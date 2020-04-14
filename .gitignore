@@ -127,3 +127,12 @@ dmypy.json
 # Project config file
 config.ini
 
+# Vim swap
+*.swp
+
+# hdf5 binary files
+*.hdf5
+
+# ssh keys
+*.pem
+
