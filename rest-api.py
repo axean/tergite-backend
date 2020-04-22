@@ -82,6 +82,11 @@ app = FastAPI(
 # routing
 @app.get("/")
 async def root():
+    return {"message": "ok"}
+
+
+@app.get("/db_access")
+async def test_db_access():
     # test DB access
     cursor = await collection.find_one({"value": {"$gt": 60}})
     #    cursor.pop('_id')
