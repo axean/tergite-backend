@@ -26,6 +26,7 @@ import Labber
 import shutil
 import pathlib
 from uuid import uuid4
+from preprocessing_worker import preprocess
 
 # .env configuration
 config = Config(".env")
@@ -33,8 +34,8 @@ NAME = config("NAME", default="NO-NAME")
 DB_URL = config("DB_URL", default="NO-DB-URL")
 PREFIX = config("PREFIX", default="pingu")
 API_PREFIX = config("API_PREFIX", default=PREFIX)
-STORAGE_PREFIX = config("STORAGE_PREFIX", default=PREFIX)
-STORAGE_LOCATION = config("STORAGE_LOCATION", default="/tmp")
+STORAGE_PREFIX_DIRNAME = config("STORAGE_PREFIX_DIRNAME", default=PREFIX)
+STORAGE_ROOT = config("STORAGE_ROOT", default="/tmp")
 UPLOAD_POOL_DIRNAME = config("UPLOAD_POOL_DIRNAME", default="upload_pool")
 
 
@@ -102,7 +103,7 @@ async def upload_job(upload_file: UploadFile = File(...)):
     # generate unique file name
     uuid = uuid4()
     file_name = str(uuid)
-    file_path = pathlib.Path(STORAGE_LOCATION) / STORAGE_PREFIX / UPLOAD_POOL_DIRNAME
+    file_path = pathlib.Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / UPLOAD_POOL_DIRNAME
     file_path.mkdir(parents=True, exist_ok=True)
     store_file = file_path / file_name
 
@@ -112,7 +113,7 @@ async def upload_job(upload_file: UploadFile = File(...)):
     upload_file.file.close()
 
     # enqueue for processing
-    rq_job_preprocessing.enqueue(labber.iJob, str(store_file), "1")
+    rq_job_preprocessing.enqueue(preprocess, store_file)
     return {"message": file_name}
 
 
