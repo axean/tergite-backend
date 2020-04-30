@@ -13,6 +13,8 @@
 import pathlib
 import json
 import time
+from scenario_scripts import demodulation_scenario
+from uuid import uuid4
 
 
 def execute_job(file):
@@ -22,7 +24,17 @@ def execute_job(file):
     with file.open() as f:
         job_dict = json.load(f)
 
-    print(f"Command: {job_dict['name']}")
-    time.sleep(3)
+    if job_dict["name"] == "demodulation_scenario":
+        signal_array = job_dict["params"]["Sine - Frequency"]
+        demod_array = job_dict["params"]["Demod - Modulation frequency"]
 
+        scenario = demodulation_scenario(signal_array, demod_array)
+
+        scenario.log_name = "Test signal demodulation - " + str(uuid4())
+        scenario.save("/tmp/my.json", save_as_json=True)
+        print("Scenario generated at /tmp/my.json")
+    else:
+        print(f"Unknown script name {job_dict['name']}")
+
+    # clean up
     file.unlink()
