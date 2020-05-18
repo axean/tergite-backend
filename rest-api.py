@@ -26,7 +26,8 @@ import Labber
 import shutil
 import pathlib
 from uuid import uuid4
-from preprocessing_worker import preprocess
+from preprocessing_worker import job_preprocess
+from postprocessing_worker import logfile_postprocess
 
 # .env configuration
 config = Config(".env")
@@ -36,8 +37,10 @@ PREFIX = config("PREFIX", default="pingu")
 API_PREFIX = config("API_PREFIX", default=PREFIX)
 STORAGE_PREFIX_DIRNAME = config("STORAGE_PREFIX_DIRNAME", default=PREFIX)
 STORAGE_ROOT = config("STORAGE_ROOT", default="/tmp")
-UPLOAD_POOL_DIRNAME = config("UPLOAD_POOL_DIRNAME", default="upload_pool")
-
+JOB_UPLOAD_POOL_DIRNAME = config("JOB_UPLOAD_POOL_DIRNAME", default="job_upload_pool")
+LOGFILE_UPLOAD_POOL_DIRNAME = config(
+    "LOGFILE_UPLOAD_POOL_DIRNAME", default="logfile_upload_pool"
+)
 
 # mongodb
 mongodb = motor.motor_asyncio.AsyncIOMotorClient(DB_URL)
@@ -55,6 +58,10 @@ q_mid = Queue("mid", connection=redis_connection)
 q_low = Queue("low", connection=redis_connection)
 
 rq_job_preprocessing = Queue(PREFIX + "_job_preprocessing", connection=redis_connection)
+rq_logfile_postprocessing = Queue(
+    PREFIX + "_logfile_postprocessing", connection=redis_connection
+)
+
 
 # pydantic models
 class Item(BaseModel):
@@ -100,10 +107,12 @@ async def test_db_access():
 @app.post("/jobs")
 async def upload_job(upload_file: UploadFile = File(...)):
 
-    # generate unique file name
+    # generate a unique file name
     uuid = uuid4()
     file_name = str(uuid)
-    file_path = pathlib.Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / UPLOAD_POOL_DIRNAME
+    file_path = (
+        pathlib.Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / JOB_UPLOAD_POOL_DIRNAME
+    )
     file_path.mkdir(parents=True, exist_ok=True)
     store_file = file_path / file_name
 
@@ -112,23 +121,39 @@ async def upload_job(upload_file: UploadFile = File(...)):
         shutil.copyfileobj(upload_file.file, destination)
     upload_file.file.close()
 
-    # enqueue for processing
-    rq_job_preprocessing.enqueue(preprocess, store_file)
+    # enqueue for pre-processing
+    rq_job_preprocessing.enqueue(job_preprocess, store_file)
     return {"message": file_name}
 
 
 @app.post("/logfiles")
 def upload_logfile(upload_file: UploadFile = File(...)):
-    with logfile.open("wb") as destination:
+
+    # generate a unique file name
+    uuid = uuid4()
+    file_name = str(uuid)
+    file_path = (
+        pathlib.Path(STORAGE_ROOT)
+        / STORAGE_PREFIX_DIRNAME
+        / LOGFILE_UPLOAD_POOL_DIRNAME
+    )
+    file_path.mkdir(parents=True, exist_ok=True)
+    store_file = file_path / file_name
+
+    with store_file.open("wb") as destination:
         shutil.copyfileobj(upload_file.file, destination)
 
     upload_file.file.close()
 
+    # enqueue for post-processing
+    rq_logfile_postprocessing.enqueue(logfile_postprocess, store_file)
+
+    # check we can read the logfile
     f = Labber.LogFile(logfile)
     log_channels = f.getLogChannels()
-    print("Log channels:")
-    for channel in log_channels:
-        print(channel["name"])
+    # print("Log channels:")
+    # for channel in log_channels:
+    #    print(channel["name"])
 
     return {"message": "ok"}
 

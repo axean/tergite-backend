@@ -18,7 +18,7 @@ from uuid import uuid4
 import requests
 
 
-def execute_job(job_file: Path):
+def job_execute(job_file: Path):
     print(f"Executing file {str(job_file)}")
 
     job_dict = {}
@@ -51,7 +51,7 @@ def execute_job(job_file: Path):
         job_file.unlink()
         scenario_file.unlink()
 
-        print("OK")
+        print("Demodulation scenario job executed successfully")
         return {"message": "ok"}
     else:
         print("Failed")
