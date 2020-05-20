@@ -17,4 +17,4 @@ rq worker --path /home/dobsicek/repos/tergite-bcc pingu_job_execution &
 rq worker --path /home/dobsicek/repos/tergite-bcc pingu_logfile_postprocessing &
 
 # rest-api
-uvicorn --host 0.0.0.0 --port 5000 rest-api:app --reload
+uvicorn --host 0.0.0.0 --port 5000 rest_api:app --reload
