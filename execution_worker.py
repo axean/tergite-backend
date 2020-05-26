@@ -13,7 +13,7 @@
 from pathlib import Path
 import json
 import time
-from scenario_scripts import demodulation_scenario
+from scenario_scripts import demodulation_scenario, qobj_scenario
 from uuid import uuid4
 import requests
 
@@ -36,6 +36,11 @@ def job_execute(job_file: Path):
 
         scenario.log_name = "Test signal demodulation - " + str(scenario_id)
         # scenario.save("/tmp/my.json", save_as_json=True)
+        scenario.save(scenario_file)
+        print(f"Scenario generated at {str(scenario_file)}")
+    elif job_dict["name"] == "qiskit_qasm_runner":
+        scenario = qobj_scenario(job_dict["params"]["qobj"])
+        scenario.log_name += str(scenario_id)
         scenario.save(scenario_file)
         print(f"Scenario generated at {str(scenario_file)}")
     else:
