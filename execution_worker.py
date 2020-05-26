@@ -16,6 +16,16 @@ import time
 from scenario_scripts import demodulation_scenario, qobj_scenario
 from uuid import uuid4
 import requests
+from starlette.config import Config
+
+# .env configuration
+config = Config(".env")
+STORAGE_ROOT = config("STORAGE_ROOT", default="/tmp")
+LABBER_MACHINE_ROOT_URL = config(
+    "LABBER_MACHINE_ROOT_URL", default="http://mc2-p045.mc2.chalmers.se:5000"
+)
+
+REST_API_MAP = {"scenarios": "/scenarios"}
 
 
 def job_execute(job_file: Path):
@@ -23,7 +33,7 @@ def job_execute(job_file: Path):
 
     job_dict = {}
     scenario_id = uuid4()
-    scenario_file = Path(r"/tmp") / (str(scenario_id) + ".labber")
+    scenario_file = Path(STORAGE_ROOT) / (str(scenario_id) + ".labber")
 
     with job_file.open() as f:
         job_dict = json.load(f)
@@ -48,7 +58,7 @@ def job_execute(job_file: Path):
 
     with scenario_file.open("rb") as source:
         files = {"upload_file": source}
-        url = "http://mc2-p045.mc2.chalmers.se:5000/scenarios"
+        url = LABBER_MACHINE_ROOT_URL + REST_API_MAP["scenarios"]
         response = requests.post(url, files=files)
 
     if response:

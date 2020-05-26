@@ -1,6 +1,6 @@
 # This code is part of Tergite
 #
-# (C) Copyright Miroslav Dobsicek 2020
+# (C) Copyright Andreas Bengtsson, Miroslav Dobsicek 2020
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -10,11 +10,21 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
+
 import numpy as np
 import json
 from uuid import uuid4
 import requests
 import pathlib
+from starlette.config import Config
+
+# .env configuration
+config = Config(".env")
+BCC_MACHINE_ROOT_URL = config(
+    "BCC_MACHINE_ROOT_URL", default="http://qtl-bcc-1.qdp.chalmers.se:5000"
+)
+
+REST_API_MAP = {"jobs": "/jobs"}
 
 
 def main():
@@ -57,7 +67,7 @@ def main():
 
     with file.open("r") as src:
         files = {"upload_file": src}
-        url = "http://localhost:5000/jobs"
+        url = BCC_MACHINE_ROOT_URL + REST_API_MAP["jobs"]
         response = requests.post(url, files=files)
 
         if response:

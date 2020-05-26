@@ -16,6 +16,15 @@ import json
 from uuid import uuid4
 import requests
 import pathlib
+from starlette.config import Config
+
+# .env configuration
+config = Config(".env")
+BCC_MACHINE_ROOT_URL = config(
+    "BCC_MACHINE_ROOT_URL", default="http://qtl-bcc-1.qdp.chalmers.se:5000"
+)
+
+REST_API_MAP = {"jobs": "/jobs"}
 
 
 def gen_array(option):
@@ -57,8 +66,8 @@ def main():
         dest="demod",
         type=str,
         nargs="*",
-        default=["stepspace", "1", "9", "4"],
-        help="Examples: -d stepspace 1 9 4",
+        default=["geomspace", "1", "9", "4"],
+        help="Examples: -d geomspace 1 15 4",
     )
     opts = parser.parse_args()
 
@@ -83,7 +92,7 @@ def main():
 
     with file.open("r") as src:
         files = {"upload_file": src}
-        url = "http://qtl-bcc-1.qdp.chalmers.se:5000/jobs"
+        url = BCC_MACHINE_ROOT_URL + REST_API_MAP["jobs"]
         response = requests.post(url, files=files)
 
         if response:
