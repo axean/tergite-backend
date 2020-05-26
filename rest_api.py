@@ -47,9 +47,6 @@ mongodb = motor.motor_asyncio.AsyncIOMotorClient(DB_URL)
 db = mongodb["milestone1"]
 collection = db["t1_mon"]
 
-# logfile
-logfile = pathlib.Path("/tmp/logfile.hdf5")
-
 # redis connection
 redis_connection = Redis()
 # redis queue
@@ -149,8 +146,8 @@ def upload_logfile(upload_file: UploadFile = File(...)):
     rq_logfile_postprocessing.enqueue(logfile_postprocess, store_file)
 
     # check we can read the logfile
-    f = Labber.LogFile(logfile)
-    log_channels = f.getLogChannels()
+    # f = Labber.LogFile(logfile)
+    # log_channels = f.getLogChannels()
     # print("Log channels:")
     # for channel in log_channels:
     #    print(channel["name"])
