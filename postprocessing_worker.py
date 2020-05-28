@@ -2,6 +2,7 @@ from pathlib import Path
 import time
 from uuid import uuid4
 from starlette.config import Config
+import Labber
 
 # config
 config = Config(".env")
@@ -37,3 +38,9 @@ def logfile_postprocess(logfile: Path):
     logfile.replace(new_file)
 
     print(f"Created new file {str(new_file)}")
+
+
+def extract_system_state_as_hex(logfile: Path):
+    f = Labber.LogFile(logfile)
+    raw_data = f.getData("State Discriminator - System state")
+    return [hex(int(x)) for x in raw_data[0]]
