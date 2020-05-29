@@ -50,7 +50,7 @@ def demodulation_scenario(signal_array, demod_array):
 
 def qobj_scenario(qobj):
     supported_gates = set(
-        ["u1", "u2", "u3", "rx", "ry", "rz", "x", "y", "z", "h", "cz",]
+        ["u1", "u2", "u3", "rx", "ry", "rz", "x", "y", "z", "h", "cz", "cx"]
     )
     scenario_template_filepath = "/home/andbe/test.labber"
 
