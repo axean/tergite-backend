@@ -52,6 +52,7 @@ def qobj_scenario(qobj):
     supported_gates = set(
         ["u1", "u2", "u3", "rx", "ry", "rz", "x", "y", "z", "h", "cz",]
     )
+    scenario_template_filepath = "/home/andbe/test.labber"
 
     def validate_gate(gate):
         if gate["name"] not in supported_gates:
@@ -71,18 +72,12 @@ def qobj_scenario(qobj):
     for ins in qobj["experiments"][0]["instructions"]:
         validate_gate(ins)
 
-    s = Scenario()
+    s = Scenario(scenario_template_filepath)
 
-    mqpg = s.add_instrument("Multi-Qubit Pulse Generator", name="MQPG")
+    mqpg = s.get_instrument(name="MQPG")
     mqpg.values["Number of qubits"] = "Two"
     mqpg.values["Sequence"] = "QObj"
     mqpg.values["QObj JSON"] = json.dumps(qobj["experiments"][0])
-
-    s.add_step("MQPG - Amplitude #1", start=0, stop=10, step=1)
-
-    # add log channels
-    s.add_log("MQPG - Trace - I1")
-    s.add_log("MQPG - Trace - Q1")
 
     # set metadata
     s.log_name = "Test qobj"
