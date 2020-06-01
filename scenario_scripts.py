@@ -14,6 +14,7 @@
 from Labber import Scenario
 import numpy as np
 import json
+from pathlib import Path
 
 
 def demodulation_scenario(signal_array, demod_array):
@@ -52,7 +53,7 @@ def qobj_scenario(qobj):
     supported_gates = set(
         ["u1", "u2", "u3", "rx", "ry", "rz", "x", "y", "z", "h", "cz", "cx"]
     )
-    scenario_template_filepath = "/home/andbe/test.labber"
+    scenario_template_filepath = Path("./qobj_template.labber")
 
     def validate_gate(gate):
         if gate["name"] not in supported_gates:
@@ -74,8 +75,7 @@ def qobj_scenario(qobj):
 
     s = Scenario(scenario_template_filepath)
 
-    mqpg = s.get_instrument(name="MQPG")
-    mqpg.values["Number of qubits"] = "Two"
+    mqpg = s.get_instrument(name="pulses")
     mqpg.values["Sequence"] = "QObj"
     mqpg.values["QObj JSON"] = json.dumps(qobj["experiments"][0])
 
@@ -83,7 +83,7 @@ def qobj_scenario(qobj):
     s.log_name = "Test qobj"
     s.comment = "Comment for log"
     s.tags.project = "My project"
-    s.tags.user = "John Doe"
+    s.tags.user = "Chalmers default user"
     s.tags.tags = ["Qobj"]
 
     # set timing info
