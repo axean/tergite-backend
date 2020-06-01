@@ -80,8 +80,8 @@ def qobj_scenario(qobj):
     mqpg.values["QObj JSON"] = json.dumps(qobj["experiments"][0])
 
     # configure number of shots
-    samples_step = s.get_step('QA - Samples')
-    samples_step.set_parameter_value(10)
+    samples_step = s.get_step("QA - Samples")
+    samples_step.range_items[0].single = 10.0
 
     # set metadata
     s.log_name = "Test qobj"
