@@ -53,7 +53,8 @@ def qobj_scenario(qobj):
     supported_gates = set(
         ["u1", "u2", "u3", "rx", "ry", "rz", "x", "y", "z", "h", "cz", "cx"]
     )
-    scenario_template_filepath = Path("./qobj_template.labber")
+    scenario_template_filepath = Path("./template.json")
+    calibration_filepath = Path("./calibration.json")
 
     def validate_gate(gate):
         if gate["name"] not in supported_gates:
@@ -80,8 +81,12 @@ def qobj_scenario(qobj):
     mqpg.values["QObj JSON"] = json.dumps(qobj["experiments"][0])
 
     # configure number of shots
-    samples_step = s.get_step("QA - Samples")
-    samples_step.range_items[0].single = 10.0
+    update_step_single_value(s, "QA - Samples", qobj["config"].get("shots", 1024))
+
+    # update with latest calibration data
+    with open(calibration_filepath, "r") as f:
+        calibration = json.load(f)
+    update_calibration_data(s, calibration)
 
     # set metadata
     s.log_name = "Test qobj"
@@ -94,3 +99,29 @@ def qobj_scenario(qobj):
     s.wait_between = 0.2
 
     return s
+
+
+def update_step_single_value(scenario, name, value):
+    scenario.get_step(name).range_items[0].single = value
+
+
+def translate_parameter_name(id_, calibration_parameter):
+    parameters = {
+        "qubit_frequency": "Qubit {id} Frequency",
+        "pi_amplitude": "Qubit {id} Amp",
+        "drag_coefficient": "Qubit {id} Alpha",
+        "readout_frequency": "pulses - Readout frequency #{id}",
+        "readout_amplitude": "pulses - Readout amplitude #{id}",
+    }
+
+    return parameters[calibration_parameter].format(id=str(id_))
+
+
+def update_calibration_data(scenario, calibration):
+    for qubit in calibration["qubits"]:
+        id_ = qubit["id"]
+        for parameter in qubit:
+            if parameter != "id":
+                update_step_single_value(
+                    scenario, translate_parameter_name(id_, parameter), qubit[parameter]
+                )

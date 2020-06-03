@@ -1,0 +1,54 @@
+{
+    "qubits": [
+        {
+            "id": 1,
+            "qubit_frequency": 4e9,
+            "pi_amplitude": 0.725,
+            "drag_coefficient": -0.5,
+            "readout_frequency": 6e9,
+            "readout_amplitude": 0.15
+        },
+        {
+            "id": 2,
+            "qubit_frequency": 4.3e9,
+            "pi_amplitude": 0.115,
+            "drag_coefficient": -0.4,
+            "readout_frequency": 6.2e9,
+            "readout_amplitude": 0.15
+        },
+        {
+            "id": 3,
+            "qubit_frequency": 4.3e9,
+            "pi_amplitude": 0.115,
+            "drag_coefficient": -0.4,
+            "readout_frequency": 6.2e9,
+            "readout_amplitude": 0.15
+        }
+    ],
+    "couplers": [
+        {
+            "id": 1,
+            "bias_voltage": 2.6,
+            "gates": [
+                {
+                    "type": "CZ",
+                    "ampltiude": 0.3,
+                    "frequency": 244e6,
+                    "qubits": [1, 2]
+                },
+                {
+                    "type": "CZ",
+                    "ampltiude": 0.2,
+                    "frequency": 295e6,
+                    "qubits": [2, 3]
+                },
+                {
+                    "type": "iSWAP",
+                    "ampltiude": 0.2,
+                    "frequency": 195e6,
+                    "qubits": [1, 3]
+                }
+            ]
+        }
+    ]
+}
