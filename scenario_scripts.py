@@ -83,10 +83,11 @@ def qobj_scenario(qobj):
     # configure number of shots
     update_step_single_value(s, "QA - Samples", qobj["config"].get("shots", 1024))
 
-    # update with latest calibration data
-    with open(calibration_filepath, "r") as f:
-        calibration = json.load(f)
-    update_calibration_data(s, calibration)
+    # update with latest calibration data, if it exists
+    if calibration_filepath.exists():
+        with open(calibration_filepath, "r") as f:
+            calibration = json.load(f)
+        update_calibration_data(s, calibration)
 
     # set metadata
     s.log_name = "Test qobj"
