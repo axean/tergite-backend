@@ -53,8 +53,8 @@ def qobj_scenario(qobj):
     supported_gates = set(
         ["u1", "u2", "u3", "rx", "ry", "rz", "x", "y", "z", "h", "cz", "cx"]
     )
-    scenario_template_filepath = Path("./template.json")
-    calibration_filepath = Path("./calibration.json")
+    scenario_template_filepath = Path("./qiskit_qasm_template.json")
+    calibration_filepath = Path("./qiskit_qasm_calibration.json")
 
     def validate_gate(gate):
         if gate["name"] not in supported_gates:
