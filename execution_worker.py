@@ -22,7 +22,10 @@ from starlette.config import Config
 config = Config(".env")
 STORAGE_ROOT = config("STORAGE_ROOT", default="/tmp")
 LABBER_MACHINE_ROOT_URL = config(
-    "LABBER_MACHINE_ROOT_URL", default="http://mc2-p045.mc2.chalmers.se:5000"
+    "LABBER_MACHINE_ROOT_URL",
+    default="http://mc2-p045.mc2.chalmers.se:5000"
+    # Pingu A
+    # "LABBER_MACHINE_ROOT_URL", default="http://129.16.115.119:5000"
 )
 
 REST_API_MAP = {"scenarios": "/scenarios"}
@@ -38,6 +41,11 @@ def job_execute(job_file: Path):
     with job_file.open() as f:
         job_dict = json.load(f)
 
+    job_id = job_dict.get("job_id", None)
+    if job_id is None:
+        print("The job does not have a valid job_id")
+        return {"message": "failed"}
+
     if job_dict["name"] == "demodulation_scenario":
         signal_array = job_dict["params"]["Sine - Frequency"]
         demod_array = job_dict["params"]["Demod - Modulation frequency"]
@@ -46,15 +54,23 @@ def job_execute(job_file: Path):
 
         scenario.log_name = "Test signal demodulation - " + str(scenario_id)
         # scenario.save("/tmp/my.json", save_as_json=True)
-        scenario.save(scenario_file)
-        print(f"Scenario generated at {str(scenario_file)}")
+
     elif job_dict["name"] == "qiskit_qasm_runner":
         scenario = qobj_scenario(job_dict["params"]["qobj"])
+
         scenario.log_name += str(scenario_id)
-        scenario.save(scenario_file)
-        print(f"Scenario generated at {str(scenario_file)}")
+
     else:
         print(f"Unknown script name {job_dict['name']}")
+        print("Job failed")
+        return {"message": "failed"}
+
+    # NOTE: Temporary WA, until a proper job supervisor is in place
+    # job_id is stored as the first item in the tags list
+    scenario.tags.tags = [job_id]
+
+    scenario.save(scenario_file)
+    print(f"Scenario generated at {str(scenario_file)}")
 
     with scenario_file.open("rb") as source:
         files = {"upload_file": source}
