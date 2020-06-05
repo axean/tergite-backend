@@ -49,12 +49,14 @@ def demodulation_scenario(signal_array, demod_array):
     return s
 
 
-def qobj_scenario(qobj):
+def qobj_scenario(job):
     supported_gates = set(
         ["u1", "u2", "u3", "rx", "ry", "rz", "x", "y", "z", "h", "cz", "cx"]
     )
     scenario_template_filepath = Path("./qiskit_qasm_template.json")
     calibration_filepath = Path("./qiskit_qasm_calibration.json")
+
+    qobj = job["params"]["qobj"]
 
     def validate_gate(gate):
         if gate["name"] not in supported_gates:
@@ -77,6 +79,7 @@ def qobj_scenario(qobj):
     s = Scenario(scenario_template_filepath)
 
     mqpg = s.get_instrument(name="pulses")
+    n_qubits = 3
     mqpg.values["Sequence"] = "QObj"
     mqpg.values["QObj JSON"] = json.dumps(qobj["experiments"][0])
 
@@ -88,6 +91,15 @@ def qobj_scenario(qobj):
         with open(calibration_filepath, "r") as f:
             calibration = json.load(f)
         update_calibration_data(s, calibration)
+
+    # add relevant log channels
+    extraction = job.get("hdf5_log_extraction", None)
+    print(extraction)
+    if extraction:
+        if extraction.get("waveforms", False):
+            add_waveforms(s, n_qubits)
+        if extraction.get("voltages", False):
+            add_readout_voltages(s, n_qubits)
 
     # set metadata
     s.log_name = "Test qobj"
@@ -126,3 +138,23 @@ def update_calibration_data(scenario, calibration):
                 update_step_single_value(
                     scenario, translate_parameter_name(id_, parameter), qubit[parameter]
                 )
+
+
+def add_waveforms(scenario, n_qubits):
+    channel = "pulses - Trace - {waveform}{id}"
+    # Add waveforms for qubit XY and Z lines
+    for i in range(n_qubits):
+        for j in ["I", "Q", "Z"]:
+            scenario.add_log(channel.format(waveform=j, id=str(i + 1)))
+
+    # Add readout waveforms
+    scenario.add_log("pulses - Trace - Readout I")
+    scenario.add_log("pulses - Trace - Readout Q")
+    scenario.add_log("pulses - Trace - Readout trig")
+
+
+def add_readout_voltages(scenario, n_qubits):
+    channel = "QA - Result {id}"
+    for i in range(n_qubits):
+        scenario.add_log(channel.format(id=str(i + 1)))
+

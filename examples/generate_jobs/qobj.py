@@ -56,8 +56,9 @@ def main():
                         ],
                     }
                 ],
-            }
+            },
         },
+        "hdf5_log_extraction": {"waveforms": True, "voltages": True},
     }
 
     file = pathlib.Path("/tmp") / str(uuid4())

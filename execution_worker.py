@@ -56,7 +56,7 @@ def job_execute(job_file: Path):
         # scenario.save("/tmp/my.json", save_as_json=True)
 
     elif job_dict["name"] == "qiskit_qasm_runner":
-        scenario = qobj_scenario(job_dict["params"]["qobj"])
+        scenario = qobj_scenario(job_dict)
 
         scenario.log_name += str(scenario_id)
 
