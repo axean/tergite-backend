@@ -97,7 +97,6 @@ def qobj_scenario(job):
 
     # add relevant log channels
     extraction = job.get("hdf5_log_extraction", None)
-    print(extraction)
     if extraction:
         if extraction.get("waveforms", False):
             add_waveforms(s, n_qubits)
