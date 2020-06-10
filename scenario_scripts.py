@@ -69,9 +69,6 @@ def qobj_scenario(job):
         if qobj["type"] != "QASM":
             raise ValueError("Only QASM-type jobs are supported.")
 
-        if len(qobj["experiments"]) > 1:
-            raise ValueError("Only supports single experiments at this moment")
-
     validate_job(qobj)
     for ins in qobj["experiments"][0]["instructions"]:
         validate_gate(ins)
@@ -81,7 +78,7 @@ def qobj_scenario(job):
     mqpg = s.get_instrument(name="pulses")
     n_qubits = 3
     mqpg.values["Sequence"] = "QObj"
-    mqpg.values["QObj JSON"] = json.dumps(qobj["experiments"][0])
+    mqpg.values["QObj JSON"] = json.dumps(qobj["experiments"])
 
     # configure number of shots
     update_step_single_value(s, "QA - Samples", qobj["config"].get("shots", 1024))
@@ -91,6 +88,12 @@ def qobj_scenario(job):
         with open(calibration_filepath, "r") as f:
             calibration = json.load(f)
         update_calibration_data(s, calibration)
+
+    # Configure mulitple experiments
+    if len(qobj["experiments"]) == 1:
+        s.add_step("pulses - QObj Iterator", single=0)
+    else:
+        s.add_step("pulses - QObj Iterator", np.arange(len(qobj["experiments"])))
 
     # add relevant log channels
     extraction = job.get("hdf5_log_extraction", None)

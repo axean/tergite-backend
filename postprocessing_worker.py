@@ -65,7 +65,8 @@ def logfile_postprocess(logfile: Path):
 
     # NOTE: When MSS adds support for the 'whole job' update
     # this will just one PUT request
-    response = requests.put(URL + REST_API_MAP["result"], json=memory)
+    # Memory could contain more than one experiment, for now just use index 0
+    response = requests.put(URL + REST_API_MAP["result"], json=memory[0])
     if response:
         print("Pushed result to MSS")
 
@@ -81,7 +82,10 @@ def logfile_postprocess(logfile: Path):
 def extract_system_state_as_hex(logfile: Path):
     f = Labber.LogFile(logfile)
     raw_data = f.getData("State Discriminator - System state")
-    return [hex(int(x)) for x in raw_data[0]]
+    memory = []
+    for entry in raw_data:
+        memory.append([hex(int(x)) for x in entry])
+    return memory
 
 
 def extract_job_id(logfile: Path):
