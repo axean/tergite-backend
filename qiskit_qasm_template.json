@@ -707,6 +707,10 @@
         },
         {
             "instrument": "pulses",
+            "quantity": "Trace - Z3"
+        },
+        {
+            "instrument": "pulses",
             "quantity": "Width, 2QB #23"
         },
         {
@@ -2873,7 +2877,7 @@
             "after_last": "Goto first point",
             "alternate_direction": false,
             "channel_name": "Qubit 1 Frequency",
-            "equation": "x+p1",
+            "equation": "x",
             "final_value": 0.0,
             "optimizer_config": {
                 "Enabled": false,
@@ -2889,12 +2893,6 @@
                     "lookup": null,
                     "use_lookup": false,
                     "variable": "x"
-                },
-                {
-                    "channel_name": "Qubit Offset",
-                    "lookup": null,
-                    "use_lookup": false,
-                    "variable": "p1"
                 }
             ],
             "show_advanced": true,
@@ -2917,7 +2915,7 @@
             "sweep_mode": "Off",
             "sweep_rate_outside": 0.0,
             "use_outside_sweep_rate": false,
-            "use_relations": true,
+            "use_relations": false,
             "wait_after": 0.0
         },
         {
@@ -3014,7 +3012,7 @@
             "after_last": "Goto first point",
             "alternate_direction": false,
             "channel_name": "Qubit 2 Frequency",
-            "equation": "x+p1",
+            "equation": "x",
             "final_value": 0.0,
             "optimizer_config": {
                 "Enabled": false,
@@ -3030,12 +3028,6 @@
                     "lookup": null,
                     "use_lookup": false,
                     "variable": "x"
-                },
-                {
-                    "channel_name": "Qubit Offset",
-                    "lookup": null,
-                    "use_lookup": false,
-                    "variable": "p1"
                 }
             ],
             "show_advanced": true,
@@ -3058,7 +3050,7 @@
             "sweep_mode": "Off",
             "sweep_rate_outside": 0.0,
             "use_outside_sweep_rate": false,
-            "use_relations": true,
+            "use_relations": false,
             "wait_after": 0.0
         },
         {
@@ -3161,7 +3153,7 @@
             "after_last": "Goto first point",
             "alternate_direction": false,
             "channel_name": "Qubit 3 Frequency",
-            "equation": "x+p1",
+            "equation": "x",
             "final_value": 0.0,
             "optimizer_config": {
                 "Enabled": false,
@@ -3177,12 +3169,6 @@
                     "lookup": null,
                     "use_lookup": false,
                     "variable": "x"
-                },
-                {
-                    "channel_name": "Qubit Offset",
-                    "lookup": null,
-                    "use_lookup": false,
-                    "variable": "p1"
                 }
             ],
             "show_advanced": true,
@@ -3205,7 +3191,7 @@
             "sweep_mode": "Off",
             "sweep_rate_outside": 0.0,
             "use_outside_sweep_rate": false,
-            "use_relations": true,
+            "use_relations": false,
             "wait_after": 0.0
         },
         {
@@ -3307,81 +3293,6 @@
         {
             "after_last": "Goto first point",
             "alternate_direction": false,
-            "channel_name": "Qubit Offset",
-            "equation": "p1",
-            "final_value": 0.0,
-            "optimizer_config": {
-                "Enabled": false,
-                "Initial step size": 746000000.0,
-                "Max value": 7460000000.0,
-                "Min value": 3730000000.0,
-                "Precision": 373000.0,
-                "Start value": 0.0
-            },
-            "relation_parameters": [
-                {
-                    "channel_name": "Step values",
-                    "lookup": null,
-                    "use_lookup": false,
-                    "variable": "x"
-                },
-                {
-                    "channel_name": "pulses - # of pi pulses",
-                    "lookup": {
-                        "interp": "Linear",
-                        "xdata": {
-                            "__ndarray__": [
-                                -1.0,
-                                0.0,
-                                1.0
-                            ],
-                            "dtype": "float64",
-                            "shape": [
-                                3
-                            ]
-                        },
-                        "ydata": {
-                            "__ndarray__": [
-                                0.0,
-                                100000.0,
-                                0.0
-                            ],
-                            "dtype": "float64",
-                            "shape": [
-                                3
-                            ]
-                        }
-                    },
-                    "use_lookup": true,
-                    "variable": "p1"
-                }
-            ],
-            "show_advanced": false,
-            "step_items": [
-                {
-                    "center": 500000.0,
-                    "interp": "Linear",
-                    "n_pts": 2,
-                    "range_type": "Single",
-                    "single": 0.0,
-                    "span": 1000000.0,
-                    "start": 0.0,
-                    "step": 1000000.0,
-                    "step_type": "Fixed step",
-                    "stop": 1000000.0,
-                    "sweep_rate": 0.0
-                }
-            ],
-            "step_unit": "Instrument",
-            "sweep_mode": "Off",
-            "sweep_rate_outside": 0.0,
-            "use_outside_sweep_rate": false,
-            "use_relations": false,
-            "wait_after": 0.0
-        },
-        {
-            "after_last": "Goto first point",
-            "alternate_direction": false,
             "channel_name": "Resonator 1 Frequency",
             "equation": "x+p1-679.5e3",
             "final_value": 0.0,
@@ -3407,7 +3318,7 @@
                     "variable": "p1"
                 }
             ],
-            "show_advanced": true,
+            "show_advanced": false,
             "step_items": [
                 {
                     "center": 0.0,
@@ -3427,7 +3338,7 @@
             "sweep_mode": "Off",
             "sweep_rate_outside": 0.0,
             "use_outside_sweep_rate": false,
-            "use_relations": true,
+            "use_relations": false,
             "wait_after": 0.0
         },
         {
@@ -3458,7 +3369,7 @@
                     "variable": "p1"
                 }
             ],
-            "show_advanced": true,
+            "show_advanced": false,
             "step_items": [
                 {
                     "center": 0.0,
@@ -3478,7 +3389,7 @@
             "sweep_mode": "Off",
             "sweep_rate_outside": 0.0,
             "use_outside_sweep_rate": false,
-            "use_relations": true,
+            "use_relations": false,
             "wait_after": 0.0
         },
         {
@@ -3509,7 +3420,7 @@
                     "variable": "p1"
                 }
             ],
-            "show_advanced": true,
+            "show_advanced": false,
             "step_items": [
                 {
                     "center": 0.0,
@@ -3529,7 +3440,7 @@
             "sweep_mode": "Off",
             "sweep_rate_outside": 0.0,
             "use_outside_sweep_rate": false,
-            "use_relations": true,
+            "use_relations": false,
             "wait_after": 0.0
         },
         {
