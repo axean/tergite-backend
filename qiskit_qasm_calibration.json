@@ -34,7 +34,7 @@
             "readout_0_real_voltage": 11.3,
             "readout_0_imag_voltage": -4.57,
             "readout_1_real_voltage": 39.4,
-            "readout_1_imag_voltage": 5000
+            "readout_1_imag_voltage": 10
         }
     ],
     "couplers": [
