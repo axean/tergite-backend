@@ -23,12 +23,12 @@ config = Config(".env")
 BCC_MACHINE_ROOT_URL = config(
     "BCC_MACHINE_ROOT_URL", default="http://qtl-bcc-1.qdp.chalmers.se:5000"
 )
-
 REST_API_MAP = {"jobs": "/jobs"}
 
 
 def main():
     job = {
+        "job_id": "123",
         "type": "script",
         "name": "qiskit_qasm_runner",
         "params": {
