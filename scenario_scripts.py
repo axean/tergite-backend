@@ -136,7 +136,36 @@ def update_calibration_data(scenario, calibration):
     for qubit in calibration["qubits"]:
         id_ = qubit["id"]
         for parameter in qubit:
-            if parameter != "id":
+            if parameter == "id":
+                continue
+            elif parameter in [
+                "readout_0_real_voltage",
+                "readout_0_imag_voltage",
+                "readout_1_real_voltage",
+                "readout_1_imag_voltage",
+            ]:
+                state = scenario.get_instrument("State Discriminator")
+                if parameter == "readout_0_real_voltage":
+                    tmp = state.values["Pointer, QB{}-S0".format(id_)]
+                    state.values["Pointer, QB{}-S0".format(id_)] = qubit[
+                        parameter
+                    ] + 1j * np.imag(tmp)
+                elif parameter == "readout_0_imag_voltage":
+                    tmp = state.values["Pointer, QB{}-S0".format(id_)]
+                    state.values["Pointer, QB{}-S0".format(id_)] = (
+                        np.real(tmp) + 1j * qubit[parameter]
+                    )
+                elif parameter == "readout_1_real_voltage":
+                    tmp = state.values["Pointer, QB{}-S1".format(id_)]
+                    state.values["Pointer, QB{}-S1".format(id_)] = qubit[
+                        parameter
+                    ] + 1j * np.imag(tmp)
+                elif parameter == "readout_1_imag_voltage":
+                    tmp = state.values["Pointer, QB{}-S1".format(id_)]
+                    state.values["Pointer, QB{}-S1".format(id_)] = (
+                        np.real(tmp) + 1j * qubit[parameter]
+                    )
+            else:
                 update_step_single_value(
                     scenario, translate_parameter_name(id_, parameter), qubit[parameter]
                 )

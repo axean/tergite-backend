@@ -6,7 +6,11 @@
             "pi_amplitude": 2.7,
             "drag_coefficient": -0.585,
             "readout_frequency": 6.43968e9,
-            "readout_amplitude": 0.15
+            "readout_amplitude": 0.15,
+            "readout_0_real_voltage": -15.3,
+            "readout_0_imag_voltage": -45,
+            "readout_1_real_voltage": 1000,
+            "readout_1_imag_voltage": -1000
         },
         {
             "id": 2,
@@ -14,7 +18,11 @@
             "pi_amplitude": 1.15,
             "drag_coefficient": -0.389,
             "readout_frequency": 6.57057e9,
-            "readout_amplitude": 0.15
+            "readout_amplitude": 0.15,
+            "readout_0_real_voltage": -21.4,
+            "readout_0_imag_voltage": 23.5,
+            "readout_1_real_voltage": -30.7,
+            "readout_1_imag_voltage": -4.23
         },
         {
             "id": 3,
@@ -22,7 +30,11 @@
             "pi_amplitude": 1.45,
             "drag_coefficient": -0.568,
             "readout_frequency": 6.67158e9,
-            "readout_amplitude": 0.15
+            "readout_amplitude": 0.15,
+            "readout_0_real_voltage": 11.3,
+            "readout_0_imag_voltage": -4.57,
+            "readout_1_real_voltage": 39.4,
+            "readout_1_imag_voltage": 5000
         }
     ],
     "couplers": [
