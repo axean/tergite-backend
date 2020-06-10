@@ -123,7 +123,7 @@ def translate_parameter_name(id_, calibration_parameter):
         "qubit_frequency": "Qubit {id} Frequency",
         "pi_amplitude": "Qubit {id} Amp",
         "drag_coefficient": "Qubit {id} Alpha",
-        "readout_frequency": "pulses - Readout frequency #{id}",
+        "readout_frequency": "Resonator {id} Frequency",
         "readout_amplitude": "pulses - Readout amplitude #{id}",
     }
 
@@ -150,11 +150,9 @@ def add_waveforms(scenario, n_qubits):
     # Add readout waveforms
     scenario.add_log("pulses - Trace - Readout I")
     scenario.add_log("pulses - Trace - Readout Q")
-    scenario.add_log("pulses - Trace - Readout trig")
 
 
 def add_readout_voltages(scenario, n_qubits):
     channel = "QA - Result {id}"
     for i in range(n_qubits):
         scenario.add_log(channel.format(id=str(i + 1)))
-
