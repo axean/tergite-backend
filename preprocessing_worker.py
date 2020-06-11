@@ -44,7 +44,7 @@ def job_preprocess(file):
     print(f"Preprocessing file {str(file)}")
 
     # mimick job pre-processing
-    time.sleep(2)
+    # time.sleep(2)
 
     new_file_name = str(uuid4())
     storage_location = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME
