@@ -11,6 +11,7 @@
 # that they have been altered from the originals.
 
 from fastapi import FastAPI, File, UploadFile
+from fastapi.responses import FileResponse
 from starlette.config import Config
 from starlette.datastructures import URL
 import motor.motor_asyncio
@@ -25,7 +26,7 @@ from pydantic import BaseModel
 import Labber
 import shutil
 import pathlib
-from uuid import uuid4
+from uuid import uuid4, UUID
 from preprocessing_worker import job_preprocess
 from postprocessing_worker import logfile_postprocess
 
@@ -40,6 +41,9 @@ STORAGE_ROOT = config("STORAGE_ROOT", default="/tmp")
 JOB_UPLOAD_POOL_DIRNAME = config("JOB_UPLOAD_POOL_DIRNAME", default="job_upload_pool")
 LOGFILE_UPLOAD_POOL_DIRNAME = config(
     "LOGFILE_UPLOAD_POOL_DIRNAME", default="logfile_upload_pool"
+)
+LOGFILE_DOWNLOAD_POOL_DIRNAME = config(
+    "LOGFILE_DOWNLOAD_POOL_DIRNAME", default="logfile_download_pool"
 )
 
 # mongodb
@@ -121,6 +125,22 @@ async def upload_job(upload_file: UploadFile = File(...)):
     # enqueue for pre-processing
     rq_job_preprocessing.enqueue(job_preprocess, store_file)
     return {"message": file_name}
+
+
+@app.get("/logfiles/{logfile_id}")
+async def download_logfile(logfile_id: UUID):
+    file_name = str(logfile_id) + ".hdf5"
+    file = (
+        pathlib.Path(STORAGE_ROOT)
+        / STORAGE_PREFIX_DIRNAME
+        / LOGFILE_DOWNLOAD_POOL_DIRNAME
+        / file_name
+    )
+
+    if file.exists():
+        return FileResponse(file)
+    else:
+        return {"message": "logfile not found"}
 
 
 @app.post("/logfiles")

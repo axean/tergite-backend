@@ -23,12 +23,17 @@ LOGFILE_DOWNLOAD_POOL_DIRNAME = config(
 MSS_MACHINE_ROOT_URL = config(
     "MSS_MACHINE_ROOT_URL", default="http://qdp-git.mc2.chalmers.se:5000"
 )
+BCC_MACHINE_ROOT_URL = config(
+    "BCC_MACHINE_ROOT_URL", default="http://qtl-bcc-1.qdp.chalmers.se:5000"
+)
 
 REST_API_MAP = {
     "result": "/result",
     "status": "/status",
     "timelog": "/timelog",
     "jobs": "/jobs",
+    "logfiles": "/logfiles",
+    "download_url": "/download_url",
 }
 
 
@@ -37,12 +42,13 @@ def logfile_postprocess(logfile: Path):
     print(f"Postprocessing logfile {str(logfile)}")
 
     # move logfile to download area
-    new_file_name = str(uuid4()) + ".hdf5"
+    new_file_name = str(uuid4())
+    new_file_name_with_suffix = new_file_name + ".hdf5"
     storage_location = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME
 
     new_file_path = storage_location / LOGFILE_DOWNLOAD_POOL_DIRNAME
     new_file_path.mkdir(exist_ok=True)
-    new_file = new_file_path / new_file_name
+    new_file = new_file_path / new_file_name_with_suffix
 
     logfile.replace(new_file)
 
@@ -61,22 +67,28 @@ def logfile_postprocess(logfile: Path):
 
     # extract job_id
     job_id = extract_job_id(new_file)
-    URL = MSS_MACHINE_ROOT_URL + REST_API_MAP["jobs"] + "/" + job_id
+    MSS_JOB = MSS_MACHINE_ROOT_URL + REST_API_MAP["jobs"] + "/" + job_id
 
     # NOTE: When MSS adds support for the 'whole job' update
     # this will just one PUT request
     # Memory could contain more than one experiment, for now just use index 0
-    response = requests.put(URL + REST_API_MAP["result"], json=memory[0])
+    response = requests.put(MSS_JOB + REST_API_MAP["result"], json=memory[0])
     if response:
         print("Pushed result to MSS")
 
-    response = requests.post(URL + REST_API_MAP["timelog"], json="RESULT")
+    response = requests.post(MSS_JOB + REST_API_MAP["timelog"], json="RESULT")
     if response:
-        print("Updated job timelog on BCC")
+        print("Updated job timelog on MSS")
 
-    response = requests.put(URL + REST_API_MAP["status"], json="DONE")
+    response = requests.put(MSS_JOB + REST_API_MAP["status"], json="DONE")
     if response:
         print("Updated job status on MSS to DONE")
+
+    download_url = BCC_MACHINE_ROOT_URL + REST_API_MAP["logfiles"] + "/" + new_file_name
+    print(f"Download url: {download_url}")
+    response = requests.put(MSS_JOB + REST_API_MAP["download_url"], json=download_url)
+    if response:
+        print("Updated job download_url on MSS")
 
 
 def extract_system_state_as_hex(logfile: Path):
