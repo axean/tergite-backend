@@ -51,7 +51,7 @@ def demodulation_scenario(signal_array, demod_array):
 
 def qobj_scenario(job):
     supported_gates = set(
-        ["u1", "u2", "u3", "rx", "ry", "rz", "x", "y", "z", "h", "cz", "cx"]
+        ["u1", "u2", "u3", "rx", "ry", "rz", "x", "y", "z", "h", "cz", "cx", "measure"]
     )
     scenario_template_filepath = Path("./qiskit_qasm_template.json")
     calibration_filepath = Path("./qiskit_qasm_calibration.json")
