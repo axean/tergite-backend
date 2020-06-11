@@ -22,10 +22,7 @@ from starlette.config import Config
 config = Config(".env")
 STORAGE_ROOT = config("STORAGE_ROOT", default="/tmp")
 LABBER_MACHINE_ROOT_URL = config(
-    "LABBER_MACHINE_ROOT_URL",
-    default="http://mc2-p045.mc2.chalmers.se:5000"
-    # Pingu A
-    # "LABBER_MACHINE_ROOT_URL", default="http://129.16.115.119:5000"
+    "LABBER_MACHINE_ROOT_URL", default="http://129.16.115.119:5000"
 )
 
 REST_API_MAP = {"scenarios": "/scenarios"}
