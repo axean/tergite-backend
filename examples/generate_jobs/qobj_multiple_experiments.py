@@ -38,7 +38,7 @@ def main():
                 "type": "QASM",
                 "header": {
                     "description": "Set of Experiments 1",
-                    "backend_name": "ibmqx2",
+                    "backend_name": "pingu",
                 },
                 "config": {"shots": 1024, "memory_slots": 1, "init_qubits": True},
                 "experiments": [
