@@ -1,0 +1,8 @@
+fastapi>=0.61.0
+motor>=2.2.0
+python-multipart>=0.0.5
+redis>=3.5.3
+requests>=2.24.0
+rq>=1.5.0
+uvicorn>=0.11.8
+numpy>=1.19.1
