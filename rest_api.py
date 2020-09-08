@@ -12,8 +12,6 @@
 
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse
-from starlette.config import Config
-from starlette.datastructures import URL
 import motor.motor_asyncio
 import pprint
 from redis import Redis
@@ -29,25 +27,19 @@ import pathlib
 from uuid import uuid4, UUID
 from preprocessing_worker import job_preprocess
 from postprocessing_worker import logfile_postprocess
+import settings
 
-# .env configuration
-config = Config(".env")
-NAME = config("NAME", default="NO-NAME")
-DB_URL = config("DB_URL", default="NO-DB-URL")
-PREFIX = config("PREFIX", default="pingu")
-API_PREFIX = config("API_PREFIX", default=PREFIX)
-STORAGE_PREFIX_DIRNAME = config("STORAGE_PREFIX_DIRNAME", default=PREFIX)
-STORAGE_ROOT = config("STORAGE_ROOT", default="/tmp")
-JOB_UPLOAD_POOL_DIRNAME = config("JOB_UPLOAD_POOL_DIRNAME", default="job_upload_pool")
-LOGFILE_UPLOAD_POOL_DIRNAME = config(
-    "LOGFILE_UPLOAD_POOL_DIRNAME", default="logfile_upload_pool"
-)
-LOGFILE_DOWNLOAD_POOL_DIRNAME = config(
-    "LOGFILE_DOWNLOAD_POOL_DIRNAME", default="logfile_download_pool"
-)
+# settings
+DEFAULT_PREFIX = settings.DEFAULT_PREFIX
+STORAGE_ROOT = settings.STORAGE_ROOT
+STORAGE_PREFIX_DIRNAME = settings.STORAGE_PREFIX_DIRNAME
+LOGFILE_UPLOAD_POOL_DIRNAME = settings.LOGFILE_UPLOAD_POOL_DIRNAME
+LOGFILE_DOWNLOAD_POOL_DIRNAME = settings.LOGFILE_DOWNLOAD_POOL_DIRNAME
+JOB_UPLOAD_POOL_DIRNAME = settings.JOB_UPLOAD_POOL_DIRNAME
+DB_MACHINE_ROOT_URL = settings.DB_MACHINE_ROOT_URL
 
 # mongodb
-mongodb = motor.motor_asyncio.AsyncIOMotorClient(DB_URL)
+mongodb = motor.motor_asyncio.AsyncIOMotorClient(str(DB_MACHINE_ROOT_URL))
 db = mongodb["milestone1"]
 collection = db["t1_mon"]
 
@@ -58,9 +50,11 @@ q_high = Queue("high", connection=redis_connection)
 q_mid = Queue("mid", connection=redis_connection)
 q_low = Queue("low", connection=redis_connection)
 
-rq_job_preprocessing = Queue(PREFIX + "_job_preprocessing", connection=redis_connection)
+rq_job_preprocessing = Queue(
+    DEFAULT_PREFIX + "_job_preprocessing", connection=redis_connection
+)
 rq_logfile_postprocessing = Queue(
-    PREFIX + "_logfile_postprocessing", connection=redis_connection
+    DEFAULT_PREFIX + "_logfile_postprocessing", connection=redis_connection
 )
 
 
@@ -102,7 +96,7 @@ async def test_db_access():
     #    pprint.pprint(cursor)
 
     # output
-    return {"message": "Hello from " + NAME + ", T1: " + str(cursor["value"])}
+    return {"message": "Hello from " + DEFAULT_PREFIX + ", T1: " + str(cursor["value"])}
 
 
 @app.post("/jobs")

@@ -16,13 +16,10 @@ import json
 from uuid import uuid4
 import requests
 import pathlib
-from starlette.config import Config
+import settings
 
-# .env configuration
-config = Config(".env")
-BCC_MACHINE_ROOT_URL = config(
-    "BCC_MACHINE_ROOT_URL", default="http://qtl-bcc-1.qdp.chalmers.se:5000"
-)
+# settings
+BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
 
 REST_API_MAP = {"jobs": "/jobs"}
 
@@ -92,7 +89,7 @@ def main():
 
     with file.open("r") as src:
         files = {"upload_file": src}
-        url = BCC_MACHINE_ROOT_URL + REST_API_MAP["jobs"]
+        url = str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["jobs"]
         response = requests.post(url, files=files)
 
         if response:

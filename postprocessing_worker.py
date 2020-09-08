@@ -14,31 +14,16 @@
 from pathlib import Path
 import time
 from uuid import uuid4
-from starlette.config import Config
 import Labber
 import requests
+import settings
 
-# config
-config = Config(".env")
-NAME = config("NAME", default="NO-NAME")
-DB_URL = config("DB_URL", default="NO-DB-URL")
-PREFIX = config("PREFIX", default="pingu")
-API_PREFIX = config("API_PREFIX", default=PREFIX)
-STORAGE_PREFIX_DIRNAME = config("STORAGE_PREFIX_DIRNAME", default=PREFIX)
-STORAGE_ROOT = config("STORAGE_ROOT", default="/tmp")
-JOB_UPLOAD_POOL_DIRNAME = config("JOB_UPLOAD_POOL_DIRNAME", default="job_upload_pool")
-JOB_EXECUTION_POOL_DIRNAME = config(
-    "JOB_EXECUTION_POOL_DIRNAME", default="job_execution_pool"
-)
-LOGFILE_DOWNLOAD_POOL_DIRNAME = config(
-    "LOGFILE_DOWNLOAD_POOL_DIRNAME", default="logfile_download_pool"
-)
-MSS_MACHINE_ROOT_URL = config(
-    "MSS_MACHINE_ROOT_URL", default="http://qdp-git.mc2.chalmers.se:5000"
-)
-BCC_MACHINE_ROOT_URL = config(
-    "BCC_MACHINE_ROOT_URL", default="http://qtl-bcc-1.qdp.chalmers.se:5000"
-)
+# settings
+STORAGE_ROOT = settings.STORAGE_ROOT
+STORAGE_PREFIX_DIRNAME = settings.STORAGE_PREFIX_DIRNAME
+LOGFILE_DOWNLOAD_POOL_DIRNAME = settings.LOGFILE_DOWNLOAD_POOL_DIRNAME
+MSS_MACHINE_ROOT_URL = settings.MSS_MACHINE_ROOT_URL
+BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
 
 REST_API_MAP = {
     "result": "/result",
@@ -80,7 +65,7 @@ def logfile_postprocess(logfile: Path):
 
     # extract job_id
     job_id = extract_job_id(new_file)
-    MSS_JOB = MSS_MACHINE_ROOT_URL + REST_API_MAP["jobs"] + "/" + job_id
+    MSS_JOB = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["jobs"] + "/" + job_id
 
     # NOTE: When MSS adds support for the 'whole job' update
     # this will just one PUT request
@@ -97,7 +82,9 @@ def logfile_postprocess(logfile: Path):
     if response:
         print("Updated job status on MSS to DONE")
 
-    download_url = BCC_MACHINE_ROOT_URL + REST_API_MAP["logfiles"] + "/" + new_file_name
+    download_url = (
+        str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["logfiles"] + "/" + new_file_name
+    )
     print(f"Download url: {download_url}")
     response = requests.put(MSS_JOB + REST_API_MAP["download_url"], json=download_url)
     if response:
