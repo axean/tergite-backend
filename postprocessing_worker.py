@@ -51,44 +51,57 @@ def logfile_postprocess(logfile: Path):
     logfile.replace(new_file)
 
     print(f"Created new file {str(new_file)}")
+    tags = extract_tags(new_file)
+    script_name = get_script_name(tags)
+    job_id = get_job_id(tags)
+    print("Tags:", tags)
 
     ###############################################################
-    # The below works/makes sense only for Qiskit/QObj jobs.
-    # Currently no check for this is in place !!!!
-    #   - one WA possibility is to use tags exactly as with job_id
+    # The code below uses a WA based on Labber job tags.
     #   - proper solution is a job supervisor
     ###############################################################
 
-    # extract System state
-    memory = extract_system_state_as_hex(new_file)
-    print(memory)
+    if script_name == "demodulation_scenario":
+        pass
 
-    # extract job_id
-    job_id = extract_job_id(new_file)
-    MSS_JOB = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["jobs"] + "/" + job_id
+    elif script_name == "qiskit_qasm_runner":
 
-    # NOTE: When MSS adds support for the 'whole job' update
-    # this will just one PUT request
-    # Memory could contain more than one experiment, for now just use index 0
-    response = requests.put(MSS_JOB + REST_API_MAP["result"], json=memory[0])
-    if response:
-        print("Pushed result to MSS")
+        # extract System state
+        memory = extract_system_state_as_hex(new_file)
+        print(memory)
 
-    response = requests.post(MSS_JOB + REST_API_MAP["timelog"], json="RESULT")
-    if response:
-        print("Updated job timelog on MSS")
+        MSS_JOB = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["jobs"] + "/" + job_id
 
-    response = requests.put(MSS_JOB + REST_API_MAP["status"], json="DONE")
-    if response:
-        print("Updated job status on MSS to DONE")
+        # NOTE: When MSS adds support for the 'whole job' update
+        # this will just one PUT request
+        # Memory could contain more than one experiment, for now just use index 0
+        response = requests.put(MSS_JOB + REST_API_MAP["result"], json=memory[0])
+        if response:
+            print("Pushed result to MSS")
 
-    download_url = (
-        str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["logfiles"] + "/" + new_file_name
-    )
-    print(f"Download url: {download_url}")
-    response = requests.put(MSS_JOB + REST_API_MAP["download_url"], json=download_url)
-    if response:
-        print("Updated job download_url on MSS")
+        response = requests.post(MSS_JOB + REST_API_MAP["timelog"], json="RESULT")
+        if response:
+            print("Updated job timelog on MSS")
+
+        response = requests.put(MSS_JOB + REST_API_MAP["status"], json="DONE")
+        if response:
+            print("Updated job status on MSS to DONE")
+
+        download_url = (
+            str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["logfiles"] + "/" + new_file_name
+        )
+        print(f"Download url: {download_url}")
+        response = requests.put(
+            MSS_JOB + REST_API_MAP["download_url"], json=download_url
+        )
+        if response:
+            print("Updated job download_url on MSS")
+
+    else:
+        print(f"Unknown script name {script_name}")
+        print("Postprocessing failed")
+
+    print(f"Postprocessing ended for script type: {script_name}")
 
 
 def extract_system_state_as_hex(logfile: Path):
@@ -100,8 +113,13 @@ def extract_system_state_as_hex(logfile: Path):
     return memory
 
 
-def extract_job_id(logfile: Path):
-    f = Labber.LogFile(logfile)
-    job_id = f.getTags()[0]
-    print(job_id)
-    return job_id
+def extract_tags(logfile: Path):
+    return Labber.LogFile(logfile).getTags()
+
+
+def get_job_id(tags):
+    return tags[0]
+
+
+def get_script_name(tags):
+    return tags[1]

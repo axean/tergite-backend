@@ -62,7 +62,8 @@ def job_execute(job_file: Path):
 
     # NOTE: Temporary WA, until a proper job supervisor is in place
     # job_id is stored as the first item in the tags list
-    scenario.tags.tags = [job_id]
+    # script name is stored as the secend item in the tags list
+    scenario.tags.tags = [job_id, job_dict["name"]]
 
     scenario.save(scenario_file)
     print(f"Scenario generated at {str(scenario_file)}")
