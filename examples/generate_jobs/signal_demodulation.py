@@ -36,7 +36,7 @@ def gen_array(option):
         return ("start=" + option[1], "stop=" + option[2], "step=" + option[3])
     else:
         numpy_array = fn_dispatcher[option[0]](
-            *(list(map(float, option[1:2])) + [int(option[3])])
+            *(list(map(float, option[1:3])) + [int(option[3])])
         )
         return numpy_array.tolist()  # json ready
 
@@ -52,7 +52,7 @@ def main():
         dest="signal",
         type=str,
         nargs="*",
-        default=["linspace", "0", "10", "51"],
+        default=["linspace", "0", "10", "5"],
         metavar="PARAM",
         help="Examples: -s linspace 0 10 51",
     )
