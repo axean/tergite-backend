@@ -75,6 +75,7 @@ def main():
     demod_array = gen_array(opts.demod)
 
     job = {
+        "job_id": str(uuid4()),
         "type": "script",
         "name": "demodulation_scenario",
         "params": {
