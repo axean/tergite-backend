@@ -78,7 +78,7 @@ def job_execute(job_file: Path):
         job_file.unlink()
         scenario_file.unlink()
 
-        print("Demodulation scenario job executed successfully")
+        print("Scenario job executed successfully")
         return {"message": "ok"}
     else:
         print("Failed")
