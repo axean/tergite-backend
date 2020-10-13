@@ -26,7 +26,7 @@ REST_API_MAP = {"jobs": "/jobs"}
 
 def main():
     job = {
-        "job_id": "123",
+        "job_id": str(uuid4()),
         "type": "script",
         "name": "qiskit_qasm_runner",
         "params": {
