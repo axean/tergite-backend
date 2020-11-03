@@ -14,7 +14,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="tergite-qiskit-connector",
+    name="tergite-bcc",
     author_emails="dobsicek@chalmers.se",
     license="Apache 2.0",
     packages=find_packages(),
