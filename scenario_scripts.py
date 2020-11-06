@@ -116,6 +116,35 @@ def qobj_scenario(job):
     return s
 
 
+def qobj_dummy_scenario(job):
+    scenario_template_filepath = Path("./qasm_dummy_template.labber")
+
+    qobj = job["params"]["qobj"]
+
+    def validate_job(qobj):
+        if qobj["type"] != "QASM":
+            raise ValueError("Only QASM-type jobs are supported.")
+
+    validate_job(qobj)
+    s = Scenario(scenario_template_filepath)
+    instr = s.get_instrument(name="State Discriminator")
+    n_qubits = 3
+    instr.values["QObj JSON"] = json.dumps(qobj)
+    instr.values["QObj ID"] = qobj["qobj_id"]
+
+    # set metadata
+    s.log_name = "Test qobj"
+    s.comment = "Comment for log"
+    s.tags.project = "My project"
+    s.tags.user = "Chalmers default user"
+    s.tags.tags = ["Qobj"]
+
+    # set timing info
+    s.wait_between = 0.2
+
+    return s
+
+
 def update_step_single_value(scenario, name, value):
     scenario.get_step(name).range_items[0].single = value
 

@@ -13,7 +13,7 @@
 from pathlib import Path
 import json
 import time
-from scenario_scripts import demodulation_scenario, qobj_scenario
+from scenario_scripts import demodulation_scenario, qobj_scenario, qobj_dummy_scenario
 from uuid import uuid4
 import requests
 import settings
@@ -52,6 +52,10 @@ def job_execute(job_file: Path):
 
     elif job_dict["name"] == "qiskit_qasm_runner":
         scenario = qobj_scenario(job_dict)
+
+        scenario.log_name += str(scenario_id)
+    elif job_dict["name"] == "qasm_dummy_job":
+        scenario = qobj_dummy_scenario(job_dict)
 
         scenario.log_name += str(scenario_id)
 

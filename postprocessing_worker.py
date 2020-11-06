@@ -71,6 +71,7 @@ def logfile_postprocess(logfile: Path):
     elif script_name == "qiskit_qasm_runner":
 
         # extract System state
+        new_file = Labber.LogFile(new_file)
         memory = extract_system_state_as_hex(new_file)
         print(memory)
 
@@ -100,7 +101,16 @@ def logfile_postprocess(logfile: Path):
         )
         if response:
             print("Updated job download_url on MSS")
-
+    elif script_name == "qasm_dummy_job":
+        new_file = Labber.LogFile(new_file)
+        q_states = extract_system_state_as_hex(new_file)
+        print(f"qubit states: {q_states}")
+        shots = extract_shots(new_file)
+        print(f"shots: {shots}")
+        max_qubits = extract_max_qubits(new_file)
+        print(f"max qubits used in experiments: {max_qubits}")
+        qobj_id = extract_qobj_id(new_file)
+        print(f"qobj ID: {qobj_id}")
     else:
         print(f"Unknown script name {script_name}")
         print("Postprocessing failed")
@@ -108,13 +118,24 @@ def logfile_postprocess(logfile: Path):
     print(f"Postprocessing ended for script type: {script_name}")
 
 
-def extract_system_state_as_hex(logfile: Path):
-    f = Labber.LogFile(logfile)
-    raw_data = f.getData("State Discriminator - System state")
+def extract_system_state_as_hex(logfile: Labber.LogFile):
+    raw_data = logfile.getData("State Discriminator - System state")
     memory = []
     for entry in raw_data:
         memory.append([hex(int(x)) for x in entry])
     return memory
+
+
+def extract_shots(logfile: Labber.LogFile):
+    return int(logfile.getData("State Discriminator - Shots", 0))
+
+
+def extract_max_qubits(logfile: Labber.LogFile):
+    return int(logfile.getData("State Discriminator - Max no. of qubits used", 0))
+
+
+def extract_qobj_id(logfile: Labber.LogFile):
+    return logfile.getChannelValue("State Discriminator - QObj ID")
 
 
 def extract_tags(logfile: Path):

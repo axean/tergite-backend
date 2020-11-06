@@ -41,7 +41,10 @@ def main():
                 "config": {"shots": 1024, "memory_slots": 1, "init_qubits": True},
                 "experiments": [
                     {
-                        "header": {"memory_slots": 1, "n_qubits": 3,},
+                        "header": {
+                            "memory_slots": 1,
+                            "n_qubits": 3,
+                        },
                         "config": {},
                         "instructions": [
                             {"name": "ry", "qubits": [1], "params": [0.8]},
@@ -49,7 +52,10 @@ def main():
                         ],
                     },
                     {
-                        "header": {"memory_slots": 1, "n_qubits": 3,},
+                        "header": {
+                            "memory_slots": 1,
+                            "n_qubits": 3,
+                        },
                         "config": {},
                         "instructions": [
                             {"name": "rx", "qubits": [0], "params": [0.8]},
