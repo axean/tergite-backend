@@ -12,6 +12,7 @@
 
 
 from pathlib import Path
+import asyncio
 import time
 from uuid import uuid4
 import Labber
@@ -63,6 +64,9 @@ def logfile_postprocess(logfile: Path):
 
     if script_name == "demodulation_scenario":
         pass
+
+    elif script_name == "calibration":
+        asyncio.run(postprocess_calibration())
 
     elif script_name == "qiskit_qasm_runner":
 
@@ -123,3 +127,18 @@ def get_job_id(tags):
 
 def get_script_name(tags):
     return tags[1]
+
+
+async def postprocess_calibration():
+    # TODO
+    # extract results from logfile
+    # store results in Redis
+
+    # inform calibration deamon that the results are available
+    reader, writer = await asyncio.open_connection("127.0.0.1", 8888)
+
+    message = "Calibration routine finished. Results available in Redis"
+    print(f"Send: {message!r}")
+    writer.write(message.encode())
+
+    writer.close()

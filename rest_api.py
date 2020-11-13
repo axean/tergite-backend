@@ -98,6 +98,8 @@ async def download_logfile(logfile_id: UUID):
 @app.post("/logfiles")
 def upload_logfile(upload_file: UploadFile = File(...)):
 
+    print(f"Received logfile {upload_file.filename}")
+
     # generate a unique file name
     uuid = uuid4()
     file_name = str(uuid)
