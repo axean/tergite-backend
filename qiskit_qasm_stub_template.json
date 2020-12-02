@@ -1,0 +1,162 @@
+{
+    "channels": [
+        {
+            "instrument": "State Discriminator",
+            "quantity": "Dummy input"
+        },
+        {
+            "instrument": "State Discriminator",
+            "quantity": "Max no. of qubits used"
+        },
+        {
+            "instrument": "State Discriminator",
+            "quantity": "QObj ID"
+        },
+        {
+            "instrument": "State Discriminator",
+            "quantity": "QObj JSON"
+        },
+        {
+            "instrument": "State Discriminator",
+            "quantity": "Shots"
+        },
+        {
+            "instrument": "State Discriminator",
+            "quantity": "System state"
+        }
+    ],
+    "instruments": [
+        {
+            "com_config": {
+                "Baud rate": 9600.0,
+                "Data bits": 8.0,
+                "GPIB board number": 0.0,
+                "Lock VISA resource": false,
+                "PXI chassis": 1.0,
+                "Parity": "No parity",
+                "Run in 32-bit mode": false,
+                "Send GPIB go to local at close": false,
+                "Send end on write": true,
+                "Stop bits": 1.0,
+                "Suppress end bit termination on read": false,
+                "TCP port": 0.0,
+                "Term. character": "Auto",
+                "Timeout": 10.0,
+                "Use VICP protocol": false,
+                "Use specific TCP port": false,
+                "address": "",
+                "interface": "None",
+                "lock": false,
+                "name": "State Discriminator",
+                "server": "localhost",
+                "show_advanced": false,
+                "startup": "Set config"
+            },
+            "hardware": "Qiskit runner stub",
+            "options": {
+                "model": "",
+                "options": []
+            },
+            "values": {
+                "Dummy input": 0.0,
+                "Max no. of qubits used": 0.0,
+                "QObj ID": "",
+                "QObj JSON": "",
+                "Shots": 0.0,
+                "System state": {
+                    "__ndarray__": [],
+                    "dtype": "float64",
+                    "shape": [
+                        0
+                    ]
+                }
+            },
+            "version": "0.1.1"
+        }
+    ],
+    "log_channels": [
+        "State Discriminator - System state",
+        "State Discriminator - Max no. of qubits used",
+        "State Discriminator - Shots"
+    ],
+    "parameters": {
+        "arm_trig_mode": false,
+        "comment": "",
+        "hardware_loop": false,
+        "log_name": "qasm_parse",
+        "log_parallel": true,
+        "logger_mode": false,
+        "time_per_point": 0.0,
+        "trig_channel": "",
+        "wait_between": 0.01
+    },
+    "settings": {
+        "Data compression": 4,
+        "Limit hardware looping to first step item": false,
+        "Max evaluations": 200,
+        "Method": "Bayesian-Gaussian-Process",
+        "Minimization function": "y[0]",
+        "Number of step items in hardware loop": 1,
+        "Only send signal if source instrument has been updated": true,
+        "Relative tolerance": Infinity,
+        "Send values in parallel": true,
+        "Target value": -Infinity,
+        "Update instruments at start even if values are unchanged": true,
+        "opt-Bayesian-Gaussian-Process: Acquisition function": "gp_hedge",
+        "opt-Bayesian-Gaussian-Process: kappa": 1.96,
+        "opt-Bayesian-Gaussian-Process: xi": 0.1
+    },
+    "step_channels": [
+        {
+            "after_last": "Goto first point",
+            "alternate_direction": false,
+            "channel_name": "State Discriminator - Dummy input",
+            "equation": "x",
+            "final_value": 0.0,
+            "optimizer_config": {
+                "Enabled": false,
+                "Initial step size": 0.0,
+                "Max value": 0.0,
+                "Min value": 0.0,
+                "Precision": 0.0,
+                "Start value": 1.0
+            },
+            "relation_parameters": [
+                {
+                    "channel_name": "Step values",
+                    "lookup": null,
+                    "use_lookup": false,
+                    "variable": "x"
+                }
+            ],
+            "show_advanced": false,
+            "step_items": [
+                {
+                    "center": 0.0,
+                    "interp": "Linear",
+                    "n_pts": 51,
+                    "range_type": "Single",
+                    "single": 0.0,
+                    "span": 0.0,
+                    "start": 0.0,
+                    "step": 0.0,
+                    "step_type": "Fixed # of pts",
+                    "stop": 0.0,
+                    "sweep_rate": 0.0
+                }
+            ],
+            "step_unit": "Instrument",
+            "sweep_mode": "Off",
+            "sweep_rate_outside": 0.0,
+            "use_outside_sweep_rate": false,
+            "use_relations": false,
+            "wait_after": 0.0
+        }
+    ],
+    "tags": {
+        "project": "",
+        "tags": [],
+        "user": ""
+    },
+    "version": "1.7.4"
+}

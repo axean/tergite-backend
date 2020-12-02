@@ -117,7 +117,7 @@ def qobj_scenario(job):
 
 
 def qobj_dummy_scenario(job):
-    scenario_template_filepath = Path("./qasm_dummy_template.labber")
+    scenario_template_filepath = Path("./qiskit_qasm_stub_template.json")
 
     qobj = job["params"]["qobj"]
 
