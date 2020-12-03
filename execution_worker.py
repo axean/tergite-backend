@@ -75,6 +75,7 @@ def job_execute(job_file: Path):
     with scenario_file.open("rb") as source:
         files = {"upload_file": source}
         url = str(LABBER_MACHINE_ROOT_URL) + REST_API_MAP["scenarios"]
+        print("Sending to Labber machine!")
         response = requests.post(url, files=files)
 
     if response:

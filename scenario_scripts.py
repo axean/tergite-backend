@@ -12,6 +12,7 @@
 
 
 from Labber import Scenario
+
 import numpy as np
 import json
 from pathlib import Path
@@ -117,7 +118,7 @@ def qobj_scenario(job):
 
 
 def qobj_dummy_scenario(job):
-    scenario_template_filepath = Path("./qiskit_qasm_stub_template.json")
+    scenario_template_filepath = Path("./qiskit_stub_scenario_template.json")
 
     qobj = job["params"]["qobj"]
 
@@ -129,6 +130,23 @@ def qobj_dummy_scenario(job):
     s = Scenario(scenario_template_filepath)
     instr = s.get_instrument(name="State Discriminator")
     n_qubits = 3
+    items = s.step_items
+    selector_item = items[0]
+    step = selector_item.range_items[0]
+
+    # Fetch number of experiements
+    no_experiments = len(qobj["experiments"])
+    # Set up a labber sweep over the experiments (or no sweep, if only 1)
+    if no_experiments > 1:
+        step.range_type = "Start - Stop"
+        step.start = 1
+        step.stop = no_experiments
+        # Stepsize, should always be 1.
+        step.step = 1
+    else:
+        step.range_type = "Single"
+        step.single = 1
+
     instr.values["QObj JSON"] = json.dumps(qobj)
     instr.values["QObj ID"] = qobj["qobj_id"]
 

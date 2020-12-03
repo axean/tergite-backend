@@ -104,7 +104,7 @@ def logfile_postprocess(logfile: Path):
     elif script_name == "qasm_dummy_job":
         new_file = Labber.LogFile(new_file)
         q_states = extract_system_state_as_hex(new_file)
-        print(f"qubit states: {q_states}")
+        print(f"qubit states: {len(q_states)} lists of length {len(q_states[0])}")
         shots = extract_shots(new_file)
         print(f"shots: {shots}")
         max_qubits = extract_max_qubits(new_file)
@@ -127,11 +127,11 @@ def extract_system_state_as_hex(logfile: Labber.LogFile):
 
 
 def extract_shots(logfile: Labber.LogFile):
-    return int(logfile.getData("State Discriminator - Shots", 0))
+    return int(logfile.getData("State Discriminator - Shots", 0)[0])
 
 
 def extract_max_qubits(logfile: Labber.LogFile):
-    return int(logfile.getData("State Discriminator - Max no. of qubits used", 0))
+    return int(logfile.getData("State Discriminator - Max no. of qubits used", 0)[0])
 
 
 def extract_qobj_id(logfile: Labber.LogFile):
