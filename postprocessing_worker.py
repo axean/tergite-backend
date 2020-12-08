@@ -105,6 +105,8 @@ def logfile_postprocess(logfile: Path):
         new_file = Labber.LogFile(new_file)
         q_states = extract_system_state_as_hex(new_file)
         print(f"qubit states: {len(q_states)} lists of length {len(q_states[0])}")
+        if len(q_states[0]) <= 5:
+            print(q_states)
         shots = extract_shots(new_file)
         print(f"shots: {shots}")
         max_qubits = extract_max_qubits(new_file)

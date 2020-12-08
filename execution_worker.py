@@ -41,6 +41,7 @@ def job_execute(job_file: Path):
         print("The job does not have a valid job_id")
         return {"message": "failed"}
 
+    print(f"Job script type: {job_dict['name']}")
     if job_dict["name"] == "demodulation_scenario":
         signal_array = job_dict["params"]["Sine - Frequency"]
         demod_array = job_dict["params"]["Demod - Modulation frequency"]
