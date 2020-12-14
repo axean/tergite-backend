@@ -68,19 +68,26 @@ def logfile_postprocess(logfile: Path):
     elif script_name == "calibration":
         asyncio.run(postprocess_calibration())
 
-    elif script_name == "qiskit_qasm_runner":
+    elif script_name in ["qiskit_qasm_runner", "qasm_dummy_job"]:
 
         # extract System state
         new_file = Labber.LogFile(new_file)
         memory = extract_system_state_as_hex(new_file)
-        print(memory)
+
+        # helper printout with first 5 outcomes
+        print("Measurement results:")
+        for experiment_memory in memory:
+            s = str(experiment_memory[:5])
+            if experiment_memory[5:6]:
+                s = s.replace("]", ", ...]")
+            print(s)
 
         MSS_JOB = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["jobs"] + "/" + job_id
 
         # NOTE: When MSS adds support for the 'whole job' update
         # this will just one PUT request
         # Memory could contain more than one experiment, for now just use index 0
-        response = requests.put(MSS_JOB + REST_API_MAP["result"], json=memory[0])
+        response = requests.put(MSS_JOB + REST_API_MAP["result"], json=memory)
         if response:
             print("Pushed result to MSS")
 
@@ -101,6 +108,7 @@ def logfile_postprocess(logfile: Path):
         )
         if response:
             print("Updated job download_url on MSS")
+
     elif script_name == "qasm_dummy_job":
         new_file = Labber.LogFile(new_file)
         q_states = extract_system_state_as_hex(new_file)
@@ -113,6 +121,7 @@ def logfile_postprocess(logfile: Path):
         print(f"max qubits used in experiments: {max_qubits}")
         qobj_id = extract_qobj_id(new_file)
         print(f"qobj ID: {qobj_id}")
+
     else:
         print(f"Unknown script name {script_name}")
         print("Postprocessing failed")
