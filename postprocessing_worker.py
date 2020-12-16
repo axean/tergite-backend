@@ -18,6 +18,9 @@ from uuid import uuid4
 import Labber
 import requests
 import settings
+import redis
+
+red = redis.Redis(host='localhost', port=6379, decode_responses=True)
 
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT
@@ -66,7 +69,9 @@ def logfile_postprocess(logfile: Path):
         pass
 
     elif script_name == "calibration":
-        asyncio.run(postprocess_calibration())
+        new_file = Labber.LogFile(new_file)
+        # The third tag of a calibration script tells us what kind of measurement we performed
+        asyncio.run(postprocess_calibration(new_file, tags[2]))
 
     elif script_name in ["qiskit_qasm_runner", "qasm_dummy_job"]:
 
@@ -161,10 +166,35 @@ def get_script_name(tags):
     return tags[1]
 
 
-async def postprocess_calibration():
+def process_dummy(logfile: Labber.LogFile):
+    """
+    Processes the logfile of a 'dummy'-marked calibration scenario
+    (which is a Qiskit Runner Stub measurement)
+    """
+    shots = extract_shots(logfile)
+    red.set('results:shots', shots)
+
+
+def process_res_spect(logfile: Labber.LogFile):
+    pass
+
+
+PROCESSING_METHODS = {
+    'dummy': process_dummy,
+    'res_spect': process_res_spect,
+    # etc...
+}
+
+
+async def postprocess_calibration(logfile: Labber.LogFile, measurement_type):
     # TODO
     # extract results from logfile
     # store results in Redis
+    # Process the log's data appropriately
+    try:
+        PROCESSING_METHODS[measurement_type](logfile)
+    except KeyError:
+        pass
 
     # inform calibration deamon that the results are available
     reader, writer = await asyncio.open_connection("127.0.0.1", 8888)
@@ -174,3 +204,4 @@ async def postprocess_calibration():
     writer.write(message.encode())
 
     writer.close()
+    assert False, 'Postprocessing done'

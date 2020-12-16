@@ -25,13 +25,7 @@ REST_API_MAP = {"jobs": "/jobs"}
 
 
 def main():
-    qobj = generate_qobj()
-    job = {
-        "job_id": str(uuid4()),
-        "type": "script",
-        "name": "qasm_dummy_job",
-        "params": {"qobj": qobj},
-    }
+    job = generate_job()
 
     file = pathlib.Path("/tmp") / str(uuid4())
     with file.open("w") as dest:
@@ -47,6 +41,16 @@ def main():
 
     file.unlink()
 
+
+def generate_job():
+    qobj = generate_qobj()
+    job = {
+        "job_id": str(uuid4()),
+        "type": "script",
+        "name": "qasm_dummy_job",
+        "params": {"qobj": qobj},
+    }
+    return job
 
 def generate_qobj():
 

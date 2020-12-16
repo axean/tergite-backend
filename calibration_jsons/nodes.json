@@ -1,0 +1,73 @@
+{
+  "fidelity": {
+    "dependencies": [
+      "rabi"
+    ],
+    "cal_f": "do_fidelity_cal",
+    "check_f": "do_fidelity_check",
+    "fidelity_measurement": true,
+    "params": [
+      {
+        "name": "fid",
+        "unit": "N/A",
+        "threshold_upper": 1.0001,
+        "threshold_lower": 0.9999,
+        "timeout": 30
+      }
+    ]
+  },
+  "rabi":{
+    "dependencies": [
+      "two-tone",
+      "res_spect"
+    ],
+    "cal_f": "cal_rabi",
+    "check_f": "check_rabi",
+    "params": [
+      {
+        "name": "t1",
+        "unit": "s",
+        "threshold_upper": 22e-6,
+        "threshold_lower": 20e-6,
+        "timeout": 1000
+      },
+      {
+        "name": "res_freq",
+        "unit": "Hz",
+        "threshold_upper": 1.1e6,
+        "threshold_lower": 1e6,
+        "timeout": 700
+      }
+    ]
+  },
+
+  "res_spect":{
+    "dependencies": [],
+    "cal_f": "cal_res_spect",
+    "check_f": "check_res_spect",
+    "params": [
+      {
+        "name": "res_freq",
+        "unit": "Hz",
+        "threshold_upper": 1.1e6,
+        "threshold_lower": 1e6,
+        "timeout": 2000
+      }
+    ]
+  },
+
+  "two-tone":{
+    "dependencies": ["res_spect"],
+    "cal_f": "cal_two-tone",
+    "check_f": "check_two-tone",
+    "params": [
+      {
+        "name": "drive_freq",
+        "unit": "Hz",
+        "threshold_upper": 1.1e6,
+        "threshold_lower": 1e6,
+        "timeout": 10
+      }
+    ]
+  }
+}
