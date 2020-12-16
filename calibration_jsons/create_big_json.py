@@ -3,15 +3,15 @@ import random
 n_nodes = 10000
 
 contents = ""
-newline = '\n'
+newline = "\n"
 
-if __name__ == '__main__':
-    with open('bigjson.json', 'w', encoding='utf-8') as file:
-        contents += '{'
+if __name__ == "__main__":
+    with open("bigjson.json", "w", encoding="utf-8") as file:
+        contents += "{"
         first = True
         for i in range(n_nodes):
             if not first:
-                contents += ',\n'
+                contents += ",\n"
             else:
                 first = False
 
@@ -32,6 +32,5 @@ if __name__ == '__main__':
     ]
   }}
 """
-        contents += '}'
+        contents += "}"
         file.write(contents)
-

@@ -20,7 +20,7 @@ import requests
 import settings
 import redis
 
-red = redis.Redis(host='localhost', port=6379, decode_responses=True)
+red = redis.Redis(host="localhost", port=6379, decode_responses=True)
 
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT
@@ -172,7 +172,7 @@ def process_dummy(logfile: Labber.LogFile):
     (which is a Qiskit Runner Stub measurement)
     """
     shots = extract_shots(logfile)
-    red.set('results:shots', shots)
+    red.set("results:shots", shots)
 
 
 def process_res_spect(logfile: Labber.LogFile):
@@ -180,8 +180,8 @@ def process_res_spect(logfile: Labber.LogFile):
 
 
 PROCESSING_METHODS = {
-    'dummy': process_dummy,
-    'res_spect': process_res_spect,
+    "dummy": process_dummy,
+    "res_spect": process_res_spect,
     # etc...
 }
 
@@ -204,4 +204,3 @@ async def postprocess_calibration(logfile: Labber.LogFile, measurement_type):
     writer.write(message.encode())
 
     writer.close()
-    assert False, 'Postprocessing done'
