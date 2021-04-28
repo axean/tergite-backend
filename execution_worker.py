@@ -21,6 +21,7 @@ import settings
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT
 LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL
+BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
 
 
 REST_API_MAP = {"scenarios": "/scenarios"}
@@ -74,9 +75,12 @@ def job_execute(job_file: Path):
     print(f"Scenario generated at {str(scenario_file)}")
 
     with scenario_file.open("rb") as source:
-        files = {"upload_file": source}
+        files = {
+            "upload_file": (scenario_file.name, source),
+            "send_logfile_to": (None, str(BCC_MACHINE_ROOT_URL)),
+        }
         url = str(LABBER_MACHINE_ROOT_URL) + REST_API_MAP["scenarios"]
-        print("Sending to Labber machine!")
+        print("Sending the scenario to Labber")
         response = requests.post(url, files=files)
 
     if response:
