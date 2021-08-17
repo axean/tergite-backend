@@ -1,6 +1,6 @@
 # This code is part of Tergite
 #
-# (C) Copyright Miroslav Dobsicek 2020
+# (C) Copyright Miroslav Dobsicek 2020, 2021
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -10,11 +10,11 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
+
 from pathlib import Path
 import json
 import time
 from scenario_scripts import demodulation_scenario, qobj_scenario, qobj_dummy_scenario
-from uuid import uuid4
 import requests
 import settings
 
@@ -30,17 +30,13 @@ REST_API_MAP = {"scenarios": "/scenarios"}
 def job_execute(job_file: Path):
     print(f"Executing file {str(job_file)}")
 
-    job_dict = {}
-    scenario_id = uuid4()
-    scenario_file = Path(STORAGE_ROOT) / (str(scenario_id) + ".labber")
+    # extract job_id from the filename
+    job_id = job_file.stem
+    scenario_file = Path(STORAGE_ROOT) / (job_id + ".labber")
 
+    job_dict = {}
     with job_file.open() as f:
         job_dict = json.load(f)
-
-    job_id = job_dict.get("job_id", None)
-    if job_id is None:
-        print("The job does not have a valid job_id")
-        return {"message": "failed"}
 
     print(f"Job script type: {job_dict['name']}")
     if job_dict["name"] == "demodulation_scenario":
@@ -49,26 +45,26 @@ def job_execute(job_file: Path):
 
         scenario = demodulation_scenario(signal_array, demod_array)
 
-        scenario.log_name = "Test signal demodulation - " + str(scenario_id)
+        scenario.log_name = "Test signal demodulation - " + job_id
         # scenario.save("/tmp/my.json", save_as_json=True)
 
     elif job_dict["name"] == "qiskit_qasm_runner":
         scenario = qobj_scenario(job_dict)
 
-        scenario.log_name += str(scenario_id)
+        scenario.log_name += job_id
     elif job_dict["name"] == "qasm_dummy_job":
         scenario = qobj_dummy_scenario(job_dict)
 
-        scenario.log_name += str(scenario_id)
+        scenario.log_name += job_id
 
     else:
         print(f"Unknown script name {job_dict['name']}")
         print("Job failed")
         return {"message": "failed"}
 
-    # NOTE: Temporary WA, until a proper job supervisor is in place
-    # job_id is stored as the first item in the tags list
-    # script name is stored as the secend item in the tags list
+    # Store important information inside the scenario: using the tag list
+    # 1) job_id
+    # 2) script name
     scenario.tags.tags = [job_id, job_dict["name"]]
 
     scenario.save(scenario_file)

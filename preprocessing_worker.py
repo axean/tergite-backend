@@ -1,6 +1,6 @@
 # This code is part of Tergite
 #
-# (C) Copyright Miroslav Dobsicek 2020
+# (C) Copyright Miroslav Dobsicek 2020, 2021
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -10,11 +10,11 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
+
 from redis import Redis
 from rq import Queue, Worker
 import shutil
 from pathlib import Path
-from uuid import uuid4
 import time
 from execution_worker import job_execute
 import settings
@@ -32,22 +32,22 @@ redis_connection = Redis()
 rq_job_execution = Queue(DEFAULT_PREFIX + "_job_execution", connection=redis_connection)
 
 
-def job_preprocess(file):
+def job_preprocess(job_file: Path):
 
-    print(f"Preprocessing file {str(file)}")
+    print(f"Preprocessing job file {str(job_file)}")
 
     # mimick job pre-processing
     # time.sleep(2)
 
-    new_file_name = str(uuid4())
+    new_file_name = job_file.stem
     storage_location = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME
 
     new_file_path = storage_location / JOB_EXECUTION_POOL_DIRNAME
     new_file_path.mkdir(exist_ok=True)
     new_file = new_file_path / new_file_name
 
-    file.replace(new_file)
+    job_file.replace(new_file)
 
     rq_job_execution.enqueue(job_execute, new_file)
 
-    print(f"Created new file {str(new_file)}")
+    print(f"Maved the job file to {str(new_file)}")

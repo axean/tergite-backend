@@ -1,6 +1,7 @@
 # This code is part of Tergite
 #
-# (C) Copyright Miroslav Dobsicek, Andreas Bengtsson 2020
+# (C) Copyright Miroslav Dobsicek 2020, 2021
+# (C) Andreas Bengtsson 2020
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -14,7 +15,6 @@
 from pathlib import Path
 import asyncio
 import time
-from uuid import uuid4
 import Labber
 import requests
 import settings
@@ -43,8 +43,10 @@ def logfile_postprocess(logfile: Path):
 
     print(f"Postprocessing logfile {str(logfile)}")
 
-    # move logfile to download area
-    new_file_name = str(uuid4())
+    # move the logfile to logfile download pool area
+    # TODO: This file change should preferably happen _after_ the
+    # post-processing.
+    new_file_name = Path(logfile).stem
     new_file_name_with_suffix = new_file_name + ".hdf5"
     storage_location = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME
 
@@ -54,7 +56,9 @@ def logfile_postprocess(logfile: Path):
 
     logfile.replace(new_file)
 
-    print(f"Created new file {str(new_file)}")
+    print(f"Moved the logfile to {str(new_file)}")
+
+    # the post-processing itself
     tags = extract_tags(new_file)
     script_name = get_script_name(tags)
     job_id = get_job_id(tags)

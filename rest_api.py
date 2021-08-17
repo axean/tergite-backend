@@ -1,6 +1,6 @@
 # This code is part of Tergite
 #
-# (C) Copyright Miroslav Dobsicek 2020
+# (C) Copyright Miroslav Dobsicek 2020, 2021
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -16,11 +16,13 @@ from fastapi.responses import FileResponse
 from redis import Redis
 from rq import Queue, Worker
 import shutil
-import pathlib
+from pathlib import Path
 from uuid import uuid4, UUID
+import json
 from preprocessing_worker import job_preprocess
 from postprocessing_worker import logfile_postprocess
 import settings
+from utils import validate_uuid4_str
 
 # settings
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX
@@ -59,16 +61,21 @@ async def root():
 @app.post("/jobs")
 async def upload_job(upload_file: UploadFile = File(...)):
 
-    # generate a unique file name
-    uuid = uuid4()
-    file_name = str(uuid)
-    file_path = (
-        pathlib.Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / JOB_UPLOAD_POOL_DIRNAME
-    )
+    # get job_id and validate it
+    job_dict = json.load(upload_file.file)
+    job_id = job_dict.get("job_id", None)
+    if job_id is None or validate_uuid4_str(job_id) is False:
+        print("The job does not have a valid UUID4 job_id")
+        return {"message": "failed"}
+
+    # store the recieved file in the job upload pool
+    file_name = job_id
+    file_path = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / JOB_UPLOAD_POOL_DIRNAME
     file_path.mkdir(parents=True, exist_ok=True)
     store_file = file_path / file_name
 
     # save it
+    upload_file.file.seek(0)
     with store_file.open("wb") as destination:
         shutil.copyfileobj(upload_file.file, destination)
     upload_file.file.close()
@@ -83,7 +90,7 @@ async def download_logfile(logfile_id: UUID):
 
     file_name = str(logfile_id) + ".hdf5"
     file = (
-        pathlib.Path(STORAGE_ROOT)
+        Path(STORAGE_ROOT)
         / STORAGE_PREFIX_DIRNAME
         / LOGFILE_DOWNLOAD_POOL_DIRNAME
         / file_name
@@ -100,13 +107,10 @@ def upload_logfile(upload_file: UploadFile = File(...)):
 
     print(f"Received logfile {upload_file.filename}")
 
-    # generate a unique file name
-    uuid = uuid4()
-    file_name = str(uuid)
+    # store the recieved file in the logfile upload pool
+    file_name = Path(upload_file.filename).stem
     file_path = (
-        pathlib.Path(STORAGE_ROOT)
-        / STORAGE_PREFIX_DIRNAME
-        / LOGFILE_UPLOAD_POOL_DIRNAME
+        Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / LOGFILE_UPLOAD_POOL_DIRNAME
     )
     file_path.mkdir(parents=True, exist_ok=True)
     store_file = file_path / file_name
