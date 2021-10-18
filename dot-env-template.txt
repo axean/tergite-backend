@@ -1,0 +1,18 @@
+# Copy this file to a .env file in the tergite-bcc folder.
+# The .env file is a simple list of keys and values. It is also known as the INI file on MS Windows.
+# Fill in the necessary values.
+
+# this can be left as it is
+DEFAULT_PREFIX=pingu
+STORAGE_ROOT=/tmp
+LOGFILE_DOWNLOAD_POOL_DIRNAME=logfile_download_pool
+LOGFILE_UPLOAD_POOL_DIRNAME=logfile_upload_pool
+JOB_UPLOAD_POOL_DIRNAME=job_upload_pool
+JOB_EXECUTION_POOL_DIRNAME=job_execution_pool
+
+# this has to be set
+MSS_MACHINE_ROOT_URL=http://host:port
+BCC_MACHINE_ROOT_URL=http://host:port
+LABBER_MACHINE_ROOT_URL=http://host:port
+DB_MACHINE_ROOT_URL=mongodb://user:pass@host:port
+BCC_PORT=num
