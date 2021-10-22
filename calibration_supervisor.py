@@ -28,6 +28,7 @@ import time
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT
 LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL
+BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
 
 REST_API_MAP = {"scenarios": "/scenarios"}
 
@@ -280,7 +281,10 @@ def send_scenario(scenario):
     print(f"Scenario generated at {str(scenario_file)}")
 
     with scenario_file.open("rb") as source:
-        files = {"upload_file": source}
+        files = {
+            "upload_file": (scenario_file.name, source),
+            "send_logfile_to": (None, str(BCC_MACHINE_ROOT_URL)),
+        }
         url = str(LABBER_MACHINE_ROOT_URL) + REST_API_MAP["scenarios"]
         response = requests.post(url, files=files)
 
