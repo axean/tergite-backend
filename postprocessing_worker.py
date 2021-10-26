@@ -137,6 +137,9 @@ def logfile_postprocess(logfile: Path):
 
     print(f"Postprocessing ended for script type: {script_name}")
 
+    # we can return an object with more information if needed
+    return job_id
+
 
 def extract_system_state_as_hex(logfile: Labber.LogFile):
     raw_data = logfile.getData("State Discriminator - System state")
@@ -208,3 +211,7 @@ async def postprocess_calibration(logfile: Labber.LogFile, measurement_type):
     writer.write(message.encode())
 
     writer.close()
+
+
+def postprocessing_success_callback(job, connection, result, *args, **kwargs):
+    print(f"Job with ID {result} has finished")

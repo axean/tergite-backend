@@ -20,7 +20,7 @@ from pathlib import Path
 from uuid import uuid4, UUID
 import json
 from preprocessing_worker import job_preprocess
-from postprocessing_worker import logfile_postprocess
+from postprocessing_worker import logfile_postprocess, postprocessing_success_callback
 import settings
 from utils import validate_uuid4_str
 
@@ -121,7 +121,9 @@ def upload_logfile(upload_file: UploadFile = File(...)):
     upload_file.file.close()
 
     # enqueue for post-processing
-    rq_logfile_postprocessing.enqueue(logfile_postprocess, store_file)
+    rq_logfile_postprocessing.enqueue(
+        logfile_postprocess, store_file, on_success=postprocessing_success_callback
+    )
 
     return {"message": "ok"}
 
