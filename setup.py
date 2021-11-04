@@ -27,6 +27,7 @@ REQUIREMENTS = [
     "h5py>=3.2.1",
     "scipy>=1.4.1",
     "networkx>=2.5.1",
+    "syncer>=1.3.0",
 ]
 
 setup(

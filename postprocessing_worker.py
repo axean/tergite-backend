@@ -1,6 +1,7 @@
 # This code is part of Tergite
 #
 # (C) Copyright Miroslav Dobsicek 2020, 2021
+# (C) Copyright David Wahlstedt 2021
 # (C) Andreas Bengtsson 2020
 #
 # This code is licensed under the Apache License, Version 2.0. You may
@@ -19,8 +20,10 @@ import Labber
 import requests
 import settings
 import redis
+from syncer import sync
 
-red = redis.Redis(host="localhost", port=6379, decode_responses=True)
+
+
 
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT
@@ -28,6 +31,10 @@ STORAGE_PREFIX_DIRNAME = settings.STORAGE_PREFIX_DIRNAME
 LOGFILE_DOWNLOAD_POOL_DIRNAME = settings.LOGFILE_DOWNLOAD_POOL_DIRNAME
 MSS_MACHINE_ROOT_URL = settings.MSS_MACHINE_ROOT_URL
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
+CALIBRATION_SUPERVISOR_PORT = settings.CALIBRATION_SUPERVISOR_PORT
+
+LOCALHOST = "localhost"
+
 
 REST_API_MAP = {
     "result": "/result",
@@ -38,6 +45,7 @@ REST_API_MAP = {
     "download_url": "/download_url",
 }
 
+red = redis.Redis(decode_responses=True)
 
 def logfile_postprocess(logfile: Path):
 
@@ -75,7 +83,7 @@ def logfile_postprocess(logfile: Path):
     elif script_name == "calibration":
         new_file = Labber.LogFile(new_file)
         # The third tag of a calibration script tells us what kind of measurement we performed
-        asyncio.run(postprocess_calibration(new_file, tags[2]))
+        sync(postprocess_calibration(new_file, tags[2]))
 
     elif script_name in ["qiskit_qasm_runner", "qasm_dummy_job"]:
 
@@ -136,9 +144,8 @@ def logfile_postprocess(logfile: Path):
         print("Postprocessing failed")
 
     print(f"Postprocessing ended for script type: {script_name}")
-
     # we can return an object with more information if needed
-    return job_id
+    return (job_id, script_name)
 
 
 def extract_system_state_as_hex(logfile: Labber.LogFile):
@@ -204,7 +211,8 @@ async def postprocess_calibration(logfile: Labber.LogFile, measurement_type):
         pass
 
     # inform calibration deamon that the results are available
-    reader, writer = await asyncio.open_connection("127.0.0.1", 8888)
+    reader, writer = await asyncio.open_connection(
+        LOCALHOST, CALIBRATION_SUPERVISOR_PORT)
 
     message = "Calibration routine finished. Results available in Redis"
     print(f"Send: {message!r}")
@@ -214,4 +222,15 @@ async def postprocess_calibration(logfile: Labber.LogFile, measurement_type):
 
 
 def postprocessing_success_callback(job, connection, result, *args, **kwargs):
-    print(f"Job with ID {result} has finished")
+    (job_id, script_name) = result # returned from logfile_postprocess
+    print(f"Job with ID {job_id}, {script_name=} has finished")
+    if script_name == "calibration":
+        print(f"Notifying calibration supervisor")
+        sync(notify_job_done(job_id))
+
+async def notify_job_done(job_id: str):
+    reader, writer = await asyncio.open_connection(
+        LOCALHOST, CALIBRATION_SUPERVISOR_PORT
+    )
+    writer.write(job_id.encode())
+    writer.close()

@@ -16,3 +16,4 @@ BCC_MACHINE_ROOT_URL=http://host:port
 LABBER_MACHINE_ROOT_URL=http://host:port
 DB_MACHINE_ROOT_URL=mongodb://user:pass@host:port
 BCC_PORT=num
+CALIBRATION_SUPERVISOR_PORT=num

@@ -1,6 +1,7 @@
 # This code is part of Tergite
 #
 # (C) Copyright Miroslav Dobsicek, Johan Blomberg, Gustav Grännsjö 2020
+# (C) Copyright David Wahlstedt 2021
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -29,11 +30,15 @@ import time
 STORAGE_ROOT = settings.STORAGE_ROOT
 LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
+CALIBRATION_SUPERVISOR_PORT = settings.CALIBRATION_SUPERVISOR_PORT
+
+LOCALHOST = "localhost"
+
 
 REST_API_MAP = {"scenarios": "/scenarios"}
 
 # Set up redis
-red = redis.Redis(host="localhost", port=6379, decode_responses=True)
+red = redis.Redis(decode_responses=True)
 
 calibrated = False
 
@@ -62,27 +67,27 @@ async def check_calib_status():
         await asyncio.sleep(1)
 
         print("------ STARTING MAINTAIN -------")
-        maintain_all()
+        await maintain_all()
         print("------ MAINTAINED -------")
 
         # Wait a while between checks
         await asyncio.sleep(15)
 
 
-def maintain_all():
+async def maintain_all():
     # Get the topological order of DAG nodes
     topo_order = red.lrange("topo_order", 0, -1)
     global node_recal_statuses
     node_recal_statuses = {}
 
     for node in topo_order:
-        node_recal_statuses[node] = maintain(node)
+        node_recal_statuses[node] = await maintain(node)
 
 
-def maintain(node):
+async def maintain(node):
     print(f"Maintaining node {node}")
 
-    result = check_state(node)
+    result = await check_state(node)
 
     # If state is fine, then no further maintenance is needed.
     if result:
@@ -90,7 +95,7 @@ def maintain(node):
         return False
 
     # Perform check_data
-    result = check_data(node)
+    result = await check_data(node)
 
     if result == DataStatus.in_spec:
         print(f"check_data returned in_spec for node {node}. No calibration.")
@@ -99,14 +104,14 @@ def maintain(node):
     if result == DataStatus.bad_data:
         print(f"check_data returned bad_data for node {node}. diagnosing dependencies.")
         deps = red.lrange(f"m_deps:{node}", 0, -1)
-        diagnose_loop(deps)
+        await diagnose_loop(deps)
     # if out of spec, no need to diagnose, go directly to calibration
     print(f"(Maintain) Calibration necessary for node {node}. Calibrating...")
-    calibrate(node)
+    await calibrate(node)
     return True
 
 
-def check_state(node):
+async def check_state(node):
     # Find dependencies
     deps = red.lrange(f"m_deps:{node}", 0, -1)
 
@@ -131,12 +136,12 @@ class DataStatus(Enum):
     bad_data = 3
 
 
-def check_data(node):
+async def check_data(node):
     # Generate a scenario to check the node's data
     scenario = MEASUREMENT_ROUTINES[red.hget(f"measurement:{node}", "check_f")]()
     # Run the scenario through Labber
     print(f"Running check scenario for {node}...")
-    send_scenario(scenario)
+    await send_scenario(scenario)
     # Wait for data logistics TODO Change into waiting for an ack from post-processing
     time.sleep(2)
 
@@ -161,7 +166,7 @@ def check_data(node):
     return DataStatus.bad_data
 
 
-def diagnose_loop(initial_nodes):
+async def diagnose_loop(initial_nodes):
     print(f"Starting diagnose for nodes {initial_nodes}")
     # To avoid recursion, we use this while loop function to perform a depth-first diagnose.
     nodes_to_diag = initial_nodes
@@ -175,7 +180,7 @@ def diagnose_loop(initial_nodes):
             nodes_to_diag.pop(0)
         # Diagnose the current node, to check if its dependencies needs to be
         # diagnosed, and if this node has to be recalibrated.
-        to_diag, to_measure = diagnose(nodes_to_diag[0])
+        to_diag, to_measure = await diagnose(nodes_to_diag[0])
         print(f"to_diag = {to_diag}")
         # Mark that we've diagnosed this node
         diagnosed_nodes.append(nodes_to_diag[0])
@@ -192,11 +197,11 @@ def diagnose_loop(initial_nodes):
 
     for node in nodes_to_measure:
         print(f"(Diag) measuring {node}")
-        calibrate(node)
+        await calibrate(node)
 
 
-def diagnose(node):
-    status = check_data(node)
+async def diagnose(node):
+    status = await check_data(node)
     if status == DataStatus.in_spec:
         # In spec, no further diag needed, and no recalibration
         return [], []
@@ -209,7 +214,7 @@ def diagnose(node):
         return deps, [node]
 
 
-def calibrate(node):
+async def calibrate(node):
     # TODO Add features
     params = red.lrange(f"m_params:{node}", 0, -1)
 
@@ -217,7 +222,7 @@ def calibrate(node):
     scenario = MEASUREMENT_ROUTINES[red.hget(f"measurement:{node}", "cal_f")]()
     # Run the scenario through Labber
     print(f"Running calibration scenario for {node}...")
-    send_scenario(scenario)
+    await send_scenario(scenario)
 
     # Wait for data logistics TODO Change into waiting for an ack from post-processing
     time.sleep(2)
@@ -246,7 +251,7 @@ def calibrate(node):
         red.expire(f"param:{param}", lifetime)
 
 
-def send_scenario(scenario):
+async def send_scenario(scenario):
     job_id = scenario.tags.tags[0]
     scenario_file = Path(STORAGE_ROOT) / (job_id + ".labber")
     scenario.save(scenario_file)
@@ -258,8 +263,10 @@ def send_scenario(scenario):
             "send_logfile_to": (None, str(BCC_MACHINE_ROOT_URL)),
         }
         url = str(LABBER_MACHINE_ROOT_URL) + REST_API_MAP["scenarios"]
+        # to be replaced with aiohttp call
         response = requests.post(url, files=files)
-
+        # simulate async request
+        await asyncio.sleep(5)
     # right now the Labber Connector sends a response *after* executing the scenario
     # ie the POST request is *blocking* until after the measurement execution
     # this will change in the future; it should just ack a succesful upload of a scenario and nothing more
@@ -283,7 +290,8 @@ async def handle_message(reader, writer):
 
 
 async def message_server():
-    server = await asyncio.start_server(handle_message, "127.0.0.1", 8888)
+    server = await asyncio.start_server(
+        handle_message, LOCALHOST, CALIBRATION_SUPERVISOR_PORT)
     async with server:
         await server.serve_forever()
 
