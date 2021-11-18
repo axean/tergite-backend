@@ -126,8 +126,10 @@ def build_redis_nodes(definition):
 
 
 if __name__ == "__main__":
-    nodes = parse_json("calibration_jsons/nodes.json")
-    # nodes = parse_json('calibration_jsons/bigjson.json')
+    DEFAULT_CALIBRATION_DAG = "calibration_graphs/default.json"
+    BIG_CALIBRATION_DAG = "calibration_graphs/big_graph.json"
+
+    nodes = parse_json(DEFAULT_CALIBRATION_DAG)
 
     create_graph_structure(nodes)
 

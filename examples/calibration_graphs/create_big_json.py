@@ -5,8 +5,12 @@ n_nodes = 10000
 contents = ""
 newline = "\n"
 
+OUTPUT_FILE = "big_graph.json"
+
 if __name__ == "__main__":
-    with open("bigjson.json", "w", encoding="utf-8") as file:
+    print(f"Creating output file {OUTPUT_FILE} ...")
+
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as file:
         contents += "{"
         first = True
         for i in range(n_nodes):
@@ -34,3 +38,6 @@ if __name__ == "__main__":
 """
         contents += "}"
         file.write(contents)
+
+
+    print("Done")

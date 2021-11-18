@@ -1,9 +1,9 @@
 The automated calibration system has two primary files,
-calibration_json_parser.py and calibration_supervisor.
+calibration_graph_parser.py and calibration_supervisor.
 The json parser requires you to have a json file representing
 all the measurements that are required to maintain your system
 and how they relate to each other. Please note that the dependency 
-structure has to be a DAG. See calibration_jsons/nodes.json
+structure has to be a DAG. See calibration_graphs/default.json
 for an example of the syntax for this file.
 
 The json parser will read the specified file and build your
