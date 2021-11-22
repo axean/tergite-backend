@@ -77,7 +77,7 @@ def qobj_scenario(job):
     s = Scenario(scenario_template_filepath)
 
     mqpg = s.get_instrument(name="pulses")
-    n_qubits = 3
+    n_qubits = qobj["config"].get("n_qubits", 1)
     mqpg.values["Sequence"] = "QObj"
     mqpg.values["QObj JSON"] = json.dumps(qobj["experiments"])
 
@@ -129,7 +129,6 @@ def qobj_dummy_scenario(job):
     validate_job(qobj)
     s = Scenario(scenario_template_filepath)
     instr = s.get_instrument(name="State Discriminator")
-    n_qubits = 3
     items = s.step_items
     selector_item = items[0]
     step = selector_item.range_items[0]
