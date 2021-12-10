@@ -22,7 +22,7 @@ import json
 from preprocessing_worker import job_preprocess
 from postprocessing_worker import logfile_postprocess, postprocessing_success_callback
 import settings
-from utils import validate_uuid4_str
+from utils.uuid import validate_uuid4_str
 
 # settings
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX
