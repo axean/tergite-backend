@@ -50,4 +50,4 @@ def job_preprocess(job_file: Path):
 
     rq_job_execution.enqueue(job_execute, new_file)
 
-    print(f"Maved the job file to {str(new_file)}")
+    print(f"Moved the job file to {str(new_file)}")

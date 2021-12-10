@@ -1,6 +1,7 @@
 # This code is part of Tergite
 #
-# (C) Copyright Miroslav Dobsicek, Johan Blomberg, Gustav Grännsjö 2020
+# (C) Johan Blomberg, Gustav Grännsjö 2020
+# (C) Copyright Miroslav Dobsicek 2020, 2021
 # (C) Copyright David Wahlstedt 2021
 #
 # This code is licensed under the Apache License, Version 2.0. You may
@@ -66,9 +67,9 @@ async def check_calib_status():
         # mimick work
         await asyncio.sleep(1)
 
-        print("------ STARTING MAINTAIN -------")
+        print("\n------ STARTING MAINTAIN -------\n")
         await maintain_all()
-        print("------ MAINTAINED -------")
+        print("\n------ MAINTAINED -------\n")
 
         # Wait a while between checks
         await asyncio.sleep(15)
@@ -87,25 +88,27 @@ async def maintain_all():
 async def maintain(node):
     print(f"Maintaining node {node}")
 
-    result = await check_state(node)
+    state_ok = await check_state(node)
 
     # If state is fine, then no further maintenance is needed.
-    if result:
+    if state_ok:
         print(f"check_state returned true for node {node}. No calibration.")
         return False
 
     # Perform check_data
-    result = await check_data(node)
+    status = await check_data(node)
 
-    if result == DataStatus.in_spec:
+    if status == DataStatus.in_spec:
         print(f"check_data returned in_spec for node {node}. No calibration.")
         return False
 
-    if result == DataStatus.bad_data:
-        print(f"check_data returned bad_data for node {node}. diagnosing dependencies.")
+    if status == DataStatus.bad_data:
+        print(
+            f"check_data returned bad_data for node {node}. diagnosing dependencies."
+        )
         deps = red.lrange(f"m_deps:{node}", 0, -1)
         await diagnose_loop(deps)
-    # if out of spec, no need to diagnose, go directly to calibration
+    # status is out of spec: no need to diagnose, go directly to calibration
     print(f"(Maintain) Calibration necessary for node {node}. Calibrating...")
     await calibrate(node)
     return True
@@ -162,7 +165,7 @@ async def check_data(node):
     if num < 0.95:
         print(f"Check_data for {node} gives OUT_OF_SPEC")
         return DataStatus.out_of_spec
-    print(f"Check_data for {node} gives BAD")
+    print(f"Check_data for {node} gives BAD_DATA")
     return DataStatus.bad_data
 
 

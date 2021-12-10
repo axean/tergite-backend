@@ -130,6 +130,9 @@ config.ini
 # Vim swap
 *.swp
 
+# Emacs backup files
+*~
+
 # hdf5 binary files
 *.hdf5
 

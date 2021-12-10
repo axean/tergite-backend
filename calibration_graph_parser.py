@@ -1,11 +1,23 @@
-# Created by Johan Blomberg and Gustav Grännsjö, 2020
+# This code is part of Tergite
+#
+# (C) Johan Blomberg, Gustav Grännsjö 2020
+# (C) Copyright Miroslav Dobsicek 2020, 2021
+# (C) Copyright David Wahlstedt 2021
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
 
 import redis
 import json
 import networkx as nx
 
 # Set up redis
-red = redis.Redis(host="localhost", port=6379, decode_responses=True)
+red = redis.Redis(decode_responses=True)
 
 # measurement parameter names
 param_names = set()
@@ -22,7 +34,7 @@ def parse_json(filename):
         return json.load(file)
 
 
-def create_graph_structure(definition):
+def create_graph_structure(nodes):
     """
     Creates a NetworkX graph from the JSON file(s). Checks that all graphs
     are free from cycles, and that all dependencies point to existing nodes.
@@ -31,13 +43,14 @@ def create_graph_structure(definition):
     names = []
 
     # Set up nodes
-    for node in definition:
+    for node in nodes:
         graph.add_node(node)
         names.append(node)
 
     # Now that all nodes exist, set up edges
-    for node in definition:
-        deps = definition[node]["dependencies"]
+    for node in nodes:
+        deps = nodes[node]["dependencies"]
+
         for dep in deps:
             # All nodes this node depends on must be defined
             if dep not in names:
@@ -60,8 +73,8 @@ def create_graph_structure(definition):
     # Remove redundant dependencies
     removed = 0
     print("Removing redundant dependencies...")
-    for node in definition:
-        deps = definition[node]["dependencies"]
+    for node in nodes:
+        deps = nodes[node]["dependencies"]
         for dep in deps:
             # print(f"Paths for {node} to {dep}:")
             paths = nx.all_simple_paths(graph, node, dep, 8)
@@ -81,7 +94,7 @@ def create_graph_structure(definition):
     print("Finished!")
 
 
-def build_redis_nodes(definition):
+def build_redis_nodes(nodes):
     # Flush any old data
     # TODO: Remove only fields we create
     red.flushdb()
@@ -91,8 +104,8 @@ def build_redis_nodes(definition):
         red.rpush("topo_order", node)
 
     # Set up measurement nodes
-    for node in definition:
-        contents = definition[node]
+    for node in nodes:
+        contents = nodes[node]
         # Main node info
         red.hset(f"measurement:{node}", "cal_f", contents["cal_f"])
         red.hset(f"measurement:{node}", "check_f", contents["check_f"])

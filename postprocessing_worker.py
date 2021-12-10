@@ -102,7 +102,7 @@ def logfile_postprocess(logfile: Path):
         MSS_JOB = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["jobs"] + "/" + job_id
 
         # NOTE: When MSS adds support for the 'whole job' update
-        # this will just one PUT request
+        # this will be just one PUT request
         # Memory could contain more than one experiment, for now just use index 0
         response = requests.put(MSS_JOB + REST_API_MAP["result"], json=memory)
         if response:
@@ -126,7 +126,7 @@ def logfile_postprocess(logfile: Path):
         if response:
             print("Updated job download_url on MSS")
 
-    elif script_name == "qasm_dummy_job":
+    elif script_name == "qasm_dummy_job": # DW FIXME: dead code:
         new_file = Labber.LogFile(new_file)
         q_states = extract_system_state_as_hex(new_file)
         print(f"qubit states: {len(q_states)} lists of length {len(q_states[0])}")
