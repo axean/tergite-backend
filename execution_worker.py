@@ -1,6 +1,7 @@
 # This code is part of Tergite
 #
 # (C) Copyright Miroslav Dobsicek 2020, 2021
+# (C) Copyright Abdullah-Al Amin 2021
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -14,7 +15,12 @@
 from pathlib import Path
 import json
 import time
-from scenario_scripts import demodulation_scenario, qobj_scenario, qobj_dummy_scenario
+from scenario_scripts import (
+    demodulation_scenario,
+    qobj_scenario,
+    qobj_dummy_scenario,
+    resonator_spectroscopy_scenario,
+)
 import requests
 import settings
 
@@ -52,8 +58,14 @@ def job_execute(job_file: Path):
         scenario = qobj_scenario(job_dict)
 
         scenario.log_name += job_id
+
     elif job_dict["name"] == "qasm_dummy_job":
         scenario = qobj_dummy_scenario(job_dict)
+
+        scenario.log_name += job_id
+
+    elif job_dict["name"] == "resonator_spectroscopy":
+        scenario = resonator_spectroscopy_scenario(job_dict)
 
         scenario.log_name += job_id
 

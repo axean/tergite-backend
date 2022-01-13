@@ -1,6 +1,7 @@
 # This code is part of Tergite
 #
-# (C) Copyright Miroslav Dobsicek, Andreas Bengtsson 2020
+# (C) Copyright Miroslav Dobsicek, Andreas Bengtsson 2020,
+# (C) Copyright Abdullah-Al Amin 2021
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -12,10 +13,12 @@
 
 
 from Labber import Scenario
+from Labber import ScriptTools
 
 import numpy as np
 import json
 from pathlib import Path
+from tempfile import gettempdir
 
 
 def demodulation_scenario(signal_array, demod_array):
@@ -110,6 +113,60 @@ def qobj_scenario(job):
     s.tags.project = "My project"
     s.tags.user = "Chalmers default user"
     s.tags.tags = ["Qobj"]
+
+    # set timing info
+    s.wait_between = 0.2
+
+    return s
+
+
+## A template scenario file is modified according to the parameters
+## that have been passed through job object in order to create a simple
+## frequency sweep scenario
+def resonator_spectroscopy_scenario(job):
+    VNA = "ZNB20"  # "RS"  # 'Keysight'  'Ceyear'
+
+    scenario_template_filepath = Path("./resonator_spectroscopy_scenario_template.json")
+
+    # loading Scenario as dictionary
+    s_dict = ScriptTools.load_scenario_as_dict(scenario_template_filepath)
+
+    s_prms = job["params"]
+
+    # Updating Step parameters in Scenario dictionary
+    for i, stepchannel in enumerate(s_dict["step_channels"]):
+        # update: VNA - Output power
+        if stepchannel["channel_name"] == VNA + " - Output power":
+            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["power"]
+        # update VNA - IF bandwidth
+        elif stepchannel["channel_name"] == VNA + " - IF bandwidth":
+            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["if_bw"]
+        # update VNA - Number of averages
+        elif stepchannel["channel_name"] == VNA + " - # of averages":
+            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["num_ave"]
+        # update VNA - Start of Sweping frequency
+        elif stepchannel["channel_name"] == VNA + " - Start frequency":
+            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["f_start"]
+        # update VNA - Stop of Sweping frequency
+        elif stepchannel["channel_name"] == VNA + " - Stop frequency":
+            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["f_stop"]
+        # update VNA - Number of measurement points (data points)
+        elif stepchannel["channel_name"] == VNA + " - # of points":
+            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["num_pts"]
+
+    # Saving Scenario in a temporary file as JSON format
+    temp_dir = gettempdir()
+    ScriptTools.save_scenario_as_json(s_dict, temp_dir + "/tmp.json")
+
+    # Loading Scenario as object
+    s = Scenario(temp_dir + "/tmp.json")
+
+    # set metadata
+    s.log_name = "Resonator Spectroscopy"
+    s.comment = "Comment for log"
+    s.tags.project = "Automatic Calibration project"
+    s.tags.user = "Chalmers default user"
+    s.tags.tags = ["ResonatorSpectroscopy"]
 
     # set timing info
     s.wait_between = 0.2
