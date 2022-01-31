@@ -12,22 +12,15 @@ PORT_NUMBER="${PORT_CONFIG#*=}"                  # extract the number
 [[ ! "$PORT_NUMBER" =~ ^[0-9]+$ ]]  &&  exit_with_error
 
 
-# TODO:
-# - clean up fixed paths from this script
-# - they don't do any harm at the moment but they are confusing
-
-
-# path (mostly for uvicorn; --app-dir option will come in a new release)
-cd /home/dobsicek/repos/tergite-bcc
 
 # clean start
 rq empty pingu_job_preprocessing pingu_job_execution pingu_logfile_postprocessing
-rm -fr /tmp/pingu
+rm -fr /tmp/pingu    # FIXME: Fixed path
 
 # worker processes
-rq worker --path /home/dobsicek/repos/tergite-bcc pingu_job_preprocessing &
-rq worker --path /home/dobsicek/repos/tergite-bcc pingu_job_execution &
-rq worker --path /home/dobsicek/repos/tergite-bcc pingu_logfile_postprocessing &
+rq worker pingu_job_preprocessing &
+rq worker pingu_job_execution &
+rq worker pingu_logfile_postprocessing &
 
 # rest-api
 uvicorn --host 0.0.0.0 --port "$PORT_NUMBER" rest_api:app --reload
