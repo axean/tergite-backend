@@ -1,27 +1,27 @@
 {
     "channels": [
         {
-            "instrument": "State Discriminator",
+            "instrument": "State Discriminator 2 States",
             "quantity": "Experiment selector"
         },
         {
-            "instrument": "State Discriminator",
+            "instrument": "State Discriminator 2 States",
             "quantity": "Max no. of qubits used"
         },
         {
-            "instrument": "State Discriminator",
+            "instrument": "State Discriminator 2 States",
             "quantity": "QObj ID"
         },
         {
-            "instrument": "State Discriminator",
+            "instrument": "State Discriminator 2 States",
             "quantity": "QObj JSON"
         },
         {
-            "instrument": "State Discriminator",
+            "instrument": "State Discriminator 2 States",
             "quantity": "Shots"
         },
         {
-            "instrument": "State Discriminator",
+            "instrument": "State Discriminator 2 States",
             "quantity": "System state"
         }
     ],
@@ -47,7 +47,7 @@
                 "address": "",
                 "interface": "None",
                 "lock": false,
-                "name": "State Discriminator",
+                "name": "State Discriminator 2 States",
                 "server": "localhost",
                 "show_advanced": false,
                 "startup": "Set config"
@@ -75,9 +75,9 @@
         }
     ],
     "log_channels": [
-        "State Discriminator - System state",
-        "State Discriminator - Shots",
-        "State Discriminator - Max no. of qubits used"
+        "State Discriminator 2 States - System state",
+        "State Discriminator 2 States - Shots",
+        "State Discriminator 2 States - Max no. of qubits used"
     ],
     "parameters": {
         "arm_trig_mode": false,
@@ -111,7 +111,7 @@
         {
             "after_last": "Goto first point",
             "alternate_direction": false,
-            "channel_name": "State Discriminator - Experiment selector",
+            "channel_name": "State Discriminator 2 States - Experiment selector",
             "equation": "x",
             "final_value": 0.0,
             "optimizer_config": {
