@@ -55,7 +55,24 @@ def demodulation_scenario(signal_array, demod_array):
 
 def qobj_scenario(job):
     supported_gates = set(
-        ["u1", "u2", "u3", "rx", "ry", "rz", "x", "y", "z", "h", "cz", "cx", "measure"]
+        [
+            "u1",
+            "u2",
+            "u3",
+            "rx",
+            "ry",
+            "rz",
+            "x",
+            "y",
+            "z",
+            "h",
+            "cz",
+            "cx",
+            "measure",
+            "s",
+            "sdg",
+            "barrier",
+        ]
     )
     scenario_template_filepath = Path("./qiskit_qasm_scenario_template.json")
     calibration_filepath = Path("./qiskit_qasm_calibration_config.json")
@@ -79,7 +96,7 @@ def qobj_scenario(job):
 
     s = Scenario(scenario_template_filepath)
 
-    mqpg = s.get_instrument(name="pulses")
+    mqpg = s.get_instrument(name="Pulses")
     n_qubits = qobj["config"].get("n_qubits", 1)
     mqpg.values["Sequence"] = "QObj"
     mqpg.values["QObj JSON"] = json.dumps(qobj["experiments"])
@@ -95,9 +112,9 @@ def qobj_scenario(job):
 
     # Configure mulitple experiments
     if len(qobj["experiments"]) == 1:
-        s.add_step("pulses - QObj Iterator", single=0)
+        s.add_step("Pulses - QObj Iterator", single=0)
     else:
-        s.add_step("pulses - QObj Iterator", np.arange(len(qobj["experiments"])))
+        s.add_step("Pulses - QObj Iterator", np.arange(len(qobj["experiments"])))
 
     # add relevant log channels
     extraction = job.get("hdf5_log_extraction", None)
@@ -185,7 +202,7 @@ def qobj_dummy_scenario(job):
 
     validate_job(qobj)
     s = Scenario(scenario_template_filepath)
-    instr = s.get_instrument(name="State Discriminator")
+    instr = s.get_instrument(name="State Discriminator 2 States")
     items = s.step_items
     selector_item = items[0]
     step = selector_item.range_items[0]
@@ -226,10 +243,10 @@ def update_step_single_value(scenario, name, value):
 def translate_parameter_name(id_, calibration_parameter):
     parameters = {
         "qubit_frequency": "Qubit {id} Frequency",
-        "pi_amplitude": "Qubit {id} Amp",
+        "pi_amplitude": "Qubit {id} Amplitude",
         "drag_coefficient": "Qubit {id} Alpha",
-        "readout_frequency": "Resonator {id} Frequency",
-        "readout_amplitude": "pulses - Readout amplitude #{id}",
+        "readout_frequency": "Res{id} Frequency",
+        "readout_amplitude": "Readout - Readout amplitude #{id}",
     }
 
     return parameters[calibration_parameter].format(id=str(id_))
@@ -247,7 +264,7 @@ def update_calibration_data(scenario, calibration):
                 "readout_1_real_voltage",
                 "readout_1_imag_voltage",
             ]:
-                state = scenario.get_instrument("State Discriminator")
+                state = scenario.get_instrument("State Discriminator 2 States")
                 if parameter == "readout_0_real_voltage":
                     tmp = state.values["Pointer, QB{}-S0".format(id_)]
                     state.values["Pointer, QB{}-S0".format(id_)] = qubit[
@@ -275,15 +292,15 @@ def update_calibration_data(scenario, calibration):
 
 
 def add_waveforms(scenario, n_qubits):
-    channel = "pulses - Trace - {waveform}{id}"
+    channel = "Pulses - Trace - {waveform}{id}"
     # Add waveforms for qubit XY and Z lines
     for i in range(n_qubits):
-        for j in ["I", "Q", "Z"]:
+        for j in ["I", "Q", "ZI"]:
             scenario.add_log(channel.format(waveform=j, id=str(i + 1)))
 
     # Add readout waveforms
-    scenario.add_log("pulses - Trace - Readout I")
-    scenario.add_log("pulses - Trace - Readout Q")
+    scenario.add_log("Readout - Trace - Readout I")
+    scenario.add_log("Readout - Trace - Readout Q")
 
 
 def add_readout_voltages(scenario, n_qubits):

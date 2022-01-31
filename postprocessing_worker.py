@@ -23,8 +23,6 @@ import redis
 from syncer import sync
 
 
-
-
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT
 STORAGE_PREFIX_DIRNAME = settings.STORAGE_PREFIX_DIRNAME
@@ -46,6 +44,7 @@ REST_API_MAP = {
 }
 
 red = redis.Redis(decode_responses=True)
+
 
 def logfile_postprocess(logfile: Path):
 
@@ -126,7 +125,7 @@ def logfile_postprocess(logfile: Path):
         if response:
             print("Updated job download_url on MSS")
 
-    elif script_name == "qasm_dummy_job": # DW FIXME: dead code:
+    elif script_name == "qasm_dummy_job":  # DW FIXME: dead code:
         new_file = Labber.LogFile(new_file)
         q_states = extract_system_state_as_hex(new_file)
         print(f"qubit states: {len(q_states)} lists of length {len(q_states[0])}")
@@ -149,7 +148,7 @@ def logfile_postprocess(logfile: Path):
 
 
 def extract_system_state_as_hex(logfile: Labber.LogFile):
-    raw_data = logfile.getData("State Discriminator - System state")
+    raw_data = logfile.getData("State Discriminator 2 States - System state")
     memory = []
     for entry in raw_data:
         memory.append([hex(int(x)) for x in entry])
@@ -157,15 +156,17 @@ def extract_system_state_as_hex(logfile: Labber.LogFile):
 
 
 def extract_shots(logfile: Labber.LogFile):
-    return int(logfile.getData("State Discriminator - Shots", 0)[0])
+    return int(logfile.getData("State Discriminator 2 States - Shots", 0)[0])
 
 
 def extract_max_qubits(logfile: Labber.LogFile):
-    return int(logfile.getData("State Discriminator - Max no. of qubits used", 0)[0])
+    return int(
+        logfile.getData("State Discriminator 2 States - Max no. of qubits used", 0)[0]
+    )
 
 
 def extract_qobj_id(logfile: Labber.LogFile):
-    return logfile.getChannelValue("State Discriminator - QObj ID")
+    return logfile.getChannelValue("State Discriminator 2 States - QObj ID")
 
 
 def extract_tags(logfile: Path):
@@ -212,7 +213,8 @@ async def postprocess_calibration(logfile: Labber.LogFile, measurement_type):
 
     # inform calibration deamon that the results are available
     reader, writer = await asyncio.open_connection(
-        LOCALHOST, CALIBRATION_SUPERVISOR_PORT)
+        LOCALHOST, CALIBRATION_SUPERVISOR_PORT
+    )
 
     message = "Calibration routine finished. Results available in Redis"
     print(f"Send: {message!r}")
@@ -222,11 +224,12 @@ async def postprocess_calibration(logfile: Labber.LogFile, measurement_type):
 
 
 def postprocessing_success_callback(job, connection, result, *args, **kwargs):
-    (job_id, script_name) = result # returned from logfile_postprocess
+    (job_id, script_name) = result  # returned from logfile_postprocess
     print(f"Job with ID {job_id}, {script_name=} has finished")
     if script_name == "calibration":
         print(f"Notifying calibration supervisor")
         sync(notify_job_done(job_id))
+
 
 async def notify_job_done(job_id: str):
     reader, writer = await asyncio.open_connection(
