@@ -19,7 +19,7 @@ import shutil
 from pathlib import Path
 from uuid import uuid4, UUID
 import json
-from preprocessing_worker import job_preprocess
+from registration_worker import job_register
 from postprocessing_worker import logfile_postprocess, postprocessing_success_callback
 import settings
 from utils.uuid import validate_uuid4_str
@@ -37,13 +37,13 @@ JOB_UPLOAD_POOL_DIRNAME = settings.JOB_UPLOAD_POOL_DIRNAME
 redis_connection = Redis()
 
 # redis queues
-rq_job_preprocessing = Queue(
-    DEFAULT_PREFIX + "_job_preprocessing", connection=redis_connection
+rq_job_registration = Queue(
+    DEFAULT_PREFIX + "_job_registration", connection=redis_connection
 )
+
 rq_logfile_postprocessing = Queue(
     DEFAULT_PREFIX + "_logfile_postprocessing", connection=redis_connection
 )
-
 
 # application
 app = FastAPI(
@@ -80,8 +80,8 @@ async def upload_job(upload_file: UploadFile = File(...)):
         shutil.copyfileobj(upload_file.file, destination)
     upload_file.file.close()
 
-    # enqueue for pre-processing
-    rq_job_preprocessing.enqueue(job_preprocess, store_file)
+    # enqueue for registration
+    rq_job_registration.enqueue(job_register, store_file)
     return {"message": file_name}
 
 
