@@ -107,8 +107,8 @@ def build_redis_nodes(nodes):
     for node in nodes:
         contents = nodes[node]
         # Main node info
-        red.hset(f"measurement:{node}", "cal_f", contents["cal_f"])
-        red.hset(f"measurement:{node}", "check_f", contents["check_f"])
+        red.hset(f"measurement:{node}", "calibration_fn", contents["calibration_fn"])
+        red.hset(f"measurement:{node}", "check_fn", contents["check_fn"])
         if "fidelity_measurement" in contents:
             red.hset(
                 f"measurement:{node}",

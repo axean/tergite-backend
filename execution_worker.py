@@ -77,7 +77,11 @@ def job_execute(job_file: Path):
     # Store important information inside the scenario: using the tag list
     # 1) job_id
     # 2) script name
+    # 3) if is_calibration_sup_job is True, set this field to True
+    is_calibration_sup_job = job_dict.get("is_calibration_sup_job", False)
     scenario.tags.tags = [job_id, job_dict["name"]]
+    if is_calibration_sup_job:
+        scenario.tags.tags += [is_calibration_sup_job]
 
     scenario.save(scenario_file)
     print(f"Scenario generated at {str(scenario_file)}")

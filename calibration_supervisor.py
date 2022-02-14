@@ -15,17 +15,18 @@
 
 import asyncio
 from random import random, randint
-from scenario_scripts import demodulation_scenario
 from uuid import uuid4
 from pathlib import Path
+import json
 import requests
 from enum import Enum
 import settings
 import datetime
 import redis
-import cal_routines.dummy_cals as cals
-import cal_routines.dummy_checks as checks
+import calibration_scripts.calibration_mockup as cals
 import time
+from tempfile import gettempdir
+
 
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT
@@ -35,100 +36,99 @@ CALIBRATION_SUPERVISOR_PORT = settings.CALIBRATION_SUPERVISOR_PORT
 
 LOCALHOST = "localhost"
 
+REST_API_MAP = {"jobs": "/jobs"}
 
-REST_API_MAP = {"scenarios": "/scenarios"}
-
-# Set up redis
+# Set up Redis
 red = redis.Redis(decode_responses=True)
-
-calibrated = False
 
 node_recal_statuses = {}
 
 # Maps names of calibration routines to their corresponding functions
-MEASUREMENT_ROUTINES = {
-    "cal_rabi": cals.cal_dummy,
-    "check_rabi": checks.check_dummy,
-    "cal_two-tone": cals.cal_dummy,
-    "check_two-tone": checks.check_dummy,
-    "cal_res_spect": cals.cal_dummy,
-    "check_res_spect": checks.check_dummy,
-    "do_fidelity_cal": cals.cal_dummy,
-    "do_fidelity_check": checks.check_dummy,
+MEASUREMENT_JOBS = {
+    "check_res_spect": cals.check_res_spect,
+    "cal_res_spect": cals.calibrate_res_spect,
+    "check_two-tone": cals.check_two_tone,
+    "cal_two-tone": cals.calibrate_two_tone,
+    "check_rabi": cals.check_rabi,
+    "cal_rabi": cals.calibrate_rabi,
+    "check_fidelity": cals.check_fidelity,
+    "cal_fidelity": cals.calibrate_fidelity,
 }
 
+# Global variable to check the identity of incoming "job done" messages
+requested_job_id = ""
 
-async def check_calib_status():
+
+async def check_calib_status(job_done):
     global already_verified
 
     while 1:
         print("Checking the status of calibration:", end=" ")
 
         # mimick work
-        await asyncio.sleep(1)
+        time.sleep(1)
 
         print("\n------ STARTING MAINTAIN -------\n")
-        await maintain_all()
+        await maintain_all(job_done)
         print("\n------ MAINTAINED -------\n")
 
         # Wait a while between checks
         await asyncio.sleep(15)
 
 
-async def maintain_all():
+async def maintain_all(job_done):
     # Get the topological order of DAG nodes
     topo_order = red.lrange("topo_order", 0, -1)
     global node_recal_statuses
     node_recal_statuses = {}
 
     for node in topo_order:
-        node_recal_statuses[node] = await maintain(node)
+        node_recal_statuses[node] = await maintain(node, job_done)
 
 
-async def maintain(node):
+async def maintain(node, job_done):
     print(f"Maintaining node {node}")
 
-    state_ok = await check_state(node)
+    state_ok = check_state(node)
 
     # If state is fine, then no further maintenance is needed.
     if state_ok:
-        print(f"check_state returned true for node {node}. No calibration.")
+        print(f"Check_state returned true for node {node}. No calibration.")
         return False
 
     # Perform check_data
-    status = await check_data(node)
-
+    status = await check_data(node, job_done)
     if status == DataStatus.in_spec:
-        print(f"check_data returned in_spec for node {node}. No calibration.")
+        print(f"Check_data returned in_spec for node {node}. No calibration.")
         return False
 
     if status == DataStatus.bad_data:
-        print(
-            f"check_data returned bad_data for node {node}. diagnosing dependencies."
-        )
+        print(f"Check_data returned bad_data for node {node}. Diagnosing dependencies.")
         deps = red.lrange(f"m_deps:{node}", 0, -1)
-        await diagnose_loop(deps)
+        await diagnose_loop(deps, job_done)
     # status is out of spec: no need to diagnose, go directly to calibration
-    print(f"(Maintain) Calibration necessary for node {node}. Calibrating...")
-    await calibrate(node)
+    print(f"Calibration necessary for node {node}. Calibrating...")
+    await calibrate(node, job_done)
     return True
 
 
-async def check_state(node):
+def check_state(node):
     # Find dependencies
     deps = red.lrange(f"m_deps:{node}", 0, -1)
 
     for dep in deps:
         dep_recalibrated = node_recal_statuses[dep]
         if dep_recalibrated:
-            print(f"{dep} needed a recal, so check_state for {node} failed")
+            print(
+                f"Node {dep} needed a recalibration, so check_state for {node} failed"
+            )
             return False
 
     params = red.lrange(f"m_params:{node}", 0, -1)
     for param in params:
         data = red.hget(f"param:{param}", "value")
         if data is None:
-            print(f"parameter {param} didn't exist, so check_state for {node} failed")
+            print(f"Parameter {param} didn't exist, so check_state for {node} failed")
             return False
     return True
 
@@ -139,22 +139,27 @@ class DataStatus(Enum):
     bad_data = 3
 
 
-async def check_data(node):
-    # Generate a scenario to check the node's data
-    scenario = MEASUREMENT_ROUTINES[red.hget(f"measurement:{node}", "check_f")]()
-    # Run the scenario through Labber
-    print(f"Running check scenario for {node}...")
-    await send_scenario(scenario)
+async def check_data(node, job_done):
+    # Run the node's associated measurement to check the node's data
+    print("")
+    mk_measurement_job = MEASUREMENT_JOBS[red.hget(f"measurement:{node}", "check_fn")]
+    job = mk_measurement_job()
+    job_id = job["job_id"]
+    print(f"Requesting check job with {job_id=} for {node=} ...")
+    await request_job(job, job_done)
     # Wait for data logistics TODO Change into waiting for an ack from post-processing
-    time.sleep(2)
 
     params = red.lrange(f"m_params:{node}", 0, -1)
     for param in params:
-        # Fetch the values we got from the measurement
-        # TODO read from the actual param name, not 'shots'
-        result = red.get("results:shots")
-        print(f"from redis we read shots: {result}")
-
+        # Fetch the values we got from the measurement's postprocessing
+        # TODO: Read from the actual param name, not 'job_id'
+        result_key = "results:job_id"
+        result = red.get(result_key)
+        print(
+            f"For {param=}, from Redis we read {result_key} from postprocessing: {result}"
+        )
+        if result == None:
+            print(f"Warning: no entry found for key {result_key}")
         # TODO ensure value is within thresholds
 
     # TODO return status based on the above param checks instead of deciding at random
@@ -169,7 +174,7 @@ async def check_data(node):
     return DataStatus.bad_data
 
 
-async def diagnose_loop(initial_nodes):
+async def diagnose_loop(initial_nodes, job_done):
     print(f"Starting diagnose for nodes {initial_nodes}")
     # To avoid recursion, we use this while loop function to perform a depth-first diagnose.
     nodes_to_diag = initial_nodes
@@ -183,8 +188,8 @@ async def diagnose_loop(initial_nodes):
             nodes_to_diag.pop(0)
         # Diagnose the current node, to check if its dependencies needs to be
         # diagnosed, and if this node has to be recalibrated.
-        to_diag, to_measure = await diagnose(nodes_to_diag[0])
-        print(f"to_diag = {to_diag}")
+        to_diag, to_measure = await diagnose(nodes_to_diag[0], job_done)
+        print(f"To_diag = {to_diag}")
         # Mark that we've diagnosed this node
         diagnosed_nodes.append(nodes_to_diag[0])
         # Add the newest set of dependencies first, and remove the current node from the list to diagnose. (Depth first)
@@ -192,7 +197,7 @@ async def diagnose_loop(initial_nodes):
         nodes_to_diag = to_diag
 
         nodes_to_measure.extend(to_measure)
-        print(f"to_diag = {nodes_to_diag}, to_measure = {nodes_to_measure}")
+        print(f"To_diag = {nodes_to_diag}, to_measure = {nodes_to_measure}")
 
     # Sort nodes to measure in topological order
     topo_order = red.lrange("topo_order", 0, -1)
@@ -200,11 +205,11 @@ async def diagnose_loop(initial_nodes):
 
     for node in nodes_to_measure:
         print(f"(Diag) measuring {node}")
-        await calibrate(node)
+        await calibrate(node, job_done)
 
 
-async def diagnose(node):
-    status = await check_data(node)
+async def diagnose(node, job_done):
+    status = await check_data(node, job_done)
     if status == DataStatus.in_spec:
         # In spec, no further diag needed, and no recalibration
         return [], []
@@ -217,28 +222,38 @@ async def diagnose(node):
         return deps, [node]
 
 
-async def calibrate(node):
+async def calibrate(node, job_done):
+    print("")
     # TODO Add features
     params = red.lrange(f"m_params:{node}", 0, -1)
 
-    # Generate a scenario to calibrate the node
-    scenario = MEASUREMENT_ROUTINES[red.hget(f"measurement:{node}", "cal_f")]()
-    # Run the scenario through Labber
-    print(f"Running calibration scenario for {node}...")
-    await send_scenario(scenario)
-
+    # Run the node's associated measurement to check the node's data
+    mk_measurement_job = MEASUREMENT_JOBS[
+        red.hget(f"measurement:{node}", "calibration_fn")
+    ]
+    job = mk_measurement_job()
+    job_id = job["job_id"]
+    print(f"Requesting calibration job with {job_id=} for {node=} ...")
+    await request_job(job, job_done)
     # Wait for data logistics TODO Change into waiting for an ack from post-processing
-    time.sleep(2)
+
+    print("")
 
     for param in params:
         # Fetch unit and parameter lifetime
         unit = red.hget(f"m_params:{node}:{param}", "unit")
         lifetime = red.hget(f"m_params:{node}:{param}", "timeout")
 
-        # Fetch the values we got from the calibration
-        # TODO read from the actual param name, not 'shots'
-        result = red.get("results:shots")
-        print(f"from redis we read shots: {result}")
+        # Fetch the values we got from the calibration's postprocessing
+        # TODO: Read from the actual param name, not 'job_id'
+        result_key = "results:job_id"
+        result = red.get(result_key)
+        print(
+            f"For {param=}, from Redis we read {result_key} from postprocessing: {result}"
+        )
+        if result == None:
+            print(f"Warning: no entry found for key {result_key}")
+            result = "not found"  # should investigate why this happens
 
         red.hset(f"param:{param}", "name", param)
         red.hset(
@@ -254,54 +269,85 @@ async def calibrate(node):
         red.expire(f"param:{param}", lifetime)
 
 
-async def send_scenario(scenario):
-    job_id = scenario.tags.tags[0]
-    scenario_file = Path(STORAGE_ROOT) / (job_id + ".labber")
-    scenario.save(scenario_file)
-    print(f"Scenario generated at {str(scenario_file)}")
+async def request_job(job, job_done):
+    global requested_job_id
 
-    with scenario_file.open("rb") as source:
-        files = {
-            "upload_file": (scenario_file.name, source),
-            "send_logfile_to": (None, str(BCC_MACHINE_ROOT_URL)),
-        }
-        url = str(LABBER_MACHINE_ROOT_URL) + REST_API_MAP["scenarios"]
-        # to be replaced with aiohttp call
+    job_id = job["job_id"]
+    requested_job_id = job_id
+
+    tmpdir = gettempdir()
+    file = Path(tmpdir) / str(uuid4())
+    with file.open("w") as dest:
+        json.dump(job, dest)
+
+    with file.open("r") as src:
+        files = {"upload_file": src}
+        url = str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["jobs"]
         response = requests.post(url, files=files)
-        # simulate async request
-        await asyncio.sleep(5)
-    # right now the Labber Connector sends a response *after* executing the scenario
-    # ie the POST request is *blocking* until after the measurement execution
-    # this will change in the future; it should just ack a succesful upload of a scenario and nothing more
-    if response:
-        # clean up
-        scenario_file.unlink()
-        print("Scenario executed successfully")
-    else:
-        print("Scenario execution failed")
+
+        # Right now the Labber Connector sends a response *after*
+        # executing the scenario i.e., the POST request is *blocking*
+        # until after the measurement execution this will change in
+        # the future; it should just ack a succesful upload of a
+        # scenario and nothing more
+
+        if response:
+            file.unlink()
+            print("Job has been successfully sent")
+        else:
+            print("request_job failed")
+
+    await job_done.wait()
+    job_done.clear()
+
+    print("")
 
 
-# NOTE: This message handling is WIP! The calibration loop does *not* depend on it.
-# Current status: The messages are ariving, but very late.
-async def handle_message(reader, writer):
+async def handle_message(reader, writer, job_done):
+    global requested_job_id
+
+    addr = writer.get_extra_info("peername")
     data = await reader.read(100)
     message = data.decode()
-    addr = writer.get_extra_info("peername")
 
-    print(f"Received {message!r} from {addr!r}")
+    try:
+        [kind, body] = message.split(":")
+        if kind == "job_done":
+            job_id = body
+            if job_id == requested_job_id:
+                print(f'handle_message: Received "job done", {job_id=!r} from {addr!r}')
+                # notify request_job to proceed
+                job_done.set()
+            else:
+                print(
+                    f'handle_message: Received *unexpected*  "job done" message with \
+                    {job_id=!r} from {addr!r}'
+                )
+        else:
+            print(f"handle_message: Unknown message kind: {kind}, {message=}")
+    except Exception:
+        print(f"handle_message: Couldn't parse incoming message: {message}")
+
     writer.close()
 
 
-async def message_server():
+async def message_server(job_done):
     server = await asyncio.start_server(
-        handle_message, LOCALHOST, CALIBRATION_SUPERVISOR_PORT)
+        lambda reader, writer: handle_message(reader, writer, job_done),
+        LOCALHOST,
+        CALIBRATION_SUPERVISOR_PORT,
+    )
     async with server:
         await server.serve_forever()
 
 
 async def main():
-    server_task = asyncio.create_task(message_server())
-    calib_task = asyncio.create_task(check_calib_status())
+    # To wait for messages from postprocessing
+    job_done = asyncio.Event()
+
+    server_task = asyncio.create_task(message_server(job_done))
+    calib_task = asyncio.create_task(check_calib_status(job_done))
+
     await server_task
     await calib_task
 

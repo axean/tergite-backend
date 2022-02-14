@@ -68,6 +68,7 @@ def logfile_postprocess(logfile: Path):
     # the post-processing itself
     tags = extract_tags(new_file)
     script_name = get_script_name(tags)
+    is_calibration_sup_job = get_is_calibration_sup_job(tags)
     job_id = get_job_id(tags)
     print("Tags:", tags)
 
@@ -78,17 +79,11 @@ def logfile_postprocess(logfile: Path):
 
     if script_name == "demodulation_scenario":
         pass
-
-    elif script_name == "calibration":
-        new_file = Labber.LogFile(new_file)
-        # The third tag of a calibration script tells us what kind of measurement we performed
-        sync(postprocess_calibration(new_file, tags[2]))
-
     elif script_name in ["qiskit_qasm_runner", "qasm_dummy_job"]:
 
         # extract System state
-        new_file = Labber.LogFile(new_file)
-        memory = extract_system_state_as_hex(new_file)
+        labber_logfile = Labber.LogFile(new_file)
+        memory = extract_system_state_as_hex(labber_logfile)
 
         # helper printout with first 5 outcomes
         print("Measurement results:")
@@ -126,25 +121,29 @@ def logfile_postprocess(logfile: Path):
             print("Updated job download_url on MSS")
 
     elif script_name == "qasm_dummy_job":  # DW FIXME: dead code:
-        new_file = Labber.LogFile(new_file)
-        q_states = extract_system_state_as_hex(new_file)
+        labber_logfile = Labber.LogFile(new_file)
+        q_states = extract_system_state_as_hex(labber_logfile)
         print(f"qubit states: {len(q_states)} lists of length {len(q_states[0])}")
         if len(q_states[0]) <= 5:
             print(q_states)
-        shots = extract_shots(new_file)
+        shots = extract_shots(labber_logfile)
         print(f"shots: {shots}")
-        max_qubits = extract_max_qubits(new_file)
+        max_qubits = extract_max_qubits(labber_logfile)
         print(f"max qubits used in experiments: {max_qubits}")
-        qobj_id = extract_qobj_id(new_file)
+        qobj_id = extract_qobj_id(labber_logfile)
         print(f"qobj ID: {qobj_id}")
 
     else:
         print(f"Unknown script name {script_name}")
         print("Postprocessing failed")
 
+    if is_calibration_sup_job:
+        # Job requested by calibration_supervisor
+        sync(postprocess_calibration(Labber.LogFile(new_file), script_name))
+
     print(f"Postprocessing ended for script type: {script_name}")
     # we can return an object with more information if needed
-    return (job_id, script_name)
+    return (job_id, script_name, is_calibration_sup_job)
 
 
 def extract_system_state_as_hex(logfile: Labber.LogFile):
@@ -181,22 +180,37 @@ def get_script_name(tags):
     return tags[1]
 
 
-def process_dummy(logfile: Labber.LogFile):
+def get_is_calibration_sup_job(tags):
+    # The third tag, if present and set to True, indicates this was
+    # requested by the calibration supervisor
+    return len(tags) >= 3 and tags[2]
+
+
+def process_demodulation(logfile: Labber.LogFile):
     """
-    Processes the logfile of a 'dummy'-marked calibration scenario
-    (which is a Qiskit Runner Stub measurement)
+    Processes the logfile of a calibration supervisor scenario
+    For now, we just extract the job_id, just to demonstrate the comcept of
+    extracting something.
     """
-    shots = extract_shots(logfile)
-    red.set("results:shots", shots)
+    tags = logfile.getTags()
+    job_id = get_job_id(tags)
+    red.set("results:job_id", job_id)
 
 
 def process_res_spect(logfile: Labber.LogFile):
-    pass
+    """
+    Processes the logfile of a calibration supervisor scenario
+    For now, we just extract the job_id, just to demonstrate the comcept of
+    extracting something.
+    """
+    tags = logfile.getTags()
+    job_id = get_job_id(tags)
+    red.set("results:job_id", job_id)
 
 
 PROCESSING_METHODS = {
-    "dummy": process_dummy,
-    "res_spect": process_res_spect,
+    "demodulation_scenario": process_demodulation,
+    "resonator_spectroscopy": process_res_spect,
     # etc...
 }
 
@@ -211,23 +225,13 @@ async def postprocess_calibration(logfile: Labber.LogFile, measurement_type):
     except KeyError:
         pass
 
-    # inform calibration deamon that the results are available
-    reader, writer = await asyncio.open_connection(
-        LOCALHOST, CALIBRATION_SUPERVISOR_PORT
-    )
-
-    message = "Calibration routine finished. Results available in Redis"
-    print(f"Send: {message!r}")
-    writer.write(message.encode())
-
-    writer.close()
-
 
 def postprocessing_success_callback(job, connection, result, *args, **kwargs):
-    (job_id, script_name) = result  # returned from logfile_postprocess
+    # From logfile_postprocess:
+    (job_id, script_name, is_calibration_sup_job) = result
     print(f"Job with ID {job_id}, {script_name=} has finished")
-    if script_name == "calibration":
-        print(f"Notifying calibration supervisor")
+    if is_calibration_sup_job:
+        print(f"Results available in Redis. Notifying calibration supervisor.")
         sync(notify_job_done(job_id))
 
 
@@ -235,5 +239,7 @@ async def notify_job_done(job_id: str):
     reader, writer = await asyncio.open_connection(
         LOCALHOST, CALIBRATION_SUPERVISOR_PORT
     )
-    writer.write(job_id.encode())
+    message = ("job_done:" + job_id).encode()
+    print(f"notify_job_done: {message=}")
+    writer.write(message)
     writer.close()
