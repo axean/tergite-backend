@@ -59,9 +59,7 @@ MEASUREMENT_JOBS = {
 requested_job_id = ""
 
 
-async def check_calib_status(job_done):
-    global already_verified
-
+async def check_calib_status(job_done_evt):
     while 1:
         print("Checking the status of calibration:", end=" ")
 
@@ -69,24 +67,24 @@ async def check_calib_status(job_done):
         time.sleep(1)
 
         print("\n------ STARTING MAINTAIN -------\n")
-        await maintain_all(job_done)
+        await maintain_all(job_done_evt)
         print("\n------ MAINTAINED -------\n")
 
         # Wait a while between checks
         await asyncio.sleep(15)
 
 
-async def maintain_all(job_done):
+async def maintain_all(job_done_evt):
     # Get the topological order of DAG nodes
     topo_order = red.lrange("topo_order", 0, -1)
     global node_recal_statuses
     node_recal_statuses = {}
 
     for node in topo_order:
-        node_recal_statuses[node] = await maintain(node, job_done)
+        node_recal_statuses[node] = await maintain(node, job_done_evt)
 
 
-async def maintain(node, job_done):
+async def maintain(node, job_done_evt):
     print(f"Maintaining node {node}")
 
     state_ok = check_state(node)
@@ -97,7 +95,7 @@ async def maintain(node, job_done):
         return False
 
     # Perform check_data
-    status = await check_data(node, job_done)
+    status = await check_data(node, job_done_evt)
     if status == DataStatus.in_spec:
         print(f"Check_data returned in_spec for node {node}. No calibration.")
         return False
@@ -105,10 +103,10 @@ async def maintain(node, job_done):
     if status == DataStatus.bad_data:
         print(f"Check_data returned bad_data for node {node}. Diagnosing dependencies.")
         deps = red.lrange(f"m_deps:{node}", 0, -1)
-        await diagnose_loop(deps, job_done)
+        await diagnose_loop(deps, job_done_evt)
     # status is out of spec: no need to diagnose, go directly to calibration
     print(f"Calibration necessary for node {node}. Calibrating...")
-    await calibrate(node, job_done)
+    await calibrate(node, job_done_evt)
     return True
 
 
@@ -139,14 +137,14 @@ class DataStatus(Enum):
     bad_data = 3
 
 
-async def check_data(node, job_done):
+async def check_data(node, job_done_evt):
     # Run the node's associated measurement to check the node's data
     print("")
     mk_measurement_job = MEASUREMENT_JOBS[red.hget(f"measurement:{node}", "check_fn")]
     job = mk_measurement_job()
     job_id = job["job_id"]
     print(f"Requesting check job with {job_id=} for {node=} ...")
-    await request_job(job, job_done)
+    await request_job(job, job_done_evt)
     # Wait for data logistics TODO Change into waiting for an ack from post-processing
 
     params = red.lrange(f"m_params:{node}", 0, -1)
@@ -174,7 +172,7 @@ async def check_data(node, job_done):
     return DataStatus.bad_data
 
 
-async def diagnose_loop(initial_nodes, job_done):
+async def diagnose_loop(initial_nodes, job_done_evt):
     print(f"Starting diagnose for nodes {initial_nodes}")
     # To avoid recursion, we use this while loop function to perform a depth-first diagnose.
     nodes_to_diag = initial_nodes
@@ -188,7 +186,7 @@ async def diagnose_loop(initial_nodes, job_done):
             nodes_to_diag.pop(0)
         # Diagnose the current node, to check if its dependencies needs to be
         # diagnosed, and if this node has to be recalibrated.
-        to_diag, to_measure = await diagnose(nodes_to_diag[0], job_done)
+        to_diag, to_measure = await diagnose(nodes_to_diag[0], job_done_evt)
         print(f"To_diag = {to_diag}")
         # Mark that we've diagnosed this node
         diagnosed_nodes.append(nodes_to_diag[0])
@@ -205,11 +203,11 @@ async def diagnose_loop(initial_nodes, job_done):
 
     for node in nodes_to_measure:
         print(f"(Diag) measuring {node}")
-        await calibrate(node, job_done)
+        await calibrate(node, job_done_evt)
 
 
-async def diagnose(node, job_done):
-    status = await check_data(node, job_done)
+async def diagnose(node, job_done_evt):
+    status = await check_data(node, job_done_evt)
     if status == DataStatus.in_spec:
         # In spec, no further diag needed, and no recalibration
         return [], []
@@ -222,7 +220,7 @@ async def diagnose(node, job_done):
         return deps, [node]
 
 
-async def calibrate(node, job_done):
+async def calibrate(node, job_done_evt):
     print("")
     # TODO Add features
     params = red.lrange(f"m_params:{node}", 0, -1)
@@ -234,7 +232,7 @@ async def calibrate(node, job_done):
     job = mk_measurement_job()
     job_id = job["job_id"]
     print(f"Requesting calibration job with {job_id=} for {node=} ...")
-    await request_job(job, job_done)
+    await request_job(job, job_done_evt)
     # Wait for data logistics TODO Change into waiting for an ack from post-processing
 
     print("")
@@ -269,10 +267,12 @@ async def calibrate(node, job_done):
         red.expire(f"param:{param}", lifetime)
 
 
-async def request_job(job, job_done):
+async def request_job(job, job_done_evt):
     global requested_job_id
 
     job_id = job["job_id"]
+
+    # Updating global variable, for handle_message to accept only this job_id:
     requested_job_id = job_id
 
     tmpdir = gettempdir()
@@ -297,43 +297,42 @@ async def request_job(job, job_done):
         else:
             print("request_job failed")
 
-    await job_done.wait()
-    job_done.clear()
+    # Wait until reply arrives(the one with our job_id).
+    await job_done_evt.wait()
+    job_done_evt.clear()
 
     print("")
 
 
-async def handle_message(reader, writer, job_done):
+async def handle_message(reader, writer, job_done_evt):
     global requested_job_id
 
     addr = writer.get_extra_info("peername")
     data = await reader.read(100)
     message = data.decode()
 
-    try:
-        [kind, body] = message.split(":")
-        if kind == "job_done":
-            job_id = body
-            if job_id == requested_job_id:
-                print(f'handle_message: Received "job done", {job_id=!r} from {addr!r}')
-                # notify request_job to proceed
-                job_done.set()
-            else:
-                print(
-                    f'handle_message: Received *unexpected*  "job done" message with \
-                    {job_id=!r} from {addr!r}'
-                )
+    parts = message.split(":")
+    if len(parts) == 2 and parts[0] == "job_done":
+        job_id = parts[1]
+        # The requested_job_id has been set to the job ID we are waiting for
+        if job_id == requested_job_id:
+            print(f'handle_message: Received "job_done", {job_id=!r} from {addr!r}')
+            # Notify request_job to proceed
+            job_done_evt.set()
         else:
-            print(f"handle_message: Unknown message kind: {kind}, {message=}")
-    except Exception:
-        print(f"handle_message: Couldn't parse incoming message: {message}")
+            print(
+                f'handle_message: Received *unexpected*  "job_done" message with \
+                {job_id=!r} from {addr!r}'
+            )
+    else:
+        print(f"handle_message: Unknown message: {message=}")
 
     writer.close()
 
 
-async def message_server(job_done):
+async def message_server(job_done_evt):
     server = await asyncio.start_server(
-        lambda reader, writer: handle_message(reader, writer, job_done),
+        lambda reader, writer: handle_message(reader, writer, job_done_evt),
         LOCALHOST,
         CALIBRATION_SUPERVISOR_PORT,
     )
@@ -343,10 +342,10 @@ async def message_server(job_done):
 
 async def main():
     # To wait for messages from postprocessing
-    job_done = asyncio.Event()
+    job_done_evt = asyncio.Event()
 
-    server_task = asyncio.create_task(message_server(job_done))
-    calib_task = asyncio.create_task(check_calib_status(job_done))
+    server_task = asyncio.create_task(message_server(job_done_evt))
+    calib_task = asyncio.create_task(check_calib_status(job_done_evt))
 
     await server_task
     await calib_task
