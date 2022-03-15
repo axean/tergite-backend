@@ -53,7 +53,7 @@ def logfile_postprocess(logfile: Path):
     # Move the logfile to logfile download pool area
     # TODO: This file change should preferably happen _after_ the
     # post-processing.
-    new_file_name = Path(logfile).stem # This is (happens to be?) the job_id
+    new_file_name = Path(logfile).stem  # This is the job_id
     new_file_name_with_suffix = new_file_name + ".hdf5"
     storage_location = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME
 
@@ -74,6 +74,7 @@ def logfile_postprocess(logfile: Path):
 # Post-processing helpers
 # =========================================================================
 
+
 def process_demodulation(logfile: Labber.LogFile):
     (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
     red.set("results:job_id", job_id)
@@ -84,6 +85,7 @@ def process_res_spect(logfile: Labber.LogFile):
     (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
     red.set("results:job_id", job_id)
     return (job_id, script_name, is_calibration_sup_job)
+
 
 def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Labber.LogFile):
     (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
@@ -117,12 +119,10 @@ def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Labber.LogFile):
         print("Updated job status on MSS to DONE")
 
     download_url = (
-        str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["logfiles"] + "/" + job_id # correct?
+        str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["logfiles"] + "/" + job_id  # correct?
     )
     print(f"Download url: {download_url}")
-    response = requests.put(
-        MSS_JOB + REST_API_MAP["download_url"], json=download_url
-    )
+    response = requests.put(MSS_JOB + REST_API_MAP["download_url"], json=download_url)
     if response:
         print("Updated job download_url on MSS")
 
@@ -147,15 +147,14 @@ def postprocess(logfile: Labber.LogFile):
     # extract results from logfile
     # store results in Redis
     # Process the log's data appropriately
-    (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
-    script_name = get_script_name(extract_tags(logfile))
+    (_, script_name, _) = get_postproc_retval(logfile)
     postproc_fn = PROCESSING_METHODS[script_name]
 
     if postproc_fn:
         result = postproc_fn(logfile)
     else:
         print(f"Unknown script name {script_name}")
-        print("Postprocessing failed") # what is the right thing to do in this case?
+        print("Postprocessing failed")  # TODO: take care of this case
 
     print(f"Postprocessing ended for script type: {script_name}")
     return result
@@ -164,6 +163,7 @@ def postprocess(logfile: Labber.LogFile):
 # =========================================================================
 # Post-processing success callback with helper
 # =========================================================================
+
 
 async def notify_job_done(job_id: str):
     reader, writer = await asyncio.open_connection(
@@ -174,6 +174,7 @@ async def notify_job_done(job_id: str):
     writer.write(message)
     writer.close()
 
+
 def postprocessing_success_callback(job, connection, result, *args, **kwargs):
     # From logfile_postprocess:
     (job_id, script_name, is_calibration_sup_job) = result
@@ -183,10 +184,10 @@ def postprocessing_success_callback(job, connection, result, *args, **kwargs):
         sync(notify_job_done(job_id))
 
 
-
 # =========================================================================
 # Extraction helpers
 # =========================================================================
+
 
 def extract_system_state_as_hex(logfile: Labber.LogFile):
     raw_data = logfile.getData("State Discriminator 2 States - System state")
@@ -227,7 +228,7 @@ def get_is_calibration_sup_job(tags):
     # requested by the calibration supervisor
     return len(tags) >= 3 and tags[2]
 
+
 def get_postproc_retval(logfile: Labber.LogFile):
     tags = extract_tags(logfile)
     return (get_job_id(tags), get_script_name(tags), get_is_calibration_sup_job(tags))
-

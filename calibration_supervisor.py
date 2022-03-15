@@ -145,7 +145,6 @@ async def check_data(node, job_done_evt):
     job_id = job["job_id"]
     print(f"Requesting check job with {job_id=} for {node=} ...")
     await request_job(job, job_done_evt)
-    # Wait for data logistics TODO Change into waiting for an ack from post-processing
 
     params = red.lrange(f"m_params:{node}", 0, -1)
     for param in params:
@@ -233,7 +232,6 @@ async def calibrate(node, job_done_evt):
     job_id = job["job_id"]
     print(f"Requesting calibration job with {job_id=} for {node=} ...")
     await request_job(job, job_done_evt)
-    # Wait for data logistics TODO Change into waiting for an ack from post-processing
 
     print("")
 
