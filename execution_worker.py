@@ -13,6 +13,7 @@
 
 
 from pathlib import Path
+from uuid import uuid4
 import json
 import time
 from scenario_scripts import (
@@ -28,21 +29,34 @@ import settings
 STORAGE_ROOT = settings.STORAGE_ROOT
 LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
+QUANTIFY_MACHINE_ROOT_URL = settings.QUANTIFY_MACHINE_ROOT_URL
 
+REST_API_MAP = {"scenarios": "/scenarios", "qobj" : "/qobj"}
 
-REST_API_MAP = {"scenarios": "/scenarios"}
+def post_schedule_file(job_dict: dict, /):
+    print(f"Received OpenPulse schedule")
+    
+    tmp_file = Path(STORAGE_ROOT) / (str(uuid4()) + ".to_quantify")
+    
+    with tmp_file.open("w") as store:
+        json.dump(job_dict, store) # copy incoming data
+    
+    with tmp_file.open("r") as source:
+        files = {
+            "upload_file": (tmp_file.name, source),
+            "send_logfile_to": (None, str(BCC_MACHINE_ROOT_URL)),
+        }
+        
+        url = str(QUANTIFY_MACHINE_ROOT_URL) + REST_API_MAP["qobj"]
+        print("Sending the pulse schedule to Quantify")
+        response = requests.post(url, files=files)
 
+    tmp_file.unlink()
+    return response
 
-def job_execute(job_file: Path):
-    print(f"Executing file {str(job_file)}")
-
-    # extract job_id from the filename
-    job_id = job_file.stem
-    scenario_file = Path(STORAGE_ROOT) / (job_id + ".labber")
-
-    job_dict = {}
-    with job_file.open() as f:
-        job_dict = json.load(f)
+def post_scenario_file(job_dict: dict, /):
+    
+    job_id = job_dict["job_id"]
 
     print(f"Job script type: {job_dict['name']}")
     if job_dict["name"] == "demodulation_scenario":
@@ -68,12 +82,10 @@ def job_execute(job_file: Path):
         scenario = resonator_spectroscopy_scenario(job_dict)
 
         scenario.log_name += job_id
-
+        
     else:
-        print(f"Unknown script name {job_dict['name']}")
-        print("Job failed")
-        return {"message": "failed"}
-
+        raise NotImplementedError(f"Unknown script name {job_dict['name']}")
+        
     # Store important information inside the scenario: using the tag list
     # 1) job_id
     # 2) script name
@@ -83,9 +95,10 @@ def job_execute(job_file: Path):
     if is_calibration_sup_job:
         scenario.tags.tags += [is_calibration_sup_job]
 
+    scenario_file = Path(STORAGE_ROOT) / (str(uuid4()) + ".labber")
     scenario.save(scenario_file)
     print(f"Scenario generated at {str(scenario_file)}")
-
+    
     with scenario_file.open("rb") as source:
         files = {
             "upload_file": (scenario_file.name, source),
@@ -94,13 +107,31 @@ def job_execute(job_file: Path):
         url = str(LABBER_MACHINE_ROOT_URL) + REST_API_MAP["scenarios"]
         print("Sending the scenario to Labber")
         response = requests.post(url, files=files)
+    
+    scenario_file.unlink()
+    return response
+
+def job_execute(job_file: Path):
+    print(f"Executing file {str(job_file)}")
+    
+    with job_file.open() as f:
+        job_dict = json.load(f)
+    
+    if job_dict["name"] == "pulse_schedule":
+        response = post_schedule_file(job_dict)
+    else:
+        try:
+            response = post_scenario_file(job_dict)
+        except NotImplementedError as err:
+            print(err)
+            print("Job failed")
+            return {"message": "failed"}
 
     if response:
         # clean up
         job_file.unlink()
-        scenario_file.unlink()
 
-        print("Scenario job executed successfully")
+        print("Job executed successfully")
         return {"message": "ok"}
     else:
         print("Failed")
