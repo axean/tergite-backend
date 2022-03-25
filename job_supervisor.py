@@ -98,7 +98,7 @@ def fetch_redis_entry(job_id: str) -> Entry:
         log(f"Job {job_id} not found", level=LogLevel.ERROR)
         raise JobNotFound(job_id)
 
-    return json.loads(entry)
+    return _load_json(entry)
 
 
 def register_job(job_id: str) -> None:
@@ -192,20 +192,37 @@ def inform_failure(job_id: str, reason: str = None) -> None:
     """Inform job supervisor that a job has failed
 
     Args:
-        job_id (str): Identifier of the job that failed
+        job_id (str): Identifier of the job that failed.
         reason (str, optional): Reason for failure. Defaults to None.
     """
     entry: Entry = fetch_redis_entry(job_id)
     update_job_entry(job_id, {"time": now(), "reason": reason}, "status", "failed")
 
+    location = entry["status"]["location"]
+
     if reason:
         log_message: str = (
-            f"Job {job_id} failed at {STR_LOC[entry.location]} due to {reason}."
+            f"Job {job_id} failed at {STR_LOC[location]} due to {reason}."
         )
     else:
-        log_message: str = f"Job {job_id} failed at {STR_LOC[entry.location]}."
+        log_message: str = f"Job {job_id} failed at {STR_LOC[location]}."
 
     log(log_message, level=LogLevel.ERROR)
+
+
+def _load_json(json_str: str) -> Entry:
+    """Loads json string into an entry.
+    
+    Args:
+        json_str (str): The json string to load.
+
+    Returns:
+        Entry: The loaded entry.
+    """
+    entry: Entry = json.loads(json_str)
+    location = entry["status"]["location"]
+    entry["status"]["location"] = Location(location)
+    return entry
 
 
 def fetch_all_jobs() -> List[Entry]:
@@ -215,7 +232,7 @@ def fetch_all_jobs() -> List[Entry]:
         List[Entry]: The list of job entires.
     """
     entries = red.hgetall("job_supervisor")
-    return {k: json.loads(v) for k, v in entries.items()}
+    return {k: _load_json(v) for k, v in entries.items()}
 
 
 def fetch_job(
@@ -270,7 +287,7 @@ def log(message: str, level: LogLevel = LogLevel.INFO) -> None:
     )
 
     current_time = datetime.now()
-    formatted_time = datetime.strftime(current_time, "%Y-%m-%d %H:%M:%S (%z)")
+    formatted_time = datetime.strftime(current_time, "%Y-%m-%d %H:%M:%S")
 
     logstring: str = (
         f"{color[level.value]}[{formatted_time}] {level.name}: {message}{color[0]}\n"
