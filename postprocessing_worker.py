@@ -50,10 +50,10 @@ def logfile_postprocess(logfile: Path):
 
     print(f"Postprocessing logfile {str(logfile)}")
 
-    # move the logfile to logfile download pool area
+    # Move the logfile to logfile download pool area
     # TODO: This file change should preferably happen _after_ the
     # post-processing.
-    new_file_name = Path(logfile).stem
+    new_file_name = Path(logfile).stem  # This is the job_id
     new_file_name_with_suffix = new_file_name + ".hdf5"
     storage_location = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME
 
@@ -64,87 +64,129 @@ def logfile_postprocess(logfile: Path):
     logfile.replace(new_file)
 
     print(f"Moved the logfile to {str(new_file)}")
+    labber_logfile = Labber.LogFile(new_file)
 
-    # the post-processing itself
-    tags = extract_tags(new_file)
-    script_name = get_script_name(tags)
-    job_id = get_job_id(tags)
-    print("Tags:", tags)
+    # The post-processing itself
+    return postprocess(labber_logfile)
 
-    ###############################################################
-    # The code below uses a WA based on Labber job tags.
-    #   - proper solution is a job supervisor
-    ###############################################################
 
-    if script_name == "demodulation_scenario":
-        pass
+# =========================================================================
+# Post-processing helpers
+# =========================================================================
 
-    elif script_name == "calibration":
-        new_file = Labber.LogFile(new_file)
-        # The third tag of a calibration script tells us what kind of measurement we performed
-        sync(postprocess_calibration(new_file, tags[2]))
 
-    elif script_name in ["qiskit_qasm_runner", "qasm_dummy_job"]:
+def process_demodulation(logfile: Labber.LogFile):
+    (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
+    red.set("results:job_id", job_id)
+    return (job_id, script_name, is_calibration_sup_job)
 
-        # extract System state
-        new_file = Labber.LogFile(new_file)
-        memory = extract_system_state_as_hex(new_file)
 
-        # helper printout with first 5 outcomes
-        print("Measurement results:")
-        for experiment_memory in memory:
-            s = str(experiment_memory[:5])
-            if experiment_memory[5:6]:
-                s = s.replace("]", ", ...]")
-            print(s)
+def process_res_spect(logfile: Labber.LogFile):
+    (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
+    red.set("results:job_id", job_id)
+    return (job_id, script_name, is_calibration_sup_job)
 
-        MSS_JOB = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["jobs"] + "/" + job_id
 
-        # NOTE: When MSS adds support for the 'whole job' update
-        # this will be just one PUT request
-        # Memory could contain more than one experiment, for now just use index 0
-        response = requests.put(MSS_JOB + REST_API_MAP["result"], json=memory)
-        if response:
-            print("Pushed result to MSS")
+def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Labber.LogFile):
+    (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
 
-        response = requests.post(MSS_JOB + REST_API_MAP["timelog"], json="RESULT")
-        if response:
-            print("Updated job timelog on MSS")
+    # Extract System state
+    memory = extract_system_state_as_hex(logfile)
 
-        response = requests.put(MSS_JOB + REST_API_MAP["status"], json="DONE")
-        if response:
-            print("Updated job status on MSS to DONE")
+    # Helper printout with first 5 outcomes
+    print("Measurement results:")
+    for experiment_memory in memory:
+        s = str(experiment_memory[:5])
+        if experiment_memory[5:6]:
+            s = s.replace("]", ", ...]")
+        print(s)
 
-        download_url = (
-            str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["logfiles"] + "/" + new_file_name
-        )
-        print(f"Download url: {download_url}")
-        response = requests.put(
-            MSS_JOB + REST_API_MAP["download_url"], json=download_url
-        )
-        if response:
-            print("Updated job download_url on MSS")
+    MSS_JOB = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["jobs"] + "/" + job_id
 
-    elif script_name == "qasm_dummy_job":  # DW FIXME: dead code:
-        new_file = Labber.LogFile(new_file)
-        q_states = extract_system_state_as_hex(new_file)
-        print(f"qubit states: {len(q_states)} lists of length {len(q_states[0])}")
-        if len(q_states[0]) <= 5:
-            print(q_states)
-        shots = extract_shots(new_file)
-        print(f"shots: {shots}")
-        max_qubits = extract_max_qubits(new_file)
-        print(f"max qubits used in experiments: {max_qubits}")
-        qobj_id = extract_qobj_id(new_file)
-        print(f"qobj ID: {qobj_id}")
+    # NOTE: When MSS adds support for the 'whole job' update
+    # this will be just one PUT request
+    # Memory could contain more than one experiment, for now just use index 0
+    response = requests.put(MSS_JOB + REST_API_MAP["result"], json=memory)
+    if response:
+        print("Pushed result to MSS")
 
+    response = requests.post(MSS_JOB + REST_API_MAP["timelog"], json="RESULT")
+    if response:
+        print("Updated job timelog on MSS")
+
+    response = requests.put(MSS_JOB + REST_API_MAP["status"], json="DONE")
+    if response:
+        print("Updated job status on MSS to DONE")
+
+    download_url = (
+        str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["logfiles"] + "/" + job_id  # correct?
+    )
+    print(f"Download url: {download_url}")
+    response = requests.put(MSS_JOB + REST_API_MAP["download_url"], json=download_url)
+    if response:
+        print("Updated job download_url on MSS")
+
+    red.set("results:job_id", job_id)
+    return (job_id, script_name, is_calibration_sup_job)
+
+
+# =========================================================================
+# Post-processing entry point
+# =========================================================================
+
+PROCESSING_METHODS = {
+    "resonator_spectroscopy": process_res_spect,
+    "demodulation_scenario": process_demodulation,
+    "qiskit_qasm_runner": process_qiskit_qasm_runner_qasm_dummy_job,
+    "qasm_dummy_job": process_qiskit_qasm_runner_qasm_dummy_job,
+}
+
+
+def postprocess(logfile: Labber.LogFile):
+    # TODO
+    # extract results from logfile
+    # store results in Redis
+    # Process the log's data appropriately
+    (_, script_name, _) = get_postproc_retval(logfile)
+    postproc_fn = PROCESSING_METHODS[script_name]
+
+    if postproc_fn:
+        result = postproc_fn(logfile)
     else:
         print(f"Unknown script name {script_name}")
-        print("Postprocessing failed")
+        print("Postprocessing failed")  # TODO: take care of this case
 
     print(f"Postprocessing ended for script type: {script_name}")
-    # we can return an object with more information if needed
-    return (job_id, script_name)
+    return result
+
+
+# =========================================================================
+# Post-processing success callback with helper
+# =========================================================================
+
+
+async def notify_job_done(job_id: str):
+    reader, writer = await asyncio.open_connection(
+        LOCALHOST, CALIBRATION_SUPERVISOR_PORT
+    )
+    message = ("job_done:" + job_id).encode()
+    print(f"notify_job_done: {message=}")
+    writer.write(message)
+    writer.close()
+
+
+def postprocessing_success_callback(job, connection, result, *args, **kwargs):
+    # From logfile_postprocess:
+    (job_id, script_name, is_calibration_sup_job) = result
+    print(f"Job with ID {job_id}, {script_name=} has finished")
+    if is_calibration_sup_job:
+        print(f"Results available in Redis. Notifying calibration supervisor.")
+        sync(notify_job_done(job_id))
+
+
+# =========================================================================
+# Extraction helpers
+# =========================================================================
 
 
 def extract_system_state_as_hex(logfile: Labber.LogFile):
@@ -169,8 +211,8 @@ def extract_qobj_id(logfile: Labber.LogFile):
     return logfile.getChannelValue("State Discriminator 2 States - QObj ID")
 
 
-def extract_tags(logfile: Path):
-    return Labber.LogFile(logfile).getTags()
+def extract_tags(logfile: Labber.LogFile):
+    return logfile.getTags()
 
 
 def get_job_id(tags):
@@ -181,59 +223,12 @@ def get_script_name(tags):
     return tags[1]
 
 
-def process_dummy(logfile: Labber.LogFile):
-    """
-    Processes the logfile of a 'dummy'-marked calibration scenario
-    (which is a Qiskit Runner Stub measurement)
-    """
-    shots = extract_shots(logfile)
-    red.set("results:shots", shots)
+def get_is_calibration_sup_job(tags):
+    # The third tag, if present and set to True, indicates this was
+    # requested by the calibration supervisor
+    return len(tags) >= 3 and tags[2]
 
 
-def process_res_spect(logfile: Labber.LogFile):
-    pass
-
-
-PROCESSING_METHODS = {
-    "dummy": process_dummy,
-    "res_spect": process_res_spect,
-    # etc...
-}
-
-
-async def postprocess_calibration(logfile: Labber.LogFile, measurement_type):
-    # TODO
-    # extract results from logfile
-    # store results in Redis
-    # Process the log's data appropriately
-    try:
-        PROCESSING_METHODS[measurement_type](logfile)
-    except KeyError:
-        pass
-
-    # inform calibration deamon that the results are available
-    reader, writer = await asyncio.open_connection(
-        LOCALHOST, CALIBRATION_SUPERVISOR_PORT
-    )
-
-    message = "Calibration routine finished. Results available in Redis"
-    print(f"Send: {message!r}")
-    writer.write(message.encode())
-
-    writer.close()
-
-
-def postprocessing_success_callback(job, connection, result, *args, **kwargs):
-    (job_id, script_name) = result  # returned from logfile_postprocess
-    print(f"Job with ID {job_id}, {script_name=} has finished")
-    if script_name == "calibration":
-        print(f"Notifying calibration supervisor")
-        sync(notify_job_done(job_id))
-
-
-async def notify_job_done(job_id: str):
-    reader, writer = await asyncio.open_connection(
-        LOCALHOST, CALIBRATION_SUPERVISOR_PORT
-    )
-    writer.write(job_id.encode())
-    writer.close()
+def get_postproc_retval(logfile: Labber.LogFile):
+    tags = extract_tags(logfile)
+    return (get_job_id(tags), get_script_name(tags), get_is_calibration_sup_job(tags))

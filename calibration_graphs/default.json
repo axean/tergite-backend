@@ -3,8 +3,8 @@
     "dependencies": [
       "rabi"
     ],
-    "cal_f": "do_fidelity_cal",
-    "check_f": "do_fidelity_check",
+    "calibration_fn": "cal_fidelity",
+    "check_fn": "check_fidelity",
     "fidelity_measurement": true,
     "params": [
       {
@@ -21,8 +21,8 @@
       "two-tone",
       "res_spect"
     ],
-    "cal_f": "cal_rabi",
-    "check_f": "check_rabi",
+    "calibration_fn": "cal_rabi",
+    "check_fn": "check_rabi",
     "params": [
       {
         "name": "t1",
@@ -43,8 +43,8 @@
 
   "res_spect":{
     "dependencies": [],
-    "cal_f": "cal_res_spect",
-    "check_f": "check_res_spect",
+    "calibration_fn": "cal_res_spect",
+    "check_fn": "check_res_spect",
     "params": [
       {
         "name": "res_freq",
@@ -58,8 +58,8 @@
 
   "two-tone":{
     "dependencies": ["res_spect"],
-    "cal_f": "cal_two-tone",
-    "check_f": "check_two-tone",
+    "calibration_fn": "cal_two-tone",
+    "check_fn": "check_two-tone",
     "params": [
       {
         "name": "drive_freq",
