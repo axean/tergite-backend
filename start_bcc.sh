@@ -14,10 +14,11 @@ PORT_NUMBER="${PORT_CONFIG#*=}"                  # extract the number
 
 
 # clean start
-rq empty pingu_job_preprocessing pingu_job_execution pingu_logfile_postprocessing
+rq empty pingu_job_registration pingu_job_preprocessing pingu_job_execution pingu_logfile_postprocessing
 rm -fr /tmp/pingu    # FIXME: Fixed path
 
 # worker processes
+rq worker pingu_job_registration &
 rq worker pingu_job_preprocessing &
 rq worker pingu_job_execution &
 rq worker pingu_logfile_postprocessing &
