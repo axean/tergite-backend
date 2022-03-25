@@ -22,6 +22,7 @@ import settings
 import redis
 from syncer import sync
 
+from qpulse.storage.file import StorageFile
 
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT
@@ -64,16 +65,28 @@ def logfile_postprocess(logfile: Path):
     logfile.replace(new_file)
 
     print(f"Moved the logfile to {str(new_file)}")
-    labber_logfile = Labber.LogFile(new_file)
+    if False:
+        labber_logfile = Labber.LogFile(new_file)
 
-    # The post-processing itself
-    return postprocess(labber_logfile)
-
+        # The post-processing itself
+        return postprocess(labber_logfile)
+    else:
+        qpsf = StorageFile(new_file, mode = "r")
+        return postprocess_qpsf(qpsf)
 
 # =========================================================================
 # Post-processing helpers
 # =========================================================================
 
+def postprocess_qpsf(sf: StorageFile):
+    
+    """
+        Discriminated:
+        
+            Measurement gate results are returned by MemorySlot.
+        
+    """
+    print("Post processing storage file")
 
 def process_demodulation(logfile: Labber.LogFile):
     (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
