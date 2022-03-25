@@ -90,32 +90,31 @@ async def upload_job(upload_file: UploadFile = File(...)):
 
 @app.get("/jobs")
 async def fetch_all_jobs():
-    jobs = job_supervisor.fetch_all_jobs()
-    return {"message" : jobs}
+    return job_supervisor.fetch_all_jobs()
 
 
 @app.get("/jobs/{job_id}")
 async def fetch_job(job_id: str):
     job = job_supervisor.fetch_job(job_id)
-    return {"message" : job or f"job {job_id} not found"}
+    return {"message": job or f"job {job_id} not found"}
 
 
 @app.get("/jobs/{job_id}/status")
 async def fetch_job_status(job_id: str):
-    status = job_supervisor.fetch_job(job_id, "status")
-    return {"message" : status or f"job {job_id} not found"}
+    status = job_supervisor.fetch_job(job_id, "status", format=True)
+    return {"message": status or f"job {job_id} not found"}
 
 
-@app.get("/jobs/{job_id}/results")
-async def fetch_job_results(job_id: str):
+@app.get("/jobs/{job_id}/result")
+async def fetch_job_result(job_id: str):
     job = job_supervisor.fetch_job(job_id)
 
     if not job:
-        return {"message" : f"job {job_id} not found"}
+        return {"message": f"job {job_id} not found"}
     elif job["status"]["finished"]:
-        return {"message" : job["results"]} 
+        return {"message": job["result"]}
     else:
-        return {"message" : "job has not finished"}
+        return {"message": "job has not finished"}
 
 
 @app.delete("/jobs/{job_id}")
@@ -165,7 +164,10 @@ def upload_logfile(upload_file: UploadFile = File(...)):
 
     # enqueue for post-processing
     rq_logfile_postprocessing.enqueue(
-        logfile_postprocess, store_file, on_success=postprocessing_success_callback
+        logfile_postprocess,
+        store_file,
+        on_success=postprocessing_success_callback,
+        job_id=file_name,
     )
 
     # inform supervisor
@@ -189,4 +191,3 @@ async def get_rq_info():
     msg += "}"
 
     return {"message": msg}
-

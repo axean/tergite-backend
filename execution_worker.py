@@ -14,7 +14,6 @@
 
 from pathlib import Path
 import json
-import time
 from scenario_scripts import (
     demodulation_scenario,
     qobj_scenario,

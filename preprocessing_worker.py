@@ -12,11 +12,8 @@
 
 
 from redis import Redis
-import asyncio
-from rq import Queue, Worker
-import shutil
+from rq import Queue
 from pathlib import Path
-import time
 from execution_worker import job_execute
 from job_supervisor import inform_location, Location
 import settings

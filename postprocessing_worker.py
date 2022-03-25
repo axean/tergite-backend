@@ -15,14 +15,13 @@
 
 from pathlib import Path
 import asyncio
-import time
 import Labber
 import requests
 import settings
 import redis
 from syncer import sync
 
-from job_supervisor import inform_location, inform_failure, Location, inform_results
+from job_supervisor import inform_location, inform_failure, Location, inform_result
 
 
 # settings
