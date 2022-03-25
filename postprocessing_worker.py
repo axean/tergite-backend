@@ -22,6 +22,8 @@ import settings
 import redis
 from syncer import sync
 
+from job_supervisor import inform_location, Location
+
 
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT

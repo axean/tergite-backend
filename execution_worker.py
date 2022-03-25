@@ -24,6 +24,8 @@ from scenario_scripts import (
 import requests
 import settings
 
+from job_supervisor import inform_location, Location
+
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT
 LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL
@@ -39,6 +41,8 @@ def job_execute(job_file: Path):
     # extract job_id from the filename
     job_id = job_file.stem
     scenario_file = Path(STORAGE_ROOT) / (job_id + ".labber")
+
+    inform_location(job_id, Location.EXEC_W)
 
     job_dict = {}
     with job_file.open() as f:

@@ -12,11 +12,13 @@
 
 
 from redis import Redis
+import asyncio
 from rq import Queue, Worker
 import shutil
 from pathlib import Path
 import time
 from execution_worker import job_execute
+from job_supervisor import inform_location, Location
 import settings
 
 
@@ -34,10 +36,14 @@ rq_job_execution = Queue(DEFAULT_PREFIX + "_job_execution", connection=redis_con
 
 def job_preprocess(job_file: Path):
 
-    print(f"Preprocessing job file {str(job_file)}")
+    job_id = job_file.stem()
 
     # mimick job pre-processing
     # time.sleep(2)
+
+    # Inform supervisor about job being in pre-processing worker
+    inform_location(job_id, Location.PRE_PROC_W)
+
 
     new_file_name = job_file.stem
     storage_location = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME
@@ -49,5 +55,7 @@ def job_preprocess(job_file: Path):
     job_file.replace(new_file)
 
     rq_job_execution.enqueue(job_execute, new_file)
+
+    inform_location(job_id, Location.EXEC_Q)
 
     print(f"Moved the job file to {str(new_file)}")
