@@ -287,7 +287,7 @@ def log(message: str, level: LogLevel = LogLevel.INFO) -> None:
     )
 
     current_time = datetime.now()
-    formatted_time = datetime.strftime(current_time, "%Y-%m-%d %H:%M:%S")
+    formatted_time = datetime.strftime(current_time, "%Y-%m-%d %H:%M:%S:%f")
 
     logstring: str = (
         f"{color[level.value]}[{formatted_time}] {level.name}: {message}{color[0]}\n"
