@@ -16,9 +16,10 @@ import time
 import shutil
 from pathlib import Path
 import settings
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Union
 import redis
 import rq
+from rq.command import send_stop_job_command
 import json
 
 STORAGE_ROOT = settings.STORAGE_ROOT
@@ -130,7 +131,7 @@ def register_job(job_id: str) -> None:
             "location": Location.REG_W,
             "started": now(),
             "finished": None,
-            "canceled": {
+            "cancelled": {
                 "time": None,
                 "reason": None
             },
@@ -183,9 +184,18 @@ def _deep_update(dict: Entry, value: Any, keys: List[str]) -> Entry:
 
 def cancel_job(job_id: str, reason: str) -> None:
     """Cancels a job by its id, regardless of which Queue it is in."""
-    rq.cancel_job(job_id)
-    update_job_entry(job_id, {"time" : now(), "reason" : reason}, "status")
-    log(f"Job {job_id} cancelled due to reason: {reason}")
+
+    # This may not be the right function to use, but it works
+    send_stop_job_command(red, job_id)
+
+    update_job_entry(job_id, {"time" : now(), "reason" : reason}, "status", "cancelled")
+    
+    if reason:
+        log_message = f"Job {job_id} cancelled due to {reason}"
+    else:
+        log_message = f"Job {job_id} cancelled."
+
+    log(log_message)
     
 
 def inform_results(job_id: str, results: Result) -> None:
@@ -193,7 +203,7 @@ def inform_results(job_id: str, results: Result) -> None:
     update_job_entry(job_id, now(), "status", "finished")
     update_job_entry(job_id, results, "results")
 
-    log("Job {job_id} finished with results")
+    log(f"Job {job_id} finished with results")
 
 
 def inform_location(job_id: str, location: Location) -> None:
@@ -214,13 +224,45 @@ def inform_failure(job_id: str, reason: str = None) -> None:
     entry: Entry = fetch_redis_entry(job_id)
     update_job_entry(job_id, {"time": now(), "reason": reason}, "status", "failed")
 
-    if reason is not None:
+    if reason:
         log_message: str = f"Job {job_id} failed at {PARSE_LOC[entry.location]} due to {reason}."
     else:
         log_message: str = f"Job {job_id} failed at {PARSE_LOC[entry.location]}."
 
     log(log_message, level = LogLevel.ERROR)
     
+
+def fetch_all_jobs() -> List[Entry]:
+    """Fetches all jobs from redis
+
+    Returns:
+        List[Entry]: The list of job entires.
+    """
+    entries = red.hgetall("job_supervisor")
+    return { k : json.loads(v) for k, v in entries.items() }
+
+
+def fetch_job(job_id: str, key: str = None) -> Union[Entry, Result]:
+    """Fetch specific job from redis
+
+    Args:
+        job_id (str): Identifier of job to fetch
+        key (str, optional): Only fetch this key. Defaults to None.
+    """
+    entry = fetch_redis_entry(job_id)
+    return entry[key] if key else entry
+
+
+def remove_job(job_id: str) -> None:
+    """Remove job entry from redis
+
+    Args:
+        job_id (str): Identifier of the job to be deleted
+    """
+    cancel_job(job_id, f"Job ID {job_id} was deleted")
+    red.hdel("job_supervisor", format_id(job_id))
+    log(f"Job {job_id} was deleted")
+
 
 @unique
 class LogLevel(Enum):

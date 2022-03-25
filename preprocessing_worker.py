@@ -52,7 +52,7 @@ def job_preprocess(job_file: Path):
 
     job_file.replace(new_file)
 
-    rq_job_execution.enqueue(job_execute, new_file)
+    rq_job_execution.enqueue(job_execute, new_file, job_id=job_id)
 
     # Inform supervisor about job moved to execution queue
     inform_location(job_id, Location.EXEC_Q)

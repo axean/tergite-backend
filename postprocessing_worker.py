@@ -22,7 +22,7 @@ import settings
 import redis
 from syncer import sync
 
-from job_supervisor import inform_location, inform_failure, Location
+from job_supervisor import inform_location, inform_failure, Location, inform_results
 
 
 # settings
