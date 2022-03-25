@@ -67,6 +67,9 @@ def logfile_postprocess(logfile: Path):
     print(f"Moved the logfile to {str(new_file)}")
     labber_logfile = Labber.LogFile(new_file)
 
+    # Inform job supervisor
+    inform_location(new_file_name, Location.PST_PROC_W)
+
     # The post-processing itself
     return postprocess(labber_logfile)
 
@@ -148,7 +151,7 @@ def postprocess(logfile: Labber.LogFile):
     # extract results from logfile
     # store results in Redis
     # Process the log's data appropriately
-    (_, script_name, _) = get_postproc_retval(logfile)
+    (job_id, script_name, _) = get_postproc_retval(logfile)
     postproc_fn = PROCESSING_METHODS[script_name]
 
     if postproc_fn:
@@ -156,6 +159,9 @@ def postprocess(logfile: Labber.LogFile):
     else:
         print(f"Unknown script name {script_name}")
         print("Postprocessing failed")  # TODO: take care of this case
+
+        # Inform job supervisor about failure
+        inform_failure(job_id, "Unknown script name")
 
     print(f"Postprocessing ended for script type: {script_name}")
     return result
@@ -179,6 +185,10 @@ async def notify_job_done(job_id: str):
 def postprocessing_success_callback(job, connection, result, *args, **kwargs):
     # From logfile_postprocess:
     (job_id, script_name, is_calibration_sup_job) = result
+
+    # Inform job supervisor about results
+    inform_result(job_id, result)
+
     print(f"Job with ID {job_id}, {script_name=} has finished")
     if is_calibration_sup_job:
         print(f"Results available in Redis. Notifying calibration supervisor.")
