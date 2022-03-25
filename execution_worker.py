@@ -24,7 +24,7 @@ from scenario_scripts import (
 import requests
 import settings
 
-from job_supervisor import inform_location, Location
+from job_supervisor import inform_location, inform_failure, Location
 
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT
@@ -42,6 +42,7 @@ def job_execute(job_file: Path):
     job_id = job_file.stem
     scenario_file = Path(STORAGE_ROOT) / (job_id + ".labber")
 
+    # Inform supervisor
     inform_location(job_id, Location.EXEC_W)
 
     job_dict = {}
@@ -76,6 +77,8 @@ def job_execute(job_file: Path):
     else:
         print(f"Unknown script name {job_dict['name']}")
         print("Job failed")
+        # Inform job supervisor about failure
+        inform_failure(job_id, reason="unknown script name")
         return {"message": "failed"}
 
     # Store important information inside the scenario: using the tag list
@@ -108,4 +111,6 @@ def job_execute(job_file: Path):
         return {"message": "ok"}
     else:
         print("Failed")
+        # inform supervisor about failure
+        inform_failure(job_id, reason="no response")
         return {"message": "failed"}

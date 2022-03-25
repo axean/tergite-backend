@@ -35,15 +35,13 @@ rq_job_execution = Queue(DEFAULT_PREFIX + "_job_execution", connection=redis_con
 
 
 def job_preprocess(job_file: Path):
-
-    job_id = job_file.stem()
-
-    # mimick job pre-processing
-    # time.sleep(2)
+    job_id = job_file.stem
 
     # Inform supervisor about job being in pre-processing worker
     inform_location(job_id, Location.PRE_PROC_W)
 
+    # mimick job pre-processing
+    # time.sleep(2)
 
     new_file_name = job_file.stem
     storage_location = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME
@@ -56,6 +54,7 @@ def job_preprocess(job_file: Path):
 
     rq_job_execution.enqueue(job_execute, new_file)
 
+    # Inform supervisor about job moved to execution queue
     inform_location(job_id, Location.EXEC_Q)
 
     print(f"Moved the job file to {str(new_file)}")

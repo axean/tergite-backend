@@ -21,6 +21,7 @@ from uuid import uuid4, UUID
 import json
 from registration_worker import job_register
 from postprocessing_worker import logfile_postprocess, postprocessing_success_callback
+from job_supervisor import inform_location, Location
 import settings
 from utils.uuid import validate_uuid4_str
 
@@ -124,6 +125,9 @@ def upload_logfile(upload_file: UploadFile = File(...)):
     rq_logfile_postprocessing.enqueue(
         logfile_postprocess, store_file, on_success=postprocessing_success_callback
     )
+
+    # inform supervisor
+    inform_location(file_name, Location.PST_PROC_Q)
 
     return {"message": "ok"}
 

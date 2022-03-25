@@ -16,8 +16,10 @@ import time
 import shutil
 from pathlib import Path
 import settings
-from typing import Dict
+from typing import List, Tuple, Dict, Any
 import redis
+import rq
+import json
 
 STORAGE_ROOT = settings.STORAGE_ROOT
 LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL
@@ -28,29 +30,17 @@ STORAGE_PREFIX_DIRNAME = settings.STORAGE_PREFIX_DIRNAME
 LOCALHOST = "localhost"
 
 # Redis connection
-# Maintains pools of
-#   incoming jobs
-#   registered jobs
-#   pre-processed scenarios
-#   incoming logfiles
-#   logfiles for download
-#   results
-
 red = redis.Redis()
 
-# TODO: Add job supervisor query 
-async def query_redis(query: str) -> str:
-    result = await red.hget("job_supervisor", query)
-    return result
+# Type hint contants
+Entry = Dict[str, Any]
+Result = Tuple[str, str]
 
-
-async def fetch_redis_entry(job_id: str) -> Dict[str, str]:
-    """Query redis for job supervisor entry"""
-    key = f"JS_{job_id}"
-    return red.hget(key)
 
 @unique
 class Location(Enum):
+    """Job location in the BCC chain"""
+
     REG_Q      = 0
     REG_W      = 1
     PRE_PROC_Q = 2
@@ -62,10 +52,70 @@ class Location(Enum):
     FINAL_Q    = 8
     FINAL_W    = 9
 
-def register_job(job_id: str) -> None:
-    """"Format job file for storage"""
-    entry_id = f"JS_{job_id}"
 
+# Parse a location
+PARSE_LOC: Dict[Location, str] = {
+    Location.REG_Q      : "registration queue",
+    Location.REG_W      : "registration worker",
+    Location.PRE_PROC_Q : "pre-processing queue",
+    Location.PRE_PROC_W : "pre-processing worker",
+    Location.EXEC_Q     : "execution queue",
+    Location.EXEC_W     : "execution worker",
+    Location.PST_PROC_Q : "post-processing queue",
+    Location.PST_PROC_W : "post-processing worker",
+    Location.FINAL_Q    : "finalization queue",
+    Location.FINAL_W    : "finalization worker"    
+}
+
+
+class EnumEncoder(json.JSONEncoder):
+    """Encodes children of enumerable classes"""
+
+    def default(self, obj):
+        if isinstance(obj, Enum):
+            return obj.value
+        return json.JSONEncoder.default(self, obj)
+
+
+class JobNotFound(Exception):
+    """A job was not found on redis"""
+
+    def __init__(self, job_id) -> None:
+        self.job_id = job_id
+
+    def __str__(self):
+        return f"Job {self.job_id} not found"
+
+
+def now() -> str:
+    """Returns the current time formatted"""
+    current_time = time.localtime()
+    formatted_time = time.strftime("%Y-%m-%d %H:%M:%S (%z)", current_time)
+    return formatted_time
+
+
+def format_id(id: str) -> str: 
+    """Format job identifier for redis query."""
+    return f"JS_{id}"
+
+
+def fetch_redis_entry(job_id: str) -> Entry:
+    """Query redis for job supervisor entry."""
+    key: str = format_id(job_id)
+    entry = red.hget("job_supervisor", key)
+    
+    if not entry:
+        log(f"Job {job_id} not found", level = LogLevel.ERROR)
+        raise JobNotFound(job_id)
+        
+    return json.loads(entry)
+
+
+def register_job(job_id: str) -> None:
+    """"Format job file for storage."""
+    entry_id: str = format_id(job_id)
+
+    # job entry skeleton
     entry = {
         "id": entry_id,
         "priorities": {
@@ -78,96 +128,123 @@ def register_job(job_id: str) -> None:
         },
         "status": {
             "location": Location.REG_W,
-            "started": time.now(),
+            "started": now(),
             "finished": None,
-            "cancelled": {
+            "canceled": {
+                "time": None,
+                "reason": None
+            },
+            "failed": {
                 "time": None,
                 "reason": None
             }
         },
         "results": None
     }
-    red.hset("job_supervisor", entry_id, entry)
+    red.hset("job_supervisor", entry_id, json.dumps(entry, cls=EnumEncoder))
 
     # log entry
     log(f"Registered entry for job {job_id}")
 
 
-def update_job_entry(job_id: str, value, *keys) -> None:
-    entry = query_redis(job_id)
-    deep_update(entry, value, keys)
-    red.hset("job_supervisor", job_id, entry)
+def update_job_entry(job_id: str, value: Any, *keys: List[str]) -> None:
+    """Updates job dict entry with given key(s).
+    
+    Args:
+        job_id (str): identifier of job to be updated
+        value (Any): new value of dictionary entry
+        keys (List[str]): nested keys of dictionary
+    """
+    entry: Entry = fetch_redis_entry(job_id)
+    _deep_update(entry, value, keys)
+    red.hset("job_supervisor", format_id(job_id), json.dumps(entry, cls=EnumEncoder))
 
 
-def deep_update(dict, value, keys):
-    for i, key in enumerate(keys):
-        if key == keys[-1]:
-            dict[key] = value
-        else:
-            sub = deep_update(dict[key], keys[i:], value)
-            dict[key] = sub
-    return dict
+def _deep_update(dict: Entry, value: Any, keys: List[str]) -> Entry:
+    """Update a nested dictionary.
+
+    Args:
+        dict (Entry): nested dictionary to be updated
+        value (Any): value to set
+        keys (List[str]): nested keys
+
+    Returns:
+        Entry: the updated entry
+            (note that this is the reference to the input dictionary)
+    """
+    if len(keys) == 1:
+        dict[keys[0]] = value
+        return dict
+
+    return {
+        keys[0] : _deep_update(dict[keys[0]], value, keys[1:])
+    }
 
 
 def cancel_job(job_id: str, reason: str) -> None:
-    pass
+    """Cancels a job by its id, regardless of which Queue it is in."""
+    rq.cancel_job(job_id)
+    update_job_entry(job_id, {"time" : now(), "reason" : reason}, "status")
+    log(f"Job {job_id} cancelled due to reason: {reason}")
+    
 
-def inform_results(job_id: str, results) -> None:
-    """Upload results to redis"""
-
-    update_job_entry(job_id, time.now(), "status", "finished")
+def inform_results(job_id: str, results: Result) -> None:
+    """Upload results to redis."""
+    update_job_entry(job_id, now(), "status", "finished")
     update_job_entry(job_id, results, "results")
 
     log("Job {job_id} finished with results")
 
 
-async def inform_location(job_id: str, location: Location) -> None:
-    """"Update job location"""
-    
-    parse_log: Dict[Location, str] = {
-        Location.REG_Q      : "registration queue",
-        Location.REG_W      : "registration worker",
-        Location.PRE_PROC_Q : "pre-processing queue",
-        Location.PRE_PROC_W : "pre-processing worker",
-        Location.EXEC_Q     : "execution queue",
-        Location.EXEC_W     : "execution worker",
-        Location.PST_PROC_Q : "post-processing queue",
-        Location.PST_PROC_W : "post-processing worker",
-        Location.FINAL_Q    : "finalization queue",
-        Location.FINAL_W    : "finalization worker"    
-    }
-
-    # update job position in redis
-    job_entry = red.hget(job_id)
-    job_entry["status"]["location"] = location
-    red.hset(job_id, job_entry)
+def inform_location(job_id: str, location: Location) -> None:
+    """"Update job location."""
+    update_job_entry(job_id, location, "status", "location")
 
     # log updated job position
-    log(f"{job_id} arrived at {parse_log[location]}")
+    log(f"{job_id} arrived at {PARSE_LOC[location]}")
 
 
-async def main():
-    server_task = asyncio.create_task()
-    await server_task
+def inform_failure(job_id: str, reason: str = None) -> None:
+    """Inform job supervisor that a job has failed
 
+    Args:
+        job_id (str): Identifier of the job that failed
+        reason (str, optional): Reason for failure. Defaults to None.
+    """
+    entry: Entry = fetch_redis_entry(job_id)
+    update_job_entry(job_id, {"time": now(), "reason": reason}, "status", "failed")
+
+    if reason is not None:
+        log_message: str = f"Job {job_id} failed at {PARSE_LOC[entry.location]} due to {reason}."
+    else:
+        log_message: str = f"Job {job_id} failed at {PARSE_LOC[entry.location]}."
+
+    log(log_message, level = LogLevel.ERROR)
+    
 
 @unique
 class LogLevel(Enum):
+    """Log level of job supervisor log messages"""
+
     INFO = 0
     WARNING = 1
     ERROR = 2
 
 
 def log(message: str, level: LogLevel = LogLevel.INFO) -> None:
-    """Save message to job supervisor log file"""
+    """Save message to job supervisor log file.
 
-    color = (
+    Args:
+        message (str): message to log
+        level (LogLevel, optional): log level of the message. Defaults to LogLevel.INFO.
+    """
+    color: Tuple(str, str, str) = (
         '\033[0m', # color end
         '\033[0;33m', # yellow
         '\033[0;31m' # red
     )
 
-    logstring = f"{color[level.value]}[{time.now()}] {level.name}: {message}{color[0]}"
+    logstring: str = f"{color[level.value]}[{now()}] {level.name}: {message}{color[0]}\n"
  
     file_path = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME 
     file_path.mkdir(parents=True, exist_ok=True)

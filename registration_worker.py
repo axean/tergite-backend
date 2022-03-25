@@ -20,14 +20,14 @@ from rq import Queue, Worker
 
 import settings
 from preprocessing_worker import job_preprocess
-from job_supervisor import inform_location, Location
+from job_supervisor import register_job, inform_location, Location
 
 # settings
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX
 STORAGE_ROOT = settings.STORAGE_ROOT
 STORAGE_PREFIX_DIRNAME = settings.STORAGE_PREFIX_DIRNAME
 JOB_EXECUTION_POOL_DIRNAME = settings.JOB_EXECUTION_POOL_DIRNAME
-JOB_REGISTRATION_POOL_DIRNAME = settings.JOB_REGISTRATION_POOL_DIRNAME
+JOB_PRE_PROC_POOL_DIRNAME = settings.JOB_PRE_PROC_POOL_DIRNAME
 
 # redis connection
 redis_connection = Redis()
@@ -40,23 +40,20 @@ rq_job_preprocessing = Queue(
 
 def job_register(job_file: Path) -> None:
     """ Registers job in job supervisor """
-
-    job_id = job_file.stem()
+    job_id = job_file.stem
     # inform job supervisor about job registration
-    inform_location(job_id, Location.REG_Q)
     print(f"Registering job file {str(job_file)}")
-
-    # add job to pre-processing queue and notify job supervisor 
-    rq_job_preprocessing.enqueue(job_preprocess, job_file)
-    inform_location(job_id, Location.PRE_PROC_Q)
+    register_job(job_id)
 
     # store the received file in the job upload pool
-    file_name = job_file
-    file_path = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / JOB_REGISTRATION_POOL_DIRNAME
+    file_name = job_file.stem
+    file_path = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / JOB_PRE_PROC_POOL_DIRNAME
     file_path.mkdir(parents=True, exist_ok=True)
     new_file = file_path / file_name
 
-    job_file.file.seek(0)
-    with new_file.open() as destination:
-        shutil.copyfileobj(job_file, destination)
-    job_file.file.close()
+    job_file.replace(new_file)
+
+    # add job to pre-processing queue and notify job supervisor
+    rq_job_preprocessing.enqueue(job_preprocess, new_file)
+
+    inform_location(job_id, Location.PRE_PROC_Q)
