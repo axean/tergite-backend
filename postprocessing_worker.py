@@ -22,7 +22,7 @@ import settings
 import redis
 from syncer import sync
 
-from qpulse.storage.file import StorageFile
+import qpulse.storage.file as qpsf
 
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT
@@ -71,22 +71,12 @@ def logfile_postprocess(logfile: Path):
         # The post-processing itself
         return postprocess(labber_logfile)
     else:
-        qpsf = StorageFile(new_file, mode = "r")
-        return postprocess_qpsf(qpsf)
+        sf = qpsf.StorageFile(new_file, mode = "r")
+        return postprocess_qpsf(sf)
 
 # =========================================================================
 # Post-processing helpers
 # =========================================================================
-
-def postprocess_qpsf(sf: StorageFile):
-    
-    """
-        Discriminated:
-        
-            Measurement gate results are returned by MemorySlot.
-        
-    """
-    print("Post processing storage file")
 
 def process_demodulation(logfile: Labber.LogFile):
     (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
@@ -100,11 +90,7 @@ def process_res_spect(logfile: Labber.LogFile):
     return (job_id, script_name, is_calibration_sup_job)
 
 
-def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Labber.LogFile):
-    (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
-
-    # Extract System state
-    memory = extract_system_state_as_hex(logfile)
+def update_mss_and_bcc(memory, job_id):
 
     # Helper printout with first 5 outcomes
     print("Measurement results:")
@@ -140,8 +126,38 @@ def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Labber.LogFile):
         print("Updated job download_url on MSS")
 
     red.set("results:job_id", job_id)
+
+def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Labber.LogFile):
+    (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
+
+    # Extract System state
+    memory = extract_system_state_as_hex(logfile)
+
+    update_mss_and_bcc(memory, job_id)
+    
     return (job_id, script_name, is_calibration_sup_job)
 
+def process_qpsf(sf: qpsf.StorageFile):
+    job_id, script_name, is_calibration_sup_job = (sf.job_id, "pulse_schedule", False)
+
+    if sf.meas_level == qpsf.DISCRIMINATED:
+        memory = sf.as_readout(hex, qpsf.LITTLE_ENDIAN)
+        
+    elif sf.meas_level == qpsf.KERNELED:
+        # this can be a lot of data, and it is unclear how to present it to the MSS / BCC
+        # if you need to use this, then currently the only way is to access the logfile directly
+        assert False, NotImplemented # TODO
+        
+    elif sf.meas_level == qpsf.RAW:
+        # this can be an extreme amount of data, and it is unclear how to present it to the MSS / BCC
+        # if you need to use this, then currently the only way is to access the logfile directly
+        assert False, NotImplemented # TODO
+    
+    else:
+        raise RuntimeError(f"Invalid measurement level {sf.meas_level}")
+    
+    update_mss_and_bcc(memory, job_id)
+    return (job_id, script_name, is_calibration_sup_job)
 
 # =========================================================================
 # Post-processing entry point
@@ -154,6 +170,8 @@ PROCESSING_METHODS = {
     "qasm_dummy_job": process_qiskit_qasm_runner_qasm_dummy_job,
 }
 
+def postprocess_qpsf(sf: StorageFile):
+    return process_qpsf(sf)
 
 def postprocess(logfile: Labber.LogFile):
     # TODO
@@ -171,7 +189,6 @@ def postprocess(logfile: Labber.LogFile):
 
     print(f"Postprocessing ended for script type: {script_name}")
     return result
-
 
 # =========================================================================
 # Post-processing success callback with helper
