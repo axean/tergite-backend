@@ -3,6 +3,7 @@
 ## Prerequisites
 * Redis
 * Labber, + export PYTHONPATH to Labber's Script module
+* qpulse (a.k.a. tergite-quantify-connector) needs to be installed with pip
 * (optional) Use Anaconda environment. With Python 3.8.
 
 ## Package installation
