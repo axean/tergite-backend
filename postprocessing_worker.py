@@ -140,23 +140,20 @@ def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Labber.LogFile):
 def process_qpsf(sf: qpsf.StorageFile):
     job_id, script_name, is_calibration_sup_job = (sf.job_id, "pulse_schedule", False)
 
-    if sf.meas_level == qpsf.DISCRIMINATED:
+    if sf.meas_level == qpsf.MeasLvl.DISCRIMINATED:
         memory = sf.as_readout(hex) # can be hex or bin
+        update_mss_and_bcc(memory, job_id)
         
-    elif sf.meas_level == qpsf.KERNELED:
+    elif sf.meas_level == qpsf.MeasLvl.KERNELED:
         # this can be a lot of data, and it is unclear how to present it to the MSS / BCC
         # if you need to use this, then currently the only way is to access the logfile directly
-        assert False, NotImplemented # TODO
+        pass # NotImplemented
         
-    elif sf.meas_level == qpsf.RAW:
+    elif sf.meas_level == qpsf.MeasLvl.RAW:
         # this can be an extreme amount of data, and it is unclear how to present it to the MSS / BCC
         # if you need to use this, then currently the only way is to access the logfile directly
-        assert False, NotImplemented # TODO
+        pass # NotImplemented
     
-    else:
-        raise RuntimeError(f"Invalid measurement level {sf.meas_level}")
-    
-    update_mss_and_bcc(memory, job_id)
     return (job_id, script_name, is_calibration_sup_job)
 
 # =========================================================================
