@@ -141,7 +141,7 @@ def process_qpsf(sf: qpsf.StorageFile):
     job_id, script_name, is_calibration_sup_job = (sf.job_id, "pulse_schedule", False)
 
     if sf.meas_level == qpsf.DISCRIMINATED:
-        memory = sf.as_readout(hex, qpsf.LITTLE_ENDIAN)
+        memory = sf.as_readout(hex) # can be hex or bin
         
     elif sf.meas_level == qpsf.KERNELED:
         # this can be a lot of data, and it is unclear how to present it to the MSS / BCC
