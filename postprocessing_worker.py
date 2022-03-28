@@ -167,7 +167,7 @@ PROCESSING_METHODS = {
     "qasm_dummy_job": process_qiskit_qasm_runner_qasm_dummy_job,
 }
 
-def postprocess_qpsf(sf: StorageFile):
+def postprocess_qpsf(sf: qpsf.StorageFile):
     return process_qpsf(sf)
 
 def postprocess(logfile: Labber.LogFile):
