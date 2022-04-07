@@ -84,7 +84,9 @@ async def upload_job(upload_file: UploadFile = File(...)):
     upload_file.file.close()
 
     # enqueue for registration
-    rq_job_registration.enqueue(job_register, store_file, job_id=job_id)
+    rq_job_registration.enqueue(
+        job_register, store_file, job_id=job_id + f"_{Location.REG_Q.name}"
+    )
     return {"message": file_name}
 
 
@@ -124,6 +126,7 @@ async def remove_job(job_id: str):
 
 @app.post("/jobs/{job_id}/cancel")
 async def cancel_job(job_id: str, reason: Optional[str] = Body(None, embed=False)):
+    print(f"Cancelling job {job_id}")
     job_supervisor.cancel_job(job_id, reason)
 
 
@@ -151,6 +154,12 @@ def upload_logfile(upload_file: UploadFile = File(...)):
 
     # store the recieved file in the logfile upload pool
     file_name = Path(upload_file.filename).stem
+
+    # Cancels postprocessing if job is labelled as cancelled
+    status = job_supervisor.fetch_job(file_name, "status")
+    if status["cancelled"]["time"]:
+        print("Job cancelled, postprocessing halted")
+        return
     file_path = (
         Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / LOGFILE_UPLOAD_POOL_DIRNAME
     )
@@ -167,7 +176,7 @@ def upload_logfile(upload_file: UploadFile = File(...)):
         logfile_postprocess,
         store_file,
         on_success=postprocessing_success_callback,
-        job_id=file_name,
+        job_id=file_name + f"_{Location.PST_PROC_Q.name}",
     )
 
     # inform supervisor

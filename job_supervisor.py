@@ -17,6 +17,7 @@ import settings
 from typing import List, Tuple, Dict, Any, Union
 import redis
 from rq.command import send_stop_job_command
+from rq.job import Job
 import json
 
 STORAGE_ROOT = settings.STORAGE_ROOT
@@ -72,7 +73,7 @@ class EnumEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, Enum):
             return obj.value
-        return json.JSONEncoder.default(self, obj)
+        return json.JSONEncoder.default
 
 
 class JobNotFound(Exception):
@@ -159,8 +160,26 @@ def _deep_update(dict: Entry, value: Any, keys: List[str]) -> Entry:
 def cancel_job(job_id: str, reason: str) -> None:
     """Cancels a job by its id, regardless of which Queue it is in."""
 
-    # This may not be the right function to use, but it works
-    send_stop_job_command(red, job_id)
+    job_status = fetch_job(job_id, "status")
+    finished = job_status["finished"]
+
+    if finished:
+        log(
+            f"Job {job_id} has finished, cancellation cancelled", level=LogLevel.WARNING
+        )
+        return
+
+    # Tries to fetch all jobs with Location suffixes for given job id
+    # Somewhat redundant solution, adding more information to the Location enum
+    # will mend this.
+    jobs = Job.fetch_many([f"{job_id}_{loc.name}" for loc in Location], red)
+
+    for job in filter(None, jobs):
+        # Depending on whether job is in a worker or queue, call appropriate cancel method
+        if job.worker_name:
+            send_stop_job_command(red, job.id)
+        else:
+            job.cancel()
 
     update_job_entry(job_id, {"time": now(), "reason": reason}, "status", "cancelled")
 
@@ -212,7 +231,7 @@ def inform_failure(job_id: str, reason: str = None) -> None:
 
 def _load_json(json_str: str) -> Entry:
     """Loads json string into an entry.
-    
+
     Args:
         json_str (str): The json string to load.
 

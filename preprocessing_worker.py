@@ -32,6 +32,7 @@ rq_job_execution = Queue(DEFAULT_PREFIX + "_job_execution", connection=redis_con
 
 
 def job_preprocess(job_file: Path):
+
     job_id = job_file.stem
 
     # Inform supervisor about job being in pre-processing worker
@@ -49,7 +50,9 @@ def job_preprocess(job_file: Path):
 
     job_file.replace(new_file)
 
-    rq_job_execution.enqueue(job_execute, new_file, job_id=job_id)
+    rq_job_execution.enqueue(
+        job_execute, new_file, job_id=job_id + f"_{Location.EXEC_Q.name}"
+    )
 
     # Inform supervisor about job moved to execution queue
     inform_location(job_id, Location.EXEC_Q)
