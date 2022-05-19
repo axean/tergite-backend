@@ -1,0 +1,606 @@
+{
+    "channels": [
+        {
+            "instrument": "VNA",
+            "quantity": "# of averages"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "# of points"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "Average S11"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "Average S12"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "Average S21"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "Average S22"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "Average"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "IF bandwidth"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "Output enabled"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "Output power"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "Range type"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "S11 - Enabled"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "S11"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "S12 - Enabled"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "S12"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "S21 - Enabled"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "S21"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "S22 - Enabled"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "S22"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "Start frequency"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "Stop frequency"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "Sweep mode"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "Sweep type"
+        },
+        {
+            "instrument": "VNA",
+            "quantity": "Wait for new trace"
+        }
+    ],
+    "instruments": [
+        {
+            "com_config": {
+                "Baud rate": 9600.0,
+                "Data bits": 8.0,
+                "GPIB board number": 0.0,
+                "Lock VISA resource": false,
+                "PXI chassis": 1.0,
+                "Parity": "No parity",
+                "Run in 32-bit mode": false,
+                "Send GPIB go to local at close": false,
+                "Send end on write": true,
+                "Stop bits": 1.0,
+                "Suppress end bit termination on read": false,
+                "TCP port": 0.0,
+                "Term. character": "Auto",
+                "Timeout": 10.0,
+                "Use VICP protocol": false,
+                "Use specific TCP port": false,
+                "address": "192.0.2.19",
+                "interface": "TCPIP",
+                "lock": false,
+                "name": "VNA",
+                "server": "localhost",
+                "show_advanced": false,
+                "startup": "Set config"
+            },
+            "hardware": "Keysight Network Analyzer",
+            "options": {
+                "model": "N5230",
+                "options": []
+            },
+            "values": {
+                "# of averages": 10.0,
+                "# of points": 2001.0,
+                "Average": true,
+                "Average S11": {
+                    "__complex__": [
+                        0.0,
+                        0.0
+                    ]
+                },
+                "Average S12": {
+                    "__complex__": [
+                        0.0,
+                        0.0
+                    ]
+                },
+                "Average S21": {
+                    "__complex__": [
+                        0.0,
+                        0.0
+                    ]
+                },
+                "Average S22": {
+                    "__complex__": [
+                        0.0,
+                        0.0
+                    ]
+                },
+                "IF bandwidth": 1000.0,
+                "Output enabled": true,
+                "Output power": -50.0,
+                "Range type": "Start - Stop",
+                "S11": {
+                    "__ndarray__": [],
+                    "dtype": "complex128",
+                    "shape": [
+                        0
+                    ]
+                },
+                "S11 - Enabled": false,
+                "S12": {
+                    "__ndarray__": [],
+                    "dtype": "complex128",
+                    "shape": [
+                        0
+                    ]
+                },
+                "S12 - Enabled": false,
+                "S21": {
+                    "__ndarray__": [],
+                    "dtype": "complex128",
+                    "shape": [
+                        0
+                    ]
+                },
+                "S21 - Enabled": true,
+                "S22": {
+                    "__ndarray__": [],
+                    "dtype": "complex128",
+                    "shape": [
+                        0
+                    ]
+                },
+                "S22 - Enabled": false,
+                "Start frequency": 6367700000.0,
+                "Stop frequency": 6381900000.0,
+                "Sweep mode": "Stepped",
+                "Sweep type": "Linear",
+                "Wait for new trace": true
+            },
+            "version": "1.0"
+        }
+    ],
+    "log_channels": [
+        "VNA - S21"
+    ],
+    "parameters": {
+        "arm_trig_mode": false,
+        "comment": "",
+        "hardware_loop": false,
+        "log_name": "Second_phase_res2",
+        "log_parallel": true,
+        "logger_mode": false,
+        "time_per_point": 17.58521691023135,
+        "trig_channel": "",
+        "wait_between": 0.01
+    },
+    "settings": {
+        "Data compression": 4,
+        "Data precision": "Double precision",
+        "Limit hardware looping to first step item": false,
+        "Max evaluations": 200,
+        "Method": "Nelder-Mead",
+        "Minimization function": "max(y[0])",
+        "Number of step items in hardware loop": 1,
+        "Only send signal if source instrument has been updated": true,
+        "Relative tolerance": Infinity,
+        "Send values in parallel": true,
+        "Target value": -Infinity,
+        "Update instruments at start even if values are unchanged": true,
+        "opt-Bayesian-Gaussian-Process: Acquisition function": "gp_hedge",
+        "opt-Bayesian-Gaussian-Process: kappa": 1.96,
+        "opt-Bayesian-Gaussian-Process: xi": 0.1
+    },
+    "step_channels": [
+        {
+            "after_last": "Goto first point",
+            "alternate_direction": false,
+            "channel_name": "VNA - Output power",
+            "equation": "x",
+            "final_value": 0.0,
+            "optimizer_config": {
+                "Enabled": false,
+                "Initial step size": 10.0,
+                "Max value": 0.0,
+                "Min value": -50.0,
+                "Precision": 0.005,
+                "Start value": -45.0
+            },
+            "relation_parameters": [
+                {
+                    "channel_name": "Step values",
+                    "lookup": null,
+                    "use_lookup": false,
+                    "variable": "x"
+                }
+            ],
+            "show_advanced": false,
+            "step_items": [
+                {
+                    "center": -25.0,
+                    "interp": "Linear",
+                    "n_pts": 51.0,
+                    "range_type": "Start - Stop",
+                    "single": -45.0,
+                    "span": 50.0,
+                    "start": -50.0,
+                    "step": 1.0,
+                    "step_type": "Fixed # of pts",
+                    "stop": 0.0,
+                    "sweep_rate": 0.0
+                }
+            ],
+            "step_unit": "Instrument",
+            "sweep_mode": "Off",
+            "sweep_rate_outside": 0.0,
+            "use_outside_sweep_rate": false,
+            "use_relations": false,
+            "wait_after": 0.0
+        },
+        {
+            "after_last": "Goto first point",
+            "alternate_direction": false,
+            "channel_name": "VNA - Output enabled",
+            "equation": "x",
+            "final_value": 0.0,
+            "optimizer_config": {
+                "Enabled": false,
+                "Initial step size": 0.2,
+                "Max value": 1.0,
+                "Min value": 0.0,
+                "Precision": 0.0001,
+                "Start value": 1
+            },
+            "relation_parameters": [
+                {
+                    "channel_name": "Step values",
+                    "lookup": null,
+                    "use_lookup": false,
+                    "variable": "x"
+                }
+            ],
+            "show_advanced": false,
+            "step_items": [
+                {
+                    "center": 0.0,
+                    "interp": "Linear",
+                    "n_pts": 2.0,
+                    "range_type": "Single",
+                    "single": 1,
+                    "span": 0.0,
+                    "start": 0.0,
+                    "step": 1.0,
+                    "step_type": "Fixed # of pts",
+                    "stop": 1.0,
+                    "sweep_rate": 0.0
+                }
+            ],
+            "step_unit": "Instrument",
+            "sweep_mode": "Off",
+            "sweep_rate_outside": 0.0,
+            "use_outside_sweep_rate": false,
+            "use_relations": false,
+            "wait_after": 0.0
+        },
+        {
+            "after_last": "Goto first point",
+            "alternate_direction": false,
+            "channel_name": "VNA - IF bandwidth",
+            "equation": "x",
+            "final_value": 0.0,
+            "optimizer_config": {
+                "Enabled": false,
+                "Initial step size": 200.0,
+                "Max value": 2000.0,
+                "Min value": 1000.0,
+                "Precision": 0.1,
+                "Start value": 1000.0
+            },
+            "relation_parameters": [
+                {
+                    "channel_name": "Step values",
+                    "lookup": null,
+                    "use_lookup": false,
+                    "variable": "x"
+                }
+            ],
+            "show_advanced": false,
+            "step_items": [
+                {
+                    "center": 0.0,
+                    "interp": "Linear",
+                    "n_pts": 51,
+                    "range_type": "Single",
+                    "single": 1000.0,
+                    "span": 0.0,
+                    "start": 1000.0,
+                    "step": 0.0,
+                    "step_type": "Fixed # of pts",
+                    "stop": 2000.0,
+                    "sweep_rate": 0.0
+                }
+            ],
+            "step_unit": "Instrument",
+            "sweep_mode": "Off",
+            "sweep_rate_outside": 0.0,
+            "use_outside_sweep_rate": false,
+            "use_relations": false,
+            "wait_after": 0.0
+        },
+        {
+            "after_last": "Goto first point",
+            "alternate_direction": false,
+            "channel_name": "VNA - Average",
+            "equation": "x",
+            "final_value": 0.0,
+            "optimizer_config": {
+                "Enabled": false,
+                "Initial step size": 0.2,
+                "Max value": 1.0,
+                "Min value": 0.0,
+                "Precision": 0.0001,
+                "Start value": 1
+            },
+            "relation_parameters": [
+                {
+                    "channel_name": "Step values",
+                    "lookup": null,
+                    "use_lookup": false,
+                    "variable": "x"
+                }
+            ],
+            "show_advanced": false,
+            "step_items": [
+                {
+                    "center": 0.0,
+                    "interp": "Linear",
+                    "n_pts": 2.0,
+                    "range_type": "Single",
+                    "single": 1,
+                    "span": 0.0,
+                    "start": 0.0,
+                    "step": 1.0,
+                    "step_type": "Fixed # of pts",
+                    "stop": 1.0,
+                    "sweep_rate": 0.0
+                }
+            ],
+            "step_unit": "Instrument",
+            "sweep_mode": "Off",
+            "sweep_rate_outside": 0.0,
+            "use_outside_sweep_rate": false,
+            "use_relations": false,
+            "wait_after": 0.0
+        },
+        {
+            "after_last": "Goto first point",
+            "alternate_direction": false,
+            "channel_name": "VNA - # of averages",
+            "equation": "x",
+            "final_value": 0.0,
+            "optimizer_config": {
+                "Enabled": false,
+                "Initial step size": 6.4,
+                "Max value": 64.0,
+                "Min value": 32.0,
+                "Precision": 0.0032,
+                "Start value": 20.0
+            },
+            "relation_parameters": [
+                {
+                    "channel_name": "Step values",
+                    "lookup": null,
+                    "use_lookup": false,
+                    "variable": "x"
+                }
+            ],
+            "show_advanced": false,
+            "step_items": [
+                {
+                    "center": 0.0,
+                    "interp": "Linear",
+                    "n_pts": 51,
+                    "range_type": "Single",
+                    "single": 10.0,
+                    "span": 0.0,
+                    "start": 32.0,
+                    "step": 0.0,
+                    "step_type": "Fixed # of pts",
+                    "stop": 64.0,
+                    "sweep_rate": 0.0
+                }
+            ],
+            "step_unit": "Instrument",
+            "sweep_mode": "Off",
+            "sweep_rate_outside": 0.0,
+            "use_outside_sweep_rate": false,
+            "use_relations": false,
+            "wait_after": 0.0
+        },
+        {
+            "after_last": "Goto first point",
+            "alternate_direction": false,
+            "channel_name": "VNA - Start frequency",
+            "equation": "x",
+            "final_value": 0.0,
+            "optimizer_config": {
+                "Enabled": false,
+                "Initial step size": 1200000000.0,
+                "Max value": 12000000000.0,
+                "Min value": 6000000000.0,
+                "Precision": 600000.0,
+                "Start value": 6000000000.0
+            },
+            "relation_parameters": [
+                {
+                    "channel_name": "Step values",
+                    "lookup": null,
+                    "use_lookup": false,
+                    "variable": "x"
+                }
+            ],
+            "show_advanced": false,
+            "step_items": [
+                {
+                    "center": 0.0,
+                    "interp": "Linear",
+                    "n_pts": 51,
+                    "range_type": "Single",
+                    "single": 6367700000.0,
+                    "span": 0.0,
+                    "start": 6000000000.0,
+                    "step": 0.0,
+                    "step_type": "Fixed # of pts",
+                    "stop": 12000000000.0,
+                    "sweep_rate": 0.0
+                }
+            ],
+            "step_unit": "Instrument",
+            "sweep_mode": "Off",
+            "sweep_rate_outside": 0.0,
+            "use_outside_sweep_rate": false,
+            "use_relations": false,
+            "wait_after": 0.0
+        },
+        {
+            "after_last": "Goto first point",
+            "alternate_direction": false,
+            "channel_name": "VNA - Stop frequency",
+            "equation": "x",
+            "final_value": 0.0,
+            "optimizer_config": {
+                "Enabled": false,
+                "Initial step size": 1400000000.0,
+                "Max value": 14000000000.0,
+                "Min value": 7000000000.0,
+                "Precision": 700000.0,
+                "Start value": 7000000000.0
+            },
+            "relation_parameters": [
+                {
+                    "channel_name": "Step values",
+                    "lookup": null,
+                    "use_lookup": false,
+                    "variable": "x"
+                }
+            ],
+            "show_advanced": false,
+            "step_items": [
+                {
+                    "center": 0.0,
+                    "interp": "Linear",
+                    "n_pts": 51,
+                    "range_type": "Single",
+                    "single": 6381900000.0,
+                    "span": 0.0,
+                    "start": 7000000000.0,
+                    "step": 0.0,
+                    "step_type": "Fixed # of pts",
+                    "stop": 14000000000.0,
+                    "sweep_rate": 0.0
+                }
+            ],
+            "step_unit": "Instrument",
+            "sweep_mode": "Off",
+            "sweep_rate_outside": 0.0,
+            "use_outside_sweep_rate": false,
+            "use_relations": false,
+            "wait_after": 0.0
+        },
+        {
+            "after_last": "Goto first point",
+            "alternate_direction": false,
+            "channel_name": "VNA - # of points",
+            "equation": "x",
+            "final_value": 0.0,
+            "optimizer_config": {
+                "Enabled": false,
+                "Initial step size": 0.2,
+                "Max value": 2.0,
+                "Min value": 1.0,
+                "Precision": 0.0001,
+                "Start value": 10001.0
+            },
+            "relation_parameters": [
+                {
+                    "channel_name": "Step values",
+                    "lookup": null,
+                    "use_lookup": false,
+                    "variable": "x"
+                }
+            ],
+            "show_advanced": false,
+            "step_items": [
+                {
+                    "center": 0.0,
+                    "interp": "Linear",
+                    "n_pts": 51,
+                    "range_type": "Single",
+                    "single": 2001.0,
+                    "span": 0.0,
+                    "start": 1.0,
+                    "step": 0.0,
+                    "step_type": "Fixed # of pts",
+                    "stop": 2.0,
+                    "sweep_rate": 0.0
+                }
+            ],
+            "step_unit": "Instrument",
+            "sweep_mode": "Off",
+            "sweep_rate_outside": 0.0,
+            "use_outside_sweep_rate": false,
+            "use_relations": false,
+            "wait_after": 0.0
+        }
+    ],
+    "tags": {
+        "project": "CalibrationTest",
+        "tags": [
+            "resonator_spectroscopy"
+        ],
+        "user": "Chalmers default user"
+    },
+    "version": "1.7.7"
+}

@@ -1,7 +1,9 @@
 # This code is part of Tergite
 #
 # (C) Copyright Miroslav Dobsicek 2020, 2021
-# (C) Copyright David Wahlstedt 2021
+# (C) Copyright David Wahlstedt 2021, 2022
+# (C) Copyright Abdullah Al Amin 2021, 2022
+# (C) Copyright Axel Andersson 2022
 # (C) Andreas Bengtsson 2020
 #
 # This code is licensed under the Apache License, Version 2.0. You may
@@ -12,29 +14,44 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-
-from pathlib import Path
+import argparse
 import asyncio
-import Labber
-import requests
-import settings
 import enums
+from pathlib import Path
+import settings
+from typing import Any, List, Dict
+
 import redis
+import requests
 from syncer import sync
 
-import tqcsf.file
-from job_supervisor import inform_location, inform_failure, Location, inform_result
+import Labber
 
-# settings
+from job_supervisor import inform_location, inform_failure, Location, inform_result
+from analysis import (
+    extract_resonance_freqs,
+    fit_resonator_idx,
+    gaussian_fit_idx,
+    fit_oscillation_idx,
+    fit_resonator,
+)
+import tqcsf.file
+
+# Storage settings
+
 STORAGE_ROOT = settings.STORAGE_ROOT
 STORAGE_PREFIX_DIRNAME = settings.STORAGE_PREFIX_DIRNAME
 LOGFILE_DOWNLOAD_POOL_DIRNAME = settings.LOGFILE_DOWNLOAD_POOL_DIRNAME
+
+# Connectivity settings
+
 MSS_MACHINE_ROOT_URL = settings.MSS_MACHINE_ROOT_URL
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
 CALIBRATION_SUPERVISOR_PORT = settings.CALIBRATION_SUPERVISOR_PORT
 
 LOCALHOST = "localhost"
 
+# REST API
 
 REST_API_MAP = {
     "result": "/result",
@@ -45,8 +62,13 @@ REST_API_MAP = {
     "download_url": "/download_url",
 }
 
+
+# Redis connection
+
 red = redis.Redis(decode_responses=True)
 
+# =========================================================================
+# Post-processing
 
 def logfile_postprocess(logfile: Path, *, logfile_type: enums.LogfileType = enums.LogfileType.LABBER_LOGFILE):
 
@@ -76,82 +98,38 @@ def logfile_postprocess(logfile: Path, *, logfile_type: enums.LogfileType = enum
         sf = tqcsf.file.StorageFile(new_file, mode="r")
         return postprocess_tqcsf(sf)
     else:
-        labber_logfile = Labber.LogFile(new_file)
-        return postprocess(labber_logfile)
+        return postprocess(new_logfile)
 
 
 # =========================================================================
-# Post-processing helpers
+# Post-processing helpers in PROCESSING_METHODS
 # =========================================================================
 
+# Dummy post-processing of signal demodulation
+def process_demodulation(logfile: Path) -> Any:
+    labber_logfile = Labber.LogFile(logfile)
+    (job_id, _, _) = get_metainfo(labber_logfile)
+    return job_id
 
-def process_demodulation(logfile: Labber.LogFile):
-    (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
-    red.set("results:job_id", job_id)
-    return (job_id, script_name, is_calibration_sup_job)
-
-
-def process_res_spect(logfile: Labber.LogFile):
-    (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
-    red.set("results:job_id", job_id)
-    return (job_id, script_name, is_calibration_sup_job)
-
-
-def update_mss_and_bcc(memory, job_id):
-
-    # Helper printout with first 5 outcomes
-    print("Measurement results:")
-    for experiment_memory in memory:
-        s = str(experiment_memory[:5])
-        if experiment_memory[5:6]:
-            s = s.replace("]", ", ...]")
-        print(s)
-
-    MSS_JOB = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["jobs"] + "/" + job_id
-
-    # NOTE: When MSS adds support for the 'whole job' update
-    # this will be just one PUT request
-    # Memory could contain more than one experiment, for now just use index 0
-    response = requests.put(MSS_JOB + REST_API_MAP["result"], json=memory)
-    if response:
-        print("Pushed result to MSS")
-
-    response = requests.post(MSS_JOB + REST_API_MAP["timelog"], json="RESULT")
-    if response:
-        print("Updated job timelog on MSS")
-
-    response = requests.put(MSS_JOB + REST_API_MAP["status"], json="DONE")
-    if response:
-        print("Updated job status on MSS to DONE")
-
-    download_url = (
-        str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["logfiles"] + "/" + job_id  # correct?
-    )
-    print(f"Download url: {download_url}")
-    response = requests.put(MSS_JOB + REST_API_MAP["download_url"], json=download_url)
-    if response:
-        print("Updated job download_url on MSS")
-
-    red.set("results:job_id", job_id)
-
-
-def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Labber.LogFile):
-    (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
+# Qasm job example
+def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Path) -> Any:
+    labber_logfile = Labber.LogFile(logfile)
+    (job_id, _, _) = get_metainfo(labber_logfile)
 
     # Extract System state
-    memory = extract_system_state_as_hex(logfile)
+    memory = extract_system_state_as_hex(labber_logfile)
 
     update_mss_and_bcc(memory, job_id)
 
-    return (job_id, script_name, is_calibration_sup_job)
+    # DW: I guess something else should be returned? memory or parts of it?
+    return job_id
 
 
 def process_tqcsf(sf: tqcsf.file.StorageFile):
-    job_id, script_name, is_calibration_sup_job = (sf.job_id, "pulse_schedule", False)
 
     if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
         memory = sf.as_readout(hex)  # can be hex or bin
-        update_mss_and_bcc(memory, job_id)
+        update_mss_and_bcc(memory, sf.job_id)
 
     elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
         # this can be a lot of data, and it is unclear how to present it to the MSS / BCC
@@ -163,7 +141,7 @@ def process_tqcsf(sf: tqcsf.file.StorageFile):
         # if you need to use this, then currently the only way is to access the logfile directly
         pass  # NotImplemented
 
-    return (job_id, script_name, is_calibration_sup_job)
+    return sf.job_id # return memory / path to memory?
 
 
 # =========================================================================
@@ -171,42 +149,49 @@ def process_tqcsf(sf: tqcsf.file.StorageFile):
 # =========================================================================
 
 PROCESSING_METHODS = {
-    "resonator_spectroscopy": process_res_spect,
+    "resonator_spectroscopy": process_res_spect_vna_phase_1,
+    "fit_resonator_spectroscopy": process_res_spect_vna_phase_2,
+    "pulsed_resonator_spectroscopy": process_pulsed_res_spect,
+    "pulsed_two_tone_qubit_spectroscopy": process_two_tone,
+    "rabi_qubit_pi_pulse_estimation": process_rabi,
+    "ramsey_qubit_freq_correction": process_ramsey,
     "demodulation_scenario": process_demodulation,
     "qiskit_qasm_runner": process_qiskit_qasm_runner_qasm_dummy_job,
     "qasm_dummy_job": process_qiskit_qasm_runner_qasm_dummy_job,
 }
 
-
 def postprocess_tqcsf(sf: tqcsf.file.StorageFile):
     return process_tqcsf(sf)
 
+def postprocess(logfile: Path):
 
-def postprocess(logfile: Labber.LogFile):
-    # TODO
-    # extract results from logfile
-    # store results in Redis
-    # Process the log's data appropriately
-    (job_id, script_name, _) = get_postproc_retval(logfile)
-    postproc_fn = PROCESSING_METHODS[script_name]
+    labber_logfile = Labber.LogFile(logfile)
+    (job_id, script_name, is_calibration_sup_job) = get_metainfo(labber_logfile)
+
+    postproc_fn = PROCESSING_METHODS.get(script_name)
+
+    print(
+        f"Starting postprocessing for script: {script_name}, {job_id=}, {is_calibration_sup_job=}"
+    )
 
     if postproc_fn:
-        result = postproc_fn(logfile)
+        results = postproc_fn(logfile)
     else:
         print(f"Unknown script name {script_name}")
         print("Postprocessing failed")  # TODO: take care of this case
+        results = None
 
         # Inform job supervisor about failure
         inform_failure(job_id, "Unknown script name")
 
-    print(f"Postprocessing ended for script type: {script_name}")
-    return result
+    print(f"Postprocessing ended for script type: {script_name}, {job_id=}, {is_calibration_sup_job=}")
+    red.set(f"postproc:results:{job_id}", str(results))
+    return (job_id, script_name, is_calibration_sup_job)
 
 
 # =========================================================================
 # Post-processing success callback with helper
 # =========================================================================
-
 
 async def notify_job_done(job_id: str):
     reader, writer = await asyncio.open_connection(
@@ -216,7 +201,6 @@ async def notify_job_done(job_id: str):
     print(f"notify_job_done: {message=}")
     writer.write(message)
     writer.close()
-
 
 def postprocessing_success_callback(job, connection, result, *args, **kwargs):
     # From logfile_postprocess:
@@ -231,10 +215,10 @@ def postprocessing_success_callback(job, connection, result, *args, **kwargs):
         sync(notify_job_done(job_id))
 
 
+
 # =========================================================================
 # Extraction helpers
 # =========================================================================
-
 
 def extract_system_state_as_hex(logfile: Labber.LogFile):
     raw_data = logfile.getData("State Discriminator 2 States - System state")
@@ -275,7 +259,62 @@ def get_is_calibration_sup_job(tags):
     # requested by the calibration supervisor
     return len(tags) >= 3 and tags[2]
 
-
-def get_postproc_retval(logfile: Labber.LogFile):
+def get_metainfo(logfile: Labber.LogFile):
     tags = extract_tags(logfile)
     return (get_job_id(tags), get_script_name(tags), get_is_calibration_sup_job(tags))
+
+# =========================================================================
+# BCC / MSS updating
+# =========================================================================
+
+def update_mss_and_bcc(memory, job_id):
+
+    # Helper printout with first 5 outcomes
+    print("Measurement results:")
+    for experiment_memory in memory:
+        s = str(experiment_memory[:5])
+        if experiment_memory[5:6]:
+            s = s.replace("]", ", ...]")
+        print(s)
+
+    job_id = logfile.stem
+    MSS_JOB = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["jobs"] + "/" + job_id
+
+    # NOTE: When MSS adds support for the 'whole job' update
+    # this will be just one PUT request
+    # Memory could contain more than one experiment, for now just use index 0
+    response = requests.put(MSS_JOB + REST_API_MAP["result"], json=memory)
+    if response:
+        print("Pushed result to MSS")
+
+    response = requests.post(MSS_JOB + REST_API_MAP["timelog"], json="RESULT")
+    if response:
+        print("Updated job timelog on MSS")
+
+    response = requests.put(MSS_JOB + REST_API_MAP["status"], json="DONE")
+    if response:
+        print("Updated job status on MSS to DONE")
+
+    download_url = (
+        str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["logfiles"] + "/" + job_id  # correct?
+    )
+    print(f"Download url: {download_url}")
+    response = requests.put(
+        MSS_JOB + REST_API_MAP["download_url"], json=download_url
+    )
+    if response:
+        print("Updated job download_url on MSS")
+
+
+# Running the postprocessing_worker from the command-line for testing purposes
+# Note: files with missing tags may not work
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Postprocessing stand-alone program")
+    parser.add_argument("--logfile", "-f", default="", type=str)
+    args = parser.parse_args()
+
+    logfile = args.logfile
+
+    results = postprocess(logfile)
+
+    print(f"{results=}")

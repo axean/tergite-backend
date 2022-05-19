@@ -28,6 +28,7 @@ REQUIREMENTS = [
     "scipy>=1.4.1",
     "networkx>=2.5.1",
     "syncer>=1.3.0",
+    "qtanalysis>=0.3",
 ]
 
 setup(

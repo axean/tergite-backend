@@ -52,12 +52,14 @@ def generate_job():
         "type": "script",
         "name": "resonator_spectroscopy",
         "params": {
-            "f_start": 6.5e9,
-            "f_stop": 7.5e9,
+            "f_start": 6.0e9,
+            "f_stop": 7.0e9,
             "if_bw": 1e3,
             "num_pts": 10001,
-            "power": -40,
-            "num_ave": 20,
+            # for single power measurement use single element, eg: [0],
+            # for multiple power sweep use: [p_start, p_stop, n_pts], eg:[-50, 0, 51]
+            "power": [-50, 0, 51],
+            "num_ave": 10,
         },
     }
     return job
@@ -66,11 +68,13 @@ def generate_job():
 """
     Parameters
     ----------
-        f_start   : (float) start sweep frequency [Hz]
-        f_stop    : (float) stop sweep frequency [Hz]
+        f_start : (float) start sweep frequency [Hz]
+        f_stop  : (float) stop sweep frequency [Hz]
         if_bw   : (float) IF bandwidth setting [Hz]
         num_pts : (int) number of frequency points
-        power   : (int) output power of VNA [dBm]
+        power   : [float, float, int] output power of VNA [dBm, dBm, n_pts]
+                    for single power measurement use single element, eg: [0],
+                    for multiple power sweep use: [p_start, p_stop, n_pts], eg:[-50, 0, 51]
         num_ave : (int) number of averages"""
 
 

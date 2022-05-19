@@ -149,8 +149,8 @@ async def check_data(node, job_done_evt):
     params = red.lrange(f"m_params:{node}", 0, -1)
     for param in params:
         # Fetch the values we got from the measurement's postprocessing
-        # TODO: Read from the actual param name, not 'job_id'
-        result_key = "results:job_id"
+        # TODO: this will be changed in a coming pull-request
+        result_key = f"postproc:results:{job_id}"
         result = red.get(result_key)
         print(
             f"For {param=}, from Redis we read {result_key} from postprocessing: {result}"
@@ -237,12 +237,13 @@ async def calibrate(node, job_done_evt):
 
     for param in params:
         # Fetch unit and parameter lifetime
+        # TODO: this will be changed in a coming pull-request
         unit = red.hget(f"m_params:{node}:{param}", "unit")
         lifetime = red.hget(f"m_params:{node}:{param}", "timeout")
 
         # Fetch the values we got from the calibration's postprocessing
-        # TODO: Read from the actual param name, not 'job_id'
-        result_key = "results:job_id"
+        # TODO: this will be changed in a coming pull-request
+        result_key = f"postproc:results:{job_id}"
         result = red.get(result_key)
         print(
             f"For {param=}, from Redis we read {result_key} from postprocessing: {result}"

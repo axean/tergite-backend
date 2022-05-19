@@ -2,6 +2,7 @@
 #
 # (C) Copyright Miroslav Dobsicek 2020, 2021
 # (C) Copyright Abdullah-Al Amin 2021
+# (C) Copyright Axel Andersson 2022
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -20,13 +21,14 @@ from scenario_scripts import (
     qobj_scenario,
     qobj_dummy_scenario,
     resonator_spectroscopy_scenario,
+    pulsed_spectroscopy_calib_scenario,
 )
 import requests
 import settings
 
 from job_supervisor import inform_location, inform_failure, Location
 
-# settings
+# Settings
 STORAGE_ROOT = settings.STORAGE_ROOT
 LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
@@ -84,8 +86,21 @@ def post_scenario_file(job_dict: dict, /):
 
         scenario.log_name += job_id
 
-    elif job_dict["name"] == "resonator_spectroscopy":
+    elif job_dict["name"] in [
+        "resonator_spectroscopy",
+        "fit_resonator_spectroscopy",
+    ]:
         scenario = resonator_spectroscopy_scenario(job_dict)
+
+        scenario.log_name += job_id
+
+    elif job_dict["name"] in [
+        "pulsed_resonator_spectroscopy",
+        "pulsed_two_tone_qubit_spectroscopy",
+        "rabi_qubit_pi_pulse_estimation",
+        "ramsey_qubit_freq_correction",
+    ]:
+        scenario = pulsed_spectroscopy_calib_scenario(job_dict)
 
         scenario.log_name += job_id
 

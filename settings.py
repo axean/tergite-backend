@@ -17,6 +17,16 @@ from starlette.datastructures import URL
 # NOTE: shell env variables take precedence over the configuration file
 config = Config(".env")
 
+
+# Misc settings
+
+# Plotting during post-processing, only for interactive use, *not*
+# when running as a server
+POSTPROC_PLOTTING = config("POSTPROC_PLOTTING", cast=bool, default=False)
+
+
+# Storage settings
+
 DEFAULT_PREFIX = config("DEFAULT_PREFIX", cast=str)
 STORAGE_ROOT = config("STORAGE_ROOT", cast=str)
 STORAGE_PREFIX_DIRNAME = config(
@@ -30,6 +40,9 @@ JOB_EXECUTION_POOL_DIRNAME = config("JOB_EXECUTION_POOL_DIRNAME", cast=str)
 JOB_SUPERVISOR_LOG = config(
     "JOB_SUPERVISOR_LOG", cast=str, default="job_supervisor.log"
 )
+
+# Connectivity settings
+
 LABBER_MACHINE_ROOT_URL = config("LABBER_MACHINE_ROOT_URL", cast=URL)
 QUANTIFY_MACHINE_ROOT_URL = config("QUANTIFY_MACHINE_ROOT_URL", cast=URL)
 MSS_MACHINE_ROOT_URL = config("MSS_MACHINE_ROOT_URL", cast=URL)
