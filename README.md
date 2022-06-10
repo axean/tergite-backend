@@ -3,8 +3,13 @@
 ## Prerequisites
 * Redis
 * Labber, + export PYTHONPATH to Labber's Script module
-* qpulse (a.k.a. tergite-quantify-connector) needs to be installed with pip
+* tqc-sf (Tergite-Quantify-Connector storage file) needs to be installed with pip (see section below)
 * (optional) Use Anaconda environment. With Python 3.8.
+
+## Installing Tergite-Quantify-Connector storage file
+* clone this repository https://bitbucket.org/qtlteam/tergite-quantify-connector-storagefile/src/main/
+* cd tergite-quantify-connector-storagefile
+* pip install -e .
 
 ## Package installation
 * cd tergite-bcc
