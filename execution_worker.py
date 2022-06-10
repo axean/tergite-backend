@@ -39,7 +39,7 @@ def post_schedule_file(job_dict: dict, /):
     tmp_file = Path(STORAGE_ROOT) / (str(uuid4()) + ".to_quantify")
     
     with tmp_file.open("w") as store:
-        json.dump(job_dict, store) # copy incoming data
+        json.dump(job_dict, store) # copy incoming data to temporary file
     
     with tmp_file.open("r") as source:
         files = {
@@ -117,6 +117,7 @@ def job_execute(job_file: Path):
     with job_file.open() as f:
         job_dict = json.load(f)
     
+    # this is where the quantify redirect is
     if job_dict["name"] == "pulse_schedule":
         response = post_schedule_file(job_dict)
     else:
