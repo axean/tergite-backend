@@ -22,7 +22,7 @@ import settings
 import redis
 from syncer import sync
 
-import qpulse.storage.file as qpsf
+import tqcsf
 
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT
@@ -71,8 +71,8 @@ def logfile_postprocess(logfile: Path):
         # The post-processing itself
         return postprocess(labber_logfile)
     else:
-        sf = qpsf.StorageFile(new_file, mode = "r")
-        return postprocess_qpsf(sf)
+        sf = tqcsf.file.StorageFile(new_file, mode = "r")
+        return postprocess_tqcsf(sf)
 
 # =========================================================================
 # Post-processing helpers
@@ -137,19 +137,19 @@ def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Labber.LogFile):
     
     return (job_id, script_name, is_calibration_sup_job)
 
-def process_qpsf(sf: qpsf.StorageFile):
+def process_tqcsf(sf: tqcsf.file.StorageFile):
     job_id, script_name, is_calibration_sup_job = (sf.job_id, "pulse_schedule", False)
 
-    if sf.meas_level == qpsf.MeasLvl.DISCRIMINATED:
+    if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
         memory = sf.as_readout(hex) # can be hex or bin
         update_mss_and_bcc(memory, job_id)
         
-    elif sf.meas_level == qpsf.MeasLvl.KERNELED:
+    elif sf.meas_level == tqcsf.file.MeasLvl.KERNELED: # TODO: Change KERNELED to INTEGRATED at next merge
         # this can be a lot of data, and it is unclear how to present it to the MSS / BCC
         # if you need to use this, then currently the only way is to access the logfile directly
         pass # NotImplemented
         
-    elif sf.meas_level == qpsf.MeasLvl.RAW:
+    elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
         # this can be an extreme amount of data, and it is unclear how to present it to the MSS / BCC
         # if you need to use this, then currently the only way is to access the logfile directly
         pass # NotImplemented
@@ -167,8 +167,8 @@ PROCESSING_METHODS = {
     "qasm_dummy_job": process_qiskit_qasm_runner_qasm_dummy_job,
 }
 
-def postprocess_qpsf(sf: qpsf.StorageFile):
-    return process_qpsf(sf)
+def postprocess_tqcsf(sf: tqcsf.file.StorageFile):
+    return process_tqcsf(sf)
 
 def postprocess(logfile: Labber.LogFile):
     # TODO
