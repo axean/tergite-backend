@@ -15,7 +15,6 @@
 from pathlib import Path
 from uuid import uuid4
 import json
-import time
 from scenario_scripts import (
     demodulation_scenario,
     qobj_scenario,
@@ -24,6 +23,8 @@ from scenario_scripts import (
 )
 import requests
 import settings
+
+from job_supervisor import inform_location, inform_failure, Location
 
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT
@@ -58,6 +59,9 @@ def post_scenario_file(job_dict: dict, /):
     
     job_id = job_dict["job_id"]
 
+    # Inform supervisor
+    inform_location(job_id, Location.EXEC_W)
+
     print(f"Job script type: {job_dict['name']}")
     if job_dict["name"] == "demodulation_scenario":
         signal_array = job_dict["params"]["Sine - Frequency"]
@@ -85,7 +89,7 @@ def post_scenario_file(job_dict: dict, /):
         
     else:
         raise NotImplementedError(f"Unknown script name {job_dict['name']}")
-        
+
     # Store important information inside the scenario: using the tag list
     # 1) job_id
     # 2) script name
@@ -95,7 +99,7 @@ def post_scenario_file(job_dict: dict, /):
     if is_calibration_sup_job:
         scenario.tags.tags += [is_calibration_sup_job]
 
-    scenario_file = Path(STORAGE_ROOT) / (str(uuid4()) + ".labber")
+    scenario_file = Path(STORAGE_ROOT) / (job_id + ".labber")
     scenario.save(scenario_file)
     print(f"Scenario generated at {str(scenario_file)}")
     
@@ -126,6 +130,8 @@ def job_execute(job_file: Path):
         except NotImplementedError as err:
             print(err)
             print("Job failed")
+            # Inform job supervisor about failure
+            inform_failure(job_id, reason="unknown script name")
             return {"message": "failed"}
 
     if response:
@@ -136,4 +142,6 @@ def job_execute(job_file: Path):
         return {"message": "ok"}
     else:
         print("Failed")
+        # inform supervisor about failure
+        inform_failure(job_id, reason="no response")
         return {"message": "failed"}
