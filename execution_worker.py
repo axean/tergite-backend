@@ -121,6 +121,8 @@ def job_execute(job_file: Path):
     with job_file.open() as f:
         job_dict = json.load(f)
     
+    job_id = job_dict["job_id"]
+
     # this is where the quantify redirect is
     if job_dict["name"] == "pulse_schedule":
         response = post_schedule_file(job_dict)
@@ -141,7 +143,7 @@ def job_execute(job_file: Path):
         print("Job executed successfully")
         return {"message": "ok"}
     else:
-        print("Failed")
+        print("Job failed")
         # inform supervisor about failure
         inform_failure(job_id, reason="no response")
         return {"message": "failed"}
