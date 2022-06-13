@@ -47,7 +47,7 @@ REST_API_MAP = {
 red = redis.Redis(decode_responses=True)
 
 
-def logfile_postprocess(logfile: Path):
+def logfile_postprocess(logfile: Path, *, tqc_storagefile: bool = False):
 
     print(f"Postprocessing logfile {str(logfile)}")
 
@@ -69,13 +69,13 @@ def logfile_postprocess(logfile: Path):
     # Inform job supervisor
     inform_location(new_file_name, Location.PST_PROC_W)
 
-    if True: #TODO
-        labber_logfile = Labber.LogFile(new_file)
-        # The post-processing itself
-        return postprocess(labber_logfile)
-    else:
+    # The post-processing itself
+    if tqc_storagefile:
         sf = tqcsf.file.StorageFile(new_file, mode = "r")
         return postprocess_tqcsf(sf)
+    else:
+        labber_logfile = Labber.LogFile(new_file)
+        return postprocess(labber_logfile)
 
 # =========================================================================
 # Post-processing helpers
