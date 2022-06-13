@@ -21,7 +21,7 @@ import settings
 import redis
 from syncer import sync
 
-import tqcsf
+import tqcsf.file
 from job_supervisor import inform_location, inform_failure, Location, inform_result
 
 # settings
