@@ -177,9 +177,9 @@ def upload_logfile(upload_file: UploadFile = File(...), *, tqc_storagefile = Fal
     # enqueue for post-processing
     rq_logfile_postprocessing.enqueue(
         logfile_postprocess,
-        store_file,
         on_success=postprocessing_success_callback,
         job_id=file_name + f"_{Location.PST_PROC_Q.name}",
+        args = (store_file,),
         kwargs = dict(
             tqc_storagefile = tqc_storagefile
         )
