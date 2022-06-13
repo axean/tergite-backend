@@ -71,6 +71,7 @@ def logfile_postprocess(logfile: Path, *, tqc_storagefile: bool = False):
 
     # The post-processing itself
     if tqc_storagefile:
+        print("Identified TQC storage file, reading file using tqcsf")
         sf = tqcsf.file.StorageFile(new_file, mode = "r")
         return postprocess_tqcsf(sf)
     else:
@@ -147,7 +148,7 @@ def process_tqcsf(sf: tqcsf.file.StorageFile):
         memory = sf.as_readout(hex) # can be hex or bin
         update_mss_and_bcc(memory, job_id)
         
-    elif sf.meas_level == tqcsf.file.MeasLvl.KERNELED: # TODO: Change KERNELED to INTEGRATED at next merge
+    elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
         # this can be a lot of data, and it is unclear how to present it to the MSS / BCC
         # if you need to use this, then currently the only way is to access the logfile directly
         pass # NotImplemented
