@@ -146,9 +146,12 @@ async def download_logfile(logfile_id: UUID):
     else:
         return {"message": "logfile not found"}
 
+@app.post("/storagefiles")
+def upload_storagefile(upload_file: UploadFile = File(...)):
+    return upload_logfile(upload_file = upload_file, tqc_storagefile = True)
 
 @app.post("/logfiles")
-def upload_logfile(upload_file: UploadFile = File(...)):
+def upload_logfile(upload_file: UploadFile = File(...), *, tqc_storagefile = False):
 
     print(f"Received logfile {upload_file.filename}")
 
@@ -177,6 +180,9 @@ def upload_logfile(upload_file: UploadFile = File(...)):
         store_file,
         on_success=postprocessing_success_callback,
         job_id=file_name + f"_{Location.PST_PROC_Q.name}",
+        kwargs = dict(
+            tqc_storagefile = tqc_storagefile
+        )
     )
 
     # inform supervisor
