@@ -21,7 +21,7 @@ from scenario_scripts import (
     qobj_scenario,
     qobj_dummy_scenario,
     resonator_spectroscopy_scenario,
-    pulsed_spectroscopy_calib_scenario,
+    generic_calib_zi_scenario,
 )
 import requests
 import settings
@@ -100,7 +100,7 @@ def post_scenario_file(job_dict: dict, /):
         "rabi_qubit_pi_pulse_estimation",
         "ramsey_qubit_freq_correction",
     ]:
-        scenario = pulsed_spectroscopy_calib_scenario(job_dict)
+        scenario = generic_calib_zi_scenario(job_dict)
 
         scenario.log_name += job_id
 

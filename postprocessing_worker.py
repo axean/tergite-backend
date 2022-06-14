@@ -24,8 +24,15 @@ from typing import Any, List, Dict
 import redis
 import requests
 from syncer import sync
+import requests
 
 import Labber
+
+from job_supervisor import inform_location, inform_failure, Location, inform_result
+
+from analysis import extract_resonance_freqs, fit_resonator_idx, gaussian_fit_idx, fit_oscillation_idx, fit_resonator
+
+# Misc settings
 
 from job_supervisor import inform_location, inform_failure, Location, inform_result
 from analysis import (
@@ -132,16 +139,40 @@ def process_tqcsf(sf: tqcsf.file.StorageFile):
         update_mss_and_bcc(memory, sf.job_id)
 
     elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
-        # this can be a lot of data, and it is unclear how to present it to the MSS / BCC
-        # if you need to use this, then currently the only way is to access the logfile directly
-        pass  # NotImplemented
-
-    elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
-        # this can be an extreme amount of data, and it is unclear how to present it to the MSS / BCC
+        # This can be a lot of data, and it is unclear how to present it to the MSS / BCC
         # if you need to use this, then currently the only way is to access the logfile directly
         pass  # NotImplemented
 
     return sf.job_id # return memory / path to memory?
+
+
+# VNA resonator spectroscopy
+def process_res_spect_vna_phase_1(logfile: Path) -> Any:
+    return fit_resonator(logfile)
+
+def process_res_spect_vna_phase_2(logfile: Path) -> Any:
+    return fit_resonator_idx(logfile, [0,50])
+
+# Pulsed resonator spectroscopy
+def process_pulsed_res_spect(logfile: Path) -> Any:
+    return fit_resonator_idx(logfile, [0])
+
+# Two-tone
+def process_two_tone(logfile: Path) -> Any:
+    # fit qubit spectra
+    return gaussian_fit_idx(logfile, [0])
+
+# Rabi
+def process_rabi(logfile: Path) -> Any:
+    # fit rabi oscillation
+    fits = fit_oscillation_idx(logfile, [0])
+    return [res['period'] for res in fits]
+
+# Ramsey
+def process_ramsey(logfile: Path) -> Any:
+    # fit ramsey oscillation
+    fits = fit_oscillation_idx(logfile, [0])
+    return [res['freq'] for res in fits]
 
 
 # =========================================================================

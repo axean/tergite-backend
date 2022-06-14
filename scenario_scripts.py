@@ -200,7 +200,11 @@ def resonator_spectroscopy_scenario(job):
 
     return s
 
-def pulsed_spectroscopy_calib_scenario(job): # possible rename of the function
+# A generic scenario creation routine for pulsed resonator
+# spectroscopy, two-tone, Rabi, and Ramey calibration steps, using ZI
+# and Labber. It can be used to create related measurement scenarios
+# as well.
+def generic_calib_zi_scenario(job):
 
     if job["name"] == "ramsey_qubit_freq_correction":
         scenario_template_filepath = Path("./scenario_templates/ramsey_using_general_calib_template.json")
