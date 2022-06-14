@@ -65,22 +65,24 @@ def logfile_postprocess(logfile: Path, *, tqc_storagefile: bool = False):
     logfile.replace(new_file)
 
     print(f"Moved the logfile to {str(new_file)}")
-    
+
     # Inform job supervisor
     inform_location(new_file_name, Location.PST_PROC_W)
 
     # The post-processing itself
     if tqc_storagefile:
         print("Identified TQC storage file, reading file using tqcsf")
-        sf = tqcsf.file.StorageFile(new_file, mode = "r")
+        sf = tqcsf.file.StorageFile(new_file, mode="r")
         return postprocess_tqcsf(sf)
     else:
         labber_logfile = Labber.LogFile(new_file)
         return postprocess(labber_logfile)
 
+
 # =========================================================================
 # Post-processing helpers
 # =========================================================================
+
 
 def process_demodulation(logfile: Labber.LogFile):
     (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
@@ -131,6 +133,7 @@ def update_mss_and_bcc(memory, job_id):
 
     red.set("results:job_id", job_id)
 
+
 def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Labber.LogFile):
     (job_id, script_name, is_calibration_sup_job) = get_postproc_retval(logfile)
 
@@ -138,27 +141,29 @@ def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Labber.LogFile):
     memory = extract_system_state_as_hex(logfile)
 
     update_mss_and_bcc(memory, job_id)
-    
+
     return (job_id, script_name, is_calibration_sup_job)
+
 
 def process_tqcsf(sf: tqcsf.file.StorageFile):
     job_id, script_name, is_calibration_sup_job = (sf.job_id, "pulse_schedule", False)
 
     if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
-        memory = sf.as_readout(hex) # can be hex or bin
+        memory = sf.as_readout(hex)  # can be hex or bin
         update_mss_and_bcc(memory, job_id)
-        
+
     elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
         # this can be a lot of data, and it is unclear how to present it to the MSS / BCC
         # if you need to use this, then currently the only way is to access the logfile directly
-        pass # NotImplemented
-        
+        pass  # NotImplemented
+
     elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
         # this can be an extreme amount of data, and it is unclear how to present it to the MSS / BCC
         # if you need to use this, then currently the only way is to access the logfile directly
-        pass # NotImplemented
-    
+        pass  # NotImplemented
+
     return (job_id, script_name, is_calibration_sup_job)
+
 
 # =========================================================================
 # Post-processing entry point
@@ -171,8 +176,10 @@ PROCESSING_METHODS = {
     "qasm_dummy_job": process_qiskit_qasm_runner_qasm_dummy_job,
 }
 
+
 def postprocess_tqcsf(sf: tqcsf.file.StorageFile):
     return process_tqcsf(sf)
+
 
 def postprocess(logfile: Labber.LogFile):
     # TODO
@@ -193,6 +200,7 @@ def postprocess(logfile: Labber.LogFile):
 
     print(f"Postprocessing ended for script type: {script_name}")
     return result
+
 
 # =========================================================================
 # Post-processing success callback with helper

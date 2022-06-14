@@ -32,22 +32,23 @@ LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
 QUANTIFY_MACHINE_ROOT_URL = settings.QUANTIFY_MACHINE_ROOT_URL
 
-REST_API_MAP = {"scenarios": "/scenarios", "qobj" : "/qobj"}
+REST_API_MAP = {"scenarios": "/scenarios", "qobj": "/qobj"}
+
 
 def post_schedule_file(job_dict: dict, /):
     print(f"Received OpenPulse schedule")
-    
+
     tmp_file = Path(STORAGE_ROOT) / (str(uuid4()) + ".to_quantify")
-    
+
     with tmp_file.open("w") as store:
-        json.dump(job_dict, store) # copy incoming data to temporary file
-    
+        json.dump(job_dict, store)  # copy incoming data to temporary file
+
     with tmp_file.open("r") as source:
         files = {
             "upload_file": (tmp_file.name, source),
             "send_logfile_to": (None, str(BCC_MACHINE_ROOT_URL)),
         }
-        
+
         url = str(QUANTIFY_MACHINE_ROOT_URL) + REST_API_MAP["qobj"]
         print("Sending the pulse schedule to Quantify")
         response = requests.post(url, files=files)
@@ -55,8 +56,9 @@ def post_schedule_file(job_dict: dict, /):
     tmp_file.unlink()
     return response
 
+
 def post_scenario_file(job_dict: dict, /):
-    
+
     job_id = job_dict["job_id"]
 
     # Inform supervisor
@@ -86,7 +88,7 @@ def post_scenario_file(job_dict: dict, /):
         scenario = resonator_spectroscopy_scenario(job_dict)
 
         scenario.log_name += job_id
-        
+
     else:
         raise NotImplementedError(f"Unknown script name {job_dict['name']}")
 
@@ -102,7 +104,7 @@ def post_scenario_file(job_dict: dict, /):
     scenario_file = Path(STORAGE_ROOT) / (job_id + ".labber")
     scenario.save(scenario_file)
     print(f"Scenario generated at {str(scenario_file)}")
-    
+
     with scenario_file.open("rb") as source:
         files = {
             "upload_file": (scenario_file.name, source),
@@ -111,16 +113,17 @@ def post_scenario_file(job_dict: dict, /):
         url = str(LABBER_MACHINE_ROOT_URL) + REST_API_MAP["scenarios"]
         print("Sending the scenario to Labber")
         response = requests.post(url, files=files)
-    
+
     scenario_file.unlink()
     return response
 
+
 def job_execute(job_file: Path):
     print(f"Executing file {str(job_file)}")
-    
+
     with job_file.open() as f:
         job_dict = json.load(f)
-    
+
     job_id = job_dict["job_id"]
 
     # this is where the quantify redirect is
