@@ -148,7 +148,7 @@ async def download_logfile(logfile_id: UUID):
         return {"message": "logfile not found"}
 
 @app.post("/logfiles")
-def upload_logfile(upload_file: UploadFile = File(...), *, logfile_type = enums.LogfileType.LABBER_LOGFILE):
+def upload_logfile(upload_file: UploadFile = File(...), *, logfile_type: enums.LogfileType = enums.LogfileType.LABBER_LOGFILE):
 
     print(f"Received logfile {upload_file.filename}")
 

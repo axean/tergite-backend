@@ -18,6 +18,7 @@ import asyncio
 import Labber
 import requests
 import settings
+import enums
 import redis
 from syncer import sync
 
@@ -47,7 +48,7 @@ REST_API_MAP = {
 red = redis.Redis(decode_responses=True)
 
 
-def logfile_postprocess(logfile: Path, *, tqc_storagefile: bool = False):
+def logfile_postprocess(logfile: Path, *, logfile_type: enums.LogfileType = enums.LogfileType.LABBER_LOGFILE):
 
     print(f"Postprocessing logfile {str(logfile)}")
 
@@ -70,7 +71,7 @@ def logfile_postprocess(logfile: Path, *, tqc_storagefile: bool = False):
     inform_location(new_file_name, Location.PST_PROC_W)
 
     # The post-processing itself
-    if tqc_storagefile:
+    if logfile_type == enums.LogfileType.TQC_STORAGE:
         print("Identified TQC storage file, reading file using tqcsf")
         sf = tqcsf.file.StorageFile(new_file, mode="r")
         return postprocess_tqcsf(sf)
