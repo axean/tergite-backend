@@ -17,7 +17,6 @@ conda activate rest-eve
 
 sleep $((RANDOM % (60*59*2)))  # sleep between 1 second upto almost 2 hours
 
-cd /home/dobsicek/bcc_stable
-git checkout master > /dev/null 2>&1
+cd /home/dobsicek/bcc
 python bcc_stub.py
 
