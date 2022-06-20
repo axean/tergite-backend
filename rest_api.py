@@ -25,6 +25,7 @@ from postprocessing_worker import logfile_postprocess, postprocessing_success_ca
 from job_supervisor import Location
 import job_supervisor
 import settings
+import enums
 from utils.uuid import validate_uuid4_str
 
 # settings
@@ -146,14 +147,8 @@ async def download_logfile(logfile_id: UUID):
     else:
         return {"message": "logfile not found"}
 
-
-@app.post("/storagefiles")
-def upload_storagefile(upload_file: UploadFile = File(...)):
-    return upload_logfile(upload_file=upload_file, tqc_storagefile=True)
-
-
 @app.post("/logfiles")
-def upload_logfile(upload_file: UploadFile = File(...), *, tqc_storagefile=False):
+def upload_logfile(upload_file: UploadFile = File(...), *, logfile_type = enums.LogfileType.LABBER_LOGFILE):
 
     print(f"Received logfile {upload_file.filename}")
 
@@ -182,7 +177,7 @@ def upload_logfile(upload_file: UploadFile = File(...), *, tqc_storagefile=False
         on_success=postprocessing_success_callback,
         job_id=file_name + f"_{Location.PST_PROC_Q.name}",
         args=(store_file,),
-        kwargs=dict(tqc_storagefile=tqc_storagefile),
+        kwargs=dict(logfile_type=logfile_type),
     )
 
     # inform supervisor
