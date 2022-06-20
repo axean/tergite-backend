@@ -46,7 +46,7 @@ def post_schedule_file(job_dict: dict, /):
     with tmp_file.open("r") as source:
         files = {
             "upload_file": (tmp_file.name, source),
-            "send_logfile_to": (None, str(BCC_MACHINE_ROOT_URL)),
+            "send_logfile_to": (None, str(BCC_MACHINE_ROOT_URL))
         }
 
         url = str(QUANTIFY_MACHINE_ROOT_URL) + REST_API_MAP["qobj"]
@@ -90,7 +90,7 @@ def post_scenario_file(job_dict: dict, /):
         scenario.log_name += job_id
 
     else:
-        raise NotImplementedError(f"Unknown script name {job_dict['name']}")
+        return None
 
     # Store important information inside the scenario: using the tag list
     # 1) job_id
@@ -130,21 +130,30 @@ def job_execute(job_file: Path):
     if job_dict["name"] == "pulse_schedule":
         response = post_schedule_file(job_dict)
     else:
-        try:
-            response = post_scenario_file(job_dict)
-        except NotImplementedError as err:
-            print(err)
-            print("Job failed")
-            # Inform job supervisor about failure
-            inform_failure(job_id, reason="unknown script name")
-            return {"message": "failed"}
+        response = post_scenario_file(job_dict)
 
-    if response:
+    if response.ok:
         # clean up
         job_file.unlink()
 
         print("Job executed successfully")
         return {"message": "ok"}
+
+    # failure case: response received but it carries error code (4xx or 5xx)
+    elif not response.ok:
+        print("Job failed")
+        print(f"Server rejected job. Response: {response}")
+        inform_failure(job_id, reason=f"HTTP error code: {response.status_code}")
+        return {"message": "failed"}
+
+    # failure case: Unknown script name
+    elif response is None:
+        print("Job failed")
+        print(f"Unknown script name {job_dict['name']}")
+        inform_failure(job_id, reason="unknown script name")
+        return {"message": "failed"}
+
+    # failure case: Unspecified error
     else:
         print("Job failed")
         # inform supervisor about failure
