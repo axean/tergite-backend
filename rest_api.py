@@ -147,9 +147,12 @@ async def download_logfile(logfile_id: UUID):
     else:
         return {"message": "logfile not found"}
 
-@app.post("/logfiles")
-def upload_logfile(upload_file: UploadFile = File(...), logfile_type: str = Form(...)):
 
+@app.post("/logfiles")
+def upload_logfile(
+    upload_file: UploadFile = File(...),
+    logfile_type: str = Form(default="LABBER_LOGFILE"),
+):
     print(f"Received logfile {upload_file.filename}")
 
     # store the recieved file in the logfile upload pool
