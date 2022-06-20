@@ -7,9 +7,12 @@
 * (optional) Use Anaconda environment. With Python 3.8.
 
 ## Installing Tergite-Quantify-Connector storage file
-* clone this repository https://bitbucket.org/qtlteam/tergite-quantify-connector-storagefile/src/main/
-* cd tergite-quantify-connector-storagefile
-* pip install -e .
+This installs tergite-quantify-connector-storagefile in edit mode to the current Python environment.
+
+* `cd ~/repos`
+* `git clone git@bitbucket.org:qtlteam/tergite-quantify-connector-storagefile.git`
+* `cd tergite-quantify-connector-storagefile`
+* `pip install -e .`
 
 ## Package installation
 * cd tergite-bcc
