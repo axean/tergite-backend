@@ -1,5 +1,5 @@
 from enum import Enum
 
 class LogfileType(Enum):
-    LABBER_LOGFILE = 0
-    TQC_STORAGE = 1
+    LABBER_LOGFILE = "LABBER_LOGFILE"
+    TQC_STORAGE = "TQC_STORAGE"

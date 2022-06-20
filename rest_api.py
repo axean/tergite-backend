@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 
 
-from fastapi import FastAPI, File, UploadFile, Body
+from fastapi import FastAPI, File, UploadFile, Body, Form
 from fastapi.responses import FileResponse
 from typing import Optional
 from redis import Redis
@@ -148,7 +148,7 @@ async def download_logfile(logfile_id: UUID):
         return {"message": "logfile not found"}
 
 @app.post("/logfiles")
-def upload_logfile(upload_file: UploadFile = File(...), *, logfile_type: enums.LogfileType = enums.LogfileType.LABBER_LOGFILE):
+def upload_logfile(upload_file: UploadFile = File(...), logfile_type: str = Form(...)):
 
     print(f"Received logfile {upload_file.filename}")
 
@@ -177,7 +177,7 @@ def upload_logfile(upload_file: UploadFile = File(...), *, logfile_type: enums.L
         on_success=postprocessing_success_callback,
         job_id=file_name + f"_{Location.PST_PROC_Q.name}",
         args=(store_file,),
-        kwargs=dict(logfile_type=logfile_type),
+        kwargs=dict(logfile_type=enums.LogfileType(logfile_type)),
     )
 
     # inform supervisor
