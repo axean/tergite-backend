@@ -305,7 +305,6 @@ def update_mss_and_bcc(memory, job_id):
             s = s.replace("]", ", ...]")
         print(s)
 
-    job_id = logfile.stem
     MSS_JOB = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["jobs"] + "/" + job_id
 
     # NOTE: When MSS adds support for the 'whole job' update
