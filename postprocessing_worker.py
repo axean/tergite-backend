@@ -105,7 +105,7 @@ def logfile_postprocess(logfile: Path, *, logfile_type: enums.LogfileType = enum
         sf = tqcsf.file.StorageFile(new_file, mode="r")
         return postprocess_tqcsf(sf)
     else:
-        return postprocess(new_logfile)
+        return postprocess(new_file)
 
 
 # =========================================================================
