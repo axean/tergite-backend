@@ -21,11 +21,10 @@ rm -fr /tmp/pingu    # FIXME: Fixed path
 # Remove old redis keys
 
 # Job supervisor
-redis-cli del job_supervisor # DW: I added this, but is it a wanted behaviour?
+redis-cli del job_supervisor
 # Post-processing results
 for key in $(redis-cli --scan --pattern "postproc:results:*")
 do
-    echo removing "$key"
     redis-cli del "$key"
 done
 
