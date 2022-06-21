@@ -29,7 +29,8 @@ REQUIREMENTS = [
     "networkx>=2.5.1",
     "syncer>=1.3.0",
     "qtanalysis>=0.3",
-    "tqcsf>=1.0.0"
+    "tqcsf>=1.0.0",
+    "matplotlib>=3.5.1"
 ]
 
 setup(

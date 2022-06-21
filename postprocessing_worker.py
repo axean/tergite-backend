@@ -24,23 +24,21 @@ from typing import Any, List, Dict
 import redis
 import requests
 from syncer import sync
-import requests
 
 import Labber
 
-from job_supervisor import inform_location, inform_failure, Location, inform_result
-
-from analysis import extract_resonance_freqs, fit_resonator_idx, gaussian_fit_idx, fit_oscillation_idx, fit_resonator
-
-# Misc settings
-
-from job_supervisor import inform_location, inform_failure, Location, inform_result
 from analysis import (
     extract_resonance_freqs,
-    fit_resonator_idx,
-    gaussian_fit_idx,
     fit_oscillation_idx,
     fit_resonator,
+    fit_resonator_idx,
+    gaussian_fit_idx,
+)
+from job_supervisor import (
+    inform_failure,
+    inform_location,
+    inform_result,
+    Location,
 )
 import tqcsf.file
 
@@ -139,13 +137,13 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> tuple:
 
     elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
         pass # TODO
-    
+
     elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
         pass # TODO
-        
+
     else:
         pass
-        
+
     return (sf.job_id, "pulse_schedule", False)
 
 # VNA resonator spectroscopy
