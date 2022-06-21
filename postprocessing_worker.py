@@ -211,6 +211,7 @@ def postprocess(logfile: Path):
 
         # Inform job supervisor about failure
         inform_failure(job_id, "Unknown script name")
+        return None
 
     print(f"Postprocessing ended for script type: {script_name}, {job_id=}, {is_calibration_sup_job=}")
     red.set(f"postproc:results:{job_id}", str(results))
