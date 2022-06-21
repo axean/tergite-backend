@@ -132,19 +132,21 @@ def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Path) -> Any:
     return job_id
 
 
-def process_tqcsf(sf: tqcsf.file.StorageFile):
+def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> tuple:
 
     if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
-        memory = sf.as_readout(hex)  # can be hex or bin
-        update_mss_and_bcc(memory, sf.job_id)
+        pass # TODO
 
     elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
-        # This can be a lot of data, and it is unclear how to present it to the MSS / BCC
-        # if you need to use this, then currently the only way is to access the logfile directly
-        pass  # NotImplemented
-
-    return sf.job_id # return memory / path to memory?
-
+        pass # TODO
+    
+    elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
+        pass # TODO
+        
+    else:
+        pass
+        
+    return (sf.job_id, "pulse_schedule", False)
 
 # VNA resonator spectroscopy
 def process_res_spect_vna_phase_1(logfile: Path) -> Any:
@@ -190,9 +192,6 @@ PROCESSING_METHODS = {
     "qiskit_qasm_runner": process_qiskit_qasm_runner_qasm_dummy_job,
     "qasm_dummy_job": process_qiskit_qasm_runner_qasm_dummy_job,
 }
-
-def postprocess_tqcsf(sf: tqcsf.file.StorageFile):
-    return process_tqcsf(sf)
 
 def postprocess(logfile: Path):
 
