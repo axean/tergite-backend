@@ -23,7 +23,7 @@ from enum import Enum
 import settings
 import datetime
 import redis
-import calibration_scripts.calibration_mockup as cals
+import calibration.measurement_jobs as meas_jobs
 import time
 from tempfile import gettempdir
 
@@ -45,14 +45,14 @@ node_recal_statuses = {}
 
 # Maps names of calibration routines to their corresponding functions
 MEASUREMENT_JOBS = {
-    "check_res_spect": cals.check_res_spect,
-    "cal_res_spect": cals.calibrate_res_spect,
-    "check_two-tone": cals.check_two_tone,
-    "cal_two-tone": cals.calibrate_two_tone,
-    "check_rabi": cals.check_rabi,
-    "cal_rabi": cals.calibrate_rabi,
-    "check_fidelity": cals.check_fidelity,
-    "cal_fidelity": cals.calibrate_fidelity,
+    "check_res_spect": meas_jobs.check_res_spect,
+    "cal_res_spect": meas_jobs.calibrate_res_spect,
+    "check_two-tone": meas_jobs.check_two_tone,
+    "cal_two-tone": meas_jobs.calibrate_two_tone,
+    "check_rabi": meas_jobs.check_rabi,
+    "cal_rabi": meas_jobs.calibrate_rabi,
+    "check_fidelity": meas_jobs.check_fidelity,
+    "cal_fidelity": meas_jobs.calibrate_fidelity,
 }
 
 # Global variable to check the identity of incoming "job done" messages
