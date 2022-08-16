@@ -27,6 +27,19 @@ import calibration.measurement_jobs as meas_jobs
 import time
 from tempfile import gettempdir
 
+# Used to wait for an incoming job with a specific job_id
+# See request_job and handle_message in this file
+class JobDoneEvent:
+    def __init__(self, event: asyncio.Event):
+        # The event will be awaited by request_job, then in
+        # handle_message, when the incoming message matches
+        # self.requested_job_id, the event will be set. This causes
+        # request_job to resume after waiting, and so request_job will
+        # clear the event.
+        self.event = event
+
+        # The requested_job_id will be set by request_job before it waits
+        self.requested_job_id = None
 
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT
@@ -55,8 +68,6 @@ MEASUREMENT_JOBS = {
     "cal_fidelity": meas_jobs.calibrate_fidelity,
 }
 
-# Global variable to check the identity of incoming "job done" messages
-requested_job_id = ""
 
 
 async def check_calib_status(job_done_evt):
@@ -267,12 +278,10 @@ async def calibrate(node, job_done_evt):
 
 
 async def request_job(job, job_done_evt):
-    global requested_job_id
-
     job_id = job["job_id"]
 
-    # Updating global variable, for handle_message to accept only this job_id:
-    requested_job_id = job_id
+    # Make handle_message accept only this job_id:
+    job_done_evt.requested_job_id = job_id
 
     tmpdir = gettempdir()
     file = Path(tmpdir) / str(uuid4())
@@ -297,14 +306,13 @@ async def request_job(job, job_done_evt):
             print("request_job failed")
 
     # Wait until reply arrives(the one with our job_id).
-    await job_done_evt.wait()
-    job_done_evt.clear()
+    await job_done_evt.event.wait()
+    job_done_evt.event.clear()
 
     print("")
 
 
 async def handle_message(reader, writer, job_done_evt):
-    global requested_job_id
 
     addr = writer.get_extra_info("peername")
     data = await reader.read(100)
@@ -314,10 +322,10 @@ async def handle_message(reader, writer, job_done_evt):
     if len(parts) == 2 and parts[0] == "job_done":
         job_id = parts[1]
         # The requested_job_id has been set to the job ID we are waiting for
-        if job_id == requested_job_id:
+        if job_id == job_done_evt.requested_job_id:
             print(f'handle_message: Received "job_done", {job_id=!r} from {addr!r}')
             # Notify request_job to proceed
-            job_done_evt.set()
+            job_done_evt.event.set()
         else:
             print(
                 f'handle_message: Received *unexpected*  "job_done" message with \
@@ -341,7 +349,7 @@ async def message_server(job_done_evt):
 
 async def main():
     # To wait for messages from postprocessing
-    job_done_evt = asyncio.Event()
+    job_done_evt = JobDoneEvent(asyncio.Event())
 
     server_task = asyncio.create_task(message_server(job_done_evt))
     calib_task = asyncio.create_task(check_calib_status(job_done_evt))
