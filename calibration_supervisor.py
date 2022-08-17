@@ -23,7 +23,7 @@ from calibration.calibration_common import DataStatus, JobDoneEvent
 import calibration.calibration_lib as cal_lib
 
 
-# settings
+# Settings
 STORAGE_ROOT = settings.STORAGE_ROOT
 LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL
 CALIBRATION_SUPERVISOR_PORT = settings.CALIBRATION_SUPERVISOR_PORT
@@ -33,6 +33,8 @@ LOCALHOST = "localhost"
 # Set up Redis connection
 red = redis.Redis(decode_responses=True)
 
+# Book-keeping of nodes that needs recalibration:
+# last result of maintain: True if and only if node was recalibrated
 node_recal_statuses = {}
 
 # Maps names of check_data routines to their corresponding functions
@@ -52,12 +54,12 @@ CALIBRATION_FUNCS = {
 }
 
 
-
+# Calibration algorithm, based on "Optimus" (see doc/calibration.md)
 async def check_calib_status(job_done_evt):
     while 1:
         print("Checking the status of calibration:", end=" ")
 
-        # mimick work
+        # Mimick work
         time.sleep(1)
 
         print("\n------ STARTING MAINTAIN -------\n")
@@ -98,7 +100,7 @@ async def maintain(node, job_done_evt):
         print(f"Check_data returned bad_data for node {node}. Diagnosing dependencies.")
         deps = red.lrange(f"m_deps:{node}", 0, -1)
         await diagnose_loop(deps, job_done_evt)
-    # status is out of spec: no need to diagnose, go directly to calibration
+    # Status is out of spec: no need to diagnose, go directly to calibration
     print(f"Calibration necessary for node {node}. Calibrating...")
     await calibrate(node, job_done_evt)
     return True
@@ -112,7 +114,7 @@ def check_state(node):
         dep_recalibrated = node_recal_statuses[dep]
         if dep_recalibrated:
             print(
-                f"Node {dep} needed a recalibration, so check_state for {node} failed"
+                f"Dependency node {dep} needed a recalibration, so check_state for {node} failed"
             )
             return False
 
@@ -133,7 +135,9 @@ async def check_data(node, job_done_evt) -> DataStatus:
 
 async def diagnose_loop(initial_nodes, job_done_evt):
     print(f"Starting diagnose for nodes {initial_nodes}")
-    # To avoid recursion, we use this while loop function to perform a depth-first diagnose.
+    # To avoid recursion(calibration graphs may in principle be very
+    # large), we use this while loop to perform a depth-first
+    # diagnose.
     nodes_to_diag = initial_nodes
     nodes_to_measure = []
     diagnosed_nodes = []
@@ -220,6 +224,9 @@ async def request_job(job, job_done_evt):
     print("")
 
 
+# -------------------------------------------------------------------
+# Serving incoming messages
+
 async def handle_message(reader, writer, job_done_evt):
 
     addr = writer.get_extra_info("peername")
@@ -254,6 +261,9 @@ async def message_server(job_done_evt):
     async with server:
         await server.serve_forever()
 
+
+# -------------------------------------------------------------------
+# Main program
 
 async def main():
     # To wait for messages from postprocessing

@@ -16,10 +16,10 @@ import redis
 import json
 import networkx as nx
 
-# Set up redis
+# Set up redis connection
 red = redis.Redis(decode_responses=True)
 
-# measurement parameter names
+# Measurement parameter names
 param_names = set()
 
 # Networkx representation of measurement graph

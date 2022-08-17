@@ -52,8 +52,8 @@ MK_JOB_FNS = {
 # This function is just a template for a future implementation
 # check_data will do something like this:
 async def check_dummy(node, job_done_evt) -> DataStatus:
-    #  This key should be found in the node, but The signal
-    # demodulation measurement is used as a dummy here.
+    # In the future this key should be found in the node, but the
+    # signal demodulation measurement is used as a dummy here.
     mk_job_fn = MK_JOB_FNS.get("mk_job_check_sig_demod")
     job = mk_job_fn()
 
@@ -63,7 +63,7 @@ async def check_dummy(node, job_done_evt) -> DataStatus:
 
     cal_params = red.lrange(f"m_params:{node}", 0, -1)
     for cal_param in cal_params:
-        # Fetch the values we got from the measurement's postprocessing
+        # Fetch the values we got from the measurement's post-processing
         # here you can use the cal_param
         result_key = f"postproc:results:{job_id}"
         result = red.get(result_key)
@@ -76,7 +76,7 @@ async def check_dummy(node, job_done_evt) -> DataStatus:
 
     # TODO return status based on the above param checks instead of deciding at random
     num = random()
-    if num < 0.8:  # remove this later :-)
+    if num < 0.8:
         print(f"Check_data for {node} gives IN_SPEC")
         return DataStatus.in_spec
     if num < 0.95:  # remove this later :-)
@@ -109,12 +109,10 @@ async def calibrate_dummy(node, job_done_evt):
     cal_params = red.lrange(f"m_params:{node}", 0, -1)
     for cal_param in cal_params:
         # Fetch unit and parameter lifetime
-        # TODO: this will be changed in a coming pull-request
         unit = red.hget(f"m_params:{node}:{cal_param}", "unit")
         lifetime = red.hget(f"m_params:{node}:{cal_param}", "timeout")
 
-        # Fetch the values we got from the calibration's postprocessing
-        # TODO: this will be changed in a coming pull-request
+        # Fetch the values we got from the calibration's post-processing
         result_key = f"postproc:results:{job_id}"
         result = red.get(result_key)
         print(
@@ -122,7 +120,7 @@ async def calibrate_dummy(node, job_done_evt):
         )
         if result == None:
             print(f"Warning: no entry found for key {result_key}")
-            result = "not found"  # should investigate why this happens
+            result = "not found"  # TODO: better error handling
 
         red.hset(f"param:{cal_param}", "name", cal_param)
         red.hset(
@@ -141,9 +139,6 @@ async def calibrate_dummy(node, job_done_evt):
 # -------------------------------------------------------------------------
 # Misc heplers
 
-# DW: This method is not calibration specific: maybe it this should be
-# available for all of BCC, so that all the job requests done the same
-# way, with the same entry point?
 async def request_job(job, job_done_evt):
     job_id = job["job_id"]
 

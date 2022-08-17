@@ -15,12 +15,8 @@ import numpy as np
 from uuid import uuid4
 
 
-# check_sig_demod and calibrate_sig_demod are now almost identical,
-# but serve only as placeholders for more interesting functions.
-
-# The is_calibration_sup_job flag indicates that the job was requested
-# by the calibration supervisor.
-
+# The following two functions only serve as placeholders for real
+# measurement jobs to be implemented in coming versions of this code.
 
 def mk_job_check_sig_demod():
     # here we should do something simpler than in the calibration fn
@@ -30,7 +26,7 @@ def mk_job_check_sig_demod():
     job = {
         "job_id": str(uuid4()),
         "type": "script",
-        "is_calibration_sup_job": True,
+        "is_calibration_sup_job": True, # job requested by calibration framework
         "name": "demodulation_scenario",
         "params": {
             "Sine - Frequency": signal_array,
