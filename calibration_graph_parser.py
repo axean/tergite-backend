@@ -12,8 +12,9 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-import redis
 import json
+
+import redis
 import networkx as nx
 
 # Set up redis connection

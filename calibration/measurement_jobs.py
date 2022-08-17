@@ -10,9 +10,9 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
+from uuid import uuid4
 
 import numpy as np
-from uuid import uuid4
 
 
 # The following two functions only serve as placeholders for real

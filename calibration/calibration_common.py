@@ -14,7 +14,6 @@
 import asyncio
 from enum import Enum
 
-import redis
 
 # Used by check_data to indicate outcome
 class DataStatus(Enum):

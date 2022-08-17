@@ -24,7 +24,6 @@ from uuid import uuid4
 import redis
 import requests
 
-import config
 import calibration.measurement_jobs as meas_jobs
 from calibration.calibration_common import JobDoneEvent, DataStatus
 

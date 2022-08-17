@@ -19,6 +19,7 @@ import settings
 import time
 
 import redis
+
 from calibration.calibration_common import DataStatus, JobDoneEvent
 import calibration.calibration_lib as cal_lib
 
