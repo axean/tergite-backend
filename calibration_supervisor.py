@@ -2,7 +2,7 @@
 #
 # (C) Johan Blomberg, Gustav Grännsjö 2020
 # (C) Copyright Miroslav Dobsicek 2020, 2021
-# (C) Copyright David Wahlstedt 2021
+# (C) Copyright David Wahlstedt 2021, 2022
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -14,58 +14,41 @@
 
 
 import asyncio
-from random import random, randint
-from uuid import uuid4
-from pathlib import Path
-import json
-import requests
 from enum import Enum
 import settings
-import datetime
-import redis
-import calibration.measurement_jobs as meas_jobs
 import time
-from tempfile import gettempdir
 
-# Used to wait for an incoming job with a specific job_id
-# See request_job and handle_message in this file
-class JobDoneEvent:
-    def __init__(self, event: asyncio.Event):
-        # The event will be awaited by request_job, then in
-        # handle_message, when the incoming message matches
-        # self.requested_job_id, the event will be set. This causes
-        # request_job to resume after waiting, and so request_job will
-        # clear the event.
-        self.event = event
+import redis
+from calibration.calibration_common import DataStatus, JobDoneEvent
+import calibration.calibration_lib as cal_lib
 
-        # The requested_job_id will be set by request_job before it waits
-        self.requested_job_id = None
 
 # settings
 STORAGE_ROOT = settings.STORAGE_ROOT
 LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL
-BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
 CALIBRATION_SUPERVISOR_PORT = settings.CALIBRATION_SUPERVISOR_PORT
 
 LOCALHOST = "localhost"
 
-REST_API_MAP = {"jobs": "/jobs"}
-
-# Set up Redis
+# Set up Redis connection
 red = redis.Redis(decode_responses=True)
 
 node_recal_statuses = {}
 
-# Maps names of calibration routines to their corresponding functions
-MEASUREMENT_JOBS = {
-    "check_res_spect": meas_jobs.check_res_spect,
-    "cal_res_spect": meas_jobs.calibrate_res_spect,
-    "check_two-tone": meas_jobs.check_two_tone,
-    "cal_two-tone": meas_jobs.calibrate_two_tone,
-    "check_rabi": meas_jobs.check_rabi,
-    "cal_rabi": meas_jobs.calibrate_rabi,
-    "check_fidelity": meas_jobs.check_fidelity,
-    "cal_fidelity": meas_jobs.calibrate_fidelity,
+# Maps names of check_data routines to their corresponding functions
+CHECK_DATA_FUNCS = {
+    "check_res_spect": cal_lib.check_dummy,
+    "check_two-tone": cal_lib.check_dummy,
+    "check_rabi": cal_lib.check_dummy,
+    "check_fidelity": cal_lib.check_dummy,
+}
+
+# Maps names of calibrate routines to their corresponding functions
+CALIBRATION_FUNCS = {
+    "cal_res_spect": cal_lib.calibrate_dummy,
+    "cal_two-tone": cal_lib.calibrate_dummy,
+    "cal_rabi": cal_lib.calibrate_dummy,
+    "cal_fidelity": cal_lib.calibrate_dummy,
 }
 
 
@@ -100,7 +83,7 @@ async def maintain(node, job_done_evt):
 
     state_ok = check_state(node)
 
-    # If state is fine, then no further maintenance is needed.
+    # If state_ok is fine, then no further maintenance is needed.
     if state_ok:
         print(f"Check_state returned true for node {node}. No calibration.")
         return False
@@ -142,45 +125,11 @@ def check_state(node):
     return True
 
 
-class DataStatus(Enum):
-    in_spec = 1
-    out_of_spec = 2
-    bad_data = 3
-
-
-async def check_data(node, job_done_evt):
+async def check_data(node, job_done_evt) -> DataStatus:
     # Run the node's associated measurement to check the node's data
-    print("")
-    mk_measurement_job = MEASUREMENT_JOBS[red.hget(f"measurement:{node}", "check_fn")]
-    job = mk_measurement_job()
-    job_id = job["job_id"]
-    print(f"Requesting check job with {job_id=} for {node=} ...")
-    await request_job(job, job_done_evt)
-
-    params = red.lrange(f"m_params:{node}", 0, -1)
-    for param in params:
-        # Fetch the values we got from the measurement's postprocessing
-        # TODO: this will be changed in a coming pull-request
-        result_key = f"postproc:results:{job_id}"
-        result = red.get(result_key)
-        print(
-            f"For {param=}, from Redis we read {result_key} from postprocessing: {result}"
-        )
-        if result == None:
-            print(f"Warning: no entry found for key {result_key}")
-        # TODO ensure value is within thresholds
-
-    # TODO return status based on the above param checks instead of deciding at random
-    num = random()
-    if num < 0.8:
-        print(f"Check_data for {node} gives IN_SPEC")
-        return DataStatus.in_spec
-    if num < 0.95:
-        print(f"Check_data for {node} gives OUT_OF_SPEC")
-        return DataStatus.out_of_spec
-    print(f"Check_data for {node} gives BAD_DATA")
-    return DataStatus.bad_data
-
+    check_data_fn = CHECK_DATA_FUNCS[red.hget(f"measurement:{node}", "check_fn")]
+    status = await check_data_fn(node, job_done_evt)
+    return status
 
 async def diagnose_loop(initial_nodes, job_done_evt):
     print(f"Starting diagnose for nodes {initial_nodes}")
@@ -232,49 +181,8 @@ async def diagnose(node, job_done_evt):
 
 async def calibrate(node, job_done_evt):
     print("")
-    # TODO Add features
-    params = red.lrange(f"m_params:{node}", 0, -1)
-
-    # Run the node's associated measurement to check the node's data
-    mk_measurement_job = MEASUREMENT_JOBS[
-        red.hget(f"measurement:{node}", "calibration_fn")
-    ]
-    job = mk_measurement_job()
-    job_id = job["job_id"]
-    print(f"Requesting calibration job with {job_id=} for {node=} ...")
-    await request_job(job, job_done_evt)
-
-    print("")
-
-    for param in params:
-        # Fetch unit and parameter lifetime
-        # TODO: this will be changed in a coming pull-request
-        unit = red.hget(f"m_params:{node}:{param}", "unit")
-        lifetime = red.hget(f"m_params:{node}:{param}", "timeout")
-
-        # Fetch the values we got from the calibration's postprocessing
-        # TODO: this will be changed in a coming pull-request
-        result_key = f"postproc:results:{job_id}"
-        result = red.get(result_key)
-        print(
-            f"For {param=}, from Redis we read {result_key} from postprocessing: {result}"
-        )
-        if result == None:
-            print(f"Warning: no entry found for key {result_key}")
-            result = "not found"  # should investigate why this happens
-
-        red.hset(f"param:{param}", "name", param)
-        red.hset(
-            f"param:{param}",
-            "date",
-            datetime.datetime.now().replace(microsecond=0).isoformat() + "Z",
-        )
-        red.hset(f"param:{param}", "unit", unit)
-        red.hset(f"param:{param}", "value", result)
-
-        # Set expiry date
-        # TODO replace with flagging system to mark outdated nodes
-        red.expire(f"param:{param}", lifetime)
+    calibration_fn = CALIBRATION_FUNCS[red.hget(f"measurement:{node}", "calibration_fn")]
+    await calibration_fn(node, job_done_evt)
 
 
 async def request_job(job, job_done_evt):

@@ -14,32 +14,6 @@
 import numpy as np
 from uuid import uuid4
 
-# Mockup calibration and check functions
-
-def check_res_spect():
-    return check_sig_demod()
-
-def calibrate_res_spect():
-    return calibrate_sig_demod()
-
-def check_two_tone():
-    return check_sig_demod()
-
-def calibrate_two_tone():
-    return calibrate_sig_demod()
-
-def check_rabi():
-    return check_sig_demod()
-
-def calibrate_rabi():
-    return calibrate_sig_demod()
-
-def check_fidelity():
-    return check_sig_demod()
-
-def calibrate_fidelity():
-    return calibrate_sig_demod()
-
 
 # check_sig_demod and calibrate_sig_demod are now almost identical,
 # but serve only as placeholders for more interesting functions.
@@ -48,7 +22,7 @@ def calibrate_fidelity():
 # by the calibration supervisor.
 
 
-def check_sig_demod():
+def mk_job_check_sig_demod():
     # here we should do something simpler than in the calibration fn
     signal_array = gen_array(["linspace", "0", "5", "5"])
     demod_array = gen_array(["geomspace", "1", "5", "4"])
@@ -67,7 +41,7 @@ def check_sig_demod():
     return job
 
 
-def calibrate_sig_demod():
+def mk_job_calibrate_sig_demod():
     signal_array = gen_array(["linspace", "0", "10", "5"])
     demod_array = gen_array(["geomspace", "1", "9", "4"])
 
