@@ -18,6 +18,7 @@ import numpy as np
 # The following two functions only serve as placeholders for real
 # measurement jobs to be implemented in coming versions of this code.
 
+
 def mk_job_check_sig_demod():
     # here we should do something simpler than in the calibration fn
     signal_array = gen_array(["linspace", "0", "5", "5"])
@@ -26,7 +27,7 @@ def mk_job_check_sig_demod():
     job = {
         "job_id": str(uuid4()),
         "type": "script",
-        "is_calibration_sup_job": True, # job requested by calibration framework
+        "is_calibration_sup_job": True,  # job requested by calibration framework
         "name": "demodulation_scenario",
         "params": {
             "Sine - Frequency": signal_array,

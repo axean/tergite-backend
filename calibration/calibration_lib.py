@@ -84,6 +84,7 @@ async def check_dummy(node, job_done_event) -> DataStatus:
     print(f"Check_data for {node} gives BAD_DATA")
     return DataStatus.bad_data
 
+
 # To be used by calibration nodes that don't yet have check_data implemented
 def out_of_spec(node):
     print(f"check_data not implemented for {node}, forcing calibration ...")
@@ -92,6 +93,7 @@ def out_of_spec(node):
 
 # -------------------------------------------------------------------------
 # Calibration procedures
+
 
 async def calibrate_dummy(node, job_done_event):
     #  This key should be found in the node, but The signal
@@ -138,6 +140,7 @@ async def calibrate_dummy(node, job_done_event):
 # -------------------------------------------------------------------------
 # Misc heplers
 
+
 async def request_job(job, job_done_event):
     job_id = job["job_id"]
 
@@ -172,5 +175,3 @@ async def request_job(job, job_done_event):
     job_done_event.event.clear()
 
     print("")
-
-

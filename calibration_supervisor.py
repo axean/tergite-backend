@@ -134,6 +134,7 @@ async def check_data(node, job_done_event) -> DataStatus:
     status = await check_data_fn(node, job_done_event)
     return status
 
+
 async def diagnose_loop(initial_nodes, job_done_event):
     print(f"Starting diagnose for nodes {initial_nodes}")
     # To avoid recursion(calibration graphs may in principle be very
@@ -186,7 +187,9 @@ async def diagnose(node, job_done_event):
 
 async def calibrate(node, job_done_event):
     print("")
-    calibration_fn = CALIBRATION_FUNCS[red.hget(f"measurement:{node}", "calibration_fn")]
+    calibration_fn = CALIBRATION_FUNCS[
+        red.hget(f"measurement:{node}", "calibration_fn")
+    ]
     await calibration_fn(node, job_done_event)
 
 
@@ -228,6 +231,7 @@ async def request_job(job, job_done_event):
 # -------------------------------------------------------------------
 # Serving incoming messages
 
+
 async def handle_message(reader, writer, job_done_event):
 
     addr = writer.get_extra_info("peername")
@@ -265,6 +269,7 @@ async def message_server(job_done_event):
 
 # -------------------------------------------------------------------
 # Main program
+
 
 async def main():
     # To wait for messages from postprocessing

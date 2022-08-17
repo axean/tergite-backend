@@ -21,6 +21,7 @@ class DataStatus(Enum):
     out_of_spec = 2
     bad_data = 3
 
+
 # The event will be awaited by calibration.calibration_lib.request_job.
 # Then, in calibration_supervisor.handle_message, when the incoming
 # message matches self.requested_job_id, the event will be set. This
@@ -30,4 +31,3 @@ class JobDoneEvent:
     def __init__(self, event: asyncio.Event):
         self.event = event
         self.requested_job_id = None
-
