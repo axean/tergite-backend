@@ -24,7 +24,7 @@ from uuid import uuid4
 import redis
 import requests
 
-import calibration.measurement_jobs as meas_jobs
+import calibration.measurement_jobs as measurement_jobs
 from calibration.calibration_common import JobDoneEvent, DataStatus
 
 # Set up Redis connection
@@ -41,8 +41,8 @@ REST_API_MAP = {"jobs": "/jobs"}
 # form of reflection: ast.literal_eval does not apply on function symbols.
 
 MK_JOB_FNS = {
-    "mk_job_check_sig_demod": meas_jobs.mk_job_check_sig_demod,
-    "mk_job_calibrate_sig_demod": meas_jobs.mk_job_calibrate_sig_demod,
+    "mk_job_check_sig_demod": measurement_jobs.mk_job_check_sig_demod,
+    "mk_job_calibrate_sig_demod": measurement_jobs.mk_job_calibrate_sig_demod,
 }
 
 # -------------------------------------------------------------------------
@@ -50,7 +50,7 @@ MK_JOB_FNS = {
 
 # This function is just a template for a future implementation
 # check_data will do something like this:
-async def check_dummy(node, job_done_evt) -> DataStatus:
+async def check_dummy(node, job_done_event) -> DataStatus:
     # In the future this key should be found in the node, but the
     # signal demodulation measurement is used as a dummy here.
     mk_job_fn = MK_JOB_FNS.get("mk_job_check_sig_demod")
@@ -58,16 +58,16 @@ async def check_dummy(node, job_done_evt) -> DataStatus:
 
     job_id = job["job_id"]
     print(f"Requesting check job with {job_id=} for {node=} ...")
-    await request_job(job, job_done_evt)
+    await request_job(job, job_done_event)
 
-    cal_params = red.lrange(f"m_params:{node}", 0, -1)
-    for cal_param in cal_params:
+    calibration_params = red.lrange(f"m_params:{node}", 0, -1)
+    for calibration_param in calibration_params:
         # Fetch the values we got from the measurement's post-processing
-        # here you can use the cal_param
+        # here you can use the calibration_param
         result_key = f"postproc:results:{job_id}"
         result = red.get(result_key)
         print(
-            f"check_data: For {cal_param=}, from Redis we read {result_key} from postprocessing: {result}"
+            f"check_data: For {calibration_param=}, from Redis we read {result_key} from postprocessing: {result}"
         )
         if result == None:
             print(f"Warning: no entry found for key {result_key}")
@@ -93,7 +93,7 @@ def out_of_spec(node):
 # -------------------------------------------------------------------------
 # Calibration procedures
 
-async def calibrate_dummy(node, job_done_evt):
+async def calibrate_dummy(node, job_done_event):
     #  This key should be found in the node, but The signal
     # demodulation measurement is used as a dummy here.
     mk_job_fn = MK_JOB_FNS.get("mk_job_calibrate_sig_demod")
@@ -101,48 +101,48 @@ async def calibrate_dummy(node, job_done_evt):
 
     job_id = job["job_id"]
     print(f"Requesting calibration job with {job_id=} for {node=} ...")
-    await request_job(job, job_done_evt)
+    await request_job(job, job_done_event)
 
     print("")
 
-    cal_params = red.lrange(f"m_params:{node}", 0, -1)
-    for cal_param in cal_params:
+    calibration_params = red.lrange(f"m_params:{node}", 0, -1)
+    for calibration_param in calibration_params:
         # Fetch unit and parameter lifetime
-        unit = red.hget(f"m_params:{node}:{cal_param}", "unit")
-        lifetime = red.hget(f"m_params:{node}:{cal_param}", "timeout")
+        unit = red.hget(f"m_params:{node}:{calibration_param}", "unit")
+        lifetime = red.hget(f"m_params:{node}:{calibration_param}", "timeout")
 
         # Fetch the values we got from the calibration's post-processing
         result_key = f"postproc:results:{job_id}"
         result = red.get(result_key)
         print(
-            f"For {cal_param=}, from Redis we read {result_key} from postprocessing: {result}"
+            f"For {calibration_param=}, from Redis we read {result_key} from postprocessing: {result}"
         )
         if result == None:
             print(f"Warning: no entry found for key {result_key}")
             result = "not found"  # TODO: better error handling
 
-        red.hset(f"param:{cal_param}", "name", cal_param)
+        red.hset(f"param:{calibration_param}", "name", calibration_param)
         red.hset(
-            f"param:{cal_param}",
+            f"param:{calibration_param}",
             "date",
             datetime.datetime.now().replace(microsecond=0).isoformat() + "Z",
         )
-        red.hset(f"param:{cal_param}", "unit", unit)
-        red.hset(f"param:{cal_param}", "value", result)
+        red.hset(f"param:{calibration_param}", "unit", unit)
+        red.hset(f"param:{calibration_param}", "value", result)
 
         # Set expiry date
         # TODO replace with flagging system to mark outdated nodes
-        red.expire(f"param:{cal_param}", lifetime)
+        red.expire(f"param:{calibration_param}", lifetime)
 
 
 # -------------------------------------------------------------------------
 # Misc heplers
 
-async def request_job(job, job_done_evt):
+async def request_job(job, job_done_event):
     job_id = job["job_id"]
 
     # Updating for handle_message to accept only this job_id:
-    job_done_evt.requested_job_id = job_id
+    job_done_event.requested_job_id = job_id
 
     tmpdir = gettempdir()
     file = Path(tmpdir) / str(uuid4())
@@ -168,8 +168,8 @@ async def request_job(job, job_done_evt):
             return
 
     # Wait until reply arrives(the one with our job_id).
-    await job_done_evt.event.wait()
-    job_done_evt.event.clear()
+    await job_done_event.event.wait()
+    job_done_event.event.clear()
 
     print("")
 

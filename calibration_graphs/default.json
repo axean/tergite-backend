@@ -3,7 +3,7 @@
     "dependencies": [
       "rabi"
     ],
-    "calibration_fn": "cal_fidelity",
+    "calibration_fn": "calibrate_fidelity",
     "check_fn": "check_fidelity",
     "fidelity_measurement": true,
     "params": [
@@ -19,9 +19,9 @@
   "rabi":{
     "dependencies": [
       "two-tone",
-      "res_spect"
+      "resonator_spectroscopy"
     ],
-    "calibration_fn": "cal_rabi",
+    "calibration_fn": "calibrate_rabi",
     "check_fn": "check_rabi",
     "params": [
       {
@@ -41,10 +41,10 @@
     ]
   },
 
-  "res_spect":{
+  "resonator_spectroscopy":{
     "dependencies": [],
-    "calibration_fn": "cal_res_spect",
-    "check_fn": "check_res_spect",
+    "calibration_fn": "calibrate_resonator_spectroscopy",
+    "check_fn": "check_resonator_spectroscopy",
     "params": [
       {
         "name": "res_freq",
@@ -57,8 +57,8 @@
   },
 
   "two-tone":{
-    "dependencies": ["res_spect"],
-    "calibration_fn": "cal_two-tone",
+    "dependencies": ["resonator_spectroscopy"],
+    "calibration_fn": "calibrate_two-tone",
     "check_fn": "check_two-tone",
     "params": [
       {

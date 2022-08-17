@@ -21,7 +21,7 @@ import time
 import redis
 
 from calibration.calibration_common import DataStatus, JobDoneEvent
-import calibration.calibration_lib as cal_lib
+import calibration.calibration_lib as calibration_lib
 
 
 # Settings
@@ -36,27 +36,27 @@ red = redis.Redis(decode_responses=True)
 
 # Book-keeping of nodes that needs recalibration:
 # last result of maintain: True if and only if node was recalibrated
-node_recal_statuses = {}
+node_recalibration_statuses = {}
 
 # Maps names of check_data routines to their corresponding functions
 CHECK_DATA_FUNCS = {
-    "check_res_spect": cal_lib.check_dummy,
-    "check_two-tone": cal_lib.check_dummy,
-    "check_rabi": cal_lib.check_dummy,
-    "check_fidelity": cal_lib.check_dummy,
+    "check_resonator_spectroscopy": calibration_lib.check_dummy,
+    "check_two-tone": calibration_lib.check_dummy,
+    "check_rabi": calibration_lib.check_dummy,
+    "check_fidelity": calibration_lib.check_dummy,
 }
 
 # Maps names of calibrate routines to their corresponding functions
 CALIBRATION_FUNCS = {
-    "cal_res_spect": cal_lib.calibrate_dummy,
-    "cal_two-tone": cal_lib.calibrate_dummy,
-    "cal_rabi": cal_lib.calibrate_dummy,
-    "cal_fidelity": cal_lib.calibrate_dummy,
+    "calibrate_resonator_spectroscopy": calibration_lib.calibrate_dummy,
+    "calibrate_two-tone": calibration_lib.calibrate_dummy,
+    "calibrate_rabi": calibration_lib.calibrate_dummy,
+    "calibrate_fidelity": calibration_lib.calibrate_dummy,
 }
 
 
 # Calibration algorithm, based on "Optimus" (see doc/calibration.md)
-async def check_calib_status(job_done_evt):
+async def check_calibration_status(job_done_event):
     while 1:
         print("Checking the status of calibration:", end=" ")
 
@@ -64,24 +64,24 @@ async def check_calib_status(job_done_evt):
         time.sleep(1)
 
         print("\n------ STARTING MAINTAIN -------\n")
-        await maintain_all(job_done_evt)
+        await maintain_all(job_done_event)
         print("\n------ MAINTAINED -------\n")
 
         # Wait a while between checks
         await asyncio.sleep(15)
 
 
-async def maintain_all(job_done_evt):
+async def maintain_all(job_done_event):
     # Get the topological order of DAG nodes
     topo_order = red.lrange("topo_order", 0, -1)
-    global node_recal_statuses
-    node_recal_statuses = {}
+    global node_recalibration_statuses
+    node_recalibration_statuses = {}
 
     for node in topo_order:
-        node_recal_statuses[node] = await maintain(node, job_done_evt)
+        node_recalibration_statuses[node] = await maintain(node, job_done_event)
 
 
-async def maintain(node, job_done_evt):
+async def maintain(node, job_done_event):
     print(f"Maintaining node {node}")
 
     state_ok = check_state(node)
@@ -92,7 +92,7 @@ async def maintain(node, job_done_evt):
         return False
 
     # Perform check_data
-    status = await check_data(node, job_done_evt)
+    status = await check_data(node, job_done_event)
     if status == DataStatus.in_spec:
         print(f"Check_data returned in_spec for node {node}. No calibration.")
         return False
@@ -100,10 +100,10 @@ async def maintain(node, job_done_evt):
     if status == DataStatus.bad_data:
         print(f"Check_data returned bad_data for node {node}. Diagnosing dependencies.")
         deps = red.lrange(f"m_deps:{node}", 0, -1)
-        await diagnose_loop(deps, job_done_evt)
+        await diagnose_loop(deps, job_done_event)
     # Status is out of spec: no need to diagnose, go directly to calibration
     print(f"Calibration necessary for node {node}. Calibrating...")
-    await calibrate(node, job_done_evt)
+    await calibrate(node, job_done_event)
     return True
 
 
@@ -112,7 +112,7 @@ def check_state(node):
     deps = red.lrange(f"m_deps:{node}", 0, -1)
 
     for dep in deps:
-        dep_recalibrated = node_recal_statuses[dep]
+        dep_recalibrated = node_recalibration_statuses[dep]
         if dep_recalibrated:
             print(
                 f"Dependency node {dep} needed a recalibration, so check_state for {node} failed"
@@ -128,13 +128,13 @@ def check_state(node):
     return True
 
 
-async def check_data(node, job_done_evt) -> DataStatus:
+async def check_data(node, job_done_event) -> DataStatus:
     # Run the node's associated measurement to check the node's data
     check_data_fn = CHECK_DATA_FUNCS[red.hget(f"measurement:{node}", "check_fn")]
-    status = await check_data_fn(node, job_done_evt)
+    status = await check_data_fn(node, job_done_event)
     return status
 
-async def diagnose_loop(initial_nodes, job_done_evt):
+async def diagnose_loop(initial_nodes, job_done_event):
     print(f"Starting diagnose for nodes {initial_nodes}")
     # To avoid recursion(calibration graphs may in principle be very
     # large), we use this while loop to perform a depth-first
@@ -150,7 +150,7 @@ async def diagnose_loop(initial_nodes, job_done_evt):
             nodes_to_diag.pop(0)
         # Diagnose the current node, to check if its dependencies needs to be
         # diagnosed, and if this node has to be recalibrated.
-        to_diag, to_measure = await diagnose(nodes_to_diag[0], job_done_evt)
+        to_diag, to_measure = await diagnose(nodes_to_diag[0], job_done_event)
         print(f"To_diag = {to_diag}")
         # Mark that we've diagnosed this node
         diagnosed_nodes.append(nodes_to_diag[0])
@@ -167,11 +167,11 @@ async def diagnose_loop(initial_nodes, job_done_evt):
 
     for node in nodes_to_measure:
         print(f"(Diag) measuring {node}")
-        await calibrate(node, job_done_evt)
+        await calibrate(node, job_done_event)
 
 
-async def diagnose(node, job_done_evt):
-    status = await check_data(node, job_done_evt)
+async def diagnose(node, job_done_event):
+    status = await check_data(node, job_done_event)
     if status == DataStatus.in_spec:
         # In spec, no further diag needed, and no recalibration
         return [], []
@@ -184,17 +184,17 @@ async def diagnose(node, job_done_evt):
         return deps, [node]
 
 
-async def calibrate(node, job_done_evt):
+async def calibrate(node, job_done_event):
     print("")
     calibration_fn = CALIBRATION_FUNCS[red.hget(f"measurement:{node}", "calibration_fn")]
-    await calibration_fn(node, job_done_evt)
+    await calibration_fn(node, job_done_event)
 
 
-async def request_job(job, job_done_evt):
+async def request_job(job, job_done_event):
     job_id = job["job_id"]
 
     # Make handle_message accept only this job_id:
-    job_done_evt.requested_job_id = job_id
+    job_done_event.requested_job_id = job_id
 
     tmpdir = gettempdir()
     file = Path(tmpdir) / str(uuid4())
@@ -219,8 +219,8 @@ async def request_job(job, job_done_evt):
             print("request_job failed")
 
     # Wait until reply arrives(the one with our job_id).
-    await job_done_evt.event.wait()
-    job_done_evt.event.clear()
+    await job_done_event.event.wait()
+    job_done_event.event.clear()
 
     print("")
 
@@ -228,7 +228,7 @@ async def request_job(job, job_done_evt):
 # -------------------------------------------------------------------
 # Serving incoming messages
 
-async def handle_message(reader, writer, job_done_evt):
+async def handle_message(reader, writer, job_done_event):
 
     addr = writer.get_extra_info("peername")
     data = await reader.read(100)
@@ -238,10 +238,10 @@ async def handle_message(reader, writer, job_done_evt):
     if len(parts) == 2 and parts[0] == "job_done":
         job_id = parts[1]
         # The requested_job_id has been set to the job ID we are waiting for
-        if job_id == job_done_evt.requested_job_id:
+        if job_id == job_done_event.requested_job_id:
             print(f'handle_message: Received "job_done", {job_id=!r} from {addr!r}')
             # Notify request_job to proceed
-            job_done_evt.event.set()
+            job_done_event.event.set()
         else:
             print(
                 f'handle_message: Received *unexpected*  "job_done" message with \
@@ -253,9 +253,9 @@ async def handle_message(reader, writer, job_done_evt):
     writer.close()
 
 
-async def message_server(job_done_evt):
+async def message_server(job_done_event):
     server = await asyncio.start_server(
-        lambda reader, writer: handle_message(reader, writer, job_done_evt),
+        lambda reader, writer: handle_message(reader, writer, job_done_event),
         LOCALHOST,
         CALIBRATION_SUPERVISOR_PORT,
     )
@@ -268,13 +268,13 @@ async def message_server(job_done_evt):
 
 async def main():
     # To wait for messages from postprocessing
-    job_done_evt = JobDoneEvent(asyncio.Event())
+    job_done_event = JobDoneEvent(asyncio.Event())
 
-    server_task = asyncio.create_task(message_server(job_done_evt))
-    calib_task = asyncio.create_task(check_calib_status(job_done_evt))
+    server_task = asyncio.create_task(message_server(job_done_event))
+    calibration_task = asyncio.create_task(check_calibration_status(job_done_event))
 
     await server_task
-    await calib_task
+    await calibration_task
 
 
 ### run ###
