@@ -16,6 +16,7 @@ import json
 import numpy as np
 from pathlib import Path
 from tempfile import gettempdir
+import toml
 
 from Labber import Scenario
 from Labber import ScriptTools
