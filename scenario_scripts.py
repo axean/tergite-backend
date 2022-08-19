@@ -12,13 +12,13 @@
 # that they have been altered from the originals.
 
 
-from Labber import Scenario
-from Labber import ScriptTools
-
-import numpy as np
 import json
+import numpy as np
 from pathlib import Path
 from tempfile import gettempdir
+
+from Labber import Scenario
+from Labber import ScriptTools
 
 
 def demodulation_scenario(signal_array, demod_array):

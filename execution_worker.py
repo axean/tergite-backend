@@ -13,9 +13,14 @@
 # that they have been altered from the originals.
 
 
-from pathlib import Path
-from uuid import uuid4
 import json
+from pathlib import Path
+import settings
+from uuid import uuid4
+
+import requests
+
+from job_supervisor import inform_location, inform_failure, Location
 from scenario_scripts import (
     demodulation_scenario,
     qobj_scenario,
@@ -23,10 +28,6 @@ from scenario_scripts import (
     resonator_spectroscopy_scenario,
     generic_calib_zi_scenario,
 )
-import requests
-import settings
-
-from job_supervisor import inform_location, inform_failure, Location
 
 # Settings
 STORAGE_ROOT = settings.STORAGE_ROOT
