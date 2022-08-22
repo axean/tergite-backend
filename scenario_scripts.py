@@ -21,6 +21,8 @@ import toml
 from Labber import Scenario
 from Labber import ScriptTools
 
+# ===========================================================================
+# Scenario creation functions
 
 def demodulation_scenario(signal_array, demod_array):
     # create and add instruments
@@ -42,11 +44,7 @@ def demodulation_scenario(signal_array, demod_array):
     # add log channels
     s.add_log("Demod - Value")
 
-    # set metadata
-    s.comment = "Comment for log"
-    s.tags.project = "My project"
-    s.tags.user = "John Doe"
-    s.tags.tags = ["Tag 1", "Tag 2/Subtag"]
+    set_default_metadata(s)
 
     # set timing info
     s.wait_between = 0.01
@@ -125,12 +123,7 @@ def qobj_scenario(job):
         if extraction.get("voltages", False):
             add_readout_voltages(s, n_qubits)
 
-    # set metadata
-    s.log_name = "Test qobj"
-    s.comment = "Comment for log"
-    s.tags.project = "My project"
-    s.tags.user = "Chalmers default user"
-    s.tags.tags = ["Qobj"]
+    set_default_metadata(s)
 
     # set timing info
     s.wait_between = 0.2
@@ -189,12 +182,7 @@ def resonator_spectroscopy_scenario(job):
     # Loading Scenario as object
     s = Scenario(temp_dir + "/tmp.json")
 
-    # set metadata
-    s.log_name = "Resonator Spectroscopy"
-    s.comment = "Comment for log"
-    s.tags.project = "Automatic Calibration project"
-    s.tags.user = "Chalmers default user"
-    s.tags.tags = ["ResonatorSpectroscopy"]
+    set_default_metadata(s)
 
     # set timing info
     s.wait_between = 0.2
@@ -319,13 +307,7 @@ def generic_calib_zi_scenario(job):
     # Loading Scenario as object
     s = Scenario(temp_dir + "/tmp.json")
 
-    # set metadata
-    # these needs to be automated by redis entries
-    s.log_name = job["name"]
-    s.comment = "Comment for log"
-    s.tags.project = "Automatic Calibration project"
-    s.tags.user = "Chalmers default user"
-    s.tags.tags = [job["name"]]
+    set_default_metadata(s)
 
     # set timing info
     s.wait_between = 0.2
@@ -365,18 +347,15 @@ def qobj_dummy_scenario(job):
     instr.values["QObj JSON"] = json.dumps(qobj)
     instr.values["QObj ID"] = qobj["qobj_id"]
 
-    # set metadata
-    s.log_name = "Test qobj"
-    s.comment = "Comment for log"
-    s.tags.project = "My project"
-    s.tags.user = "Chalmers default user"
-    s.tags.tags = ["Qobj"]
+    set_default_metadata(s)
 
     # set timing info
     s.wait_between = 0.2
 
     return s
 
+# ===========================================================================
+# Misc helpers
 
 def update_step_single_value(scenario, name, value):
     scenario.get_step(name).range_items[0].single = value
@@ -449,3 +428,10 @@ def add_readout_voltages(scenario, n_qubits):
     channel = "QA - Result {id}"
     for i in range(n_qubits):
         scenario.add_log(channel.format(id=str(i + 1)))
+
+
+def set_default_metadata(s):
+    s.comment = "Default comment for log"
+    s.tags.project = "Default project"
+    s.tags.user = "Default user"
+    s.tags.tags = ["Default tag"]

@@ -67,6 +67,8 @@ def post_scenario_file(job_dict: dict, /):
     # Inform supervisor
     inform_location(job_id, Location.EXEC_W)
 
+    # Create scenario
+
     print(f"Job script type: {job_dict['name']}")
     if job_dict["name"] == "demodulation_scenario":
         signal_array = job_dict["params"]["Sine - Frequency"]
@@ -74,26 +76,17 @@ def post_scenario_file(job_dict: dict, /):
 
         scenario = demodulation_scenario(signal_array, demod_array)
 
-        scenario.log_name = "Test signal demodulation - " + job_id
-        # scenario.save("/tmp/my.json", save_as_json=True)
-
     elif job_dict["name"] == "qiskit_qasm_runner":
         scenario = qobj_scenario(job_dict)
 
-        scenario.log_name += job_id
-
     elif job_dict["name"] == "qasm_dummy_job":
         scenario = qobj_dummy_scenario(job_dict)
-
-        scenario.log_name += job_id
 
     elif job_dict["name"] in [
         "resonator_spectroscopy",
         "fit_resonator_spectroscopy",
     ]:
         scenario = resonator_spectroscopy_scenario(job_dict)
-
-        scenario.log_name += job_id
 
     elif job_dict["name"] in [
         "pulsed_resonator_spectroscopy",
@@ -103,10 +96,12 @@ def post_scenario_file(job_dict: dict, /):
     ]:
         scenario = generic_calib_zi_scenario(job_dict)
 
-        scenario.log_name += job_id
-
     else:
         return None
+
+    # Update metadata
+
+    scenario.log_name = job_id
 
     # Store important information inside the scenario: using the tag list
     # 1) job_id
@@ -117,6 +112,7 @@ def post_scenario_file(job_dict: dict, /):
     if is_calibration_sup_job:
         scenario.tags.tags += [is_calibration_sup_job]
 
+    # Upload scenario
     scenario_file = Path(STORAGE_ROOT) / (job_id + ".labber")
     scenario.save(scenario_file)
     print(f"Scenario generated at {str(scenario_file)}")
