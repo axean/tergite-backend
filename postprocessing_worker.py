@@ -132,6 +132,8 @@ def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Path) -> Any:
 
 def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> tuple:
 
+    update_mss_and_bcc(memory = [], job_id = sf.job_id)
+
     if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
         pass # TODO
 
