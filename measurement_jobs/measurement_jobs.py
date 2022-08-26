@@ -51,6 +51,36 @@ def mk_job_pulsed_res_spect(
     }
     return job
 
+def mk_job_two_tone(
+    # Mandatory parameters for measurement job
+    control_start_freq,
+    control_stop_freq,
+    readout_resonance_freq,  # depends on pulsed resonator spectroscopy result
+    num_pts,
+    # Optional arguments to override calibration supervisor defaults
+    is_calibration_sup_job = True,
+    name = "pulsed_two_tone_qubit_spectroscopy",
+    # Optional arguments to override any other parameters from the
+    # defaults TOML file in measurement_jobs/parameter_defaults/
+    **kwargs,
+):
+
+    job = {
+        "job_id": str(uuid4()),
+        "type": "script",
+        "is_calibration_sup_job": is_calibration_sup_job,
+        "name": name,
+        "params": {
+            "control_start_freq": control_start_freq,
+            "control_stop_freq": control_stop_freq,
+            "readout_resonance_freq": readout_resonance_freq,
+            "num_pts": num_pts,
+            **kwargs,
+        },
+    }
+    return job
+
+
 # ------------------------------------------------------------------------------
 # Misc jobs
 
