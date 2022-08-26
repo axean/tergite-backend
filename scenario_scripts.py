@@ -215,9 +215,12 @@ def generic_calib_zi_scenario(job):
 
     job_name = job["name"]
 
-    # Loading scenario as dictionary
     scenario_dict = get_scenario_template_dict(job_name)
-    scenario_parameters = job["params"]
+
+    defaults = get_default_params(job_name)
+
+    # The parameters from job will override those of defaults
+    scenario_parameters = dict(defaults, **job["params"])
 
     # Updating Step parameters in Scenario dictionary
     for i, stepchannel in enumerate(scenario_dict["step_channels"]):
@@ -398,6 +401,18 @@ def get_scenario_template_dict(job_name):
     scenario_dict = ScriptTools.load_scenario_as_dict(scenario_template_filepath)
     return scenario_dict
 
+
+# Returns a dictionary of the default measurement parameters for the associated job name
+def get_default_params(job_name):
+    default_files = {
+        "pulsed_resonator_spectroscopy": "pulsed_resonator_spectroscopy.toml",
+        "pulsed_two_tone_qubit_spectroscopy": "two_tone.toml",
+        "rabi_qubit_pi_pulse_estimation": "rabi.toml",
+        "ramsey_qubit_freq_correction": "ramsey.toml",
+    }
+    filename = default_files[job_name]
+    filepath = "measurement_jobs/parameter_defaults/" + filename
+    return toml.load(filepath)
 
 
 def update_step_single_value(scenario, name, value):

@@ -14,11 +14,48 @@ from uuid import uuid4
 
 import numpy as np
 
+# ------------------------------------------------------------------------------
+# Calibration jobs
 
-# The following two functions only serve as placeholders for real
-# measurement jobs to be implemented in coming versions of this code.
+# Performs pulsed resonator spectroscopy
+def mk_job_pulsed_res_spect(
+        # Mandatory parameters for measurement job
+        num_pts,
+        qa_avg,
+        readout_amp,
+        readout_start_freq,
+        readout_stop_freq,
+        readout_power,
+        # Optional arguments to override calibration supervisor defaults
+        is_calibration_sup_job = True,
+        name = "pulsed_resonator_spectroscopy",
+        # Optional arguments to override any other parameters from the
+        # defaults TOML file in measurement_jobs/parameter_defaults/
+        **kwargs,
+):
 
+    job = {
+        "job_id": str(uuid4()),
+        "type": "script",
+        "is_calibration_sup_job": is_calibration_sup_job,
+        "name": name,
+        "params": {
+            "num_pts": num_pts,  # 20M/200 points = 1k sweep frequency resolution
+            "qa_avg": qa_avg,  # previously num_ave, 1024
+            "readout_start_freq": readout_start_freq,
+            "readout_stop_freq": readout_stop_freq,
+            "readout_amp": readout_amp,
+            "readout_power": readout_power,
+            **kwargs
+        },
+    }
+    return job
 
+# ------------------------------------------------------------------------------
+# Misc jobs
+
+# Signal demodulation, demo that performs dry-run on the Labber API,
+# not involving any instruments
 def mk_job_check_sig_demod():
     # here we should do something simpler than in the calibration fn
     signal_array = gen_array(["linspace", "0", "5", "5"])
