@@ -24,7 +24,7 @@ from uuid import uuid4
 import redis
 import requests
 
-import calibration.measurement_jobs as measurement_jobs
+import measurement_jobs.measurement_jobs as measurement_jobs
 from calibration.calibration_common import JobDoneEvent, DataStatus
 
 # Set up Redis connection
