@@ -3,9 +3,9 @@
 # from the calibration_supervisor.py
 #
 # Used to populate scenarios created by scenario_scripts.py for jobs
-# with name field "pulsed_resonator_spectroscopy". Creating such a job with
-# calibration/measurement_jobs.py allows these values to be overridden
-# by the corresponding keys in the job's 'params' field.
+# with name field "pulsed_resonator_spectroscopy". Creating such a job
+# with measurement_jobs/measurement_jobs.py allows these values to be
+# overridden by the corresponding keys in the job's 'params' field.
 
 num_pts = 201 # mandatory. name: num_pts # 20M/200 points = 1k sweep frequency resolution
 num_pts_other_axis = 21 # mandatory. name: num_pts_other_axis # used when another measurement sweep is required, alt name: num_pts_2d_axis ?

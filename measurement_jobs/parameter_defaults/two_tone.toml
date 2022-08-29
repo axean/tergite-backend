@@ -1,11 +1,12 @@
 #
-# Default values for pulsed resonator spectroscopy using ZI / Keysight / Labber,
-# from the calibration_supervisor.py
+# Default values for pulsed two-tone qubit spectroscopy using ZI /
+# Keysight / Labber, from the calibration_supervisor.py
 #
 # Used to populate scenarios created by scenario_scripts.py for jobs
 # with name field "pulsed_two_tone_qubit_spectroscopy". Creating such
-# a job with calibration/measurement_jobs.py allows these values to be
-# overridden by the corresponding keys in the job's 'params' field.
+# a job with measurement_jobs/measurement_jobs.py allows these values
+# to be overridden by the corresponding keys in the job's 'params'
+# field.
 
 # All params are general form of Pulsed Resonator Spectroscopy,
 # Two-tone, Rabi and Ramsey
