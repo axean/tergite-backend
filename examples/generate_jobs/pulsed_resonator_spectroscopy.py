@@ -60,7 +60,7 @@ def generate_job():
         is_calibration_sup_job = False, # default True
         # non-mandatory arguments overriding defaults
         # just to show we can override: default in Toml file is 274.68e6
-        control_freq = 274.68e6 + 0.001e6,
+        drive_freq = 274.68e6 + 0.001e6,
     )
     return job
 

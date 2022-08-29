@@ -53,8 +53,8 @@ def mk_job_pulsed_res_spect(
 
 def mk_job_two_tone(
     # Mandatory parameters for measurement job
-    control_start_freq,
-    control_stop_freq,
+    drive_start_freq,
+    drive_stop_freq,
     readout_resonance_freq,  # depends on pulsed resonator spectroscopy result
     num_pts,
     # Optional arguments to override calibration supervisor defaults
@@ -71,8 +71,8 @@ def mk_job_two_tone(
         "is_calibration_sup_job": is_calibration_sup_job,
         "name": name,
         "params": {
-            "control_start_freq": control_start_freq,
-            "control_stop_freq": control_stop_freq,
+            "drive_start_freq": drive_start_freq,
+            "drive_stop_freq": drive_stop_freq,
             "readout_resonance_freq": readout_resonance_freq,
             "num_pts": num_pts,
             **kwargs,
@@ -83,7 +83,7 @@ def mk_job_two_tone(
 def mk_job_rabi(
     # Mandatory parameters for measurement job
     readout_resonance_freq,  # depends on pulsed resonator spectroscopy result
-    control_freq,  # depends on two_tone
+    drive_freq,  # depends on two_tone
     num_pts, # maybe this doesn't need to be a parameter here?
     # Optional arguments to override calibration supervisor defaults
     is_calibration_sup_job = True,
@@ -99,7 +99,7 @@ def mk_job_rabi(
         "name": name,
         "params": {
             "readout_resonance_freq": readout_resonance_freq,
-            "control_freq": control_freq,
+            "drive_freq": drive_freq,
             "num_pts": num_pts,
             **kwargs,
         },
@@ -109,8 +109,8 @@ def mk_job_rabi(
 def mk_job_ramsey(
     # Mandatory parameters for measurement job
     readout_resonance_freq,  # depends on pulsed resonator spectroscopy result
-    control_freq,  # depends on two_tone
-    control_amp,  # depends on rabi = result / 2
+    drive_freq,  # depends on two_tone
+    drive_amp,  # depends on rabi = result / 2
     num_pts, # maybe this doesn't need to be a parameter here?
     # Optional arguments to override calibration supervisor defaults
     is_calibration_sup_job = True,
@@ -126,7 +126,7 @@ def mk_job_ramsey(
         "name": name,
         "params": {
             "readout_resonance_freq": readout_resonance_freq,
-            "control_freq": control_freq,
+            "drive_freq": drive_freq,
             "num_pts": num_pts,
             **kwargs,
         },

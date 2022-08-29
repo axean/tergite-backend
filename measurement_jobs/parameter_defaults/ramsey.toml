@@ -7,25 +7,25 @@
 # with measurement_jobs/measurement_jobs.py allows these values to be
 # overridden by the corresponding keys in the job's 'params' field.
 
-control_output_enabled = 1  # & output On, exiting the qubit
-control_freq_range_type = "Single"
-control_start_freq = 270e6
-control_stop_freq = 280e6
-control_if_freq = 4.5e9  # & should be in some config param
-control_freq = 273.18e6  # & qubiy exitation frequency = "control_freq" + "control_if_freq" # should be replaced by the measured variable
-control_amp_range_type = "Single"
-control_amp = 48e-3  # & Half the pi-pulse amplitude, depends on Rabi result
-control_amp_start = 1e-3
-control_amp_stop = 200e-3
-control_duration = 100e-9
-control_pulse_spacing_range_type = "Start - Stop"  # & doing a pulse spacing sweep
-control_pulse_spacing_start = 100e-9  # &
-control_pulse_spacing_stop = 2e-6  # &
-control_pulse_spacing = 2e-6  # kept as default value
-control_power_range_type = "Single"
-control_power = -10  # & used in RS-RF Source
-control_start_power = -20
-control_stop_power = 0
+drive_output_enabled = 1  # & output On, exiting the qubit
+drive_freq_range_type = "Single"
+drive_start_freq = 270e6
+drive_stop_freq = 280e6
+drive_if_freq = 4.5e9  # & should be in some config param
+drive_freq = 273.18e6  # & qubiy exitation frequency = "drive_freq" + "drive_if_freq" # should be replaced by the measured variable
+drive_amp_range_type = "Single"
+drive_amp = 48e-3  # & Half the pi-pulse amplitude, depends on Rabi result
+drive_amp_start = 1e-3
+drive_amp_stop = 200e-3
+drive_duration = 100e-9
+drive_pulse_spacing_range_type = "Start - Stop"  # & doing a pulse spacing sweep
+drive_pulse_spacing_start = 100e-9  # &
+drive_pulse_spacing_stop = 2e-6  # &
+drive_pulse_spacing = 2e-6  # kept as default value
+drive_power_range_type = "Single"
+drive_power = -10  # & used in RS-RF Source
+drive_start_power = -20
+drive_stop_power = 0
 readout_freq = 379.17e6  # & close to expected resonance frequency
 readout_freq_range_type = "Single"  # & single fequency at the resosnace of the resonator
 readout_start_freq = 5.99e9
@@ -75,13 +75,13 @@ hdwag_marker_duration = 100e-9
 #  "start_power": Start of sweeping
 #  "stop_power": End of sweeping
 #
-#  "control_output_enabled": RF-Source output used to drive qubit. 0=Off, 1=On
-#  "control_amp_range_type": Control MQPG drive signal amplitude sweeping type
-#  "control_amp": Control MQPG drive signal amplitude, used when "Single" or "Span" range type is used
-#  "control_amp_start": Start of amplitude sweeping
-#  "control_amp_stop": Stop of amplitude sweeping
-#  "control_duration": Control MQPG drive pulse duration
-#  "control_if_freq": Control RF-Source frequency
+#  "drive_output_enabled": RF-Source output used to drive qubit. 0=Off, 1=On
+#  "drive_amp_range_type": Control MQPG drive signal amplitude sweeping type
+#  "drive_amp": Control MQPG drive signal amplitude, used when "Single" or "Span" range type is used
+#  "drive_amp_start": Start of amplitude sweeping
+#  "drive_amp_stop": Stop of amplitude sweeping
+#  "drive_duration": Control MQPG drive pulse duration
+#  "drive_if_freq": Control RF-Source frequency
 #
 #  "num_pts": number of points of measurement
 #

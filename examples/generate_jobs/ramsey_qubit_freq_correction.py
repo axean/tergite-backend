@@ -53,8 +53,8 @@ def generate_job():
     job = measurement_jobs.mk_job_ramsey(
         # Mandatory parameters for measurement job
         readout_resonance_freq = 5.99931e9,  # depends on pulsed resonator spectroscopy result
-        control_freq = 274.68e6,  # depends on two_tone
-        control_amp = 48e-3,  # depends on rabi = result / 2
+        drive_freq = 274.68e6,  # depends on two_tone
+        drive_amp = 48e-3,  # depends on rabi = result / 2
         num_pts = 191,
 
         # Optional arguments to override calibration supervisor defaults
@@ -70,7 +70,7 @@ def generate_job():
 """
  Parameters (need updating)
  ---------
- "control_amp": Control MQPG drive signal amplitude, used when "Single" or "Span" range type is used
+ "drive_amp": Control MQPG drive signal amplitude, used when "Single" or "Span" range type is used
  "num_pts": number of points of measurement
 """
 

@@ -232,45 +232,45 @@ def generic_calib_zi_scenario(job):
             step_channel_i["single"] = scenario_parameters["mqpg_smpl_rate"]
         elif stepchannel["channel_name"] == "MQPG Control - Frequency #1":
             step_channel_i["range_type"] = scenario_parameters[
-                "control_freq_range_type"
+                "drive_freq_range_type"
             ]
-            if scenario_parameters["control_freq_range_type"] == "Start - Stop":
-                step_channel_i["start"] = scenario_parameters["control_start_freq"]
-                step_channel_i["stop"] = scenario_parameters["control_stop_freq"]
+            if scenario_parameters["drive_freq_range_type"] == "Start - Stop":
+                step_channel_i["start"] = scenario_parameters["drive_start_freq"]
+                step_channel_i["stop"] = scenario_parameters["drive_stop_freq"]
                 step_channel_i["n_pts"] = scenario_parameters["num_pts"]
-            elif scenario_parameters["control_freq_range_type"] == "Single":
-                step_channel_i["single"] = scenario_parameters["control_freq"]
+            elif scenario_parameters["drive_freq_range_type"] == "Single":
+                step_channel_i["single"] = scenario_parameters["drive_freq"]
         elif stepchannel["channel_name"] == "MQPG Control - Amplitude #1":
-            step_channel_i["range_type"] = scenario_parameters["control_amp_range_type"]
-            if scenario_parameters["control_amp_range_type"] == "Start - Stop":
-                step_channel_i["start"] = scenario_parameters["control_amp_start"]
-                step_channel_i["stop"] = scenario_parameters["control_amp_stop"]
+            step_channel_i["range_type"] = scenario_parameters["drive_amp_range_type"]
+            if scenario_parameters["drive_amp_range_type"] == "Start - Stop":
+                step_channel_i["start"] = scenario_parameters["drive_amp_start"]
+                step_channel_i["stop"] = scenario_parameters["drive_amp_stop"]
                 step_channel_i["n_pts"] = scenario_parameters["num_pts"]
-            elif scenario_parameters["control_amp_range_type"] == "Single":
-                step_channel_i["single"] = scenario_parameters["control_amp"]
+            elif scenario_parameters["drive_amp_range_type"] == "Single":
+                step_channel_i["single"] = scenario_parameters["drive_amp"]
         elif stepchannel["channel_name"] == "MQPG Control - Pulse spacing":
             step_channel_i["range_type"] = scenario_parameters[
-                "control_pulse_spacing_range_type"
+                "drive_pulse_spacing_range_type"
             ]
-            if scenario_parameters["control_amp_range_type"] == "Start - Stop":
+            if scenario_parameters["drive_amp_range_type"] == "Start - Stop":
                 step_channel_i["start"] = scenario_parameters[
-                    "control_pulse_spacing_start"
+                    "drive_pulse_spacing_start"
                 ]
                 step_channel_i["stop"] = scenario_parameters[
-                    "control_pulse_spacing_stop"
+                    "drive_pulse_spacing_stop"
                 ]
                 step_channel_i["n_pts"] = scenario_parameters["num_pts"]
-            elif scenario_parameters["control_amp_range_type"] == "Single":
-                step_channel_i["single"] = scenario_parameters["control_pulse_spacing"]
+            elif scenario_parameters["drive_amp_range_type"] == "Single":
+                step_channel_i["single"] = scenario_parameters["drive_pulse_spacing"]
         elif stepchannel["channel_name"] == "Qubit 2B - Output":
-            step_channel_i["single"] = scenario_parameters["control_output_enabled"]
+            step_channel_i["single"] = scenario_parameters["drive_output_enabled"]
         elif stepchannel["channel_name"] == "Qubit 2B - Power":
-            if scenario_parameters["control_power_range_type"] == "Start - Stop":
-                step_channel_i["start"] = scenario_parameters["control_start_power"]
-                step_channel_i["stop"] = scenario_parameters["control_stop_power"]
+            if scenario_parameters["drive_power_range_type"] == "Start - Stop":
+                step_channel_i["start"] = scenario_parameters["drive_start_power"]
+                step_channel_i["stop"] = scenario_parameters["drive_stop_power"]
                 step_channel_i["n_pts"] = scenario_parameters["num_pts"]
-            elif scenario_parameters["control_power_range_type"] == "Single":
-                step_channel_i["single"] = scenario_parameters["control_power"]
+            elif scenario_parameters["drive_power_range_type"] == "Single":
+                step_channel_i["single"] = scenario_parameters["drive_power"]
         # For Readout RF source frequency and power settings:
         elif stepchannel["channel_name"] == "QA_Carrier - Frequency":
             step_channel_i["range_type"] = scenario_parameters[

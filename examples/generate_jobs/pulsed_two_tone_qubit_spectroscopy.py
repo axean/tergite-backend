@@ -50,8 +50,8 @@ def main():
 def generate_job():
     job = measurement_jobs.mk_job_two_tone(
         # Mandatory parameters for measurement job
-        control_start_freq = 111e6, # 270e6,
-        control_stop_freq = 280e6,
+        drive_start_freq = 111e6, # 270e6,
+        drive_stop_freq = 280e6,
         readout_resonance_freq = 5.99931e9,  # depends on pulsed resonator spectroscopy result
         num_pts = 201,
         # Optional arguments to override calibration supervisor defaults
@@ -66,7 +66,7 @@ def generate_job():
 
 Parameters (needs update)
 ---------
-Is this control_start_freq and control_stop_freq ?
+Is this drive_start_freq and drive_stop_freq ?
 
 "start_freq: Start of sweeping frequency
 "stop_freq": End of sweeping frequency
