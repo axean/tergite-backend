@@ -106,6 +106,34 @@ def mk_job_rabi(
     }
     return job
 
+def mk_job_ramsey(
+    # Mandatory parameters for measurement job
+    readout_resonance_freq,  # depends on pulsed resonator spectroscopy result
+    control_freq,  # depends on two_tone
+    control_amp,  # depends on rabi = result / 2
+    num_pts, # maybe this doesn't need to be a parameter here?
+    # Optional arguments to override calibration supervisor defaults
+    is_calibration_sup_job = True,
+    name = "ramsey_qubit_freq_correction",
+    # Optional arguments to override any other parameters from the
+    # defaults TOML file in measurement_jobs/parameter_defaults/
+    **kwargs,
+):
+    job = {
+        "job_id": str(uuid4()),
+        "type": "script",
+        "is_calibration_sup_job": is_calibration_sup_job,
+        "name": name,
+        "params": {
+            "readout_resonance_freq": readout_resonance_freq,
+            "control_freq": control_freq,
+            "num_pts": num_pts,
+            **kwargs,
+        },
+    }
+    return job
+
+
 # ------------------------------------------------------------------------------
 # Misc jobs
 

@@ -1,15 +1,11 @@
 #
-# Default values for rabi calibration measurement using ZI / Keysight
+# Default values for Rabi calibration measurement using ZI / Keysight
 # / Labber, from the calibration_supervisor.py
 #
 # Used to populate scenarios created by scenario_scripts.py for jobs
 # with name field "rabi_qubit_pi_pulse_estimation". Creating such a
 # job with measurement_jobs/measurement_jobs.py allows these values to be
 # overridden by the corresponding keys in the job's 'params' field.
-
-# All params are general form of Pulsed Resonator Spectroscopy,
-# Two-tone, Rabi and Ramsey
-# The important parameters for current job type are markd with # &
 
 control_output_enabled = 1  # & output On, exciting the qubit
 control_freq_range_type = "Single"

@@ -1,48 +1,47 @@
 #
-# Default values for pulsed two-tone qubit spectroscopy using ZI /
-# Keysight / Labber, from the calibration_supervisor.py
+# Default values for Ramsey calibration measurement using ZI / Keysight
+# / Labber, from the calibration_supervisor.py
 #
 # Used to populate scenarios created by scenario_scripts.py for jobs
-# with name field "pulsed_two_tone_qubit_spectroscopy". Creating such
-# a job with measurement_jobs/measurement_jobs.py allows these values
-# to be overridden by the corresponding keys in the job's 'params'
-# field.
+# with name field "ramsey_qubit_freq_correction". Creating such a job
+# with measurement_jobs/measurement_jobs.py allows these values to be
+# overridden by the corresponding keys in the job's 'params' field.
 
-control_output_enabled = 1  # & output On, exciting the qubit
-control_freq_range_type = "Start - Stop"  # & doing a freq sweep around the expected qubit frequency
-control_start_freq = 270e6  # &
-control_stop_freq = 280e6  # &
+control_output_enabled = 1  # & output On, exiting the qubit
+control_freq_range_type = "Single"
+control_start_freq = 270e6
+control_stop_freq = 280e6
 control_if_freq = 4.5e9  # & should be in some config param
-control_freq = 274.68e6  # qubiy exitation frequency = "control_freq" + "control_if_freq" # this has no effect when the range type is "Start - Stop" (should be removed?)
-control_amp_range_type = "Single"  # &
-control_amp = 20e-3  # &
-control_amp_start = 20e-3
-control_amp_stop = 20e-3
+control_freq = 273.18e6  # & qubiy exitation frequency = "control_freq" + "control_if_freq" # should be replaced by the measured variable
+control_amp_range_type = "Single"
+control_amp = 48e-3  # & Half the pi-pulse amplitude, depends on Rabi result
+control_amp_start = 1e-3
+control_amp_stop = 200e-3
 control_duration = 100e-9
-control_pulse_spacing_range_type = "Single"  # pulse spacing only used in ramsey
-control_pulse_spacing_start = 100e-9
-control_pulse_spacing_stop = 2e-6
+control_pulse_spacing_range_type = "Start - Stop"  # & doing a pulse spacing sweep
+control_pulse_spacing_start = 100e-9  # &
+control_pulse_spacing_stop = 2e-6  # &
 control_pulse_spacing = 2e-6  # kept as default value
 control_power_range_type = "Single"
 control_power = -10  # & used in RS-RF Source
-control_start_power = -20 # should these be here, as the range type is "Single"?
+control_start_power = -20
 control_stop_power = 0
 readout_freq = 379.17e6  # & close to expected resonance frequency
 readout_freq_range_type = "Single"  # & single fequency at the resosnace of the resonator
-readout_start_freq = 5.99e9 # should these be here, as the range type is "Single"?
+readout_start_freq = 5.99e9
 readout_stop_freq = 6.01
-readout_resonance_freq = 5.99931e9  # & resonace determined by pulsed_res_spect
+readout_resonance_freq = 5.9999e9  # & resonace determined by pulsed_res_spect
 readout_amp_range_type = "Single"
 readout_amp = 25e-3  # &
-readout_amp_start = 5e-3 # should these be here, as the range type is "Single"?
+readout_amp_start = 5e-3
 readout_amp_stop = 20e-3
-readout_duration = 3e-6  # &
+readout_duration = 3e-6
 readout_sampling_delay = 200e-9
 readout_power_range_type = "Single"
 readout_power = 10  # & used in RS-RF Source
-readout_start_power = -20 # should these be here, as the range type is "Single"?
+readout_start_power = -20
 readout_stop_power = 0
-num_pts = 201  # & 10M/200 points = 50k sweep frequency resolation
+num_pts = 191  # & 100 ns to 2 us, 191 points = 10 ns sweep resolation
 num_pts_other_axis = 21  # used when another measurement sweep is required
 sampling_duration = 2e-6
 repetition_delay = 1e-6
@@ -60,9 +59,10 @@ hdawg_int_trig_period = 300e-6  # aka relaxation_time
 hdawg_marker_start_time = 4.9e-6
 hdwag_marker_duration = 100e-9
 
-# Parameters (doc needs update)
-# ---------
-# _range_type: sweeping direction, valid values: "Start - Stop", "Span", "Single"
+
+#  Parameters (need updating)
+#
+#  _range_type: sweeping direction, valid values: "Start - Stop", "Span", "Single"
 #
 #  "freq_range_type": Frequency sweeping type
 #  "start_freq: Start of sweeping frequency
