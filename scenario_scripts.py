@@ -2,6 +2,7 @@
 #
 # (C) Copyright Miroslav Dobsicek, Andreas Bengtsson 2020,
 # (C) Copyright Abdullah-Al Amin 2021
+# (C) Copyright David Wahlstedt 2022
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -13,10 +14,11 @@
 
 
 import json
-import numpy as np
 from pathlib import Path
 from tempfile import gettempdir
 import toml
+
+import numpy as np
 
 from Labber import Scenario
 from Labber import ScriptTools
