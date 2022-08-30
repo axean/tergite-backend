@@ -52,8 +52,8 @@ def main():
 def generate_job():
 
     job = measurement_jobs.mk_job_res_spect_vna(
-        f_start=6.0e9,
-        f_stop=7.0e9,
+        freq_start=6.0e9,
+        freq_stop=7.0e9,
         if_bw=1e3,
         num_pts=10001,
         # For multiple power sweeps use: [start, stop, n_pts],
@@ -79,7 +79,7 @@ def generate_job_direct():
         # Defaults for "params" are loaded in scenario_scripts.py from
         # measurement_jobs/parameter_defaults/vna_resonator_spectroscopy.toml
         "params": {
-            "f_start": 6.0e9 + 0.01e9,  # demonstrating it can be overridden
+            "freq_start": 6.0e9 + 0.01e9,  # demonstrating it can be overridden
         },
     }
     return job
@@ -88,8 +88,8 @@ def generate_job_direct():
 """
     Parameters
     ----------
-        f_start : (float) start sweep frequency [Hz]
-        f_stop  : (float) stop sweep frequency [Hz]
+        freq_start : (float) start sweep frequency [Hz]
+        freq_stop  : (float) stop sweep frequency [Hz]
         if_bw   : (float) IF bandwidth setting [Hz]
         num_pts : (int) number of frequency points
         power   : [float, float, int] output power of VNA [dBm, dBm, n_pts]

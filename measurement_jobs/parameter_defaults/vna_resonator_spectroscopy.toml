@@ -7,8 +7,8 @@
 # measurement_jobs/measurement_jobs.py allows these values to be
 # overridden by the corresponding keys in the job's 'params' field.
 
-f_start = 6.0e9
-f_stop = 7.0e9
+freq_start = 6.0e9
+freq_stop = 7.0e9
 if_bw = 1e3
 num_pts = 10001
 # for single power measurement use single element, eg: [0]
@@ -18,8 +18,8 @@ num_ave = 10
 
 # Parameters
 #
-# f_start   : (float) start sweep frequency [Hz]
-# f_stop    : (float) stop sweep frequency [Hz]
+# freq_start   : (float) start sweep frequency [Hz]
+# freq_stop    : (float) stop sweep frequency [Hz]
 # if_bw   : (float) IF bandwidth setting [Hz]
 # num_pts : (int) number of frequency points
 # power   : (int) output power of VNA [dBm]

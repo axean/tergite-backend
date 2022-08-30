@@ -20,8 +20,8 @@ import numpy as np
 # Performs VNA resonator spectroscopy with ZI / Labber
 def mk_job_res_spect_vna(
     # Mandatory parameters for measurement job
-    f_start,
-    f_stop,
+    freq_start,
+    freq_stop,
     if_bw,
     num_pts,
     power,
@@ -36,8 +36,8 @@ def mk_job_res_spect_vna(
     """
     Parameters
     ----------
-        f_start   : (float) start sweep frequency [Hz]
-        f_stop    : (float) stop sweep frequency [Hz]
+        freq_start   : (float) start sweep frequency [Hz]
+        freq_stop    : (float) stop sweep frequency [Hz]
         if_bw   : (float) IF bandwidth setting [Hz]
         num_pts : (int) number of frequency points
         power   : (int) output power of VNA [dBm]
@@ -49,8 +49,8 @@ def mk_job_res_spect_vna(
         "is_calibration_sup_job": is_calibration_sup_job,
         "name": "resonator_spectroscopy",
         "params": {
-            "f_start": f_start,
-            "f_stop": f_stop,
+            "freq_start": freq_start,
+            "freq_stop": freq_stop,
             "if_bw": if_bw,
             "num_pts": num_pts,
             # For multiple power sweeps use: [start, stop, n_pts],

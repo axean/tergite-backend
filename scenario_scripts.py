@@ -197,12 +197,12 @@ def resonator_spectroscopy_scenario(job):
         elif stepchannel["channel_name"] == VNA + " - Start frequency":
             scenario_dict["step_channels"][i]["step_items"][0][
                 "single"
-            ] = scenario_parameters["f_start"]
+            ] = scenario_parameters["freq_start"]
         # update VNA - Stop of Sweping frequency
         elif stepchannel["channel_name"] == VNA + " - Stop frequency":
             scenario_dict["step_channels"][i]["step_items"][0][
                 "single"
-            ] = scenario_parameters["f_stop"]
+            ] = scenario_parameters["freq_stop"]
         # update VNA - Number of measurement points (data points)
         elif stepchannel["channel_name"] == VNA + " - # of points":
             scenario_dict["step_channels"][i]["step_items"][0][
