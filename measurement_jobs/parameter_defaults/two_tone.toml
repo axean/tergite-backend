@@ -13,13 +13,13 @@ drive_freq_range_type = "Start - Stop"  # & doing a freq sweep around the expect
 drive_start_freq = 270e6  # &
 drive_stop_freq = 280e6  # &
 drive_if_freq = 4.5e9  # & should be in some config param
-drive_freq = 274.68e6  # qubiy exitation frequency = "drive_freq" + "drive_if_freq" # this has no effect when the range type is "Start - Stop" (should be removed?)
+drive_freq = 274.68e6  # qubit excitation frequency = "drive_freq" + "drive_if_freq" # this has no effect when the range type is "Start - Stop" (should be removed?)
 drive_amp_range_type = "Single"  # &
 drive_amp = 20e-3  # &
 drive_amp_start = 20e-3
 drive_amp_stop = 20e-3
 drive_duration = 100e-9
-drive_pulse_spacing_range_type = "Single"  # pulse spacing only used in ramsey
+drive_pulse_spacing_range_type = "Single"  # pulse spacing only used in Ramsey
 drive_pulse_spacing_start = 100e-9
 drive_pulse_spacing_stop = 2e-6
 drive_pulse_spacing = 2e-6  # kept as default value
@@ -28,10 +28,10 @@ drive_power = -10  # & used in RS-RF Source
 drive_start_power = -20 # should these be here, as the range type is "Single"?
 drive_stop_power = 0
 readout_freq = 379.17e6  # & close to expected resonance frequency
-readout_freq_range_type = "Single"  # & single fequency at the resosnace of the resonator
+readout_freq_range_type = "Single"  # & single frequency at the resonance of the resonator
 readout_start_freq = 5.99e9 # should these be here, as the range type is "Single"?
 readout_stop_freq = 6.01
-readout_resonance_freq = 5.99931e9  # & resonace determined by pulsed_res_spect
+readout_resonance_freq = 5.99931e9  # & resonance determined by pulsed_res_spect
 readout_amp_range_type = "Single"
 readout_amp = 25e-3  # &
 readout_amp_start = 5e-3 # should these be here, as the range type is "Single"?
@@ -42,7 +42,7 @@ readout_power_range_type = "Single"
 readout_power = 10  # & used in RS-RF Source
 readout_start_power = -20 # should these be here, as the range type is "Single"?
 readout_stop_power = 0
-num_pts = 201  # & 10M/200 points = 50k sweep frequency resolation
+num_pts = 201  # & 10M/200 points = 50k sweep frequency resolution
 num_pts_other_axis = 21  # used when another measurement sweep is required
 sampling_duration = 2e-6
 repetition_delay = 1e-6
@@ -93,13 +93,13 @@ hdwag_marker_duration = 100e-9
 #
 #  "sampling_duration": signal recording duration
 #  "repetition_delay":
-#  "qa_integration_length": intregation of samples to have energy value
+#  "qa_integration_length": integration of samples to have energy value
 #  "qa_delay": delay just after recording of pulse, to avoid noise in pulse start point
 #  "qa_avg": number of recording average
-#  "integration_window_start": Defines strat time when a window is used to define integration scope
+#  "integration_window_start": Defines start time when a window is used to define integration scope
 #  "integration_window_stop": Defines stop time .. as above
 #
-#  "trace_time": MPQG constructed signal length in time
+#  "trace_time": MQPG constructed signal length in time
 #  "mqpg_smpl_rate": DAC sample rate
 #
 #  "hdawg_int_trig_period": minimum time to start another control pulse # aka relaxation_time

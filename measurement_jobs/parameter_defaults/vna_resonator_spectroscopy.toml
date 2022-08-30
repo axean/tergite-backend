@@ -11,8 +11,8 @@ freq_start = 6.0e9
 freq_stop = 7.0e9
 if_bw = 1e3
 num_pts = 10001
-# for single power measurement use single element, eg: [0]
-# for multiple power sweep use: [p_start, p_stop, n_pts], eg:[-50, 0, 51]
+# for single power measurement use single element, e.g. [0]
+# for multiple power sweep use: [p_start, p_stop, n_pts], e.g. [-50, 0, 51]
 power = [-50, 0, 51]
 num_ave = 10
 
