@@ -17,6 +17,51 @@ import numpy as np
 # ------------------------------------------------------------------------------
 # Calibration jobs
 
+# Performs VNA resonator spectroscopy with ZI / Labber
+def mk_job_res_spect_vna(
+    # Mandatory parameters for measurement job
+    f_start,
+    f_stop,
+    if_bw,
+    num_pts,
+    power,
+    num_ave,
+    # Optional arguments to override calibration supervisor defaults
+    is_calibration_sup_job = True,
+    name = "resonator_spectroscopy",
+    # Optional arguments to override any other parameters from the
+    # defaults TOML file in measurement_jobs/parameter_defaults/
+    **kwargs,
+):
+    """
+    Parameters
+    ----------
+        f_start   : (float) start sweep frequency [Hz]
+        f_stop    : (float) stop sweep frequency [Hz]
+        if_bw   : (float) IF bandwidth setting [Hz]
+        num_pts : (int) number of frequency points
+        power   : (int) output power of VNA [dBm]
+        num_ave : (int) number of averages"""
+
+    job = {
+        "job_id": str(uuid4()),
+        "type": "script",
+        "is_calibration_sup_job": is_calibration_sup_job,
+        "name": "resonator_spectroscopy",
+        "params": {
+            "f_start": f_start,
+            "f_stop": f_stop,
+            "if_bw": if_bw,
+            "num_pts": num_pts,
+            # For multiple power sweeps use: [start, stop, n_pts],
+            # example:[-50, 0, 1]
+            "power": power,
+            "num_ave": num_ave,
+            **kwargs,
+        },
+    }
+    return job
+
 # Performs pulsed resonator spectroscopy
 def mk_job_pulsed_res_spect(
         # Mandatory parameters for measurement job
@@ -46,7 +91,7 @@ def mk_job_pulsed_res_spect(
             "readout_stop_freq": readout_stop_freq,
             "readout_amp": readout_amp,
             "readout_power": readout_power,
-            **kwargs
+            **kwargs,
         },
     }
     return job

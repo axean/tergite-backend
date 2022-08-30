@@ -1,6 +1,6 @@
 #
 # Default values for Rabi calibration measurement using ZI / Keysight
-# / Labber, from the calibration_supervisor.py
+# / Labber
 #
 # Used to populate scenarios created by scenario_scripts.py for jobs
 # with name field "rabi_qubit_pi_pulse_estimation". Creating such a

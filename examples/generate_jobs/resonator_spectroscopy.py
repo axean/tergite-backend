@@ -2,6 +2,7 @@
 #
 # (C) Copyright Andreas Bengtsson, Miroslav Dobsicek 2020
 # (C) Copyright Abdullah-Al Amin 2021
+# (C) Copyright David Wahlstedt 2022
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -12,15 +13,18 @@
 # that they have been altered from the originals.
 
 
-import numpy as np
 import json
-from uuid import uuid4
-import requests
 import pathlib
-from tempfile import gettempdir
 import settings
+from tempfile import gettempdir
+from uuid import uuid4
 
-# settings
+import numpy as np
+import requests
+
+import measurement_jobs.measurement_jobs as measurement_jobs
+
+# Settings
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
 
 REST_API_MAP = {"jobs": "/jobs"}
@@ -47,19 +51,34 @@ def main():
 
 def generate_job():
 
+    job = measurement_jobs.mk_job_res_spect_vna(
+        f_start = 6.0e9,
+        f_stop = 7.0e9,
+        if_bw = 1e3,
+        num_pts = 10001,
+        # For multiple power sweeps use: [start, stop, n_pts],
+        # example:[-50, 0, 1]
+        power = [-50, 0, 51],
+        num_ave = 10,
+        # optional argument for calibration supervisor
+        is_calibration_sup_job = False, # default True
+        # non-mandatory arguments overriding defaults
+    )
+    return job
+
+# Jobs can be generated directly as follows, and then default
+# parameters can be overridden. However, with this method there is no
+# control that mandatory arguments are provided.
+def generate_job_direct():
+
     job = {
         "job_id": str(uuid4()),
         "type": "script",
         "name": "resonator_spectroscopy",
+        # Defaults for "params" are loaded in scenario_scripts.py from
+        # measurement_jobs/parameter_defaults/vna_resonator_spectroscopy.toml
         "params": {
-            "f_start": 6.0e9,
-            "f_stop": 7.0e9,
-            "if_bw": 1e3,
-            "num_pts": 10001,
-            # for single power measurement use single element, eg: [0],
-            # for multiple power sweep use: [p_start, p_stop, n_pts], eg:[-50, 0, 51]
-            "power": [-50, 0, 51],
-            "num_ave": 10,
+            "f_start": 6.0e9 + 0.01e9, # demonstrating it can be overridden
         },
     }
     return job

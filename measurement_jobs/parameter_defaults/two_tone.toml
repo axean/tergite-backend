@@ -1,6 +1,6 @@
 #
 # Default values for pulsed two-tone qubit spectroscopy using ZI /
-# Keysight / Labber, from the calibration_supervisor.py
+# Keysight / Labber
 #
 # Used to populate scenarios created by scenario_scripts.py for jobs
 # with name field "pulsed_two_tone_qubit_spectroscopy". Creating such

@@ -133,70 +133,70 @@ def qobj_scenario(job):
 
     return s
 
-
-## A template scenario file is modified according to the parameters
-## that have been passed through job object in order to create a simple
-## frequency sweep scenario
+# VNA resonator spectroscopy
+# A template scenario file is modified according to the parameters
+# that have been passed through job object in order to create a simple
+# frequency sweep scenario
 def resonator_spectroscopy_scenario(job):
     VNA = "VNA"  # "ZNB20"  # "RS"  # 'Keysight'  'Ceyear'
 
-    scenario_template_filepath = Path(
-        "./scenario_templates/resonator_spectroscopy_scenario_template_keysight_vna.json"
-    )
+    job_name = job["name"]
 
-    # loading Scenario as dictionary
-    s_dict = ScriptTools.load_scenario_as_dict(scenario_template_filepath)
+    scenario_dict = get_scenario_template_dict(job_name)
 
-    s_prms = job["params"]
+    defaults = get_default_params(job_name)
+
+    # The parameters from job will override those of defaults
+    scenario_parameters = dict(defaults, **job["params"])
 
     # Updating Step parameters in Scenario dictionary
-    for i, stepchannel in enumerate(s_dict["step_channels"]):
+    for i, stepchannel in enumerate(scenario_dict["step_channels"]):
         # update: VNA - Output power
         if stepchannel["channel_name"] == VNA + " - Output power":
             if (
-                len(s_prms["power"]) == 1
+                len(scenario_parameters["power"]) == 1
             ):  # only single value power is required for the measurement
-                s_dict["step_channels"][i]["step_items"][0]["range_type"] = "Single"
-                s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["power"][
+                scenario_dict["step_channels"][i]["step_items"][0]["range_type"] = "Single"
+                scenario_dict["step_channels"][i]["step_items"][0]["single"] = scenario_parameters["power"][
                     0
                 ]
             elif (
-                len(s_prms["power"]) == 3
+                len(scenario_parameters["power"]) == 3
             ):  # multiple step value for power is required for the measurement
-                s_dict["step_channels"][i]["step_items"][0][
+                scenario_dict["step_channels"][i]["step_items"][0][
                     "range_type"
                 ] = "Start - Stop"
-                s_dict["step_channels"][i]["step_items"][0][
+                scenario_dict["step_channels"][i]["step_items"][0][
                     "step_type"
                 ] = "Fixed # of pts"
-                s_dict["step_channels"][i]["step_items"][0]["start"] = s_prms["power"][
+                scenario_dict["step_channels"][i]["step_items"][0]["start"] = scenario_parameters["power"][
                     0
                 ]
-                s_dict["step_channels"][i]["step_items"][0]["stop"] = s_prms["power"][1]
-                s_dict["step_channels"][i]["step_items"][0]["n_pts"] = s_prms["power"][
+                scenario_dict["step_channels"][i]["step_items"][0]["stop"] = scenario_parameters["power"][1]
+                scenario_dict["step_channels"][i]["step_items"][0]["n_pts"] = scenario_parameters["power"][
                     2
                 ]
             else:
                 raise ValueError("Input Power parameter is not well defined.")
         # update VNA - IF bandwidth
         elif stepchannel["channel_name"] == VNA + " - IF bandwidth":
-            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["if_bw"]
+            scenario_dict["step_channels"][i]["step_items"][0]["single"] = scenario_parameters["if_bw"]
         # update VNA - Number of averages
         elif stepchannel["channel_name"] == VNA + " - # of averages":
-            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["num_ave"]
+            scenario_dict["step_channels"][i]["step_items"][0]["single"] = scenario_parameters["num_ave"]
         # update VNA - Start of Sweping frequency
         elif stepchannel["channel_name"] == VNA + " - Start frequency":
-            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["f_start"]
+            scenario_dict["step_channels"][i]["step_items"][0]["single"] = scenario_parameters["f_start"]
         # update VNA - Stop of Sweping frequency
         elif stepchannel["channel_name"] == VNA + " - Stop frequency":
-            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["f_stop"]
+            scenario_dict["step_channels"][i]["step_items"][0]["single"] = scenario_parameters["f_stop"]
         # update VNA - Number of measurement points (data points)
         elif stepchannel["channel_name"] == VNA + " - # of points":
-            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["num_pts"]
+            scenario_dict["step_channels"][i]["step_items"][0]["single"] = scenario_parameters["num_pts"]
 
     # Saving Scenario in a temporary file as JSON format
     temp_dir = gettempdir()
-    ScriptTools.save_scenario_as_json(s_dict, temp_dir + "/tmp.json")
+    ScriptTools.save_scenario_as_json(scenario_dict, temp_dir + "/tmp.json")
 
     # Loading Scenario as object
     s = Scenario(temp_dir + "/tmp.json")
@@ -396,6 +396,9 @@ def get_scenario_template_dict(job_name):
         "rabi_qubit_pi_pulse_estimation": "rabi_using_general_calib_template.json",
         "pulsed_two_tone_qubit_spectroscopy": "pulsed_qubit_spectroscopy_using_general_calib_template.json",
         "pulsed_resonator_spectroscopy": "pulsed_spectroscopy_scenario_template.json",
+        # VNA resonator spectroscopy:
+        "resonator_spectroscopy": "resonator_spectroscopy_scenario_template_keysight_vna.json",
+        "fit_resonator_spectroscopy": "resonator_spectroscopy_scenario_template_keysight_vna.json",
     }
     filename = template_dict[job_name]
     scenario_template_filepath = Path("scenario_templates/" + filename)
@@ -411,6 +414,9 @@ def get_default_params(job_name):
         "pulsed_two_tone_qubit_spectroscopy": "two_tone.toml",
         "rabi_qubit_pi_pulse_estimation": "rabi.toml",
         "ramsey_qubit_freq_correction": "ramsey.toml",
+        # VNA resonator spectroscopy:
+        "resonator_spectroscopy": "vna_resonator_spectroscopy.toml",
+        "fit_resonator_spectroscopy": "vna_resonator_spectroscopy.toml",
     }
     filename = default_files[job_name]
     filepath = "measurement_jobs/parameter_defaults/" + filename

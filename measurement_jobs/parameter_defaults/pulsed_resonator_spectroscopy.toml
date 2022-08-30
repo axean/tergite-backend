@@ -1,6 +1,5 @@
 #
-# Default values for pulsed resonator spectroscopy using ZI / Keysight / Labber,
-# from the calibration_supervisor.py
+# Default values for pulsed resonator spectroscopy using ZI / Keysight / Labber
 #
 # Used to populate scenarios created by scenario_scripts.py for jobs
 # with name field "pulsed_resonator_spectroscopy". Creating such a job
