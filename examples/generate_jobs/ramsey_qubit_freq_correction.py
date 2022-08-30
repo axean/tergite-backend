@@ -51,6 +51,21 @@ def main():
     file.unlink()
 
 
+# Jobs can be generated directly as follows, and then default
+# parameters can be overridden. However, with this method there is no
+# control that mandatory arguments are provided.
+def generate_job_direct():
+    job = {
+        "job_id": str(uuid4()),
+        "type": "script",
+        "name": "ramsey_qubit_freq_correction",
+        # Defaults for "params" are loaded in scenario_scripts.py from
+        # measurement_jobs/parameter_defaults/ramsey.toml
+        "params": {},
+    }
+    return job
+
+
 def generate_job():
 
     job = measurement_jobs.mk_job_ramsey(

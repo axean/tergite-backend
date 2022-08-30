@@ -67,6 +67,20 @@ def generate_job():
     )
     return job
 
+# Jobs can be generated directly as follows, and then default
+# parameters can be overridden. However, with this method there is no
+# control that mandatory arguments are provided.
+def generate_job_direct():
+    job = {
+        "job_id": str(uuid4()),
+        "type": "script",
+        "name": "pulsed_resonator_spectroscopy",
+        # Defaults for "params" are loaded in scenario_scripts.py from
+        # measurement_jobs/parameter_defaults/vna_resonator_spectroscopy.toml
+        "params": {},
+    }
+    return job
+
 
 """
     Parameters (needs to be updated)
