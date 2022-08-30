@@ -27,8 +27,8 @@ def mk_job_res_spect_vna(
     power,
     num_ave,
     # Optional arguments to override calibration supervisor defaults
-    is_calibration_sup_job = True,
-    name = "resonator_spectroscopy",
+    is_calibration_sup_job=True,
+    name="resonator_spectroscopy",
     # Optional arguments to override any other parameters from the
     # defaults TOML file in measurement_jobs/parameter_defaults/
     **kwargs,
@@ -62,21 +62,22 @@ def mk_job_res_spect_vna(
     }
     return job
 
+
 # Performs pulsed resonator spectroscopy
 def mk_job_pulsed_res_spect(
-        # Mandatory parameters for measurement job
-        num_pts,
-        qa_avg,
-        readout_amp,
-        readout_start_freq,
-        readout_stop_freq,
-        readout_power,
-        # Optional arguments to override calibration supervisor defaults
-        is_calibration_sup_job = True,
-        name = "pulsed_resonator_spectroscopy",
-        # Optional arguments to override any other parameters from the
-        # defaults TOML file in measurement_jobs/parameter_defaults/
-        **kwargs,
+    # Mandatory parameters for measurement job
+    num_pts,
+    qa_avg,
+    readout_amp,
+    readout_start_freq,
+    readout_stop_freq,
+    readout_power,
+    # Optional arguments to override calibration supervisor defaults
+    is_calibration_sup_job=True,
+    name="pulsed_resonator_spectroscopy",
+    # Optional arguments to override any other parameters from the
+    # defaults TOML file in measurement_jobs/parameter_defaults/
+    **kwargs,
 ):
 
     job = {
@@ -96,6 +97,7 @@ def mk_job_pulsed_res_spect(
     }
     return job
 
+
 def mk_job_two_tone(
     # Mandatory parameters for measurement job
     drive_start_freq,
@@ -103,8 +105,8 @@ def mk_job_two_tone(
     readout_resonance_freq,  # depends on pulsed resonator spectroscopy result
     num_pts,
     # Optional arguments to override calibration supervisor defaults
-    is_calibration_sup_job = True,
-    name = "pulsed_two_tone_qubit_spectroscopy",
+    is_calibration_sup_job=True,
+    name="pulsed_two_tone_qubit_spectroscopy",
     # Optional arguments to override any other parameters from the
     # defaults TOML file in measurement_jobs/parameter_defaults/
     **kwargs,
@@ -125,14 +127,15 @@ def mk_job_two_tone(
     }
     return job
 
+
 def mk_job_rabi(
     # Mandatory parameters for measurement job
     readout_resonance_freq,  # depends on pulsed resonator spectroscopy result
     drive_freq,  # depends on two_tone
-    num_pts, # maybe this doesn't need to be a parameter here?
+    num_pts,  # maybe this doesn't need to be a parameter here?
     # Optional arguments to override calibration supervisor defaults
-    is_calibration_sup_job = True,
-    name = "rabi_qubit_pi_pulse_estimation",
+    is_calibration_sup_job=True,
+    name="rabi_qubit_pi_pulse_estimation",
     # Optional arguments to override any other parameters from the
     # defaults TOML file in measurement_jobs/parameter_defaults/
     **kwargs,
@@ -151,15 +154,16 @@ def mk_job_rabi(
     }
     return job
 
+
 def mk_job_ramsey(
     # Mandatory parameters for measurement job
     readout_resonance_freq,  # depends on pulsed resonator spectroscopy result
     drive_freq,  # depends on two_tone
     drive_amp,  # depends on rabi = result / 2
-    num_pts, # maybe this doesn't need to be a parameter here?
+    num_pts,  # maybe this doesn't need to be a parameter here?
     # Optional arguments to override calibration supervisor defaults
-    is_calibration_sup_job = True,
-    name = "ramsey_qubit_freq_correction",
+    is_calibration_sup_job=True,
+    name="ramsey_qubit_freq_correction",
     # Optional arguments to override any other parameters from the
     # defaults TOML file in measurement_jobs/parameter_defaults/
     **kwargs,

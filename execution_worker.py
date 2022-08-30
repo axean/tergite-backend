@@ -50,7 +50,7 @@ def post_schedule_file(job_dict: dict, /):
     with tmp_file.open("r") as source:
         files = {
             "upload_file": (tmp_file.name, source),
-            "send_logfile_to": (None, str(BCC_MACHINE_ROOT_URL))
+            "send_logfile_to": (None, str(BCC_MACHINE_ROOT_URL)),
         }
 
         url = str(QUANTIFY_MACHINE_ROOT_URL) + REST_API_MAP["qobj"]

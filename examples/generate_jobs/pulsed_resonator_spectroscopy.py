@@ -49,20 +49,21 @@ def main():
 
     file.unlink()
 
+
 def generate_job():
     job = measurement_jobs.mk_job_pulsed_res_spect(
         # Mandatory parameters
-        num_pts = 201,
-        qa_avg = 1024,
-        readout_amp = 25e-3,
-        readout_start_freq = 5.99e9,
-        readout_stop_freq = 6.01e9,
-        readout_power = 10,
+        num_pts=201,
+        qa_avg=1024,
+        readout_amp=25e-3,
+        readout_start_freq=5.99e9,
+        readout_stop_freq=6.01e9,
+        readout_power=10,
         # optional argument for calibration supervisor
-        is_calibration_sup_job = False, # default True
+        is_calibration_sup_job=False,  # default True
         # non-mandatory arguments overriding defaults
         # just to show we can override: default in Toml file is 274.68e6
-        drive_freq = 274.68e6 + 0.001e6,
+        drive_freq=274.68e6 + 0.001e6,
     )
     return job
 

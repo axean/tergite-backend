@@ -31,7 +31,7 @@ REQUIREMENTS = [
     "qtanalysis>=0.3",
     "tqcsf>=1.0.0",
     "matplotlib>=3.5.1",
-    "toml>=0.10.2"
+    "toml>=0.10.2",
 ]
 
 setup(

@@ -54,17 +54,18 @@ def generate_job():
 
     job = measurement_jobs.mk_job_rabi(
         # Mandatory parameters for measurement job
-        readout_resonance_freq = 5.99931e9,  # depends on pulsed resonator spectroscopy result
-        drive_freq = 274.68e6,  # depends on two_tone
-        num_pts = 200,
-
+        readout_resonance_freq=5.99931e9,  # depends on pulsed resonator spectroscopy result
+        drive_freq=274.68e6,  # depends on two_tone
+        num_pts=200,
         # Optional arguments to override calibration supervisor defaults
-        is_calibration_sup_job = False,
+        is_calibration_sup_job=False,
         # Optional arguments to override any other parameters from the
         # defaults TOML file in measurement_jobs/parameter_defaults/
         #
     )
     return job
+
+
 """
     Parameters
     ---------

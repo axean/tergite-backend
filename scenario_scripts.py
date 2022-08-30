@@ -133,6 +133,7 @@ def qobj_scenario(job):
 
     return s
 
+
 # VNA resonator spectroscopy
 # A template scenario file is modified according to the parameters
 # that have been passed through job object in order to create a simple
@@ -156,10 +157,12 @@ def resonator_spectroscopy_scenario(job):
             if (
                 len(scenario_parameters["power"]) == 1
             ):  # only single value power is required for the measurement
-                scenario_dict["step_channels"][i]["step_items"][0]["range_type"] = "Single"
-                scenario_dict["step_channels"][i]["step_items"][0]["single"] = scenario_parameters["power"][
-                    0
-                ]
+                scenario_dict["step_channels"][i]["step_items"][0][
+                    "range_type"
+                ] = "Single"
+                scenario_dict["step_channels"][i]["step_items"][0][
+                    "single"
+                ] = scenario_parameters["power"][0]
             elif (
                 len(scenario_parameters["power"]) == 3
             ):  # multiple step value for power is required for the measurement
@@ -169,30 +172,42 @@ def resonator_spectroscopy_scenario(job):
                 scenario_dict["step_channels"][i]["step_items"][0][
                     "step_type"
                 ] = "Fixed # of pts"
-                scenario_dict["step_channels"][i]["step_items"][0]["start"] = scenario_parameters["power"][
-                    0
-                ]
-                scenario_dict["step_channels"][i]["step_items"][0]["stop"] = scenario_parameters["power"][1]
-                scenario_dict["step_channels"][i]["step_items"][0]["n_pts"] = scenario_parameters["power"][
-                    2
-                ]
+                scenario_dict["step_channels"][i]["step_items"][0][
+                    "start"
+                ] = scenario_parameters["power"][0]
+                scenario_dict["step_channels"][i]["step_items"][0][
+                    "stop"
+                ] = scenario_parameters["power"][1]
+                scenario_dict["step_channels"][i]["step_items"][0][
+                    "n_pts"
+                ] = scenario_parameters["power"][2]
             else:
                 raise ValueError("Input Power parameter is not well defined.")
         # update VNA - IF bandwidth
         elif stepchannel["channel_name"] == VNA + " - IF bandwidth":
-            scenario_dict["step_channels"][i]["step_items"][0]["single"] = scenario_parameters["if_bw"]
+            scenario_dict["step_channels"][i]["step_items"][0][
+                "single"
+            ] = scenario_parameters["if_bw"]
         # update VNA - Number of averages
         elif stepchannel["channel_name"] == VNA + " - # of averages":
-            scenario_dict["step_channels"][i]["step_items"][0]["single"] = scenario_parameters["num_ave"]
+            scenario_dict["step_channels"][i]["step_items"][0][
+                "single"
+            ] = scenario_parameters["num_ave"]
         # update VNA - Start of Sweping frequency
         elif stepchannel["channel_name"] == VNA + " - Start frequency":
-            scenario_dict["step_channels"][i]["step_items"][0]["single"] = scenario_parameters["f_start"]
+            scenario_dict["step_channels"][i]["step_items"][0][
+                "single"
+            ] = scenario_parameters["f_start"]
         # update VNA - Stop of Sweping frequency
         elif stepchannel["channel_name"] == VNA + " - Stop frequency":
-            scenario_dict["step_channels"][i]["step_items"][0]["single"] = scenario_parameters["f_stop"]
+            scenario_dict["step_channels"][i]["step_items"][0][
+                "single"
+            ] = scenario_parameters["f_stop"]
         # update VNA - Number of measurement points (data points)
         elif stepchannel["channel_name"] == VNA + " - # of points":
-            scenario_dict["step_channels"][i]["step_items"][0]["single"] = scenario_parameters["num_pts"]
+            scenario_dict["step_channels"][i]["step_items"][0][
+                "single"
+            ] = scenario_parameters["num_pts"]
 
     # Saving Scenario in a temporary file as JSON format
     temp_dir = gettempdir()
@@ -233,9 +248,7 @@ def generic_calib_zi_scenario(job):
         if stepchannel["channel_name"] == "MQPG Control - Sample rate":
             step_channel_i["single"] = scenario_parameters["mqpg_smpl_rate"]
         elif stepchannel["channel_name"] == "MQPG Control - Frequency #1":
-            step_channel_i["range_type"] = scenario_parameters[
-                "drive_freq_range_type"
-            ]
+            step_channel_i["range_type"] = scenario_parameters["drive_freq_range_type"]
             if scenario_parameters["drive_freq_range_type"] == "Start - Stop":
                 step_channel_i["start"] = scenario_parameters["drive_start_freq"]
                 step_channel_i["stop"] = scenario_parameters["drive_stop_freq"]
@@ -258,9 +271,7 @@ def generic_calib_zi_scenario(job):
                 step_channel_i["start"] = scenario_parameters[
                     "drive_pulse_spacing_start"
                 ]
-                step_channel_i["stop"] = scenario_parameters[
-                    "drive_pulse_spacing_stop"
-                ]
+                step_channel_i["stop"] = scenario_parameters["drive_pulse_spacing_stop"]
                 step_channel_i["n_pts"] = scenario_parameters["num_pts"]
             elif scenario_parameters["drive_amp_range_type"] == "Single":
                 step_channel_i["single"] = scenario_parameters["drive_pulse_spacing"]
@@ -389,6 +400,7 @@ def qobj_dummy_scenario(job):
 
 # ===========================================================================
 # Misc helpers
+
 
 def get_scenario_template_dict(job_name):
     template_dict = {

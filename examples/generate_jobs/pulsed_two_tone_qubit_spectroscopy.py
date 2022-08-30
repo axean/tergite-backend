@@ -49,20 +49,22 @@ def main():
 
     file.unlink()
 
+
 def generate_job():
     job = measurement_jobs.mk_job_two_tone(
         # Mandatory parameters for measurement job
-        drive_start_freq = 270e6,
-        drive_stop_freq = 280e6,
-        readout_resonance_freq = 5.99931e9,  # depends on pulsed resonator spectroscopy result
-        num_pts = 201,
+        drive_start_freq=270e6,
+        drive_stop_freq=280e6,
+        readout_resonance_freq=5.99931e9,  # depends on pulsed resonator spectroscopy result
+        num_pts=201,
         # Optional arguments to override calibration supervisor defaults
-        is_calibration_sup_job = False,
+        is_calibration_sup_job=False,
         # Optional arguments to override any other parameters from the
         # defaults TOML file in measurement_jobs/parameter_defaults/
         #
     )
     return job
+
 
 """
 
@@ -75,7 +77,6 @@ Is this drive_start_freq and drive_stop_freq ?
 "num_pts": number of points of measurement
 
 """
-
 
 
 if __name__ == "__main__":

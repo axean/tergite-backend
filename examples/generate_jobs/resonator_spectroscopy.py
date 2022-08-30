@@ -52,19 +52,20 @@ def main():
 def generate_job():
 
     job = measurement_jobs.mk_job_res_spect_vna(
-        f_start = 6.0e9,
-        f_stop = 7.0e9,
-        if_bw = 1e3,
-        num_pts = 10001,
+        f_start=6.0e9,
+        f_stop=7.0e9,
+        if_bw=1e3,
+        num_pts=10001,
         # For multiple power sweeps use: [start, stop, n_pts],
         # example:[-50, 0, 1]
-        power = [-50, 0, 51],
-        num_ave = 10,
+        power=[-50, 0, 51],
+        num_ave=10,
         # optional argument for calibration supervisor
-        is_calibration_sup_job = False, # default True
+        is_calibration_sup_job=False,  # default True
         # non-mandatory arguments overriding defaults
     )
     return job
+
 
 # Jobs can be generated directly as follows, and then default
 # parameters can be overridden. However, with this method there is no
@@ -78,7 +79,7 @@ def generate_job_direct():
         # Defaults for "params" are loaded in scenario_scripts.py from
         # measurement_jobs/parameter_defaults/vna_resonator_spectroscopy.toml
         "params": {
-            "f_start": 6.0e9 + 0.01e9, # demonstrating it can be overridden
+            "f_start": 6.0e9 + 0.01e9,  # demonstrating it can be overridden
         },
     }
     return job
