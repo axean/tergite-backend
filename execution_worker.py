@@ -3,6 +3,7 @@
 # (C) Copyright Miroslav Dobsicek 2020, 2021
 # (C) Copyright Abdullah-Al Amin 2021
 # (C) Copyright Axel Andersson 2022
+# (C) Copyright David Wahlstedt 2022
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -13,9 +14,14 @@
 # that they have been altered from the originals.
 
 
-from pathlib import Path
-from uuid import uuid4
 import json
+from pathlib import Path
+import settings
+from uuid import uuid4
+
+import requests
+
+from job_supervisor import inform_location, inform_failure, Location
 from scenario_scripts import (
     demodulation_scenario,
     qobj_scenario,
@@ -23,10 +29,6 @@ from scenario_scripts import (
     resonator_spectroscopy_scenario,
     generic_calib_zi_scenario,
 )
-import requests
-import settings
-
-from job_supervisor import inform_location, inform_failure, Location
 
 # Settings
 STORAGE_ROOT = settings.STORAGE_ROOT
@@ -48,7 +50,7 @@ def post_schedule_file(job_dict: dict, /):
     with tmp_file.open("r") as source:
         files = {
             "upload_file": (tmp_file.name, source),
-            "send_logfile_to": (None, str(BCC_MACHINE_ROOT_URL))
+            "send_logfile_to": (None, str(BCC_MACHINE_ROOT_URL)),
         }
 
         url = str(QUANTIFY_MACHINE_ROOT_URL) + REST_API_MAP["qobj"]
@@ -66,6 +68,8 @@ def post_scenario_file(job_dict: dict, /):
     # Inform supervisor
     inform_location(job_id, Location.EXEC_W)
 
+    # Create scenario
+
     print(f"Job script type: {job_dict['name']}")
     if job_dict["name"] == "demodulation_scenario":
         signal_array = job_dict["params"]["Sine - Frequency"]
@@ -73,26 +77,17 @@ def post_scenario_file(job_dict: dict, /):
 
         scenario = demodulation_scenario(signal_array, demod_array)
 
-        scenario.log_name = "Test signal demodulation - " + job_id
-        # scenario.save("/tmp/my.json", save_as_json=True)
-
     elif job_dict["name"] == "qiskit_qasm_runner":
         scenario = qobj_scenario(job_dict)
 
-        scenario.log_name += job_id
-
     elif job_dict["name"] == "qasm_dummy_job":
         scenario = qobj_dummy_scenario(job_dict)
-
-        scenario.log_name += job_id
 
     elif job_dict["name"] in [
         "resonator_spectroscopy",
         "fit_resonator_spectroscopy",
     ]:
         scenario = resonator_spectroscopy_scenario(job_dict)
-
-        scenario.log_name += job_id
 
     elif job_dict["name"] in [
         "pulsed_resonator_spectroscopy",
@@ -102,10 +97,12 @@ def post_scenario_file(job_dict: dict, /):
     ]:
         scenario = generic_calib_zi_scenario(job_dict)
 
-        scenario.log_name += job_id
-
     else:
         return None
+
+    # Update metadata
+
+    scenario.log_name = job_id
 
     # Store important information inside the scenario: using the tag list
     # 1) job_id
@@ -116,6 +113,7 @@ def post_scenario_file(job_dict: dict, /):
     if is_calibration_sup_job:
         scenario.tags.tags += [is_calibration_sup_job]
 
+    # Upload scenario
     scenario_file = Path(STORAGE_ROOT) / (job_id + ".labber")
     scenario.save(scenario_file)
     print(f"Scenario generated at {str(scenario_file)}")

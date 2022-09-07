@@ -11,12 +11,13 @@
 # that they have been altered from the originals.
 
 from argparse import ArgumentParser
-import numpy as np
 import json
-from uuid import uuid4
-import requests
 import pathlib
 import settings
+from uuid import uuid4
+
+import numpy as np
+import requests
 
 # settings
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL

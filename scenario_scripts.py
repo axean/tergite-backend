@@ -2,6 +2,7 @@
 #
 # (C) Copyright Miroslav Dobsicek, Andreas Bengtsson 2020,
 # (C) Copyright Abdullah-Al Amin 2021
+# (C) Copyright David Wahlstedt 2022
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -12,13 +13,18 @@
 # that they have been altered from the originals.
 
 
-from Labber import Scenario
-from Labber import ScriptTools
-
-import numpy as np
 import json
 from pathlib import Path
 from tempfile import gettempdir
+import toml
+
+import numpy as np
+
+from Labber import Scenario
+from Labber import ScriptTools
+
+# ===========================================================================
+# Scenario creation functions
 
 
 def demodulation_scenario(signal_array, demod_array):
@@ -41,11 +47,7 @@ def demodulation_scenario(signal_array, demod_array):
     # add log channels
     s.add_log("Demod - Value")
 
-    # set metadata
-    s.comment = "Comment for log"
-    s.tags.project = "My project"
-    s.tags.user = "John Doe"
-    s.tags.tags = ["Tag 1", "Tag 2/Subtag"]
+    set_default_metadata(s)
 
     # set timing info
     s.wait_between = 0.01
@@ -124,12 +126,7 @@ def qobj_scenario(job):
         if extraction.get("voltages", False):
             add_readout_voltages(s, n_qubits)
 
-    # set metadata
-    s.log_name = "Test qobj"
-    s.comment = "Comment for log"
-    s.tags.project = "My project"
-    s.tags.user = "Chalmers default user"
-    s.tags.tags = ["Qobj"]
+    set_default_metadata(s)
 
     # set timing info
     s.wait_between = 0.2
@@ -137,194 +134,223 @@ def qobj_scenario(job):
     return s
 
 
-## A template scenario file is modified according to the parameters
-## that have been passed through job object in order to create a simple
-## frequency sweep scenario
+# VNA resonator spectroscopy
+# A template scenario file is modified according to the parameters
+# that have been passed through job object in order to create a simple
+# frequency sweep scenario
 def resonator_spectroscopy_scenario(job):
-    VNA = "VNA" #"ZNB20"  # "RS"  # 'Keysight'  'Ceyear'
+    VNA = "VNA"  # "ZNB20"  # "RS"  # 'Keysight'  'Ceyear'
 
-    scenario_template_filepath = Path("./scenario_templates/resonator_spectroscopy_scenario_template_keysight_vna.json")
+    job_name = job["name"]
 
-    # loading Scenario as dictionary
-    s_dict = ScriptTools.load_scenario_as_dict(scenario_template_filepath)
+    scenario_dict = get_scenario_template_dict(job_name)
 
-    s_prms = job["params"]
+    defaults = get_default_params(job_name)
+
+    # The parameters from job will override those of defaults
+    scenario_parameters = dict(defaults, **job["params"])
 
     # Updating Step parameters in Scenario dictionary
-    for i, stepchannel in enumerate(s_dict["step_channels"]):
+    for i, stepchannel in enumerate(scenario_dict["step_channels"]):
         # update: VNA - Output power
         if stepchannel["channel_name"] == VNA + " - Output power":
-            if len(s_prms["power"]) == 1: # only single value power is required for the measurement
-                s_dict["step_channels"][i]["step_items"][0]["range_type"] = "Single"
-                s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["power"][0]
-            elif len(s_prms["power"]) == 3: # multiple step value for power is required for the measurement
-                s_dict["step_channels"][i]["step_items"][0]["range_type"] = "Start - Stop"
-                s_dict["step_channels"][i]["step_items"][0]["step_type"] ="Fixed # of pts"
-                s_dict["step_channels"][i]["step_items"][0]["start"] = s_prms["power"][0]
-                s_dict["step_channels"][i]["step_items"][0]["stop"] = s_prms["power"][1]
-                s_dict["step_channels"][i]["step_items"][0]["n_pts"] = s_prms["power"][2]
+            if (
+                len(scenario_parameters["power"]) == 1
+            ):  # only single value power is required for the measurement
+                scenario_dict["step_channels"][i]["step_items"][0][
+                    "range_type"
+                ] = "Single"
+                scenario_dict["step_channels"][i]["step_items"][0][
+                    "single"
+                ] = scenario_parameters["power"][0]
+            elif (
+                len(scenario_parameters["power"]) == 3
+            ):  # multiple step value for power is required for the measurement
+                scenario_dict["step_channels"][i]["step_items"][0][
+                    "range_type"
+                ] = "Start - Stop"
+                scenario_dict["step_channels"][i]["step_items"][0][
+                    "step_type"
+                ] = "Fixed # of pts"
+                scenario_dict["step_channels"][i]["step_items"][0][
+                    "start"
+                ] = scenario_parameters["power"][0]
+                scenario_dict["step_channels"][i]["step_items"][0][
+                    "stop"
+                ] = scenario_parameters["power"][1]
+                scenario_dict["step_channels"][i]["step_items"][0][
+                    "n_pts"
+                ] = scenario_parameters["power"][2]
             else:
                 raise ValueError("Input Power parameter is not well defined.")
         # update VNA - IF bandwidth
         elif stepchannel["channel_name"] == VNA + " - IF bandwidth":
-            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["if_bw"]
+            scenario_dict["step_channels"][i]["step_items"][0][
+                "single"
+            ] = scenario_parameters["if_bw"]
         # update VNA - Number of averages
         elif stepchannel["channel_name"] == VNA + " - # of averages":
-            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["num_ave"]
+            scenario_dict["step_channels"][i]["step_items"][0][
+                "single"
+            ] = scenario_parameters["num_ave"]
         # update VNA - Start of Sweping frequency
         elif stepchannel["channel_name"] == VNA + " - Start frequency":
-            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["f_start"]
+            scenario_dict["step_channels"][i]["step_items"][0][
+                "single"
+            ] = scenario_parameters["freq_start"]
         # update VNA - Stop of Sweping frequency
         elif stepchannel["channel_name"] == VNA + " - Stop frequency":
-            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["f_stop"]
+            scenario_dict["step_channels"][i]["step_items"][0][
+                "single"
+            ] = scenario_parameters["freq_stop"]
         # update VNA - Number of measurement points (data points)
         elif stepchannel["channel_name"] == VNA + " - # of points":
-            s_dict["step_channels"][i]["step_items"][0]["single"] = s_prms["num_pts"]
+            scenario_dict["step_channels"][i]["step_items"][0][
+                "single"
+            ] = scenario_parameters["num_pts"]
 
     # Saving Scenario in a temporary file as JSON format
     temp_dir = gettempdir()
-    ScriptTools.save_scenario_as_json(s_dict, temp_dir + "/tmp.json")
+    ScriptTools.save_scenario_as_json(scenario_dict, temp_dir + "/tmp.json")
 
     # Loading Scenario as object
     s = Scenario(temp_dir + "/tmp.json")
 
-    # set metadata
-    s.log_name = "Resonator Spectroscopy"
-    s.comment = "Comment for log"
-    s.tags.project = "Automatic Calibration project"
-    s.tags.user = "Chalmers default user"
-    s.tags.tags = ["ResonatorSpectroscopy"]
+    set_default_metadata(s)
 
     # set timing info
     s.wait_between = 0.2
 
     return s
 
+
 # A generic scenario creation routine for pulsed resonator
-# spectroscopy, two-tone, Rabi, and Ramey calibration steps, using ZI
-# and Labber. It can be used to create related measurement scenarios
-# as well.
+# spectroscopy, two-tone, Rabi, and Ramsey calibrations, using ZI and
+# Labber. It can be used to create related measurement scenarios as
+# well (if the code is updated accordingly).
 def generic_calib_zi_scenario(job):
 
-    if job["name"] == "ramsey_qubit_freq_correction":
-        scenario_template_filepath = Path("./scenario_templates/ramsey_using_general_calib_template.json")
-    elif job["name"] == "rabi_qubit_pi_pulse_estimation":
-        scenario_template_filepath = Path("./scenario_templates/rabi_using_general_calib_template.json")
-    elif job["name"] == "pulsed_two_tone_qubit_spectroscopy":
-        scenario_template_filepath = Path("./scenario_templates/pulsed_qubit_spectroscopy_using_general_calib_template.json")
-    elif job["name"] == "pulsed_resonator_spectroscopy":
-        scenario_template_filepath = Path("./scenario_templates/pulsed_spectroscopy_scenario_template.json")
+    job_name = job["name"]
 
-    # loading Scenario as dictionary
-    s_dict = ScriptTools.load_scenario_as_dict(scenario_template_filepath)
+    scenario_dict = get_scenario_template_dict(job_name)
 
-    s_prms = job["params"]
+    defaults = get_default_params(job_name)
+
+    # The parameters from job will override those of defaults
+    scenario_parameters = dict(defaults, **job["params"])
 
     # Updating Step parameters in Scenario dictionary
-    for i, stepchannel in enumerate(s_dict["step_channels"]):
-        step_channel_i = s_dict["step_channels"][i]["step_items"][0]
+    for i, stepchannel in enumerate(scenario_dict["step_channels"]):
+        step_channel_i = scenario_dict["step_channels"][i]["step_items"][0]
         # For Qubit Control RF source settings:
-        #if stepchannel["channel_name"] == "Trace Time":
-        #    step_channel_i["single"] = s_prms["trace_time"]
+        # if stepchannel["channel_name"] == "Trace Time":
+        #    step_channel_i["single"] = scenario_parameters["trace_time"]
         if stepchannel["channel_name"] == "MQPG Control - Sample rate":
-            step_channel_i["single"] = s_prms["mqpg_smpl_rate"]
+            step_channel_i["single"] = scenario_parameters["mqpg_smpl_rate"]
         elif stepchannel["channel_name"] == "MQPG Control - Frequency #1":
-            step_channel_i["range_type"] = s_prms["control_freq_range_type"]
-            if s_prms["control_freq_range_type"] == "Start - Stop":
-                step_channel_i["start"] = s_prms["control_start_freq"]
-                step_channel_i["stop"] = s_prms["control_stop_freq"]
-                step_channel_i["n_pts"] = s_prms["num_pts"]
-            elif s_prms["control_freq_range_type"] == "Single":
-                step_channel_i["single"] = s_prms["control_freq"]
+            step_channel_i["range_type"] = scenario_parameters["drive_freq_range_type"]
+            if scenario_parameters["drive_freq_range_type"] == "Start - Stop":
+                step_channel_i["start"] = scenario_parameters["drive_start_freq"]
+                step_channel_i["stop"] = scenario_parameters["drive_stop_freq"]
+                step_channel_i["n_pts"] = scenario_parameters["num_pts"]
+            elif scenario_parameters["drive_freq_range_type"] == "Single":
+                step_channel_i["single"] = scenario_parameters["drive_freq"]
         elif stepchannel["channel_name"] == "MQPG Control - Amplitude #1":
-            step_channel_i["range_type"] = s_prms["control_amp_range_type"]
-            if s_prms["control_amp_range_type"] == "Start - Stop":
-                step_channel_i["start"] = s_prms["control_amp_start"]
-                step_channel_i["stop"] = s_prms["control_amp_stop"]
-                step_channel_i["n_pts"] = s_prms["num_pts"]
-            elif s_prms["control_amp_range_type"] == "Single":
-                step_channel_i["single"] = s_prms["control_amp"]
+            step_channel_i["range_type"] = scenario_parameters["drive_amp_range_type"]
+            if scenario_parameters["drive_amp_range_type"] == "Start - Stop":
+                step_channel_i["start"] = scenario_parameters["drive_amp_start"]
+                step_channel_i["stop"] = scenario_parameters["drive_amp_stop"]
+                step_channel_i["n_pts"] = scenario_parameters["num_pts"]
+            elif scenario_parameters["drive_amp_range_type"] == "Single":
+                step_channel_i["single"] = scenario_parameters["drive_amp"]
         elif stepchannel["channel_name"] == "MQPG Control - Pulse spacing":
-            step_channel_i["range_type"] = s_prms["control_pulse_spacing_range_type"]
-            if s_prms["control_amp_range_type"] == "Start - Stop":
-                step_channel_i["start"] = s_prms["control_pulse_spacing_start"]
-                step_channel_i["stop"] = s_prms["control_pulse_spacing_stop"]
-                step_channel_i["n_pts"] = s_prms["num_pts"]
-            elif s_prms["control_amp_range_type"] == "Single":
-                step_channel_i["single"] = s_prms["control_pulse_spacing"]
+            step_channel_i["range_type"] = scenario_parameters[
+                "drive_pulse_spacing_range_type"
+            ]
+            if scenario_parameters["drive_amp_range_type"] == "Start - Stop":
+                step_channel_i["start"] = scenario_parameters[
+                    "drive_pulse_spacing_start"
+                ]
+                step_channel_i["stop"] = scenario_parameters["drive_pulse_spacing_stop"]
+                step_channel_i["n_pts"] = scenario_parameters["num_pts"]
+            elif scenario_parameters["drive_amp_range_type"] == "Single":
+                step_channel_i["single"] = scenario_parameters["drive_pulse_spacing"]
         elif stepchannel["channel_name"] == "Qubit 2B - Output":
-            step_channel_i["single"] = s_prms["control_output_enabled"]
+            step_channel_i["single"] = scenario_parameters["drive_output_enabled"]
         elif stepchannel["channel_name"] == "Qubit 2B - Power":
-            if s_prms["control_power_range_type"] == "Start - Stop":
-                step_channel_i["start"] = s_prms["control_start_power"]
-                step_channel_i["stop"] = s_prms["control_stop_power"]
-                step_channel_i["n_pts"] = s_prms["num_pts"]
-            elif s_prms["control_power_range_type"] == "Single":
-                step_channel_i["single"] = s_prms["control_power"]
+            if scenario_parameters["drive_power_range_type"] == "Start - Stop":
+                step_channel_i["start"] = scenario_parameters["drive_start_power"]
+                step_channel_i["stop"] = scenario_parameters["drive_stop_power"]
+                step_channel_i["n_pts"] = scenario_parameters["num_pts"]
+            elif scenario_parameters["drive_power_range_type"] == "Single":
+                step_channel_i["single"] = scenario_parameters["drive_power"]
         # For Readout RF source frequency and power settings:
         elif stepchannel["channel_name"] == "QA_Carrier - Frequency":
-            step_channel_i["range_type"] = s_prms["readout_freq_range_type"]
-            if s_prms["readout_freq_range_type"] == "Start - Stop":
-                step_channel_i["start"] = s_prms["readout_start_freq"]
-                step_channel_i["stop"] = s_prms["readout_stop_freq"]
-                step_channel_i["n_pts"] = s_prms["num_pts"]
-            elif s_prms["readout_freq_range_type"] == "Single":
-                step_channel_i["single"] = s_prms["readout_resonance_freq"]
+            step_channel_i["range_type"] = scenario_parameters[
+                "readout_freq_range_type"
+            ]
+            if scenario_parameters["readout_freq_range_type"] == "Start - Stop":
+                step_channel_i["start"] = scenario_parameters["readout_start_freq"]
+                step_channel_i["stop"] = scenario_parameters["readout_stop_freq"]
+                step_channel_i["n_pts"] = scenario_parameters["num_pts"]
+            elif scenario_parameters["readout_freq_range_type"] == "Single":
+                step_channel_i["single"] = scenario_parameters["readout_resonance_freq"]
         elif stepchannel["channel_name"] == "QA_Carrier - Power":
-            step_channel_i["range_type"] = s_prms["readout_power_range_type"]
-            if s_prms["readout_power_range_type"] == "Start - Stop":
-                step_channel_i["start"] = s_prms["readout_power_start"]
-                step_channel_i["stop"] = s_prms["readout_power_stop"]
-                step_channel_i["n_pts"] = s_prms["num_pts"]
-            elif s_prms["readout_power_range_type"] == "Single":
-                step_channel_i["single"] = s_prms["readout_power"]
+            step_channel_i["range_type"] = scenario_parameters[
+                "readout_power_range_type"
+            ]
+            if scenario_parameters["readout_power_range_type"] == "Start - Stop":
+                step_channel_i["start"] = scenario_parameters["readout_power_start"]
+                step_channel_i["stop"] = scenario_parameters["readout_power_stop"]
+                step_channel_i["n_pts"] = scenario_parameters["num_pts"]
+            elif scenario_parameters["readout_power_range_type"] == "Single":
+                step_channel_i["single"] = scenario_parameters["readout_power"]
         # Readout settings for MQPG
         elif stepchannel["channel_name"] == "MQPG Readout - Readout frequency #1":
-            step_channel_i["single"] = s_prms["readout_freq"]
+            step_channel_i["single"] = scenario_parameters["readout_freq"]
         elif stepchannel["channel_name"] == "MQPG Readout - Readout amplitude #1":
-            step_channel_i["range_type"] = s_prms["readout_amp_range_type"]
-            if s_prms["readout_amp_range_type"] == "Start - Stop":
-                step_channel_i["start"] = s_prms["readout_amp_start"]
-                step_channel_i["stop"] = s_prms["readout_amp_stop"]
-                step_channel_i["n_pts"] = s_prms["num_pts_other_axis"]
-            elif s_prms["readout_power_range_type"] == "Single":
-                step_channel_i["single"] = s_prms["readout_amp"]
+            step_channel_i["range_type"] = scenario_parameters["readout_amp_range_type"]
+            if scenario_parameters["readout_amp_range_type"] == "Start - Stop":
+                step_channel_i["start"] = scenario_parameters["readout_amp_start"]
+                step_channel_i["stop"] = scenario_parameters["readout_amp_stop"]
+                step_channel_i["n_pts"] = scenario_parameters["num_pts_other_axis"]
+            elif scenario_parameters["readout_power_range_type"] == "Single":
+                step_channel_i["single"] = scenario_parameters["readout_amp"]
         elif stepchannel["channel_name"] == "MQPG Readout - Readout duration":
-            step_channel_i["single"] = s_prms["readout_duration"]
+            step_channel_i["single"] = scenario_parameters["readout_duration"]
         # HDAWG Marker Pulse Setting, Marker is used as trigger for QA
         elif stepchannel["channel_name"] == "HDAWG - Internal trigger period":
-            step_channel_i["range_type"] = s_prms["hdawg_trigger_range_type"]
-            if s_prms["hdawg_trigger_range_type"] == "Start - Stop":
-                step_channel_i["start"] = s_prms["hdawg_trigger_period_start"]
-                step_channel_i["stop"] = s_prms["hdawg_trigger_period_stop"]
-                step_channel_i["n_pts"] = s_prms["num_pts"]
-            elif s_prms["hdawg_trigger_range_type"] == "Single":
-                step_channel_i["single"] = s_prms["hdawg_int_trig_period"]
+            step_channel_i["range_type"] = scenario_parameters[
+                "hdawg_trigger_range_type"
+            ]
+            if scenario_parameters["hdawg_trigger_range_type"] == "Start - Stop":
+                step_channel_i["start"] = scenario_parameters[
+                    "hdawg_trigger_period_start"
+                ]
+                step_channel_i["stop"] = scenario_parameters[
+                    "hdawg_trigger_period_stop"
+                ]
+                step_channel_i["n_pts"] = scenario_parameters["num_pts"]
+            elif scenario_parameters["hdawg_trigger_range_type"] == "Single":
+                step_channel_i["single"] = scenario_parameters["hdawg_int_trig_period"]
         elif stepchannel["channel_name"] == "HDAWG - Output 1 Marker 1 duration":
-            step_channel_i["single"] = s_prms["hdwag_marker_duration"]
+            step_channel_i["single"] = scenario_parameters["hdwag_marker_duration"]
         # UHFQA Settings
         elif stepchannel["channel_name"] == "QA_DEV2346 - Integration Length":
-            step_channel_i["single"] = s_prms["qa_integration_length"]
+            step_channel_i["single"] = scenario_parameters["qa_integration_length"]
         elif stepchannel["channel_name"] == "QA_DEV2346 - Delay":
-            step_channel_i["single"] = s_prms["qa_delay"]
+            step_channel_i["single"] = scenario_parameters["qa_delay"]
         elif stepchannel["channel_name"] == "QA_DEV2346 - Averages":
-            step_channel_i["single"] = s_prms["qa_avg"]
-
+            step_channel_i["single"] = scenario_parameters["qa_avg"]
 
     # Saving Scenario in a temporary file as JSON format
     temp_dir = gettempdir()
-    ScriptTools.save_scenario_as_json(s_dict, temp_dir + "/tmp.json")
+    ScriptTools.save_scenario_as_json(scenario_dict, temp_dir + "/tmp.json")
 
     # Loading Scenario as object
     s = Scenario(temp_dir + "/tmp.json")
 
-    # set metadata
-    # these needs to be automated by redis entries
-    s.log_name = job["name"]
-    s.comment = "Comment for log"
-    s.tags.project = "Automatic Calibration project"
-    s.tags.user = "Chalmers default user"
-    s.tags.tags = [job["name"]]
+    set_default_metadata(s)
 
     # set timing info
     s.wait_between = 0.2
@@ -364,17 +390,49 @@ def qobj_dummy_scenario(job):
     instr.values["QObj JSON"] = json.dumps(qobj)
     instr.values["QObj ID"] = qobj["qobj_id"]
 
-    # set metadata
-    s.log_name = "Test qobj"
-    s.comment = "Comment for log"
-    s.tags.project = "My project"
-    s.tags.user = "Chalmers default user"
-    s.tags.tags = ["Qobj"]
+    set_default_metadata(s)
 
     # set timing info
     s.wait_between = 0.2
 
     return s
+
+
+# ===========================================================================
+# Misc helpers
+
+
+def get_scenario_template_dict(job_name):
+    template_dict = {
+        "ramsey_qubit_freq_correction": "ramsey_using_general_calib_template.json",
+        "rabi_qubit_pi_pulse_estimation": "rabi_using_general_calib_template.json",
+        "pulsed_two_tone_qubit_spectroscopy": "pulsed_qubit_spectroscopy_using_general_calib_template.json",
+        "pulsed_resonator_spectroscopy": "pulsed_spectroscopy_scenario_template.json",
+        # VNA resonator spectroscopy:
+        "resonator_spectroscopy": "resonator_spectroscopy_scenario_template_keysight_vna.json",
+        "fit_resonator_spectroscopy": "resonator_spectroscopy_scenario_template_keysight_vna.json",
+    }
+    filename = template_dict[job_name]
+    scenario_template_filepath = Path("scenario_templates/" + filename)
+    # Loading scenario as dictionary
+    scenario_dict = ScriptTools.load_scenario_as_dict(scenario_template_filepath)
+    return scenario_dict
+
+
+# Returns a dictionary of the default measurement parameters for the associated job name
+def get_default_params(job_name):
+    default_files = {
+        "pulsed_resonator_spectroscopy": "pulsed_resonator_spectroscopy.toml",
+        "pulsed_two_tone_qubit_spectroscopy": "two_tone.toml",
+        "rabi_qubit_pi_pulse_estimation": "rabi.toml",
+        "ramsey_qubit_freq_correction": "ramsey.toml",
+        # VNA resonator spectroscopy:
+        "resonator_spectroscopy": "vna_resonator_spectroscopy.toml",
+        "fit_resonator_spectroscopy": "vna_resonator_spectroscopy.toml",
+    }
+    filename = default_files[job_name]
+    filepath = "measurement_jobs/parameter_defaults/" + filename
+    return toml.load(filepath)
 
 
 def update_step_single_value(scenario, name, value):
@@ -448,3 +506,10 @@ def add_readout_voltages(scenario, n_qubits):
     channel = "QA - Result {id}"
     for i in range(n_qubits):
         scenario.add_log(channel.format(id=str(i + 1)))
+
+
+def set_default_metadata(s):
+    s.comment = "Default comment for log"
+    s.tags.project = "Default project"
+    s.tags.user = "Default user"
+    s.tags.tags = ["Default tag"]
