@@ -71,8 +71,8 @@ def mk_job_pulsed_res_spect(
     num_pts,
     qa_avg,
     readout_amp,
-    readout_start_freq,
-    readout_stop_freq,
+    readout_freq_start,
+    readout_freq_stop,
     readout_power,
     # Optional arguments to override calibration supervisor defaults
     is_calibration_sup_job=True,
@@ -90,8 +90,8 @@ def mk_job_pulsed_res_spect(
         "params": {
             "num_pts": num_pts,  # 20M/200 points = 1k sweep frequency resolution
             "qa_avg": qa_avg,  # previously num_ave, 1024
-            "readout_start_freq": readout_start_freq,
-            "readout_stop_freq": readout_stop_freq,
+            "readout_freq_start": readout_freq_start,
+            "readout_freq_stop": readout_freq_stop,
             "readout_amp": readout_amp,
             "readout_power": readout_power,
             **kwargs,
@@ -102,8 +102,8 @@ def mk_job_pulsed_res_spect(
 
 def mk_job_two_tone(
     # Mandatory parameters for measurement job
-    drive_start_freq,
-    drive_stop_freq,
+    drive_freq_start,
+    drive_freq_stop,
     readout_resonance_freq,  # depends on pulsed resonator spectroscopy result
     num_pts,
     # Optional arguments to override calibration supervisor defaults
@@ -120,8 +120,8 @@ def mk_job_two_tone(
         "is_calibration_sup_job": is_calibration_sup_job,
         "name": name,
         "params": {
-            "drive_start_freq": drive_start_freq,
-            "drive_stop_freq": drive_stop_freq,
+            "drive_freq_start": drive_freq_start,
+            "drive_freq_stop": drive_freq_stop,
             "readout_resonance_freq": readout_resonance_freq,
             "num_pts": num_pts,
             **kwargs,

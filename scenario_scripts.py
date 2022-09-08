@@ -250,8 +250,8 @@ def generic_calib_zi_scenario(job):
         elif stepchannel["channel_name"] == "MQPG Control - Frequency #1":
             step_channel_i["range_type"] = scenario_parameters["drive_freq_range_type"]
             if scenario_parameters["drive_freq_range_type"] == "Start - Stop":
-                step_channel_i["start"] = scenario_parameters["drive_start_freq"]
-                step_channel_i["stop"] = scenario_parameters["drive_stop_freq"]
+                step_channel_i["start"] = scenario_parameters["drive_freq_start"]
+                step_channel_i["stop"] = scenario_parameters["drive_freq_stop"]
                 step_channel_i["n_pts"] = scenario_parameters["num_pts"]
             elif scenario_parameters["drive_freq_range_type"] == "Single":
                 step_channel_i["single"] = scenario_parameters["drive_freq"]
@@ -279,8 +279,8 @@ def generic_calib_zi_scenario(job):
             step_channel_i["single"] = scenario_parameters["drive_output_enabled"]
         elif stepchannel["channel_name"] == "Qubit 2B - Power":
             if scenario_parameters["drive_power_range_type"] == "Start - Stop":
-                step_channel_i["start"] = scenario_parameters["drive_start_power"]
-                step_channel_i["stop"] = scenario_parameters["drive_stop_power"]
+                step_channel_i["start"] = scenario_parameters["drive_power_start"]
+                step_channel_i["stop"] = scenario_parameters["drive_power_stop"]
                 step_channel_i["n_pts"] = scenario_parameters["num_pts"]
             elif scenario_parameters["drive_power_range_type"] == "Single":
                 step_channel_i["single"] = scenario_parameters["drive_power"]
@@ -290,8 +290,8 @@ def generic_calib_zi_scenario(job):
                 "readout_freq_range_type"
             ]
             if scenario_parameters["readout_freq_range_type"] == "Start - Stop":
-                step_channel_i["start"] = scenario_parameters["readout_start_freq"]
-                step_channel_i["stop"] = scenario_parameters["readout_stop_freq"]
+                step_channel_i["start"] = scenario_parameters["readout_freq_start"]
+                step_channel_i["stop"] = scenario_parameters["readout_freq_stop"]
                 step_channel_i["n_pts"] = scenario_parameters["num_pts"]
             elif scenario_parameters["readout_freq_range_type"] == "Single":
                 step_channel_i["single"] = scenario_parameters["readout_resonance_freq"]

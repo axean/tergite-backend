@@ -15,8 +15,8 @@ drive_freq_range_type = "Single"
 # qubit excitation frequency = "drive_freq" + "drive_if_freq"
 # should be replaced by the measured variable
 drive_freq = 274.68e6
-drive_start_freq = 270e6
-drive_stop_freq = 280e6
+drive_freq_start = 270e6
+drive_freq_stop = 280e6
 drive_amp_range_type = "Single"
 drive_amp = 20e-3
 drive_amp_start = 1e-3 # DW: used?
@@ -24,8 +24,8 @@ drive_amp_stop = 200e-3 # DW: used?
 drive_duration = 100e-9
 drive_power_range_type = "Single"
 drive_power = -10 # used in RS-RF Source
-drive_start_power = -20
-drive_stop_power = 0
+drive_power_start = -20
+drive_power_stop = 0
 drive_if_freq = 4.5e9
 drive_if_span_freq = 20e6
 drive_output_enabled = 0
@@ -36,8 +36,8 @@ drive_pulse_spacing = 2e-6 # kept as default value
 # Doing a frequency sweep around expected resonace freq
 readout_freq_range_type = "Start - Stop"
 readout_freq = 379.17e6 # config. name: readout_freq # close to expected resonance frequency, :config
-readout_start_freq = 5.99e9 # name: readout_start_freq
-readout_stop_freq = 6.01e9 # name: readout_stop_freq
+readout_freq_start = 5.99e9 # name: readout_freq_start
+readout_freq_stop = 6.01e9 # name: readout_freq_stop
 readout_resonance_freq = 5.99931e9
 readout_amp_range_type = "Single"
 readout_amp = 25e-3 # config. name: readout_amp
@@ -59,7 +59,7 @@ hdawg_trigger_range_type = "Single"
 hdawg_trigger_period_start = 300e-6
 hdawg_trigger_period_stop = 600e-6
 hdawg_int_trig_period = 300e-6 # aka relaxation_time
-hdawg_marker_start_time = 4.9e-6
+hdawg_marker_start_time = 4.9e-6 # not used in scenario_scripts: remove?
 hdwag_marker_duration = 100e-9
 
 #################################################################################

@@ -9,8 +9,8 @@
 
 drive_output_enabled = 1  # & output On, exciting the qubit
 drive_freq_range_type = "Single"
-drive_start_freq = 270e6
-drive_stop_freq = 280e6
+drive_freq_start = 270e6
+drive_freq_stop = 280e6
 drive_if_freq = 4.5e9  # & should be in some config param
 drive_freq = 273.18e6  # & qubit excitation frequency = "drive_freq" + "drive_if_freq" # should be replaced by the measured variable
 drive_amp_range_type = "Single"
@@ -24,12 +24,12 @@ drive_pulse_spacing_stop = 2e-6  # &
 drive_pulse_spacing = 2e-6  # kept as default value
 drive_power_range_type = "Single"
 drive_power = -10  # & used in RS-RF Source
-drive_start_power = -20
-drive_stop_power = 0
+drive_power_start = -20
+drive_power_stop = 0
 readout_freq = 379.17e6  # & close to expected resonance frequency
 readout_freq_range_type = "Single"  # & single frequency at the resonance of the resonator
-readout_start_freq = 5.99e9
-readout_stop_freq = 6.01
+readout_freq_start = 5.99e9
+readout_freq_stop = 6.01
 readout_resonance_freq = 5.9999e9  # & resonance determined by pulsed_res_spect
 readout_amp_range_type = "Single"
 readout_amp = 25e-3  # &
@@ -39,8 +39,8 @@ readout_duration = 3e-6
 readout_sampling_delay = 200e-9
 readout_power_range_type = "Single"
 readout_power = 10  # & used in RS-RF Source
-readout_start_power = -20
-readout_stop_power = 0
+readout_power_start = -20
+readout_power_stop = 0
 num_pts = 191  # & 100 ns to 2 us, 191 points = 10 ns sweep resolution
 num_pts_other_axis = 21  # used when another measurement sweep is required
 sampling_duration = 2e-6
@@ -56,7 +56,7 @@ hdawg_trigger_range_type = "Single"
 hdawg_trigger_period_start = 300e-6
 hdawg_trigger_period_stop = 600e-6
 hdawg_int_trig_period = 300e-6  # aka relaxation_time
-hdawg_marker_start_time = 4.9e-6
+hdawg_marker_start_time = 4.9e-6 # not used in scenario_scripts: remove?
 hdwag_marker_duration = 100e-9
 
 

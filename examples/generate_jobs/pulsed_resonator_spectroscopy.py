@@ -56,8 +56,8 @@ def generate_job():
         num_pts=201,
         qa_avg=1024,
         readout_amp=25e-3,
-        readout_start_freq=5.99e9,
-        readout_stop_freq=6.01e9,
+        readout_freq_start=5.99e9,
+        readout_freq_stop=6.01e9,
         readout_power=10,
         # optional argument for calibration supervisor
         is_calibration_sup_job=False,  # default True
