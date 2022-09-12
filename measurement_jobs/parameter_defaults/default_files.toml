@@ -1,0 +1,34 @@
+# This file defines a dictionary that maps job names to lists of
+# default parameter files
+#
+# This file is pointed at by the MEASUREMENT_DEFAULT_FILES settings variable
+
+[directory]
+
+# The files are loaded from the following path
+default_file_dir = "measurement_jobs/parameter_defaults/"
+
+[mapping]
+
+# The following keys map job names to default files. Each list on the
+# right-hand side is a sequence of default parameter value files aht
+# will be applied from left to right, and finally the job's 'params'
+# field will override them.
+
+pulsed_resonator_spectroscopy = [
+    "spectroscopy_common.toml",
+    "pulsed_resonator_spectroscopy.toml",
+]
+
+pulsed_two_tone_qubit_spectroscopy = [
+    "spectroscopy_common.toml",
+    "two_tone.toml",
+]
+
+rabi_qubit_pi_pulse_estimation = ["spectroscopy_common.toml", "rabi.toml"]
+
+ramsey_qubit_freq_correction = ["spectroscopy_common.toml", "ramsey.toml"]
+
+# VNA resonator spectroscopy:
+resonator_spectroscopy = ["vna_resonator_spectroscopy.toml"]
+fit_resonator_spectroscopy = ["vna_resonator_spectroscopy.toml"]

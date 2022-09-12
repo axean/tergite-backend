@@ -41,6 +41,9 @@ JOB_SUPERVISOR_LOG = config(
     "JOB_SUPERVISOR_LOG", cast=str, default="job_supervisor.log"
 )
 
+# Measurement default file mapping
+MEASUREMENT_DEFAULT_FILES = config("MEASUREMENT_DEFAULT_FILES", cast=str, default="measurement_jobs/parameter_defaults/default_files.toml")
+
 # Connectivity settings
 
 LABBER_MACHINE_ROOT_URL = config("LABBER_MACHINE_ROOT_URL", cast=URL)

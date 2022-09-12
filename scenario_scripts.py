@@ -15,6 +15,7 @@
 import functools
 import json
 from pathlib import Path
+import settings
 from tempfile import gettempdir
 import toml
 
@@ -22,6 +23,9 @@ import numpy as np
 
 from Labber import Scenario
 from Labber import ScriptTools
+
+# Settings
+DEFAULT_FILES = settings.MEASUREMENT_DEFAULT_FILES
 
 # ===========================================================================
 # Scenario creation functions
@@ -324,12 +328,8 @@ def generic_calib_zi_scenario(job):
                 "hdawg_trigger_range_type"
             ]
             if scenario_parameters["hdawg_trigger_range_type"] == "Start - Stop":
-                step_channel_i["start"] = scenario_parameters[
-                    "hdawg_trigger_start"
-                ]
-                step_channel_i["stop"] = scenario_parameters[
-                    "hdawg_trigger_stop"
-                ]
+                step_channel_i["start"] = scenario_parameters["hdawg_trigger_start"]
+                step_channel_i["stop"] = scenario_parameters["hdawg_trigger_stop"]
                 step_channel_i["n_pts"] = scenario_parameters["num_pts"]
             elif scenario_parameters["hdawg_trigger_range_type"] == "Single":
                 step_channel_i["single"] = scenario_parameters["hdawg_trigger"]
@@ -423,29 +423,18 @@ def get_scenario_template_dict(job_name):
 def get_default_params(job_name):
     # Each entry maps to a list of default configurations. These are
     # applied in a left to right order, overriding previously defined
-    # keys. Maybe this table should also be in a TOML file?
-    default_files = {
-        "pulsed_resonator_spectroscopy": [
-            "spectroscopy_common.toml",
-            "pulsed_resonator_spectroscopy.toml",
-        ],
-        "pulsed_two_tone_qubit_spectroscopy": [
-            "spectroscopy_common.toml",
-            "two_tone.toml",
-        ],
-        "rabi_qubit_pi_pulse_estimation": ["spectroscopy_common.toml", "rabi.toml"],
-        "ramsey_qubit_freq_correction": ["spectroscopy_common.toml", "ramsey.toml"],
-        # VNA resonator spectroscopy:
-        "resonator_spectroscopy": ["vna_resonator_spectroscopy.toml"],
-        "fit_resonator_spectroscopy": ["vna_resonator_spectroscopy.toml"],
-    }
-    default_file_dir = "measurement_jobs/parameter_defaults/"
+    # keys.
+    default_files_map = toml.load(DEFAULT_FILES)
+
+    default_files = default_files_map["mapping"]
+    default_file_dir = default_files_map["directory"]["default_file_dir"]
 
     dicts = [
         toml.load(default_file_dir + filename) for filename in default_files[job_name]
     ]
     # Apply updates from left to right
     return functools.reduce(lambda d1, d2: {**d1, **d2}, dicts)
+
 
 def update_step_single_value(scenario, name, value):
     scenario.get_step(name).range_items[0].single = value
