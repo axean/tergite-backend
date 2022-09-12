@@ -12,7 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-
+import functools
 import json
 from pathlib import Path
 from tempfile import gettempdir
@@ -421,19 +421,31 @@ def get_scenario_template_dict(job_name):
 
 # Returns a dictionary of the default measurement parameters for the associated job name
 def get_default_params(job_name):
+    # Each entry maps to a list of default configurations. These are
+    # applied in a left to right order, overriding previously defined
+    # keys. Maybe this table should also be in a TOML file?
     default_files = {
-        "pulsed_resonator_spectroscopy": "pulsed_resonator_spectroscopy.toml",
-        "pulsed_two_tone_qubit_spectroscopy": "two_tone.toml",
-        "rabi_qubit_pi_pulse_estimation": "rabi.toml",
-        "ramsey_qubit_freq_correction": "ramsey.toml",
+        "pulsed_resonator_spectroscopy": [
+            "spectroscopy_common.toml",
+            "pulsed_resonator_spectroscopy.toml",
+        ],
+        "pulsed_two_tone_qubit_spectroscopy": [
+            "spectroscopy_common.toml",
+            "two_tone.toml",
+        ],
+        "rabi_qubit_pi_pulse_estimation": ["spectroscopy_common.toml", "rabi.toml"],
+        "ramsey_qubit_freq_correction": ["spectroscopy_common.toml", "ramsey.toml"],
         # VNA resonator spectroscopy:
-        "resonator_spectroscopy": "vna_resonator_spectroscopy.toml",
-        "fit_resonator_spectroscopy": "vna_resonator_spectroscopy.toml",
+        "resonator_spectroscopy": ["vna_resonator_spectroscopy.toml"],
+        "fit_resonator_spectroscopy": ["vna_resonator_spectroscopy.toml"],
     }
-    filename = default_files[job_name]
-    filepath = "measurement_jobs/parameter_defaults/" + filename
-    return toml.load(filepath)
+    default_file_dir = "measurement_jobs/parameter_defaults/"
 
+    dicts = [
+        toml.load(default_file_dir + filename) for filename in default_files[job_name]
+    ]
+    # Apply updates from left to right
+    return functools.reduce(lambda d1, d2: {**d1, **d2}, dicts)
 
 def update_step_single_value(scenario, name, value):
     scenario.get_step(name).range_items[0].single = value

@@ -1,107 +1,25 @@
 #
-# Default values for Rabi calibration measurement using ZI / Keysight
-# / Labber
+# Default measurement parameters to be used with ZI / Keysight /
+# Labber for Rabi calibration
 #
-# Used to populate scenarios created by scenario_scripts.py for jobs
-# with name field "rabi_qubit_pi_pulse_estimation". Creating such a
-# job with measurement_jobs/measurement_jobs.py allows these values to be
-# overridden by the corresponding keys in the job's 'params' field.
+# This file contains default values that should override the common
+# default value file.
+#
+# The keys will / may be overridden by the individual TOML files for
+# the respective calibration steps.
+#
+# The keys are alphabetically sorted.
+#
 
-drive_output_enabled = 1  # & output On, exciting the qubit
+drive_amp_range_type = "Start - Stop"
+drive_amp_start = 0.001
+drive_amp_stop = 0.2
+
+drive_freq = 274680000.0
 drive_freq_range_type = "Single"
-drive_freq_start = 270e6
-drive_freq_stop = 280e6
-drive_if_freq = 4.5e9  # & should be in some config param
-drive_freq = 274.68e6  # & qubit excitation frequency = "drive_freq" + "drive_if_freq" # depends on result of two-tone
-drive_amp_range_type = "Start - Stop"  # & rabi power sweep
-drive_amp = 20e-3
-drive_amp_start = 1e-3  # &
-drive_amp_stop = 200e-3  # &
-drive_duration = 100e-9
-drive_pulse_spacing_range_type = "Single"  # pulse spacing only used in ramsey
-drive_pulse_spacing_start = 100e-9
-drive_pulse_spacing_stop = 2e-6
-drive_pulse_spacing = 2e-6  # kept as default value
-drive_power_range_type = "Single"
-drive_power = -10  # & used in RS-RF Source
-drive_power_start = -20
-drive_power_stop = 0
-readout_freq = 379.17e6  # & close to expected resonance frequency
-readout_freq_range_type = "Single"  # & single fequency at the resosnace of the resonator
-readout_freq_start = 5.99e9
-readout_freq_stop = 6.01
-readout_resonance_freq = 5.99931e9  # & resonace determined by pulsed_res_spect
-readout_amp_range_type = "Single"
-readout_amp = 25e-3  # &
-readout_amp_start = 5e-3
-readout_amp_stop = 20e-3
-readout_duration = 3e-6
-readout_sampling_delay = 200e-9
-readout_power_range_type = "Single"
-readout_power = 10 # & previously 16, used in RS-RF Source
-readout_power_start = -20
-readout_power_stop = 0
-# Why is num_pts 200 here, but 201 in res. spect and two-tone?
-num_pts = 200  # & 1 mV to 200 mV, 200 points = 1 mV sweep resolation
-num_pts_other_axis = 21  # used when another measurement sweep is required
-sampling_duration = 2e-6
-repetition_delay = 1e-6
-qa_integration_length = 4096
-qa_delay = 1e3
-qa_avg = 1024
-integration_window_start = 1e-6
-integration_window_stop = 3e-6
-trace_time = 5e-6
-mqpg_smpl_rate = 2.4e9
-hdawg_trigger_range_type = "Single"
-hdawg_trigger_period_start = 300e-6
-hdawg_trigger_period_stop = 600e-6
-hdawg_int_trig_period = 300e-6  # aka relaxation_time
-hdawg_marker_start_time = 4.9e-6 # not used in scenario_scripts: remove?
-hdwag_marker_duration = 100e-9
 
-# Parameters (need updating)
-# ---------
-# _range_type: sweeping direction, valid values: "Start - Stop", "Span", "Single"
-#
-# freq_range_type: Frequency sweeping type
-# start_freq: Start of sweeping frequency
-# stop_freq: End of sweeping frequency
-# center_freq: Center of sweeping frequency
-# span_freq: Frequency Span value from center_freq
-#
-# power_range_type: Power sweeping type
-# power: used when "Single" or "Span" range type is used
-# start_power: Start of sweeping
-# stop_power: End of sweeping
-#
-# drive_output_enabled: RF-Source output used to drive qubit. 0=Off, 1=On
-# drive_amp_range_type: Control MQPG drive signal amplitude sweeping type
-# drive_amp: Control MQPG drive signal amplitude, used when "Single" or "Span" range type is used
-# drive_amp_start: Start of amplitude sweeping
-# drive_amp_stop: Stop of amplitude sweeping
-# drive_duration: Control MQPG drive pulse duration
-# drive_if_freq: Control RF-Source frequency
-#
-# num_pts: number of points of measurement
-#
-# readout_freq: Readout MQPG frequency
-# readout_amp_range_type: Readout MQPG drive signal amplitude sweeping type
-# readout_amp: Readout MQPG drive signal amplitude, used when "Single" or "Span" range type is used
-# readout_duration: Readout MQPG output pulse duration
-# readout_sampling_delay: A delay that depends on the readout path length
-#
-# sampling_duration: signal recording duration
-# repetition_delay:
-# qa_integration_length: intregation of samples to have energy value
-# qa_delay: delay just after recording of pulse, to avoid noise in pulse start point
-# qa_avg: number of recording average
-# integration_window_start: Defines start time when a window is used to define integration scope
-# integration_window_stop: Defines stop time .. as above
-#
-# trace_time: MPQG constructed signal length in time
-# mqpg_smpl_rate: DAC sample rate
-#
-# hdawg_int_trig_period: minimum time to start another control pulse # aka relaxation_time
-# hdawg_marker_start_time: defines start time of Marker output to signal Readout process
-# hdwag_marker_duration: Marker pulse duration
+drive_output_enabled = 1
+
+num_pts = 200
+
+readout_resonance_freq = 5999310000.0
