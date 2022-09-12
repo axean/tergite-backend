@@ -18,8 +18,9 @@ drive_freq_range_type = "Start - Stop"
 drive_freq_start = 270000000.0
 drive_freq_stop = 280000000.0
 
-drive_output_enabled = 1
+# RF-Source output used to drive qubit. 0=Off, 1=On
+drive_output_enabled = 1 # output On, exciting the qubit
 
-num_pts = 201
+num_pts = 201 # 20M/200 points = 1k sweep frequency resolution
 
-readout_resonance_freq = 5999310000.0
+readout_resonance_freq = 5999310000.0 # provided from pulsed resonator spectroscopy

@@ -13,39 +13,39 @@
 # The keys are alphabetically sorted.
 #
 
-drive_power = -10
+drive_power = -10 # used in RS-RF Source
 drive_power_range_type = "Single"
 drive_power_start = -20
 drive_power_stop = 0
 
-drive_pulse_spacing = 2e-6
+drive_pulse_spacing = 2e-6 # pulse spacing only used in Ramsey
 drive_pulse_spacing_range_type = "Single"
 drive_pulse_spacing_start = 1e-7
 drive_pulse_spacing_stop = 2e-6
 
-hdawg_trigger = 0.0003
+hdawg_trigger = 0.0003 # a.k.a. relaxation_time
 hdawg_trigger_start = 0.0003
 hdawg_trigger_stop = 0.0006
 hdawg_trigger_range_type = "Single" # rename to hdawg_trigger_period_range type?
 
 hdwag_marker_duration = 1e-7
 
-mqpg_smpl_rate = 2400000000.0
+mqpg_smpl_rate = 2400000000.0 # DAC sample rate
 
-num_pts_other_axis = 21
+num_pts_other_axis = 21 # used when another measurement sweep is required
 
 qa_avg = 1024
 qa_delay = 1000.0
-qa_integration_length = 4096
+qa_integration_length = 4096 # intregation of samples to have energy value
 
-readout_amp = 0.025
+readout_amp = 0.025 # readout MQPG drive signal amplitude
 readout_amp_range_type = "Single"
 readout_amp_start = 0.005
 readout_amp_stop = 0.02
 
-readout_duration = 3e-6
+readout_duration = 3e-6 # readout MQPG output pulse duration
 
-readout_freq = 379170000.0
+readout_freq = 379170000.0 # readout MQPG frequency
 readout_freq_range_type = "Single"
 
 readout_power = 10
@@ -53,4 +53,4 @@ readout_power_range_type = "Single"
 readout_power_start = -20
 readout_power_stop = 0
 
-trace_time = 5e-6
+trace_time = 5e-6 # MPQG constructed signal length in time

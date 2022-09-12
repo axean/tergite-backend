@@ -18,8 +18,8 @@ drive_amp_stop = 0.2
 drive_freq = 274680000.0
 drive_freq_range_type = "Single"
 
-drive_output_enabled = 1
+drive_output_enabled = 1 # output On, exciting the qubit
 
-num_pts = 200
+num_pts = 200 # 1 mV to 200 mV, 200 points = 1 mV sweep resolation
 
-readout_resonance_freq = 5999310000.0
+readout_resonance_freq = 5999310000.0 # provided from pulsed resonator spectroscopy

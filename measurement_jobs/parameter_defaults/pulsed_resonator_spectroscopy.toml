@@ -17,9 +17,9 @@ drive_amp_range_type = "Single"
 drive_freq = 274680000.0
 drive_freq_range_type = "Single"
 
-drive_output_enabled = 0
+drive_output_enabled = 0 # RF-Source output used to drive qubit. 0=Off, 1=On
 
-num_pts = 201
+num_pts = 201 # 20M/200 points = 1k sweep frequency resolution
 
 readout_freq_range_type = "Start - Stop"
 readout_freq_start = 5990000000.0
