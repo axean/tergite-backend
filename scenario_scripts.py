@@ -325,14 +325,14 @@ def generic_calib_zi_scenario(job):
             ]
             if scenario_parameters["hdawg_trigger_range_type"] == "Start - Stop":
                 step_channel_i["start"] = scenario_parameters[
-                    "hdawg_trigger_period_start"
+                    "hdawg_trigger_start"
                 ]
                 step_channel_i["stop"] = scenario_parameters[
-                    "hdawg_trigger_period_stop"
+                    "hdawg_trigger_stop"
                 ]
                 step_channel_i["n_pts"] = scenario_parameters["num_pts"]
             elif scenario_parameters["hdawg_trigger_range_type"] == "Single":
-                step_channel_i["single"] = scenario_parameters["hdawg_int_trig_period"]
+                step_channel_i["single"] = scenario_parameters["hdawg_trigger"]
         elif stepchannel["channel_name"] == "HDAWG - Output 1 Marker 1 duration":
             step_channel_i["single"] = scenario_parameters["hdwag_marker_duration"]
         # UHFQA Settings

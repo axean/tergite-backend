@@ -23,9 +23,9 @@ drive_pulse_spacing_range_type = "Single"
 drive_pulse_spacing_start = 1e-7
 drive_pulse_spacing_stop = 2e-6
 
-hdawg_int_trig_period = 0.0003 # rename to hdawg_trigger_period?
-hdawg_trigger_period_start = 0.0003
-hdawg_trigger_period_stop = 0.0006
+hdawg_trigger = 0.0003
+hdawg_trigger_start = 0.0003
+hdawg_trigger_stop = 0.0006
 hdawg_trigger_range_type = "Single" # rename to hdawg_trigger_period_range type?
 
 hdwag_marker_duration = 1e-7
