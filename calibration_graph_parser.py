@@ -96,9 +96,8 @@ def create_graph_structure(nodes):
 
 
 def build_redis_nodes(nodes):
-    # Flush any old data
-    # TODO: Remove only fields we create
-    red.flushdb()
+    # Remove entries we might have created previously
+    utils.redis.del_keys(red, regex="^(topo_order|(m_deps|m_params|measurement):)")
 
     # Store topological node order
     for node in topo_order:
