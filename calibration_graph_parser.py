@@ -14,8 +14,10 @@
 
 import json
 
-import redis
 import networkx as nx
+import redis
+
+import utils.redis
 
 # Set up redis connection
 red = redis.Redis(decode_responses=True)
