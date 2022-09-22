@@ -1,6 +1,7 @@
 # This code is part of Tergite
 #
 # (C) Copyright Miroslav Dobsicek 2020, 2021
+# (C) Copyright Abdullah-Al Amin 2022
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -27,6 +28,7 @@ import job_supervisor
 import settings
 import enums
 from utils.uuid import validate_uuid4_str
+import json
 
 # settings
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX
@@ -39,6 +41,7 @@ JOB_UPLOAD_POOL_DIRNAME = settings.JOB_UPLOAD_POOL_DIRNAME
 
 # redis connection
 redis_connection = Redis()
+
 
 # redis queues
 rq_job_registration = Queue(
@@ -204,3 +207,16 @@ async def get_rq_info():
     msg += "}"
 
     return {"message": msg}
+
+
+# Webgui requests
+
+@app.get("/web-gui")
+async def snapshot():
+    snapshot = redis_connection.get("current_snapshot")
+    return json.loads(snapshot) 
+
+@app.get("/web-gui/config")
+async def web_config():
+    snapshot = redis_connection.get("config") 
+    return json.loads(snapshot)
