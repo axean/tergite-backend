@@ -1,6 +1,7 @@
 # This code is part of Tergite
 #
 # (C) Copyright Nicklas Botö, Fabian Forslund 2022
+# (C) Copyright David Wahlstedt 2022
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -15,7 +16,8 @@ from redis import Redis
 from rq import Queue
 import settings
 from preprocessing_worker import job_preprocess
-from job_supervisor import register_job, inform_location, Location
+from job_supervisor import register_job, inform_location, Location, update_job_entry
+from utils.json_utils import get_items_from_json
 
 # settings
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX
@@ -50,3 +52,9 @@ def job_register(job_file: Path) -> None:
         job_preprocess, new_file, job_id=job_id + f"_{Location.PRE_PROC_Q.name}"
     )
     inform_location(job_id, Location.PRE_PROC_Q)
+
+    # put some of this job's items in job_supervisor's Redis entry
+    keys = ["name", "is_calibration_sup_job"]
+    dict_partial = get_items_from_json(new_file, keys)
+    for key, value in dict_partial.items():
+        update_job_entry(job_id, value, key)
