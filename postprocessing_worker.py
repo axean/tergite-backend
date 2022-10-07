@@ -67,7 +67,8 @@ REST_API_MAP = {
 red = redis.Redis(decode_responses=True)
 
 # =========================================================================
-# Post-processing
+# Post-processing entry function
+# =========================================================================
 
 
 def logfile_postprocess(
@@ -94,18 +95,46 @@ def logfile_postprocess(
     # Inform job supervisor
     inform_location(new_file_name, Location.PST_PROC_W)
 
-    # The post-processing itself
+    # The return value will be passed to postprocessing_success_callback
     if logfile_type == enums.LogfileType.TQC_STORAGE:
         print("Identified TQC storage file, reading file using tqcsf")
         sf = tqcsf.file.StorageFile(new_file, mode="r")
         return postprocess_tqcsf(sf)
     else:
-        return postprocess(new_file)
+        return postprocess_labber_logfile(new_file)
+
+
+# =========================================================================
+# Post-processing Quantify / Qblox files
+# =========================================================================
+
+
+def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> tuple:
+
+    update_mss_and_bcc(memory=[], job_id=sf.job_id)
+
+    if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
+        pass  # TODO
+
+    elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
+        pass  # TODO
+
+    elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
+        pass  # TODO
+
+    else:
+        pass
+
+    return (sf.job_id, "pulse_schedule", False)
+
+
+# =========================================================================
+# Post-processing Labber logfiles
+# =========================================================================
 
 
 # =========================================================================
 # Post-processing helpers in PROCESSING_METHODS
-# =========================================================================
 
 # Dummy post-processing of signal demodulation
 def process_demodulation(logfile: Path) -> Any:
@@ -126,25 +155,6 @@ def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Path) -> Any:
 
     # DW: I guess something else should be returned? memory or parts of it?
     return job_id
-
-
-def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> tuple:
-
-    update_mss_and_bcc(memory=[], job_id=sf.job_id)
-
-    if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
-        pass  # TODO
-
-    elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
-        pass  # TODO
-
-    elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
-        pass  # TODO
-
-    else:
-        pass
-
-    return (sf.job_id, "pulse_schedule", False)
 
 
 # VNA resonator spectroscopy
@@ -182,8 +192,7 @@ def process_ramsey(logfile: Path) -> Any:
 
 
 # =========================================================================
-# Post-processing entry point
-# =========================================================================
+# Post-processing function mapping
 
 PROCESSING_METHODS = {
     "resonator_spectroscopy": process_res_spect_vna_phase_1,
@@ -197,8 +206,11 @@ PROCESSING_METHODS = {
     "qasm_dummy_job": process_qiskit_qasm_runner_qasm_dummy_job,
 }
 
+# =========================================================================
+# Post-processing Labber logfiles
 
-def postprocess(logfile: Path):
+
+def postprocess_labber_logfile(logfile: Path):
 
     labber_logfile = Labber.LogFile(logfile)
     (job_id, script_name, is_calibration_sup_job) = get_metainfo(labber_logfile)
@@ -256,7 +268,7 @@ def postprocessing_success_callback(job, connection, result, *args, **kwargs):
 
 
 # =========================================================================
-# Extraction helpers
+# Labber logfile extraction helpers
 # =========================================================================
 
 
@@ -346,7 +358,10 @@ def update_mss_and_bcc(memory, job_id):
         print("Updated job download_url on MSS")
 
 
-# Running the postprocessing_worker from the command-line for testing purposes
+# =========================================================================
+# Running postprocessing_worker from command-line for testing purposes
+# =========================================================================
+
 # Note: files with missing tags may not work
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Postprocessing stand-alone program")
@@ -355,6 +370,6 @@ if __name__ == "__main__":
 
     logfile = args.logfile
 
-    results = postprocess(logfile)
+    results = postprocess_labber_logfile(logfile)
 
     print(f"{results=}")
