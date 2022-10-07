@@ -16,18 +16,18 @@
 
 import json
 from pathlib import Path
-import settings
 from uuid import uuid4
 
 import requests
 
-from job_supervisor import inform_location, inform_failure, Location
+import settings
+from job_supervisor import Location, inform_failure, inform_location
 from scenario_scripts import (
     demodulation_scenario,
-    qobj_scenario,
-    qobj_dummy_scenario,
-    resonator_spectroscopy_scenario,
     generic_calib_zi_scenario,
+    qobj_dummy_scenario,
+    qobj_scenario,
+    resonator_spectroscopy_scenario,
 )
 
 # Settings

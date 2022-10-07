@@ -16,17 +16,17 @@
 
 import argparse
 import asyncio
-import enums
 from pathlib import Path
-import settings
-from typing import Any, List, Dict
-
-import redis
-import requests
-from syncer import sync
+from typing import Any, Dict, List
 
 import Labber
+import redis
+import requests
+import tqcsf.file
+from syncer import sync
 
+import enums
+import settings
 from analysis import (
     extract_resonance_freqs,
     fit_oscillation_idx,
@@ -34,13 +34,7 @@ from analysis import (
     fit_resonator_idx,
     gaussian_fit_idx,
 )
-from job_supervisor import (
-    inform_failure,
-    inform_location,
-    inform_result,
-    Location,
-)
-import tqcsf.file
+from job_supervisor import Location, inform_failure, inform_location, inform_result
 
 # Storage settings
 
@@ -75,7 +69,10 @@ red = redis.Redis(decode_responses=True)
 # =========================================================================
 # Post-processing
 
-def logfile_postprocess(logfile: Path, *, logfile_type: enums.LogfileType = enums.LogfileType.LABBER_LOGFILE):
+
+def logfile_postprocess(
+    logfile: Path, *, logfile_type: enums.LogfileType = enums.LogfileType.LABBER_LOGFILE
+):
 
     print(f"Postprocessing logfile {str(logfile)}")
 
@@ -116,6 +113,7 @@ def process_demodulation(logfile: Path) -> Any:
     (job_id, _, _) = get_metainfo(labber_logfile)
     return job_id
 
+
 # Qasm job example
 def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Path) -> Any:
     labber_logfile = Labber.LogFile(logfile)
@@ -132,49 +130,55 @@ def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Path) -> Any:
 
 def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> tuple:
 
-    update_mss_and_bcc(memory = [], job_id = sf.job_id)
+    update_mss_and_bcc(memory=[], job_id=sf.job_id)
 
     if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
-        pass # TODO
+        pass  # TODO
 
     elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
-        pass # TODO
+        pass  # TODO
 
     elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
-        pass # TODO
+        pass  # TODO
 
     else:
         pass
 
     return (sf.job_id, "pulse_schedule", False)
 
+
 # VNA resonator spectroscopy
 def process_res_spect_vna_phase_1(logfile: Path) -> Any:
     return fit_resonator(logfile)
 
+
 def process_res_spect_vna_phase_2(logfile: Path) -> Any:
-    return fit_resonator_idx(logfile, [0,50])
+    return fit_resonator_idx(logfile, [0, 50])
+
 
 # Pulsed resonator spectroscopy
 def process_pulsed_res_spect(logfile: Path) -> Any:
     return fit_resonator_idx(logfile, [0])
+
 
 # Two-tone
 def process_two_tone(logfile: Path) -> Any:
     # fit qubit spectra
     return gaussian_fit_idx(logfile, [0])
 
+
 # Rabi
 def process_rabi(logfile: Path) -> Any:
     # fit rabi oscillation
     fits = fit_oscillation_idx(logfile, [0])
-    return [res['period'] for res in fits]
+    return [res["period"] for res in fits]
+
 
 # Ramsey
 def process_ramsey(logfile: Path) -> Any:
     # fit ramsey oscillation
     fits = fit_oscillation_idx(logfile, [0])
-    return [res['freq'] for res in fits]
+    return [res["freq"] for res in fits]
 
 
 # =========================================================================
@@ -192,6 +196,7 @@ PROCESSING_METHODS = {
     "qiskit_qasm_runner": process_qiskit_qasm_runner_qasm_dummy_job,
     "qasm_dummy_job": process_qiskit_qasm_runner_qasm_dummy_job,
 }
+
 
 def postprocess(logfile: Path):
 
@@ -215,7 +220,9 @@ def postprocess(logfile: Path):
         inform_failure(job_id, "Unknown script name")
         return None
 
-    print(f"Postprocessing ended for script type: {script_name}, {job_id=}, {is_calibration_sup_job=}")
+    print(
+        f"Postprocessing ended for script type: {script_name}, {job_id=}, {is_calibration_sup_job=}"
+    )
     red.set(f"postproc:results:{job_id}", str(results))
     return (job_id, script_name, is_calibration_sup_job)
 
@@ -223,6 +230,7 @@ def postprocess(logfile: Path):
 # =========================================================================
 # Post-processing success callback with helper
 # =========================================================================
+
 
 async def notify_job_done(job_id: str):
     reader, writer = await asyncio.open_connection(
@@ -232,6 +240,7 @@ async def notify_job_done(job_id: str):
     print(f"notify_job_done: {message=}")
     writer.write(message)
     writer.close()
+
 
 def postprocessing_success_callback(job, connection, result, *args, **kwargs):
     # From logfile_postprocess:
@@ -246,10 +255,10 @@ def postprocessing_success_callback(job, connection, result, *args, **kwargs):
         sync(notify_job_done(job_id))
 
 
-
 # =========================================================================
 # Extraction helpers
 # =========================================================================
+
 
 def extract_system_state_as_hex(logfile: Labber.LogFile):
     raw_data = logfile.getData("State Discriminator 2 States - System state")
@@ -290,13 +299,16 @@ def get_is_calibration_sup_job(tags):
     # requested by the calibration supervisor
     return len(tags) >= 3 and tags[2]
 
+
 def get_metainfo(logfile: Labber.LogFile):
     tags = extract_tags(logfile)
     return (get_job_id(tags), get_script_name(tags), get_is_calibration_sup_job(tags))
 
+
 # =========================================================================
 # BCC / MSS updating
 # =========================================================================
+
 
 def update_mss_and_bcc(memory, job_id):
 
@@ -329,9 +341,7 @@ def update_mss_and_bcc(memory, job_id):
         str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["logfiles"] + "/" + job_id  # correct?
     )
     print(f"Download url: {download_url}")
-    response = requests.put(
-        MSS_JOB + REST_API_MAP["download_url"], json=download_url
-    )
+    response = requests.put(MSS_JOB + REST_API_MAP["download_url"], json=download_url)
     if response:
         print("Updated job download_url on MSS")
 

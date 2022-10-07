@@ -10,9 +10,10 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-from pathlib import Path
-from typing import List, Dict, Any
 import json
+from pathlib import Path
+from typing import Any, Dict, List
+
 import ijson
 
 # Note: if the JSON file is big, this may need to be changed. Perhaps

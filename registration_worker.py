@@ -12,11 +12,13 @@
 # that they have been altered from the originals.
 
 from pathlib import Path
+
 from redis import Redis
 from rq import Queue
+
 import settings
+from job_supervisor import Location, inform_location, register_job, update_job_entry
 from preprocessing_worker import job_preprocess
-from job_supervisor import register_job, inform_location, Location, update_job_entry
 from utils.json_utils import get_items_from_json
 
 # settings
