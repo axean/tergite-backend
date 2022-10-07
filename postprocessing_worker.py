@@ -101,7 +101,10 @@ def logfile_postprocess(
         sf = tqcsf.file.StorageFile(new_file, mode="r")
         return postprocess_tqcsf(sf)
     else:
-        return postprocess_labber_logfile(new_file)
+        # Labber logfile
+        # All further post-processing, from this point on, is Labber specific.
+        labber_logfile = Labber.LogFile(new_file)
+        return postprocess_labber_logfile(labber_logfile)
 
 
 # =========================================================================
@@ -135,17 +138,15 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> tuple:
 
 # =========================================================================
 # Post-processing helpers in PROCESSING_METHODS
-
+# labber_logfile: Labber.LogFile
 # Dummy post-processing of signal demodulation
-def process_demodulation(logfile: Path) -> Any:
-    labber_logfile = Labber.LogFile(logfile)
+def process_demodulation(labber_logfile: Labber.LogFile) -> Any:
     (job_id, _, _) = get_metainfo(labber_logfile)
     return job_id
 
 
 # Qasm job example
-def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Path) -> Any:
-    labber_logfile = Labber.LogFile(logfile)
+def process_qiskit_qasm_runner_qasm_dummy_job(labber_logfile: Labber.LogFile) -> Any:
     (job_id, _, _) = get_metainfo(labber_logfile)
 
     # Extract System state
@@ -158,36 +159,36 @@ def process_qiskit_qasm_runner_qasm_dummy_job(logfile: Path) -> Any:
 
 
 # VNA resonator spectroscopy
-def process_res_spect_vna_phase_1(logfile: Path) -> Any:
-    return fit_resonator(logfile)
+def process_res_spect_vna_phase_1(labber_logfile: Labber.LogFile) -> Any:
+    return fit_resonator(labber_logfile)
 
 
-def process_res_spect_vna_phase_2(logfile: Path) -> Any:
-    return fit_resonator_idx(logfile, [0, 50])
+def process_res_spect_vna_phase_2(labber_logfile: Labber.LogFile) -> Any:
+    return fit_resonator_idx(labber_logfile, [0, 50])
 
 
 # Pulsed resonator spectroscopy
-def process_pulsed_res_spect(logfile: Path) -> Any:
-    return fit_resonator_idx(logfile, [0])
+def process_pulsed_res_spect(labber_logfile: Labber.LogFile) -> Any:
+    return fit_resonator_idx(labber_logfile, [0])
 
 
 # Two-tone
-def process_two_tone(logfile: Path) -> Any:
+def process_two_tone(labber_logfile: Labber.LogFile) -> Any:
     # fit qubit spectra
-    return gaussian_fit_idx(logfile, [0])
+    return gaussian_fit_idx(labber_logfile, [0])
 
 
 # Rabi
-def process_rabi(logfile: Path) -> Any:
-    # fit rabi oscillation
-    fits = fit_oscillation_idx(logfile, [0])
+def process_rabi(labber_logfile: Labber.LogFile) -> Any:
+    # fit Rabi oscillation
+    fits = fit_oscillation_idx(labber_logfile, [0])
     return [res["period"] for res in fits]
 
 
 # Ramsey
-def process_ramsey(logfile: Path) -> Any:
-    # fit ramsey oscillation
-    fits = fit_oscillation_idx(logfile, [0])
+def process_ramsey(labber_logfile: Labber.LogFile) -> Any:
+    # fit Ramsey oscillation
+    fits = fit_oscillation_idx(labber_logfile, [0])
     return [res["freq"] for res in fits]
 
 
@@ -210,9 +211,8 @@ PROCESSING_METHODS = {
 # Post-processing Labber logfiles
 
 
-def postprocess_labber_logfile(logfile: Path):
+def postprocess_labber_logfile(labber_logfile: Labber.LogFile):
 
-    labber_logfile = Labber.LogFile(logfile)
     (job_id, script_name, is_calibration_sup_job) = get_metainfo(labber_logfile)
 
     postproc_fn = PROCESSING_METHODS.get(script_name)
@@ -222,7 +222,7 @@ def postprocess_labber_logfile(logfile: Path):
     )
 
     if postproc_fn:
-        results = postproc_fn(logfile)
+        results = postproc_fn(labber_logfile)
     else:
         print(f"Unknown script name {script_name}")
         print("Postprocessing failed")  # TODO: take care of this case

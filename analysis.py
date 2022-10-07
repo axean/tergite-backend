@@ -29,8 +29,7 @@ import qtanalysis.utilities as qu
 
 POSTPROC_PLOTTING = settings.POSTPROC_PLOTTING
 
-def fit_resonator(logfile):
-    labber_logfile = Labber.LogFile(logfile)
+def fit_resonator(labber_logfile: Labber.LogFile):
 
     # Labber api function, y value is not used scince it is not well defined, for
     # multiple y traces, y represents only the last one, not usable in this case
@@ -39,7 +38,8 @@ def fit_resonator(logfile):
 
     # Extracting data using qtl-analysis repo, xdict contains third dimension of
     # data, for example sweeped power values, ydict contains values of the traces
-    xdict, ydict = qu.file_handling.LabberParsing(logfile)
+
+    xdict, ydict = qu.file_handling.LabberParsing(labber_logfile)
     resonators_res_freq = extract_resonance_freqs(x, y, xdict, ydict)
     print("\n")
     print(f"Number or resonators: {len(resonators_res_freq[0])}")
@@ -83,11 +83,11 @@ def extract_resonance_freqs(x, y, xdict, ydict):
     return resonance_freqs
 
 
-def fit_resonator_idx(logfile: Path, idxs) -> List[float]:
-    labber_logfile = Labber.LogFile(logfile)
+def fit_resonator_idx(labber_logfile: Labber.LogFile, idxs: List[int]) -> List[float]:
 
     x, y = labber_logfile.getTraceXY()
-    xdict, ydict = qu.file_handling.LabberParsing(logfile)
+
+    xdict, ydict = qu.file_handling.LabberParsing(labber_logfile)
 
     results = []
 
@@ -103,9 +103,9 @@ def fit_resonator_idx(logfile: Path, idxs) -> List[float]:
     return results
 
 
-def gaussian_fit_idx(logfile: Path, idxs) -> List[float]:
+def gaussian_fit_idx(labber_logfile: Labber.LogFile, idxs: List[int]) -> List[float]:
 
-    xdict, ydict = qu.file_handling.LabberParsing(logfile)
+    xdict, ydict = qu.file_handling.LabberParsing(labber_logfile)
 
     results = []
 
@@ -149,9 +149,12 @@ def gaussian_fit_idx(logfile: Path, idxs) -> List[float]:
 
     return results
 
-def fit_oscillation_idx(logfile: Path, idxs) -> List[Dict[str, float]]:
 
-    xdict, ydict = qu.file_handling.LabberParsing(logfile)
+def fit_oscillation_idx(
+    labber_logfile: Labber.LogFile, idxs: List[int]
+) -> List[Dict[str, float]]:
+
+    xdict, ydict = qu.file_handling.LabberParsing(labber_logfile)
 
     results = []
 
