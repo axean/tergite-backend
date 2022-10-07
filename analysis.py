@@ -11,23 +11,22 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-from typing import Any, List, Dict
-
-import settings
 from pathlib import Path
-
-import numpy as np
-import scipy.signal
-from scipy.optimize import curve_fit
-import matplotlib.pyplot as plt
-from resonator_tools import circuit
+from typing import Any, Dict, List
 
 import Labber
-
+import matplotlib.pyplot as plt
+import numpy as np
 import qtanalysis.core as qc
 import qtanalysis.utilities as qu
+import scipy.signal
+from resonator_tools import circuit
+from scipy.optimize import curve_fit
+
+import settings
 
 POSTPROC_PLOTTING = settings.POSTPROC_PLOTTING
+
 
 def fit_resonator(labber_logfile: Labber.LogFile):
 
@@ -48,6 +47,7 @@ def fit_resonator(labber_logfile: Labber.LogFile):
     print(f"Resonance frequencies: {resonators_res_freq}")
     print("\n")
     return resonators_res_freq
+
 
 # Processing results for resonators resonace frequencies
 # algorithm for approximate peak detection is not robast
@@ -72,8 +72,7 @@ def extract_resonance_freqs(x, y, xdict, ydict):
         # FIXME: Quick hard coded solution, improvment required
         min_height = -3 * std - mean
         # Detecting the possible and approximate pick or dips
-        peaks, _ = scipy.signal.find_peaks(-trace, height=-min_height,
-                                           distance=100)
+        peaks, _ = scipy.signal.find_peaks(-trace, height=-min_height, distance=100)
         # Extracting the frequiencies of the peaks
         peak_freqs = x[peaks]
         # Each list in resonance_freq list represents corresponding

@@ -17,7 +17,7 @@
 import argparse
 import asyncio
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 import Labber
 import redis
@@ -34,7 +34,13 @@ from analysis import (
     fit_resonator_idx,
     gaussian_fit_idx,
 )
-from job_supervisor import Location, inform_failure, inform_location, inform_result
+from job_supervisor import (
+    Location,
+    fetch_redis_entry,
+    inform_failure,
+    inform_location,
+    inform_result,
+)
 
 # Storage settings
 
@@ -112,7 +118,7 @@ def logfile_postprocess(
 # =========================================================================
 
 
-def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> tuple:
+def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> str:
 
     update_mss_and_bcc(memory=[], job_id=sf.job_id)
 
@@ -128,7 +134,9 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> tuple:
     else:
         pass
 
-    return (sf.job_id, "pulse_schedule", False)
+    # job["name"] has already been set to "pulse_schedule"
+
+    return sf.job_id
 
 
 # =========================================================================
@@ -141,13 +149,13 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> tuple:
 # labber_logfile: Labber.LogFile
 # Dummy post-processing of signal demodulation
 def process_demodulation(labber_logfile: Labber.LogFile) -> Any:
-    (job_id, _, _) = get_metainfo(labber_logfile)
+    job_id = get_job_id_labber(labber_logfile)
     return job_id
 
 
 # Qasm job example
 def process_qiskit_qasm_runner_qasm_dummy_job(labber_logfile: Labber.LogFile) -> Any:
-    (job_id, _, _) = get_metainfo(labber_logfile)
+    job_id = get_job_id_labber(labber_logfile)
 
     # Extract System state
     memory = extract_system_state_as_hex(labber_logfile)
@@ -213,7 +221,8 @@ PROCESSING_METHODS = {
 
 def postprocess_labber_logfile(labber_logfile: Labber.LogFile):
 
-    (job_id, script_name, is_calibration_sup_job) = get_metainfo(labber_logfile)
+    job_id = get_job_id_labber(labber_logfile)
+    (script_name, is_calibration_sup_job) = get_metainfo(job_id)
 
     postproc_fn = PROCESSING_METHODS.get(script_name)
 
@@ -236,7 +245,7 @@ def postprocess_labber_logfile(labber_logfile: Labber.LogFile):
         f"Postprocessing ended for script type: {script_name}, {job_id=}, {is_calibration_sup_job=}"
     )
     red.set(f"postproc:results:{job_id}", str(results))
-    return (job_id, script_name, is_calibration_sup_job)
+    return job_id
 
 
 # =========================================================================
@@ -256,10 +265,12 @@ async def notify_job_done(job_id: str):
 
 def postprocessing_success_callback(job, connection, result, *args, **kwargs):
     # From logfile_postprocess:
-    (job_id, script_name, is_calibration_sup_job) = result
+    job_id = result
 
     # Inform job supervisor about results
     inform_result(job_id, result)
+
+    (script_name, is_calibration_sup_job) = get_metainfo(job_id)
 
     print(f"Job with ID {job_id}, {script_name=} has finished")
     if is_calibration_sup_job:
@@ -293,29 +304,17 @@ def extract_max_qubits(logfile: Labber.LogFile):
 def extract_qobj_id(logfile: Labber.LogFile):
     return logfile.getChannelValue("State Discriminator 2 States - QObj ID")
 
-
-def extract_tags(logfile: Labber.LogFile):
-    return logfile.getTags()
-
-
-def get_job_id(tags):
+def get_job_id_labber(labber_logfile: Labber.LogFile):
+    tags = labber_logfile.getTags()
+    if len(tags) == 0:
+        print(f"Fatal: no tags in logfile. Can't extract job_id")
     return tags[0]
 
-
-def get_script_name(tags):
-    return tags[1]
-
-
-def get_is_calibration_sup_job(tags):
-    # The third tag, if present and set to True, indicates this was
-    # requested by the calibration supervisor
-    return len(tags) >= 3 and tags[2]
-
-
-def get_metainfo(logfile: Labber.LogFile):
-    tags = extract_tags(logfile)
-    return (get_job_id(tags), get_script_name(tags), get_is_calibration_sup_job(tags))
-
+def get_metainfo(job_id: str) -> Tuple[str, str]:
+    entry = fetch_redis_entry(job_id)
+    script_name = entry["name"]
+    is_calibration_sup_job = entry.get("is_calibration_sup_job", False)
+    return (script_name, is_calibration_sup_job)
 
 # =========================================================================
 # BCC / MSS updating

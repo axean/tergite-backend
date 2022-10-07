@@ -104,14 +104,11 @@ def post_scenario_file(job_dict: dict, /):
 
     scenario.log_name = job_id
 
-    # Store important information inside the scenario: using the tag list
+    # Store the following fields from job_dict inside the scenario,
+    # using the Labber tag list(will be present in the returned logfile):
     # 1) job_id
-    # 2) script name
-    # 3) if is_calibration_sup_job is True, set this field to True
-    is_calibration_sup_job = job_dict.get("is_calibration_sup_job", False)
+    # 2) name
     scenario.tags.tags = [job_id, job_dict["name"]]
-    if is_calibration_sup_job:
-        scenario.tags.tags += [is_calibration_sup_job]
 
     # Upload scenario
     scenario_file = Path(STORAGE_ROOT) / (job_id + ".labber")
