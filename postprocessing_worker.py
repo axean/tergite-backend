@@ -36,6 +36,7 @@ from analysis import (
 )
 from job_supervisor import (
     Location,
+    fetch_job,
     fetch_redis_entry,
     inform_failure,
     inform_location,
@@ -224,27 +225,21 @@ def postprocess_labber_logfile(labber_logfile: Labber.LogFile):
     job_id = get_job_id_labber(labber_logfile)
     (script_name, is_calibration_sup_job) = get_metainfo(job_id)
 
-    postproc_fn = PROCESSING_METHODS.get(script_name)
-
     print(
-        f"Starting postprocessing for script: {script_name}, {job_id=}, {is_calibration_sup_job=}"
+        f"Entering postprocess_labber_logfile for script: {script_name}, {job_id=}, {is_calibration_sup_job=}"
     )
+
+    postproc_fn = PROCESSING_METHODS.get(script_name)
 
     if postproc_fn:
         results = postproc_fn(labber_logfile)
+        red.set(f"postproc:results:{job_id}", str(results))
     else:
-        print(f"Unknown script name {script_name}")
-        print("Postprocessing failed")  # TODO: take care of this case
-        results = None
-
         # Inform job supervisor about failure
-        inform_failure(job_id, "Unknown script name")
-        return None
+        message = "Unknown script name"
+        inform_failure(job_id, message)
+        # postprocessing_success_callback will handle this
 
-    print(
-        f"Postprocessing ended for script type: {script_name}, {job_id=}, {is_calibration_sup_job=}"
-    )
-    red.set(f"postproc:results:{job_id}", str(results))
     return job_id
 
 
@@ -267,10 +262,16 @@ def postprocessing_success_callback(job, connection, result, *args, **kwargs):
     # From logfile_postprocess:
     job_id = result
 
+    (script_name, is_calibration_sup_job) = get_metainfo(job_id)
+
+    status = fetch_job(job_id, "status")
+
+    if status["failed"]["time"]:
+        print(f"Job {job_id}, {script_name=} has failed: aborting. Status: {status}")
+        return
+
     # Inform job supervisor about results
     inform_result(job_id, result)
-
-    (script_name, is_calibration_sup_job) = get_metainfo(job_id)
 
     print(f"Job with ID {job_id}, {script_name=} has finished")
     if is_calibration_sup_job:
@@ -304,17 +305,20 @@ def extract_max_qubits(logfile: Labber.LogFile):
 def extract_qobj_id(logfile: Labber.LogFile):
     return logfile.getChannelValue("State Discriminator 2 States - QObj ID")
 
+
 def get_job_id_labber(labber_logfile: Labber.LogFile):
     tags = labber_logfile.getTags()
     if len(tags) == 0:
         print(f"Fatal: no tags in logfile. Can't extract job_id")
     return tags[0]
 
+
 def get_metainfo(job_id: str) -> Tuple[str, str]:
     entry = fetch_redis_entry(job_id)
     script_name = entry["name"]
     is_calibration_sup_job = entry.get("is_calibration_sup_job", False)
     return (script_name, is_calibration_sup_job)
+
 
 # =========================================================================
 # BCC / MSS updating
