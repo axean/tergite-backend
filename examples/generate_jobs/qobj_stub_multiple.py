@@ -30,6 +30,7 @@ def main():
         "job_id": str(uuid4()),
         "type": "script",
         "name": "qasm_dummy_job",
+        "post_processing": "process_qiskit_qasm_runner_qasm_dummy_job",
         "params": {"qobj": qobj},
     }
 

@@ -58,6 +58,7 @@ def generate_job_direct():
         "job_id": str(uuid4()),
         "type": "script",
         "name": "rabi_qubit_pi_pulse_estimation",
+        "post_processing": "process_rabi",
         # Defaults for "params" are loaded in scenario_scripts.py from
         # measurement_jobs/parameter_defaults/rabi.toml
         "params": {},
@@ -72,6 +73,8 @@ def generate_job():
         readout_resonance_freq=5.99931e9,  # depends on pulsed resonator spectroscopy result
         drive_freq=274.68e6,  # depends on two_tone
         num_pts=200,
+        # Meta info
+        post_processing = "process_rabi",
         # Optional arguments to override calibration supervisor defaults
         is_calibration_sup_job=False,
         # Optional arguments to override any other parameters from the

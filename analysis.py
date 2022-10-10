@@ -28,7 +28,7 @@ import settings
 POSTPROC_PLOTTING = settings.POSTPROC_PLOTTING
 
 
-def fit_resonator(labber_logfile: Labber.LogFile):
+def fit_resonator(labber_logfile: Labber.LogFile) -> List[List[float]]:
 
     # Labber api function, y value is not used scince it is not well defined, for
     # multiple y traces, y represents only the last one, not usable in this case
@@ -54,7 +54,7 @@ def fit_resonator(labber_logfile: Labber.LogFile):
 # may fail in some measurement/traces, improvement required.
 # parameter y and xdict is not used, passed for possible
 # future uses.
-def extract_resonance_freqs(x, y, xdict, ydict):
+def extract_resonance_freqs(x, y, xdict, ydict) -> List[List[float]]:
     resonance_freqs = []
     for indx, traces in enumerate(ydict["y0"]["values"]):
         trace = np.absolute(traces)

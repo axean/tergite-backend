@@ -57,6 +57,7 @@ def generate_job_direct():
         "job_id": str(uuid4()),
         "type": "script",
         "name": "pulsed_two_tone_qubit_spectroscopy",
+        "post_processing": "process_two_tone",
         # Defaults for "params" are loaded in scenario_scripts.py from
         # measurement_jobs/parameter_defaults/two_tone.toml
         "params": {},
@@ -71,6 +72,8 @@ def generate_job():
         drive_freq_stop=280e6,
         readout_resonance_freq=5.99931e9,  # depends on pulsed resonator spectroscopy result
         num_pts=201,
+        # Meta info
+        post_processing = "process_two_tone",
         # Optional arguments to override calibration supervisor defaults
         is_calibration_sup_job=False,
         # Optional arguments to override any other parameters from the

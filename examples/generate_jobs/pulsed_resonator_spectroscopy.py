@@ -59,6 +59,8 @@ def generate_job():
         readout_freq_start=5.99e9,
         readout_freq_stop=6.01e9,
         readout_power=10,
+        # post-processing
+        post_processing = "process_pulsed_res_spect",
         # optional argument for calibration supervisor
         is_calibration_sup_job=False,  # default True
         # non-mandatory arguments overriding defaults
@@ -75,6 +77,8 @@ def generate_job_direct():
         "job_id": str(uuid4()),
         "type": "script",
         "name": "pulsed_resonator_spectroscopy",
+        # post-processing
+        "post_processing": "process_pulsed_res_spect",
         # Defaults for "params" are loaded in scenario_scripts.py from
         # measurement_jobs/parameter_defaults/vna_resonator_spectroscopy.toml
         "params": {},

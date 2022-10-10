@@ -60,6 +60,11 @@ def generate_job():
         # example:[-50, 0, 1]
         power=[-50, 0, 51],
         num_ave=10,
+        # No post-processing will take place. This measurement does not
+        # exactly the same as what will be phase one or two in VNA
+        # resonator spectroscopy, and there is yet no decision made
+        # how to post-process this one.
+        post_processing = None,
         # optional argument for calibration supervisor
         is_calibration_sup_job=False,  # default True
         # non-mandatory arguments overriding defaults
@@ -88,14 +93,15 @@ def generate_job_direct():
 """
     Parameters
     ----------
-        freq_start : (float) start sweep frequency [Hz]
-        freq_stop  : (float) stop sweep frequency [Hz]
-        if_bw   : (float) IF bandwidth setting [Hz]
-        num_pts : (int) number of frequency points
-        power   : [float, float, int] output power of VNA [dBm, dBm, n_pts]
-                    for single power measurement use single element, eg: [0],
-                    for multiple power sweep use: [p_start, p_stop, n_pts], eg:[-50, 0, 51]
-        num_ave : (int) number of averages"""
+    freq_start : (float) start sweep frequency [Hz]
+    freq_stop  : (float) stop sweep frequency [Hz]
+    if_bw   : (float) IF bandwidth setting [Hz]
+    num_pts : (int) number of frequency points
+    power   : [float, float, int] output power of VNA [dBm, dBm, n_pts]
+      for single power measurement use single element, e.g.: [0],
+      for multiple power sweep use: [p_start, p_stop, n_pts], e.g.:[-50, 0, 51]
+    num_ave : (int) number of averages
+"""
 
 
 if __name__ == "__main__":

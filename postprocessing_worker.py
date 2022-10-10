@@ -68,6 +68,9 @@ REST_API_MAP = {
     "download_url": "/download_url",
 }
 
+# Type aliases
+
+JobID = str
 
 # Redis connection
 
@@ -80,7 +83,7 @@ red = redis.Redis(decode_responses=True)
 
 def logfile_postprocess(
     logfile: Path, *, logfile_type: enums.LogfileType = enums.LogfileType.LABBER_LOGFILE
-):
+) -> JobID:
 
     print(f"Postprocessing logfile {str(logfile)}")
 
@@ -119,7 +122,7 @@ def logfile_postprocess(
 # =========================================================================
 
 
-def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> str:
+def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
 
     update_mss_and_bcc(memory=[], job_id=sf.job_id)
 
@@ -135,7 +138,7 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> str:
     else:
         pass
 
-    # job["name"] has already been set to "pulse_schedule"
+    # job["name"] was set to "pulse_schedule" when registered
 
     return sf.job_id
 
@@ -149,13 +152,13 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> str:
 # Post-processing helpers in PROCESSING_METHODS
 # labber_logfile: Labber.LogFile
 # Dummy post-processing of signal demodulation
-def process_demodulation(labber_logfile: Labber.LogFile) -> Any:
+def process_demodulation(labber_logfile: Labber.LogFile) -> JobID:
     job_id = get_job_id_labber(labber_logfile)
     return job_id
 
 
 # Qasm job example
-def process_qiskit_qasm_runner_qasm_dummy_job(labber_logfile: Labber.LogFile) -> Any:
+def process_qiskit_qasm_runner_qasm_dummy_job(labber_logfile: Labber.LogFile) -> str:
     job_id = get_job_id_labber(labber_logfile)
 
     # Extract System state
@@ -168,34 +171,36 @@ def process_qiskit_qasm_runner_qasm_dummy_job(labber_logfile: Labber.LogFile) ->
 
 
 # VNA resonator spectroscopy
-def process_res_spect_vna_phase_1(labber_logfile: Labber.LogFile) -> Any:
+def process_res_spect_vna_phase_1(labber_logfile: Labber.LogFile) -> List[List[float]]:
     return fit_resonator(labber_logfile)
 
 
-def process_res_spect_vna_phase_2(labber_logfile: Labber.LogFile) -> Any:
+def process_res_spect_vna_phase_2(
+    labber_logfile: Labber.LogFile,
+) -> List[Dict[str, float]]:
     return fit_resonator_idx(labber_logfile, [0, 50])
 
 
 # Pulsed resonator spectroscopy
-def process_pulsed_res_spect(labber_logfile: Labber.LogFile) -> Any:
+def process_pulsed_res_spect(labber_logfile: Labber.LogFile) -> List[Dict[str, float]]:
     return fit_resonator_idx(labber_logfile, [0])
 
 
 # Two-tone
-def process_two_tone(labber_logfile: Labber.LogFile) -> Any:
+def process_two_tone(labber_logfile: Labber.LogFile) -> [float]:
     # fit qubit spectra
     return gaussian_fit_idx(labber_logfile, [0])
 
 
 # Rabi
-def process_rabi(labber_logfile: Labber.LogFile) -> Any:
+def process_rabi(labber_logfile: Labber.LogFile) -> [float]:
     # fit Rabi oscillation
     fits = fit_oscillation_idx(labber_logfile, [0])
     return [res["period"] for res in fits]
 
 
 # Ramsey
-def process_ramsey(labber_logfile: Labber.LogFile) -> Any:
+def process_ramsey(labber_logfile: Labber.LogFile) -> [float]:
     # fit Ramsey oscillation
     fits = fit_oscillation_idx(labber_logfile, [0])
     return [res["freq"] for res in fits]
@@ -204,41 +209,45 @@ def process_ramsey(labber_logfile: Labber.LogFile) -> Any:
 # =========================================================================
 # Post-processing function mapping
 
+# A way to convert a limited set of strings to function names
 PROCESSING_METHODS = {
-    "resonator_spectroscopy": process_res_spect_vna_phase_1,
-    "fit_resonator_spectroscopy": process_res_spect_vna_phase_2,
-    "pulsed_resonator_spectroscopy": process_pulsed_res_spect,
-    "pulsed_two_tone_qubit_spectroscopy": process_two_tone,
-    "rabi_qubit_pi_pulse_estimation": process_rabi,
-    "ramsey_qubit_freq_correction": process_ramsey,
-    "demodulation_scenario": process_demodulation,
-    "qiskit_qasm_runner": process_qiskit_qasm_runner_qasm_dummy_job,
-    "qasm_dummy_job": process_qiskit_qasm_runner_qasm_dummy_job,
+    # VNA resonator spectroscopy
+    "process_res_spect_vna_phase_1": process_res_spect_vna_phase_1,
+    "process_res_spect_vna_phase_2": process_res_spect_vna_phase_2,
+    # Four basic calibration steps
+    "process_pulsed_res_spect": process_pulsed_res_spect,
+    "process_two_tone": process_two_tone,
+    "process_rabi": process_rabi,
+    "process_ramsey": process_ramsey,
+    # Other
+    "process_demodulation": process_demodulation,
+    "process_qiskit_qasm_runner_qasm_dummy_job": process_qiskit_qasm_runner_qasm_dummy_job,
 }
 
 # =========================================================================
 # Post-processing Labber logfiles
 
 
-def postprocess_labber_logfile(labber_logfile: Labber.LogFile):
+def postprocess_labber_logfile(labber_logfile: Labber.LogFile) -> JobID:
 
     job_id = get_job_id_labber(labber_logfile)
-    (script_name, is_calibration_sup_job) = get_metainfo(job_id)
+    (script_name, is_calibration_sup_job, post_processing) = get_metainfo(job_id)
 
     print(
         f"Entering postprocess_labber_logfile for script: {script_name}, {job_id=}, {is_calibration_sup_job=}"
     )
 
-    postproc_fn = PROCESSING_METHODS.get(script_name)
+    postproc_fn = PROCESSING_METHODS.get(post_processing)
 
     if postproc_fn:
         results = postproc_fn(labber_logfile)
         red.set(f"postproc:results:{job_id}", str(results))
-    else:
+    elif post_processing:  # Method was specified but not found in table
+        message = "Unknown post-processing method"
         # Inform job supervisor about failure
-        message = "Unknown script name"
         inform_failure(job_id, message)
-        # postprocessing_success_callback will handle this
+    else:
+        print(f"No post-processing specified: skipping")
 
     return job_id
 
@@ -258,24 +267,32 @@ async def notify_job_done(job_id: str):
     writer.close()
 
 
-def postprocessing_success_callback(job, connection, result, *args, **kwargs):
+def postprocessing_success_callback(
+    _rq_job, _rq_connection, result: JobID, *args, **kwargs
+):
     # From logfile_postprocess:
     job_id = result
 
-    (script_name, is_calibration_sup_job) = get_metainfo(job_id)
+    (script_name, is_calibration_sup_job, post_processing) = get_metainfo(job_id)
 
     status = fetch_job(job_id, "status")
 
     if status["failed"]["time"]:
-        print(f"Job {job_id}, {script_name=} has failed: aborting. Status: {status}")
+        print(
+            f"Job {job_id}, {script_name=}, {post_processing=} has failed: aborting. Status: {status}"
+        )
         return
 
     # Inform job supervisor about results
     inform_result(job_id, result)
 
     print(f"Job with ID {job_id}, {script_name=} has finished")
+    if post_processing:
+        print(
+            f"Results post-processed by '{post_processing}' available by job_id in Redis."
+        )
     if is_calibration_sup_job:
-        print(f"Results available in Redis. Notifying calibration supervisor.")
+        print(f"Job was requested by calibration_supervisor: notifying caller.")
         sync(notify_job_done(job_id))
 
 
@@ -283,8 +300,9 @@ def postprocessing_success_callback(job, connection, result, *args, **kwargs):
 # Labber logfile extraction helpers
 # =========================================================================
 
+Memory = Any # TODO: change to correct type!
 
-def extract_system_state_as_hex(logfile: Labber.LogFile):
+def extract_system_state_as_hex(logfile: Labber.LogFile) -> Memory:
     raw_data = logfile.getData("State Discriminator 2 States - System state")
     memory = []
     for entry in raw_data:
@@ -292,40 +310,43 @@ def extract_system_state_as_hex(logfile: Labber.LogFile):
     return memory
 
 
-def extract_shots(logfile: Labber.LogFile):
+def extract_shots(logfile: Labber.LogFile) -> int:
     return int(logfile.getData("State Discriminator 2 States - Shots", 0)[0])
 
 
-def extract_max_qubits(logfile: Labber.LogFile):
+def extract_max_qubits(logfile: Labber.LogFile) -> int:
     return int(
         logfile.getData("State Discriminator 2 States - Max no. of qubits used", 0)[0]
     )
 
+QobjID = str # TODO: check that this type is correct!
 
-def extract_qobj_id(logfile: Labber.LogFile):
+def extract_qobj_id(logfile: Labber.LogFile) -> QobjID:
     return logfile.getChannelValue("State Discriminator 2 States - QObj ID")
 
 
-def get_job_id_labber(labber_logfile: Labber.LogFile):
+def get_job_id_labber(labber_logfile: Labber.LogFile) -> JobID:
     tags = labber_logfile.getTags()
     if len(tags) == 0:
+        # Print this message, then let it crash:
         print(f"Fatal: no tags in logfile. Can't extract job_id")
     return tags[0]
 
 
-def get_metainfo(job_id: str) -> Tuple[str, str]:
+def get_metainfo(job_id: str) -> Tuple[str, str, str]:
     entry = fetch_redis_entry(job_id)
     script_name = entry["name"]
     is_calibration_sup_job = entry.get("is_calibration_sup_job", False)
-    return (script_name, is_calibration_sup_job)
+    post_processing = entry.get("post_processing")
+    return (script_name, is_calibration_sup_job, post_processing)
 
 
 # =========================================================================
 # BCC / MSS updating
 # =========================================================================
 
-
-def update_mss_and_bcc(memory, job_id):
+# TODO: check the type of "memory" below
+def update_mss_and_bcc(memory, job_id: JobID):
 
     # Helper printout with first 5 outcomes
     print("Measurement results:")

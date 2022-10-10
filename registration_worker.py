@@ -56,7 +56,7 @@ def job_register(job_file: Path) -> None:
     inform_location(job_id, Location.PRE_PROC_Q)
 
     # put some of this job's items in job_supervisor's Redis entry
-    keys = ["name", "is_calibration_sup_job"]
+    keys = ["name", "is_calibration_sup_job", "post_processing"]
     dict_partial = get_items_from_json(new_file, keys)
     for key, value in dict_partial.items():
         update_job_entry(job_id, value, key)

@@ -79,6 +79,8 @@ def main():
         "job_id": str(uuid4()),
         "type": "script",
         "name": "demodulation_scenario",
+        # Uncomment (and change) to specify post_processing method:
+        "post_processing": "process_demodulation",
         "params": {
             "Sine - Frequency": signal_array,
             "Demod - Modulation frequency": demod_array,

@@ -59,6 +59,7 @@ def generate_job_direct():
         "job_id": str(uuid4()),
         "type": "script",
         "name": "ramsey_qubit_freq_correction",
+        "post_processing": "process_ramsey",
         # Defaults for "params" are loaded in scenario_scripts.py from
         # measurement_jobs/parameter_defaults/ramsey.toml
         "params": {},
@@ -74,6 +75,8 @@ def generate_job():
         drive_freq=274.68e6,  # depends on two_tone
         drive_amp=48e-3,  # depends on rabi = result / 2
         num_pts=191,
+        # Meta info
+        post_processing = "process_ramsey",
         # Optional arguments to override calibration supervisor defaults
         is_calibration_sup_job=False,
         # Optional arguments to override any other parameters from the

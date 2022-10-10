@@ -28,6 +28,8 @@ def mk_job_res_spect_vna(
     num_pts,
     power,
     num_ave,
+    # Job meta info:
+    post_processing,
     # Optional arguments to override calibration supervisor defaults
     is_calibration_sup_job=True,
     name="resonator_spectroscopy",
@@ -48,6 +50,7 @@ def mk_job_res_spect_vna(
     job = {
         "job_id": str(uuid4()),
         "type": "script",
+        "post_processing": post_processing,
         "is_calibration_sup_job": is_calibration_sup_job,
         "name": "resonator_spectroscopy",
         "params": {
@@ -74,6 +77,8 @@ def mk_job_pulsed_res_spect(
     readout_freq_start,
     readout_freq_stop,
     readout_power,
+    # Job meta info:
+    post_processing,
     # Optional arguments to override calibration supervisor defaults
     is_calibration_sup_job=True,
     name="pulsed_resonator_spectroscopy",
@@ -85,6 +90,7 @@ def mk_job_pulsed_res_spect(
     job = {
         "job_id": str(uuid4()),
         "type": "script",
+        "post_processing": post_processing,
         "is_calibration_sup_job": is_calibration_sup_job,
         "name": name,
         "params": {
@@ -106,6 +112,8 @@ def mk_job_two_tone(
     drive_freq_stop,
     readout_resonance_freq,  # depends on pulsed resonator spectroscopy result
     num_pts,
+    # Job meta info:
+    post_processing,
     # Optional arguments to override calibration supervisor defaults
     is_calibration_sup_job=True,
     name="pulsed_two_tone_qubit_spectroscopy",
@@ -117,6 +125,7 @@ def mk_job_two_tone(
     job = {
         "job_id": str(uuid4()),
         "type": "script",
+        "post_processing": post_processing,
         "is_calibration_sup_job": is_calibration_sup_job,
         "name": name,
         "params": {
@@ -135,6 +144,8 @@ def mk_job_rabi(
     readout_resonance_freq,  # depends on pulsed resonator spectroscopy result
     drive_freq,  # depends on two_tone
     num_pts,  # maybe this doesn't need to be a parameter here?
+    # Job meta info:
+    post_processing,
     # Optional arguments to override calibration supervisor defaults
     is_calibration_sup_job=True,
     name="rabi_qubit_pi_pulse_estimation",
@@ -145,6 +156,7 @@ def mk_job_rabi(
     job = {
         "job_id": str(uuid4()),
         "type": "script",
+        "post_processing": post_processing,
         "is_calibration_sup_job": is_calibration_sup_job,
         "name": name,
         "params": {
@@ -163,6 +175,8 @@ def mk_job_ramsey(
     drive_freq,  # depends on two_tone
     drive_amp,  # depends on rabi = result / 2
     num_pts,  # maybe this doesn't need to be a parameter here?
+    # Job meta info:
+    post_processing,
     # Optional arguments to override calibration supervisor defaults
     is_calibration_sup_job=True,
     name="ramsey_qubit_freq_correction",
@@ -173,6 +187,7 @@ def mk_job_ramsey(
     job = {
         "job_id": str(uuid4()),
         "type": "script",
+        "post_processing": post_processing,
         "is_calibration_sup_job": is_calibration_sup_job,
         "name": name,
         "params": {
@@ -198,6 +213,7 @@ def mk_job_check_sig_demod():
     job = {
         "job_id": str(uuid4()),
         "type": "script",
+        "post_processing": "process_demodulation",
         "is_calibration_sup_job": True,  # job requested by calibration framework
         "name": "demodulation_scenario",
         "params": {
@@ -216,6 +232,7 @@ def mk_job_calibrate_sig_demod():
     job = {
         "job_id": str(uuid4()),
         "type": "script",
+        "post_processing": "process_demodulation",
         "is_calibration_sup_job": True,
         "name": "demodulation_scenario",
         "params": {
