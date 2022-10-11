@@ -35,12 +35,16 @@ from analysis import (
     gaussian_fit_idx,
 )
 from job_supervisor import (
+    JobNotFound,
     Location,
+    cancel_job,
     fetch_job,
     fetch_redis_entry,
     inform_failure,
     inform_location,
     inform_result,
+    register_job,
+    update_job_entry,
 )
 
 # Storage settings
@@ -390,10 +394,44 @@ def update_mss_and_bcc(memory, job_id: JobID):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Postprocessing stand-alone program")
     parser.add_argument("--logfile", "-f", default="", type=str)
+    parser.add_argument("--name", "-n", default="test_name", type=str)
+    parser.add_argument("--post_processing", "-p", default="", type=str)
     args = parser.parse_args()
 
     logfile = args.logfile
+    post_processing = args.post_processing
 
-    results = postprocess_labber_logfile(logfile)
+    labber_logfile = Labber.LogFile(logfile)
 
-    print(f"{results=}")
+    job_id = get_job_id_labber(labber_logfile)
+    # check if job id already present
+    try:
+        _ = fetch_redis_entry(job_id)
+        # job_id already in use, we can't proceed
+        print(
+            f"the logfile's job_id is already in use. please wait until it is finished or try a file with another job_id"
+        )
+        exit()
+    except JobNotFound:
+        pass  # this is the expected behaviour
+
+    register_job(job_id)
+    try:
+        name = labber_logfile.getTags()[1]
+    except IndexError:
+        print(
+            f"Name missing in logfile, using default '{args.name}' instead (or specify with -n)."
+        )
+        name = args.name
+
+    update_job_entry(job_id, name, "name")
+    update_job_entry(job_id, post_processing, "post_processing")
+
+    return_value = postprocess_labber_logfile(labber_logfile)
+
+    # This cleanup is omitted if the previous call raises an
+    # exception, maybe we should fix that.
+    cancel_job(job_id, "testing done")
+    # Maybe we need a new job_supervisor method for this:
+    red.hdel("job_supervisor", job_id)
+    print(f"{return_value=}")
