@@ -14,7 +14,6 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
-import ijson
 
 # Note: if the JSON file is big, this may need to be changed. Perhaps
 # the "bigjson" library could help, which reads the file as a stream
