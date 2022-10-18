@@ -191,20 +191,20 @@ def process_pulsed_res_spect(labber_logfile: Labber.LogFile) -> List[Dict[str, f
 
 
 # Two-tone
-def process_two_tone(labber_logfile: Labber.LogFile) -> [float]:
+def process_two_tone(labber_logfile: Labber.LogFile) -> List[float]:
     # fit qubit spectra
     return gaussian_fit_idx(labber_logfile, [0])
 
 
 # Rabi
-def process_rabi(labber_logfile: Labber.LogFile) -> [float]:
+def process_rabi(labber_logfile: Labber.LogFile) -> List[float]:
     # fit Rabi oscillation
     fits = fit_oscillation_idx(labber_logfile, [0])
     return [res["period"] for res in fits]
 
 
 # Ramsey
-def process_ramsey(labber_logfile: Labber.LogFile) -> [float]:
+def process_ramsey(labber_logfile: Labber.LogFile) -> List[float]:
     # fit Ramsey oscillation
     fits = fit_oscillation_idx(labber_logfile, [0])
     return [res["freq"] for res in fits]
