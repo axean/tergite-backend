@@ -28,11 +28,10 @@ from syncer import sync
 import enums
 import settings
 from analysis import (
-    extract_resonance_freqs,
-    fit_oscillation_idx,
-    fit_resonator,
-    fit_resonator_idx,
-    gaussian_fit_idx,
+    fit_oscillation_iqubits,
+    find_resonators,
+    fit_resonator_ipowers,
+    gaussian_fit_iqubits,
 )
 from job_supervisor import (
     JobNotFound,
@@ -175,39 +174,39 @@ def process_qiskit_qasm_runner_qasm_dummy_job(labber_logfile: Labber.LogFile) ->
 
 
 # VNA resonator spectroscopy
-def process_res_spect_vna_phase_1(labber_logfile: Labber.LogFile) -> List[List[float]]:
-    return fit_resonator(labber_logfile)
+def process_resonator_spectroscopy_vna_phase_1(labber_logfile: Labber.LogFile) -> List[List[float]]:
+    return find_resonators(labber_logfile)
 
 
-def process_res_spect_vna_phase_2(
+def process_resonator_spectroscopy_vna_phase_2(
     labber_logfile: Labber.LogFile,
 ) -> List[Dict[str, float]]:
-    return fit_resonator_idx(labber_logfile, [0, 50])
+    return fit_resonator_ipowers(labber_logfile, [0, 50])
 
 
 # Pulsed resonator spectroscopy
-def process_pulsed_res_spect(labber_logfile: Labber.LogFile) -> List[Dict[str, float]]:
-    return fit_resonator_idx(labber_logfile, [0])
+def process_pulsed_resonator_spectroscopy(labber_logfile: Labber.LogFile) -> List[Dict[str, float]]:
+    return fit_resonator_ipowers(labber_logfile, [0])
 
 
 # Two-tone
 def process_two_tone(labber_logfile: Labber.LogFile) -> List[float]:
     # fit qubit spectra
-    return gaussian_fit_idx(labber_logfile, [0])
+    return gaussian_fit_iqubits(labber_logfile, [0])
 
 
 # Rabi
 def process_rabi(labber_logfile: Labber.LogFile) -> List[float]:
     # fit Rabi oscillation
-    fits = fit_oscillation_idx(labber_logfile, [0])
-    return [res["period"] for res in fits]
+    fits = fit_oscillation_iqubits(labber_logfile, [0])
+    return [entry["period"] for entry in fits]
 
 
 # Ramsey
 def process_ramsey(labber_logfile: Labber.LogFile) -> List[float]:
     # fit Ramsey oscillation
-    fits = fit_oscillation_idx(labber_logfile, [0])
-    return [res["freq"] for res in fits]
+    fits = fit_oscillation_iqubits(labber_logfile, [0])
+    return [entry["freq"] for entry in fits]
 
 
 # =========================================================================
@@ -216,10 +215,10 @@ def process_ramsey(labber_logfile: Labber.LogFile) -> List[float]:
 # A way to convert a limited set of strings to function names
 PROCESSING_METHODS = {
     # VNA resonator spectroscopy
-    "process_res_spect_vna_phase_1": process_res_spect_vna_phase_1,
-    "process_res_spect_vna_phase_2": process_res_spect_vna_phase_2,
+    "process_resonator_spectroscopy_vna_phase_1": process_resonator_spectroscopy_vna_phase_1,
+    "process_resonator_spectroscopy_vna_phase_2": process_resonator_spectroscopy_vna_phase_2,
     # Four basic calibration steps
-    "process_pulsed_res_spect": process_pulsed_res_spect,
+    "process_pulsed_resonator_spectroscopy": process_pulsed_resonator_spectroscopy,
     "process_two_tone": process_two_tone,
     "process_rabi": process_rabi,
     "process_ramsey": process_ramsey,
@@ -235,10 +234,10 @@ PROCESSING_METHODS = {
 def postprocess_labber_logfile(labber_logfile: Labber.LogFile) -> JobID:
 
     job_id = get_job_id_labber(labber_logfile)
-    (script_name, is_calibration_sup_job, post_processing) = get_metainfo(job_id)
+    (script_name, is_calibration_supervisor_job, post_processing) = get_metainfo(job_id)
 
     print(
-        f"Entering postprocess_labber_logfile for script: {script_name}, {job_id=}, {is_calibration_sup_job=}"
+        f"Entering postprocess_labber_logfile for script: {script_name}, {job_id=}, {is_calibration_supervisor_job=}"
     )
 
     postproc_fn = PROCESSING_METHODS.get(post_processing)
@@ -277,7 +276,7 @@ def postprocessing_success_callback(
     # From logfile_postprocess:
     job_id = result
 
-    (script_name, is_calibration_sup_job, post_processing) = get_metainfo(job_id)
+    (script_name, is_calibration_supervisor_job, post_processing) = get_metainfo(job_id)
 
     status = fetch_job(job_id, "status")
 
@@ -295,7 +294,7 @@ def postprocessing_success_callback(
         print(
             f"Results post-processed by '{post_processing}' available by job_id in Redis."
         )
-    if is_calibration_sup_job:
+    if is_calibration_supervisor_job:
         print(f"Job was requested by calibration_supervisor: notifying caller.")
         sync(notify_job_done(job_id))
 
@@ -340,9 +339,9 @@ def get_job_id_labber(labber_logfile: Labber.LogFile) -> JobID:
 def get_metainfo(job_id: str) -> Tuple[str, str, str]:
     entry = fetch_redis_entry(job_id)
     script_name = entry["name"]
-    is_calibration_sup_job = entry.get("is_calibration_sup_job", False)
+    is_calibration_supervisor_job = entry.get("is_calibration_supervisor_job", False)
     post_processing = entry.get("post_processing")
-    return (script_name, is_calibration_sup_job, post_processing)
+    return (script_name, is_calibration_supervisor_job, post_processing)
 
 
 # =========================================================================

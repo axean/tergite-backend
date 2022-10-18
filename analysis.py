@@ -28,7 +28,7 @@ import settings
 POSTPROC_PLOTTING = settings.POSTPROC_PLOTTING
 
 
-def fit_resonator(labber_logfile: Labber.LogFile) -> List[List[float]]:
+def find_resonators(labber_logfile: Labber.LogFile) -> List[List[float]]:
 
     # Labber api function, y value is not used scince it is not well defined, for
     # multiple y traces, y represents only the last one, not usable in this case
@@ -39,23 +39,23 @@ def fit_resonator(labber_logfile: Labber.LogFile) -> List[List[float]]:
     # data, for example sweeped power values, ydict contains values of the traces
 
     xdict, ydict = qu.file_handling.LabberParsing(labber_logfile)
-    resonators_res_freq = extract_resonance_freqs(x, y, xdict, ydict)
+    result = extract_resonance_frequencies(x, y, xdict, ydict)
     print("\n")
-    print(f"Number or resonators: {len(resonators_res_freq[0])}")
+    print(f"Number or resonators: {len(result[0])}")
     print(f"Number of traces: {len(xdict['x0']['values'])}")
     print(f"Corresponding power: {xdict['x0']['values']}")
-    print(f"Resonance frequencies: {resonators_res_freq}")
+    print(f"Resonance frequencies: {result}")
     print("\n")
-    return resonators_res_freq
+    return result
 
 
 # Processing results for resonators resonace frequencies
-# algorithm for approximate peak detection is not robast
+# algorithm for approximate peak detection is not robust
 # may fail in some measurement/traces, improvement required.
 # parameter y and xdict is not used, passed for possible
 # future uses.
-def extract_resonance_freqs(x, y, xdict, ydict) -> List[List[float]]:
-    resonance_freqs = []
+def extract_resonance_frequencies(x, y, xdict, ydict) -> List[List[float]]:
+    resonance_frequencies = []
     for indx, traces in enumerate(ydict["y0"]["values"]):
         trace = np.absolute(traces)
         # Detrain the trace using scipy.signal
@@ -74,15 +74,17 @@ def extract_resonance_freqs(x, y, xdict, ydict) -> List[List[float]]:
         # Detecting the possible and approximate pick or dips
         peaks, _ = scipy.signal.find_peaks(-trace, height=-min_height, distance=100)
         # Extracting the frequiencies of the peaks
-        peak_freqs = x[peaks]
-        # Each list in resonance_freq list represents corresponding
-        # resonanace frequiencies of the current trace
-        resonance_freqs.append(peak_freqs.tolist())
+        peak_frequencies = x[peaks]
+        # Each list in the resonance_frequencies list represents
+        # corresponding resonanace frequiencies of the current trace
+        resonance_frequencies.append(peak_frequencies.tolist())
 
-    return resonance_freqs
+    return resonance_frequencies
 
 
-def fit_resonator_idx(labber_logfile: Labber.LogFile, idxs: List[int]) -> List[float]:
+def fit_resonator_ipowers(
+    labber_logfile: Labber.LogFile, ipowers: List[int]
+) -> List[float]:
 
     x, y = labber_logfile.getTraceXY()
 
@@ -90,9 +92,9 @@ def fit_resonator_idx(labber_logfile: Labber.LogFile, idxs: List[int]) -> List[f
 
     results = []
 
-    for p_idx in idxs:
-        # indices refer to measurements at corresponding powers
-        trace = ydict["y0"]["values"][p_idx]
+    for ipower in ipowers:
+        # ipower indices refer to measurements at corresponding powers
+        trace = ydict["y0"]["values"][ipower]
         port1 = circuit.notch_port(x, trace)
         port1.autofit()
         results += [port1.fitresults]
@@ -102,7 +104,9 @@ def fit_resonator_idx(labber_logfile: Labber.LogFile, idxs: List[int]) -> List[f
     return results
 
 
-def gaussian_fit_idx(labber_logfile: Labber.LogFile, idxs: List[int]) -> List[float]:
+def gaussian_fit_iqubits(
+    labber_logfile: Labber.LogFile, iqubits: List[int]
+) -> List[float]:
 
     xdict, ydict = qu.file_handling.LabberParsing(labber_logfile)
 
@@ -117,12 +121,12 @@ def gaussian_fit_idx(labber_logfile: Labber.LogFile, idxs: List[int]) -> List[fl
         popt, pcov = curve_fit(gauss, x, y, p0=[min(y), max(y), mean, sigma])
         return popt
 
-    # idxs points to the trace number for multiple recordings in the same log
-    for p_idx in idxs:
-        freq_array = xdict["x0"]["values"]
-        trace = np.absolute(ydict["y0"]["values"][p_idx])
+    # iqubit points to the trace number, corresponding to iqubit'th qubit, for multiple recordings in the same log
+    for iqubit in iqubits:
+        frequency_array = xdict["x0"]["values"]
+        trace = np.absolute(ydict["y0"]["values"][iqubit])
 
-        H, A, x0, sigma = gauss_fit(freq_array, trace)
+        H, A, x0, sigma = gauss_fit(frequency_array, trace)
         FWHM = 2.35482 * sigma
 
         print("The offset of the gaussian baseline is", H)
@@ -132,14 +136,14 @@ def gaussian_fit_idx(labber_logfile: Labber.LogFile, idxs: List[int]) -> List[fl
         print("The Amplitude of the gaussian fit is", A)
         print("The FWHM of the gaussian fit is", FWHM)
 
-        fitted_data = gauss(freq_array, *gauss_fit(freq_array, trace))
+        fitted_data = gauss(frequency_array, *gauss_fit(frequency_array, trace))
 
         results += [x0]
 
         if POSTPROC_PLOTTING:
             # plotting of the fitting, may be useful later
-            plt.plot(freq_array, trace, "--b", label="orginal data")
-            plt.plot(freq_array, fitted_data, "-r", label="fit")
+            plt.plot(frequency_array, trace, "--b", label="orginal data")
+            plt.plot(frequency_array, fitted_data, "-r", label="fit")
             plt.legend()
             plt.title("Gaussian fit,  $f(x) = A e^{(-(x-x_0)^2/(2sigma^2))}$")
             plt.xlabel("Frequency (Hz)")
@@ -149,8 +153,8 @@ def gaussian_fit_idx(labber_logfile: Labber.LogFile, idxs: List[int]) -> List[fl
     return results
 
 
-def fit_oscillation_idx(
-    labber_logfile: Labber.LogFile, idxs: List[int]
+def fit_oscillation_iqubits(
+    labber_logfile: Labber.LogFile, iqubits: List[int]
 ) -> List[Dict[str, float]]:
 
     xdict, ydict = qu.file_handling.LabberParsing(labber_logfile)
@@ -160,12 +164,12 @@ def fit_oscillation_idx(
     def fit_sin(x, y):
         ff = np.fft.fftfreq(len(x), (x[1] - x[0]))  # assume uniform spacing
         ffy = abs(np.fft.fft(y))
-        guess_freq = abs(
+        guess_frequency = abs(
             ff[np.argmax(ffy[1:]) + 1]
         )  # excluding the zero frequency "peak", which is related to offset
         guess_amp = np.std(y) * 2.0**0.5
         guess_offset = np.mean(y)
-        guess = np.array([guess_amp, 2.0 * np.pi * guess_freq, 0.0, guess_offset])
+        guess = np.array([guess_amp, 2.0 * np.pi * guess_frequency, 0.0, guess_offset])
 
         def sinfunc(t, A, w, p, c):
             return A * np.sin(w * t + p) + c
@@ -186,23 +190,23 @@ def fit_oscillation_idx(
             "rawres": (guess, popt, pcov),
         }
 
-    # idxs points to the trace number for multiple recordings in the same log
-    for p_idx in idxs:
-        freq_array = xdict["x0"]["values"]
-        trace = np.absolute(ydict["y0"]["values"][p_idx])
-        res = fit_sin(freq_array, trace)
+    # iqubit points to the trace number, corresponding to the iqubit'th qubit, for multiple recordings in the same log
+    for iqubit in iqubits:
+        frequency_array = xdict["x0"]["values"]
+        trace = np.absolute(ydict["y0"]["values"][iqubit])
+        result = fit_sin(frequency_array, trace)
         # In case of Rabi, the period is the inverted the frequency
-        results += [res]
+        results += [result]
         print(
             "Amplitude=%(amp)s, freq=%(freq)s, period.=%(period)s, Angular freq.=%(omega)s, phase=%(phase)s, offset=%(offset)s, Max. Cov.=%(maxcov)s"
-            % res
+            % result
         )
 
         if POSTPROC_PLOTTING:
-            plt.plot(freq_array, trace, "-k", label="y", linewidth=2)
+            plt.plot(frequency_array, trace, "-k", label="y", linewidth=2)
             plt.plot(
-                freq_array,
-                res["fitfunc"](freq_array),
+                frequency_array,
+                result["fitfunc"](frequency_array),
                 "r-",
                 label="y fit curve",
                 linewidth=2,

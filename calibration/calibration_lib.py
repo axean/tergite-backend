@@ -41,8 +41,8 @@ REST_API_MAP = {"jobs": "/jobs"}
 # form of reflection: ast.literal_eval does not apply on function symbols.
 
 MK_JOB_FNS = {
-    "mk_job_check_sig_demod": measurement_jobs.mk_job_check_sig_demod,
-    "mk_job_calibrate_sig_demod": measurement_jobs.mk_job_calibrate_sig_demod,
+    "mk_job_check_sig_demod": measurement_jobs.mk_job_check_signal_demodulation,
+    "mk_job_calibrate_sig_demod": measurement_jobs.mk_job_calibrate_signal_demodulation,
 }
 
 # -------------------------------------------------------------------------

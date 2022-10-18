@@ -66,7 +66,7 @@ def generate_job():
         # how to post-process this one.
         post_processing = None,
         # optional argument for calibration supervisor
-        is_calibration_sup_job=False,  # default True
+        is_calibration_supervisor_job=False,  # default True
         # non-mandatory arguments overriding defaults
     )
     return job

@@ -78,7 +78,7 @@ def generate_job():
         # Meta info
         post_processing = "process_ramsey",
         # Optional arguments to override calibration supervisor defaults
-        is_calibration_sup_job=False,
+        is_calibration_supervisor_job=False,
         # Optional arguments to override any other parameters from the
         # defaults TOML file in measurement_jobs/parameter_defaults/
         #

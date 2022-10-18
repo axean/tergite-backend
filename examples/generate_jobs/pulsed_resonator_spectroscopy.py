@@ -51,7 +51,7 @@ def main():
 
 
 def generate_job():
-    job = measurement_jobs.mk_job_pulsed_res_spect(
+    job = measurement_jobs.mk_job_pulsed_resonator_spectroscopy(
         # Mandatory parameters
         num_pts=201,
         qa_avg=1024,
@@ -60,9 +60,9 @@ def generate_job():
         readout_freq_stop=6.01e9,
         readout_power=10,
         # post-processing
-        post_processing = "process_pulsed_res_spect",
+        post_processing = "process_pulsed_resonator_spectroscopy",
         # optional argument for calibration supervisor
-        is_calibration_sup_job=False,  # default True
+        is_calibration_supervisor_job=False,  # default True
         # non-mandatory arguments overriding defaults
         # just to show we can override: default in Toml file is 274.68e6
         drive_freq=274.68e6 + 0.001e6,
@@ -78,7 +78,7 @@ def generate_job_direct():
         "type": "script",
         "name": "pulsed_resonator_spectroscopy",
         # post-processing
-        "post_processing": "process_pulsed_res_spect",
+        "post_processing": "process_pulsed_resonator_spectroscopy",
         # Defaults for "params" are loaded in scenario_scripts.py from
         # measurement_jobs/parameter_defaults/vna_resonator_spectroscopy.toml
         "params": {},

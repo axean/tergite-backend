@@ -31,7 +31,7 @@ def mk_job_res_spect_vna(
     # Job meta info:
     post_processing,
     # Optional arguments to override calibration supervisor defaults
-    is_calibration_sup_job=True,
+    is_calibration_supervisor_job=True,
     name="resonator_spectroscopy",
     # Optional arguments to override any other parameters from the
     # defaults TOML file in measurement_jobs/parameter_defaults/
@@ -51,7 +51,7 @@ def mk_job_res_spect_vna(
         "job_id": str(uuid4()),
         "type": "script",
         "post_processing": post_processing,
-        "is_calibration_sup_job": is_calibration_sup_job,
+        "is_calibration_supervisor_job": is_calibration_supervisor_job,
         "name": "resonator_spectroscopy",
         "params": {
             "freq_start": freq_start,
@@ -69,7 +69,7 @@ def mk_job_res_spect_vna(
 
 
 # Performs pulsed resonator spectroscopy
-def mk_job_pulsed_res_spect(
+def mk_job_pulsed_resonator_spectroscopy(
     # Mandatory parameters for measurement job
     num_pts,
     qa_avg,
@@ -80,7 +80,7 @@ def mk_job_pulsed_res_spect(
     # Job meta info:
     post_processing,
     # Optional arguments to override calibration supervisor defaults
-    is_calibration_sup_job=True,
+    is_calibration_supervisor_job=True,
     name="pulsed_resonator_spectroscopy",
     # Optional arguments to override any other parameters from the
     # defaults TOML file in measurement_jobs/parameter_defaults/
@@ -91,7 +91,7 @@ def mk_job_pulsed_res_spect(
         "job_id": str(uuid4()),
         "type": "script",
         "post_processing": post_processing,
-        "is_calibration_sup_job": is_calibration_sup_job,
+        "is_calibration_supervisor_job": is_calibration_supervisor_job,
         "name": name,
         "params": {
             "num_pts": num_pts,  # 20M/200 points = 1k sweep frequency resolution
@@ -115,7 +115,7 @@ def mk_job_two_tone(
     # Job meta info:
     post_processing,
     # Optional arguments to override calibration supervisor defaults
-    is_calibration_sup_job=True,
+    is_calibration_supervisor_job=True,
     name="pulsed_two_tone_qubit_spectroscopy",
     # Optional arguments to override any other parameters from the
     # defaults TOML file in measurement_jobs/parameter_defaults/
@@ -126,7 +126,7 @@ def mk_job_two_tone(
         "job_id": str(uuid4()),
         "type": "script",
         "post_processing": post_processing,
-        "is_calibration_sup_job": is_calibration_sup_job,
+        "is_calibration_supervisor_job": is_calibration_supervisor_job,
         "name": name,
         "params": {
             "drive_freq_start": drive_freq_start,
@@ -147,7 +147,7 @@ def mk_job_rabi(
     # Job meta info:
     post_processing,
     # Optional arguments to override calibration supervisor defaults
-    is_calibration_sup_job=True,
+    is_calibration_supervisor_job=True,
     name="rabi_qubit_pi_pulse_estimation",
     # Optional arguments to override any other parameters from the
     # defaults TOML file in measurement_jobs/parameter_defaults/
@@ -157,7 +157,7 @@ def mk_job_rabi(
         "job_id": str(uuid4()),
         "type": "script",
         "post_processing": post_processing,
-        "is_calibration_sup_job": is_calibration_sup_job,
+        "is_calibration_supervisor_job": is_calibration_supervisor_job,
         "name": name,
         "params": {
             "readout_resonance_freq": readout_resonance_freq,
@@ -178,7 +178,7 @@ def mk_job_ramsey(
     # Job meta info:
     post_processing,
     # Optional arguments to override calibration supervisor defaults
-    is_calibration_sup_job=True,
+    is_calibration_supervisor_job=True,
     name="ramsey_qubit_freq_correction",
     # Optional arguments to override any other parameters from the
     # defaults TOML file in measurement_jobs/parameter_defaults/
@@ -188,7 +188,7 @@ def mk_job_ramsey(
         "job_id": str(uuid4()),
         "type": "script",
         "post_processing": post_processing,
-        "is_calibration_sup_job": is_calibration_sup_job,
+        "is_calibration_supervisor_job": is_calibration_supervisor_job,
         "name": name,
         "params": {
             "readout_resonance_freq": readout_resonance_freq,
@@ -205,7 +205,7 @@ def mk_job_ramsey(
 
 # Signal demodulation, demo that performs dry-run on the Labber API,
 # not involving any instruments
-def mk_job_check_sig_demod():
+def mk_job_check_signal_demodulation():
     # here we should do something simpler than in the calibration fn
     signal_array = gen_array(["linspace", "0", "5", "5"])
     demod_array = gen_array(["geomspace", "1", "5", "4"])
@@ -214,7 +214,7 @@ def mk_job_check_sig_demod():
         "job_id": str(uuid4()),
         "type": "script",
         "post_processing": "process_demodulation",
-        "is_calibration_sup_job": True,  # job requested by calibration framework
+        "is_calibration_supervisor_job": True,  # job requested by calibration framework
         "name": "demodulation_scenario",
         "params": {
             "Sine - Frequency": signal_array,
@@ -225,7 +225,7 @@ def mk_job_check_sig_demod():
     return job
 
 
-def mk_job_calibrate_sig_demod():
+def mk_job_calibrate_signal_demodulation():
     signal_array = gen_array(["linspace", "0", "10", "5"])
     demod_array = gen_array(["geomspace", "1", "9", "4"])
 
@@ -233,7 +233,7 @@ def mk_job_calibrate_sig_demod():
         "job_id": str(uuid4()),
         "type": "script",
         "post_processing": "process_demodulation",
-        "is_calibration_sup_job": True,
+        "is_calibration_supervisor_job": True,
         "name": "demodulation_scenario",
         "params": {
             "Sine - Frequency": signal_array,
