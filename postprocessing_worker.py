@@ -28,10 +28,10 @@ from syncer import sync
 import enums
 import settings
 from analysis import (
-    fit_oscillation_iqubits,
+    fit_oscillation_itraces,
     find_resonators,
-    fit_resonator_ipowers,
-    gaussian_fit_iqubits,
+    fit_resonator_itraces,
+    gaussian_fit_itraces,
 )
 from job_supervisor import (
     JobNotFound,
@@ -181,31 +181,40 @@ def process_resonator_spectroscopy_vna_phase_1(labber_logfile: Labber.LogFile) -
 def process_resonator_spectroscopy_vna_phase_2(
     labber_logfile: Labber.LogFile,
 ) -> List[Dict[str, float]]:
-    return fit_resonator_ipowers(labber_logfile, [0, 50])
+    return fit_resonator_itraces(labber_logfile, [0, 50])
 
+# (*) Note on pulsed resonator spectroscopy, two_tone, Rabi, and
+#     Ramsey post-processing:
+#
+# Currently, this only supports one qubit, and the index list of
+# traces is [0] below. To adapt this to multiple qubits, we need to
+# figure out whether we can have Labber to put all the relevant traces
+# in one logfile, or if they would come in one logfile for each
+# qubit. Based on this we will be able to select which trace incides
+# will be passed to the analysis functions.
 
 # Pulsed resonator spectroscopy
 def process_pulsed_resonator_spectroscopy(labber_logfile: Labber.LogFile) -> List[Dict[str, float]]:
-    return fit_resonator_ipowers(labber_logfile, [0])
+    return fit_resonator_itraces(labber_logfile, [0])
 
 
 # Two-tone
 def process_two_tone(labber_logfile: Labber.LogFile) -> List[float]:
     # fit qubit spectra
-    return gaussian_fit_iqubits(labber_logfile, [0])
+    return gaussian_fit_itraces(labber_logfile, [0])
 
 
 # Rabi
 def process_rabi(labber_logfile: Labber.LogFile) -> List[float]:
     # fit Rabi oscillation
-    fits = fit_oscillation_iqubits(labber_logfile, [0])
+    fits = fit_oscillation_itraces(labber_logfile, [0])
     return [entry["period"] for entry in fits]
 
 
 # Ramsey
 def process_ramsey(labber_logfile: Labber.LogFile) -> List[float]:
     # fit Ramsey oscillation
-    fits = fit_oscillation_iqubits(labber_logfile, [0])
+    fits = fit_oscillation_itraces(labber_logfile, [0])
     return [entry["freq"] for entry in fits]
 
 
