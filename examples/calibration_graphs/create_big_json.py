@@ -39,5 +39,4 @@ if __name__ == "__main__":
         contents += "}"
         file.write(contents)
 
-
     print("Done")

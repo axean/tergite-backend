@@ -59,7 +59,7 @@ def generate_job():
         readout_freq_stop=6.01e9,
         readout_power=10,
         # post-processing
-        post_processing = "process_pulsed_resonator_spectroscopy",
+        post_processing="process_pulsed_resonator_spectroscopy",
         # optional argument for calibration supervisor
         is_calibration_supervisor_job=False,  # default True
         # non-mandatory arguments overriding defaults
@@ -67,6 +67,7 @@ def generate_job():
         drive_freq=274.68e6 + 0.001e6,
     )
     return job
+
 
 # Jobs can be generated directly as follows, and then default
 # parameters can be overridden. However, with this method there is no

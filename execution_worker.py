@@ -84,7 +84,7 @@ def post_scenario_file(job_dict: dict, /):
         scenario = qobj_dummy_scenario(job_dict)
 
     elif job_dict["name"] in [
-        "resonator_spectroscopy", # VNA resonator spectroscopy
+        "resonator_spectroscopy",  # VNA resonator spectroscopy
     ]:
         scenario = resonator_spectroscopy_scenario(job_dict)
 

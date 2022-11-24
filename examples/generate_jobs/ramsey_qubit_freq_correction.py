@@ -74,7 +74,7 @@ def generate_job():
         drive_amp=48e-3,  # depends on rabi = result / 2
         num_pts=191,
         # Meta info
-        post_processing = "process_ramsey",
+        post_processing="process_ramsey",
         # Optional arguments to override calibration supervisor defaults
         is_calibration_supervisor_job=False,
         # Optional arguments to override any other parameters from the

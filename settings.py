@@ -42,7 +42,11 @@ JOB_SUPERVISOR_LOG = config(
 )
 
 # Measurement default file mapping
-MEASUREMENT_DEFAULT_FILES = config("MEASUREMENT_DEFAULT_FILES", cast=str, default="measurement_jobs/parameter_defaults/default_files.toml")
+MEASUREMENT_DEFAULT_FILES = config(
+    "MEASUREMENT_DEFAULT_FILES",
+    cast=str,
+    default="measurement_jobs/parameter_defaults/default_files.toml",
+)
 
 # Connectivity settings
 

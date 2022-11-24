@@ -212,12 +212,14 @@ async def get_rq_info():
 
 # Webgui requests
 
+
 @app.get("/web-gui")
 async def snapshot():
     snapshot = redis_connection.get("current_snapshot")
-    return json.loads(snapshot) 
+    return json.loads(snapshot)
+
 
 @app.get("/web-gui/config")
 async def web_config():
-    snapshot = redis_connection.get("config") 
+    snapshot = redis_connection.get("config")
     return json.loads(snapshot)

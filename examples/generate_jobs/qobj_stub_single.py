@@ -54,6 +54,7 @@ def generate_job():
     }
     return job
 
+
 def generate_qobj():
 
     qobj = {

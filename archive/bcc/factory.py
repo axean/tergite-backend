@@ -21,9 +21,8 @@ def create_app():
     CORS(app)
     app.register_blueprint(bcc_routes)
 
-    @app.route('/bcc')
+    @app.route("/bcc")
     def serve():
         return "Welcome to dev' BCC"
 
     return app
-

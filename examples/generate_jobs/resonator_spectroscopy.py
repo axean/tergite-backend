@@ -63,7 +63,7 @@ def generate_job():
         # exactly the same as what will be phase one or two in VNA
         # resonator spectroscopy, and there is yet no decision made
         # how to post-process this one.
-        post_processing = None,
+        post_processing=None,
         # optional argument for calibration supervisor
         is_calibration_supervisor_job=False,  # default True
         # non-mandatory arguments overriding defaults

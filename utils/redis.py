@@ -21,7 +21,7 @@ ind_step = 2
 # optional argument regex: dump all keys matching the regular expression regex
 #
 # Todo: put the contents in a nested dict instead, and do the printing separately.
-def dump_redis(red, msg="", regex='(?!rq:)'):
+def dump_redis(red, msg="", regex="(?!rq:)"):
     print(f"---- Redis dump: {msg} ----")
 
     re_prog = compile_re(regex)
@@ -63,6 +63,7 @@ def dump_redis(red, msg="", regex='(?!rq:)'):
     print("}")
     print(f"---- END Redis dump: {msg} ----")
 
+
 # Deletes all keys matching the given regular expression
 def del_keys(red, regex):
     re_prog = compile_re(regex)
@@ -73,12 +74,14 @@ def del_keys(red, regex):
     for key in list(filter(lambda k: re_prog.match(k), keys)):
         red.delete(key)
 
+
 # Delete all keys *not* related to the Redis queue "rq" package
 def del_non_rq(red):
     del_keys(red, "(?!rq:)")
 
 
 # Misc helpers
+
 
 def compile_re(regex):
     try:
@@ -88,8 +91,10 @@ def compile_re(regex):
         return None
     return re_prog
 
+
 def quote(s):
     return '"' + s + '"'
 
+
 def indent(n, s):
-    return ind_step * n * ' ' + s
+    return ind_step * n * " " + s

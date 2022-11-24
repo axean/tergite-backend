@@ -174,7 +174,9 @@ def process_qiskit_qasm_runner_qasm_dummy_job(labber_logfile: Labber.LogFile) ->
 
 
 # VNA resonator spectroscopy
-def process_resonator_spectroscopy_vna_phase_1(labber_logfile: Labber.LogFile) -> List[List[float]]:
+def process_resonator_spectroscopy_vna_phase_1(
+    labber_logfile: Labber.LogFile,
+) -> List[List[float]]:
     return find_resonators(labber_logfile)
 
 
@@ -182,6 +184,7 @@ def process_resonator_spectroscopy_vna_phase_2(
     labber_logfile: Labber.LogFile,
 ) -> List[Dict[str, float]]:
     return fit_resonator_itraces(labber_logfile, [0, 50])
+
 
 # (*) Note on pulsed resonator spectroscopy, two_tone, Rabi, and
 #     Ramsey post-processing:
@@ -194,7 +197,9 @@ def process_resonator_spectroscopy_vna_phase_2(
 # will be passed to the analysis functions.
 
 # Pulsed resonator spectroscopy
-def process_pulsed_resonator_spectroscopy(labber_logfile: Labber.LogFile) -> List[Dict[str, float]]:
+def process_pulsed_resonator_spectroscopy(
+    labber_logfile: Labber.LogFile,
+) -> List[Dict[str, float]]:
     return fit_resonator_itraces(labber_logfile, [0])
 
 
@@ -312,7 +317,8 @@ def postprocessing_success_callback(
 # Labber logfile extraction helpers
 # =========================================================================
 
-Memory = Any # TODO: change to correct type!
+Memory = Any  # TODO: change to correct type!
+
 
 def extract_system_state_as_hex(logfile: Labber.LogFile) -> Memory:
     raw_data = logfile.getData("State Discriminator 2 States - System state")
@@ -331,7 +337,9 @@ def extract_max_qubits(logfile: Labber.LogFile) -> int:
         logfile.getData("State Discriminator 2 States - Max no. of qubits used", 0)[0]
     )
 
-QobjID = str # TODO: check that this type is correct!
+
+QobjID = str  # TODO: check that this type is correct!
+
 
 def extract_qobj_id(logfile: Labber.LogFile) -> QobjID:
     return logfile.getChannelValue("State Discriminator 2 States - QObj ID")

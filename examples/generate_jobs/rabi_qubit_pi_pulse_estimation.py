@@ -73,7 +73,7 @@ def generate_job():
         drive_freq=274.68e6,  # depends on two_tone
         num_pts=200,
         # Meta info
-        post_processing = "process_rabi",
+        post_processing="process_rabi",
         # Optional arguments to override calibration supervisor defaults
         is_calibration_supervisor_job=False,
         # Optional arguments to override any other parameters from the

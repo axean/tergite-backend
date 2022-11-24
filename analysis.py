@@ -101,6 +101,7 @@ def fit_resonator_itraces(
 
     return results
 
+
 # gaussian fits in traces from the given index list itraces
 def gaussian_fit_itraces(
     labber_logfile: Labber.LogFile, itraces: List[int]
@@ -149,6 +150,7 @@ def gaussian_fit_itraces(
             plt.show()
 
     return results
+
 
 # fits oscillation in traces from the given index list itraces
 def fit_oscillation_itraces(

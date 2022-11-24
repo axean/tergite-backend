@@ -48,6 +48,7 @@ def main():
 
     file.unlink()
 
+
 # Jobs can be generated directly as follows, and then default
 # parameters can be overridden. However, with this method there is no
 # control that mandatory arguments are provided.
@@ -72,7 +73,7 @@ def generate_job():
         readout_resonance_freq=5.99931e9,  # depends on pulsed resonator spectroscopy result
         num_pts=201,
         # Meta info
-        post_processing = "process_two_tone",
+        post_processing="process_two_tone",
         # Optional arguments to override calibration supervisor defaults
         is_calibration_supervisor_job=False,
         # Optional arguments to override any other parameters from the

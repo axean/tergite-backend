@@ -19,22 +19,16 @@ from pymongo import MongoClient
 
 config = configparser.ConfigParser()
 config.read(path.abspath(path.join("config.ini")))
-DB_URI = config['DATABASE']['DB_URI']
+DB_URI = config["DATABASE"]["DB_URI"]
 
-db = MongoClient(DB_URI)["milestone1"]   # select database
-data = db.t1_mon                         # select collection
+db = MongoClient(DB_URI)["milestone1"]  # select database
+data = db.t1_mon  # select collection
 
 # ISO 8601 date-time
-timestamp = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
-t1_value  = random.SystemRandom().uniform(40,80)
+timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+t1_value = random.SystemRandom().uniform(40, 80)
 
 # NDUV struct
-entry = {
-    "name"  : "T1",
-    "date"  : timestamp,
-    "unit"  : "us",
-    "value" : t1_value
-}
+entry = {"name": "T1", "date": timestamp, "unit": "us", "value": t1_value}
 
 data.insert_one(entry)
-

@@ -15,32 +15,33 @@ from flask import Blueprint, current_app, g, jsonify, make_response, request
 from flask_cors import CORS
 from werkzeug.local import LocalProxy
 
-bcc_routes = Blueprint('bcc_routes','bcc_routes')
+bcc_routes = Blueprint("bcc_routes", "bcc_routes")
 CORS(bcc_routes)
 
-@bcc_routes.route('/bcc/registration', methods=['GET','POST'])
+
+@bcc_routes.route("/bcc/registration", methods=["GET", "POST"])
 def api_registration():
     response = dict()
 
-    if request.method == 'POST':
+    if request.method == "POST":
         if request.is_json:
             invitation = request.get_json()
-            sha_check = invitation.get('sha_check',None)
+            sha_check = invitation.get("sha_check", None)
 
             if sha_check:
-                print('Got sha_check')
-                response['name'] = "chalmers-gold"
-                response['url']  = "https://qdp-git.mc2.chalmers.se/bcc"
-                response['lab_setup'] = None
-                response['description'] = "Stubbed BCC running on VM"
-                response['sha_check'] = invitation['sha_check']
-                response['status'] = {}
-                response['config'] = {}
-                response['calibration'] = []
+                print("Got sha_check")
+                response["name"] = "chalmers-gold"
+                response["url"] = "https://qdp-git.mc2.chalmers.se/bcc"
+                response["lab_setup"] = None
+                response["description"] = "Stubbed BCC running on VM"
+                response["sha_check"] = invitation["sha_check"]
+                response["status"] = {}
+                response["config"] = {}
+                response["calibration"] = []
 
                 return make_response(jsonify(response), 200)
             else:
-                response = 'No sha_check found'
+                response = "No sha_check found"
                 print(response)
                 return make_response(jsonify(response), 400)
 
@@ -49,9 +50,6 @@ def api_registration():
             print(response)
             return make_response(jsonify(response), 400)
     else:
-        response="Send me an invitation!"
+        response = "Send me an invitation!"
         print(response)
         return make_response(jsonify(response), 200)
-
-
-
