@@ -11,7 +11,6 @@
 # that they have been altered from the originals.
 
 
-import numpy as np
 import json
 from uuid import uuid4
 import requests

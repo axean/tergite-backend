@@ -19,7 +19,7 @@ from redis import Redis
 from rq import Queue, Worker
 import shutil
 from pathlib import Path
-from uuid import uuid4, UUID
+from uuid import UUID
 import json
 from registration_worker import job_register
 from postprocessing_worker import logfile_postprocess, postprocessing_success_callback

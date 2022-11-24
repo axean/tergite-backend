@@ -12,7 +12,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-import asyncio
 import datetime
 import json
 from pathlib import Path
@@ -24,7 +23,7 @@ from uuid import uuid4
 import redis
 import requests
 
-from calibration.calibration_common import JobDoneEvent, DataStatus
+from calibration.calibration_common import DataStatus
 import measurement_jobs.measurement_jobs as measurement_jobs
 
 # Set up Redis connection

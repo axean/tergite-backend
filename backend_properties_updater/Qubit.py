@@ -14,7 +14,6 @@
 # that they have been altered from the originals.
 
 
-from backend_properties_updater.NDUV import NDUV
 from backend_properties_updater.backend_properties_updater_utils import (
     init_NDUV,
     update_NDUV,

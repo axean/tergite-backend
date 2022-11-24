@@ -14,7 +14,6 @@
 
 
 import asyncio
-from enum import Enum
 import settings
 import time
 

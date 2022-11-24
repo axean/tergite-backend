@@ -11,13 +11,11 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-from pathlib import Path
-from typing import Any, Dict, List
+from typing import Dict, List
 
 import Labber
 import matplotlib.pyplot as plt
 import numpy as np
-import qtanalysis.core as qc
 import qtanalysis.utilities as qu
 import scipy.signal
 from resonator_tools import circuit

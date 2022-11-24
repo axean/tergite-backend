@@ -18,7 +18,6 @@ import settings
 from tempfile import gettempdir
 from uuid import uuid4
 
-import numpy as np
 import requests
 
 import measurement_jobs.measurement_jobs as measurement_jobs
