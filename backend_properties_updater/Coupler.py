@@ -15,7 +15,7 @@
 
 
 from datetime import datetime
-from backend_properties_updater.NDUV import NDUV
+
 from backend_properties_updater.backend_properties_updater_utils import (
     TYPE1,
     TYPE4_CODOMAIN,
@@ -23,7 +23,7 @@ from backend_properties_updater.backend_properties_updater_utils import (
     init_NDUV,
     update_NDUV,
 )
-
+from backend_properties_updater.NDUV import NDUV
 
 UPPER_FREQ_MAX_LIMIT = 9e9
 LOWER_FREQ_MAX_LIMIT = 7e9

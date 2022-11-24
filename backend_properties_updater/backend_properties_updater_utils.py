@@ -14,8 +14,9 @@
 # that they have been altered from the originals.
 
 
-from datetime import datetime, timezone
 import random
+from datetime import datetime, timezone
+
 from backend_properties_updater.NDUV import NDUV
 
 TYPE1 = "type1"

@@ -10,15 +10,17 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-from enum import Enum, unique
+import json
 from datetime import datetime
+from enum import Enum, unique
 from pathlib import Path
-import settings
-from typing import List, Tuple, Dict, Any, Union
+from typing import Any, Dict, List, Tuple, Union
+
 import redis
 from rq.command import send_stop_job_command
 from rq.job import Job
-import json
+
+import settings
 
 STORAGE_ROOT = settings.STORAGE_ROOT
 LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL

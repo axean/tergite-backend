@@ -11,13 +11,14 @@
 # that they have been altered from the originals.
 
 
+from pathlib import Path
+
 from redis import Redis
 from rq import Queue
-from pathlib import Path
-from execution_worker import job_execute
-from job_supervisor import inform_location, Location
-import settings
 
+import settings
+from execution_worker import job_execute
+from job_supervisor import Location, inform_location
 
 # settings
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX

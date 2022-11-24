@@ -15,10 +15,11 @@
 
 
 from datetime import datetime, timezone
-from backend_properties_updater.Qubit import Qubit
-from backend_properties_updater.Resonator import Resonator
+
 from backend_properties_updater.Coupler import Coupler
 from backend_properties_updater.Gate import Gate
+from backend_properties_updater.Qubit import Qubit
+from backend_properties_updater.Resonator import Resonator
 
 
 class config_updater:

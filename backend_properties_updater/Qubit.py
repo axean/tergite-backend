@@ -15,13 +15,12 @@
 
 
 from backend_properties_updater.backend_properties_updater_utils import (
-    init_NDUV,
-    update_NDUV,
     TYPE1,
     TYPE2,
     TYPE4_DOMAIN,
+    init_NDUV,
+    update_NDUV,
 )
-
 
 UPPER_FREQUENCY_LIMIT = 5e9
 LOWER_FREQUENCY_LIMIT = 4e9

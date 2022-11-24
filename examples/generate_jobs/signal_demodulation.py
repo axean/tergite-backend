@@ -10,14 +10,15 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-from argparse import ArgumentParser
 import json
 import pathlib
-import settings
+from argparse import ArgumentParser
 from uuid import uuid4
 
 import numpy as np
 import requests
+
+import settings
 
 # settings
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL

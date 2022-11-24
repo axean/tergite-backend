@@ -1,7 +1,8 @@
-from scenario_scripts import qobj_dummy_scenario
-from examples.generate_jobs.qobj_stub_single import generate_job
-from uuid import uuid4
 import random
+from uuid import uuid4
+
+from examples.generate_jobs.qobj_stub_single import generate_job
+from scenario_scripts import qobj_dummy_scenario
 
 
 def cal_dummy():

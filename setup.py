@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 REQUIREMENTS = [
     "aiofiles>=0.7.0",

@@ -11,9 +11,8 @@
 # that they have been altered from the originals.
 
 
+from flask import Blueprint, current_app, g, jsonify, make_response, request
 from flask_cors import CORS
-from flask import jsonify, Blueprint, current_app, g, request
-from flask import make_response
 from werkzeug.local import LocalProxy
 
 bcc_routes = Blueprint('bcc_routes','bcc_routes')

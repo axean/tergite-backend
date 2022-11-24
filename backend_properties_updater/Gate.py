@@ -15,12 +15,12 @@
 
 
 from backend_properties_updater.backend_properties_updater_utils import (
+    TYPE1,
+    TYPE3,
+    TYPE4_CODOMAIN,
+    TYPE4_DOMAIN,
     init_NDUV,
     update_NDUV,
-    TYPE1,
-    TYPE4_DOMAIN,
-    TYPE4_CODOMAIN,
-    TYPE3,
 )
 from backend_properties_updater.NDUV import NDUV
 

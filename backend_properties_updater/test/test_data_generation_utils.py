@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
-from backend_properties_updater.backend_properties_updater_utils import update_NDUV
+
 from NDUV import NDUV
+
+from backend_properties_updater.backend_properties_updater_utils import update_NDUV
 
 
 # generate_value only returns values between the given lower

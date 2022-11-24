@@ -11,9 +11,10 @@
 # that they have been altered from the originals.
 
 
+from bcc.api.routes import bcc_routes
 from flask import Flask
 from flask_cors import CORS
-from bcc.api.routes import bcc_routes
+
 
 def create_app():
     app = Flask(__name__)

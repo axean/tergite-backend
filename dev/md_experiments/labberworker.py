@@ -12,8 +12,9 @@
 
 
 import os
-from Labber import ScriptTools
+
 import Labber
+from Labber import ScriptTools
 
 # Labber.ScriptTools.setExePath("/usr/share/Labber/Program/Measurement")
 

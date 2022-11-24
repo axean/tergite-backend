@@ -15,11 +15,11 @@
 
 
 from backend_properties_updater.backend_properties_updater_utils import (
+    TYPE1,
+    TYPE4_CODOMAIN,
+    TYPE4_DOMAIN,
     init_NDUV,
     update_NDUV,
-    TYPE1,
-    TYPE4_DOMAIN,
-    TYPE4_CODOMAIN,
 )
 
 UPPER_FREQUENCY_LIMIT = 8e09  # HZ

@@ -15,13 +15,13 @@
 
 import json
 import pathlib
-import settings
 from tempfile import gettempdir
 from uuid import uuid4
 
 import requests
 
 import measurement_jobs.measurement_jobs as measurement_jobs
+import settings
 
 # Settings
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL

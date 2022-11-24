@@ -15,14 +15,13 @@
 import functools
 import json
 from pathlib import Path
-import settings
 from tempfile import gettempdir
-import toml
 
 import numpy as np
+import toml
+from Labber import Scenario, ScriptTools
 
-from Labber import Scenario
-from Labber import ScriptTools
+import settings
 
 # Settings
 DEFAULT_FILES = settings.MEASUREMENT_DEFAULT_FILES

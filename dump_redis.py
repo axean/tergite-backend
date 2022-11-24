@@ -14,6 +14,7 @@
 import argparse
 
 import redis
+
 import utils.redis
 
 if __name__ == "__main__":

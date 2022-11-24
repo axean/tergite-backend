@@ -12,10 +12,10 @@
 
 import configparser
 import random
-from pymongo import MongoClient
 from datetime import datetime
 from os import path
 
+from pymongo import MongoClient
 
 config = configparser.ConfigParser()
 config.read(path.abspath(path.join("config.ini")))

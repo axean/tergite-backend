@@ -14,11 +14,12 @@
 # that they have been altered from the originals.
 
 
-from time import sleep
 import json
-import redis
-from backend_properties_updater.backend_config_updater import config_updater
+from time import sleep
 
+import redis
+
+from backend_properties_updater.backend_config_updater import config_updater
 
 with open("backend_config.json") as config_json:
     config = json.load(config_json)

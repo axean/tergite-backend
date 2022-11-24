@@ -28,8 +28,8 @@ from syncer import sync
 import enums
 import settings
 from analysis import (
-    fit_oscillation_itraces,
     find_resonators,
+    fit_oscillation_itraces,
     fit_resonator_itraces,
     gaussian_fit_itraces,
 )

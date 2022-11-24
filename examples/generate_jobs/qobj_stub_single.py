@@ -12,9 +12,11 @@
 
 
 import json
-from uuid import uuid4
-import requests
 import pathlib
+from uuid import uuid4
+
+import requests
+
 import settings
 
 # settings

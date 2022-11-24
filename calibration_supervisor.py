@@ -14,14 +14,13 @@
 
 
 import asyncio
-import settings
 import time
 
 import redis
 
-from calibration.calibration_common import DataStatus, JobDoneEvent
 import calibration.calibration_lib as calibration_lib
-
+import settings
+from calibration.calibration_common import DataStatus, JobDoneEvent
 
 # Settings
 STORAGE_ROOT = settings.STORAGE_ROOT

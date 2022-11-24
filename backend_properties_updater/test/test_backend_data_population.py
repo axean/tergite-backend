@@ -14,8 +14,10 @@
 # that they have been altered from the originals.
 
 import json
-from backend_properties_updater.backend_config_updater import config_updater
+
 from redis import Redis
+
+from backend_properties_updater.backend_config_updater import config_updater
 
 redis_connection = Redis()
 

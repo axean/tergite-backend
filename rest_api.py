@@ -12,23 +12,24 @@
 # that they have been altered from the originals.
 
 
-from fastapi import FastAPI, File, UploadFile, Body, Form
-from fastapi.responses import FileResponse
-from typing import Optional
-from redis import Redis
-from rq import Queue, Worker
+import json
 import shutil
 from pathlib import Path
+from typing import Optional
 from uuid import UUID
-import json
-from registration_worker import job_register
-from postprocessing_worker import logfile_postprocess, postprocessing_success_callback
-from job_supervisor import Location
+
+from fastapi import Body, FastAPI, File, Form, UploadFile
+from fastapi.responses import FileResponse
+from redis import Redis
+from rq import Queue, Worker
+
+import enums
 import job_supervisor
 import settings
-import enums
+from job_supervisor import Location
+from postprocessing_worker import logfile_postprocess, postprocessing_success_callback
+from registration_worker import job_register
 from utils.uuid import validate_uuid4_str
-import json
 
 # settings
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX
