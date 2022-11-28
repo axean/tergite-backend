@@ -30,7 +30,6 @@ def main():
         "job_id": str(uuid4()),
         "type": "script",
         "name": "qiskit_qasm_runner",
-        "post_processing": "process_qiskit_qasm_runner_qasm_dummy_job",
         "params": {
             "qobj": {
                 "qobj_id": "exp123_072018",

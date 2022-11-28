@@ -29,7 +29,7 @@ def mk_job_res_spect_vna(
     power,
     num_ave,
     # Job meta info:
-    post_processing,
+    post_processing=None,
     # Optional arguments to override calibration supervisor defaults
     is_calibration_supervisor_job=True,
     name="resonator_spectroscopy",
@@ -78,7 +78,7 @@ def mk_job_pulsed_resonator_spectroscopy(
     readout_freq_stop,
     readout_power,
     # Job meta info:
-    post_processing,
+    post_processing=None,
     # Optional arguments to override calibration supervisor defaults
     is_calibration_supervisor_job=True,
     name="pulsed_resonator_spectroscopy",
@@ -113,7 +113,7 @@ def mk_job_two_tone(
     readout_resonance_freq,  # depends on pulsed resonator spectroscopy result
     num_pts,
     # Job meta info:
-    post_processing,
+    post_processing=None,
     # Optional arguments to override calibration supervisor defaults
     is_calibration_supervisor_job=True,
     name="pulsed_two_tone_qubit_spectroscopy",
@@ -145,7 +145,7 @@ def mk_job_rabi(
     drive_freq,  # depends on two_tone
     num_pts,  # maybe this doesn't need to be a parameter here?
     # Job meta info:
-    post_processing,
+    post_processing=None,
     # Optional arguments to override calibration supervisor defaults
     is_calibration_supervisor_job=True,
     name="rabi_qubit_pi_pulse_estimation",
@@ -176,7 +176,7 @@ def mk_job_ramsey(
     drive_amp,  # depends on rabi = result / 2
     num_pts,  # maybe this doesn't need to be a parameter here?
     # Job meta info:
-    post_processing,
+    post_processing=None,
     # Optional arguments to override calibration supervisor defaults
     is_calibration_supervisor_job=True,
     name="ramsey_qubit_freq_correction",
@@ -213,7 +213,6 @@ def mk_job_check_signal_demodulation():
     job = {
         "job_id": str(uuid4()),
         "type": "script",
-        "post_processing": "process_demodulation",
         "is_calibration_supervisor_job": True,  # job requested by calibration framework
         "name": "demodulation_scenario",
         "params": {
@@ -232,7 +231,6 @@ def mk_job_calibrate_signal_demodulation():
     job = {
         "job_id": str(uuid4()),
         "type": "script",
-        "post_processing": "process_demodulation",
         "is_calibration_supervisor_job": True,
         "name": "demodulation_scenario",
         "params": {

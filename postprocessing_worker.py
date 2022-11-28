@@ -161,7 +161,7 @@ def process_demodulation(labber_logfile: Labber.LogFile) -> JobID:
 
 
 # Qasm job example
-def process_qiskit_qasm_runner_qasm_dummy_job(labber_logfile: Labber.LogFile) -> str:
+def process_qiskit_qasm(labber_logfile: Labber.LogFile) -> str:
     job_id = get_job_id_labber(labber_logfile)
 
     # Extract System state
@@ -224,10 +224,28 @@ def process_ramsey(labber_logfile: Labber.LogFile) -> List[float]:
 
 
 # =========================================================================
-# Post-processing function mapping
+# Post-processing function mappings
 
-# A way to convert a limited set of strings to function names
+# Based on job["name"], these are the default post-processing methods
 PROCESSING_METHODS = {
+    # VNA resonator spectroscopy
+    "resonator_spectroscopy": process_resonator_spectroscopy_vna_phase_1,
+    # Four basic calibration steps
+    "pulsed_resonator_spectroscopy": process_pulsed_resonator_spectroscopy,
+    "pulsed_two_tone_qubit_spectroscopy": process_two_tone,
+    "rabi_qubit_pi_pulse_estimation": process_rabi,
+    "ramsey_qubit_freq_correction": process_ramsey,
+    # Other
+    "demodulation_scenario": process_demodulation,
+    "qiskit_qasm_runner": process_qiskit_qasm,
+    "qasm_dummy_job": process_qiskit_qasm,
+}
+
+# A map from strings to the corresponding function names
+#
+# If job["post_processing"] field has any of these values, it will
+# override the PROCESSING_METHODS mapping
+PROCESSING_STR_TO_FUNCTION = {
     # VNA resonator spectroscopy
     "process_resonator_spectroscopy_vna_phase_1": process_resonator_spectroscopy_vna_phase_1,
     "process_resonator_spectroscopy_vna_phase_2": process_resonator_spectroscopy_vna_phase_2,
@@ -238,7 +256,7 @@ PROCESSING_METHODS = {
     "process_ramsey": process_ramsey,
     # Other
     "process_demodulation": process_demodulation,
-    "process_qiskit_qasm_runner_qasm_dummy_job": process_qiskit_qasm_runner_qasm_dummy_job,
+    "process_qiskit_qasm": process_qiskit_qasm,
 }
 
 # =========================================================================
@@ -248,24 +266,32 @@ PROCESSING_METHODS = {
 def postprocess_labber_logfile(labber_logfile: Labber.LogFile) -> JobID:
 
     job_id = get_job_id_labber(labber_logfile)
-    (script_name, is_calibration_supervisor_job, post_processing) = get_metainfo(job_id)
+    (job_name, is_calibration_supervisor_job, post_processing) = get_metainfo(job_id)
 
     print(
-        f"Entering postprocess_labber_logfile for script: {script_name}, {job_id=}, {is_calibration_supervisor_job=}"
+        f"Entering postprocess_labber_logfile for script: {job_name}, {job_id=}, {is_calibration_supervisor_job=}"
     )
 
-    postproc_fn = PROCESSING_METHODS.get(post_processing)
+    postprocessing_fn = PROCESSING_METHODS.get(job_name)
+    custom_postprocessing_fn = PROCESSING_STR_TO_FUNCTION.get(post_processing)
 
-    if postproc_fn:
-        results = postproc_fn(labber_logfile)
-        red.set(f"postproc:results:{job_id}", str(results))
-    elif post_processing:  # Method was specified but not found in table
-        message = "Unknown post-processing method"
-        # Inform job supervisor about failure
-        inform_failure(job_id, message)
+    if custom_postprocessing_fn:
+        if not postprocessing_fn:
+            print(
+                f'Warning: no default post-processing matched job_name, but "post_processing" was specified as {post_processing}, and that one will be used.'
+            )
+        results = custom_postprocessing_fn(labber_logfile)
+    elif postprocessing_fn:
+        results = postprocessing_fn(labber_logfile)
     else:
-        print(f"No post-processing specified: skipping")
+        message = f"No post-processing method assigned, nor by {job_name=}, neither by {post_processing=}."
+        print(message)
+        inform_failure(job_id, message)
+        return job_id
 
+    # Post-processing was specified, either by job["name"], or by
+    # job["post_processing"]
+    red.set(f"postproc:results:{job_id}", str(results))
     return job_id
 
 
