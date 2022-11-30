@@ -12,7 +12,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-import datetime
 import json
 from pathlib import Path
 from random import random
@@ -25,6 +24,7 @@ import requests
 import measurement_jobs.measurement_jobs as measurement_jobs
 import settings
 from calibration.calibration_common import DataStatus
+from utils import datetime_utils
 
 # Set up Redis connection
 red = redis.Redis(decode_responses=True)
@@ -123,11 +123,7 @@ async def calibrate_dummy(node, job_done_event):
             result = "not found"  # TODO: better error handling
 
         red.hset(f"param:{calibration_param}", "name", calibration_param)
-        red.hset(
-            f"param:{calibration_param}",
-            "date",
-            datetime.datetime.now().replace(microsecond=0).isoformat() + "Z",
-        )
+        red.hset(f"param:{calibration_param}", "date", datetime_utils.utc_now_iso())
         red.hset(f"param:{calibration_param}", "unit", unit)
         red.hset(f"param:{calibration_param}", "value", result)
 

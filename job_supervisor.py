@@ -11,7 +11,6 @@
 # that they have been altered from the originals.
 
 import json
-from datetime import datetime
 from enum import Enum, unique
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
@@ -21,6 +20,7 @@ from rq.command import send_stop_job_command
 from rq.job import Job
 
 import settings
+from utils import datetime_utils
 
 STORAGE_ROOT = settings.STORAGE_ROOT
 LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL
@@ -90,7 +90,7 @@ class JobNotFound(Exception):
 
 def now() -> str:
     """Returns the current time formatted"""
-    return datetime.now().isoformat()
+    return datetime_utils.utc_now_iso()
 
 
 def fetch_redis_entry(job_id: str) -> Entry:
@@ -301,14 +301,13 @@ def log(message: str, level: LogLevel = LogLevel.INFO) -> None:
         message (str): message to log
         level (LogLevel, optional): log level of the message. Defaults to LogLevel.INFO.
     """
-    color: Tuple(str, str, str) = (
+    color: Tuple[str, str, str] = (
         "\033[0m",  # color end
         "\033[0;33m",  # yellow
         "\033[0;31m",  # red
     )
 
-    current_time = datetime.now()
-    formatted_time = datetime.strftime(current_time, "%Y-%m-%d %H:%M:%S:%f")
+    formatted_time = now()
 
     logstring: str = (
         f"{color[level.value]}[{formatted_time}] {level.name}: {message}{color[0]}\n"

@@ -131,7 +131,9 @@ def _init_xtalk(coupler_config: dict, coupling_map):
             ).to_dict()
 
         else:
-            nduv = NDUV(property_name, datetime.now(), "", 0, XTALK_TYPES).to_dict()
+            nduv = NDUV(
+                property_name, datetime.now(timezone.utc), "", 0, XTALK_TYPES
+            ).to_dict()
         xtalks.append(nduv)
 
     return xtalks
