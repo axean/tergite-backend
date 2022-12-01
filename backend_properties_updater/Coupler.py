@@ -14,7 +14,7 @@
 # that they have been altered from the originals.
 
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend_properties_updater.backend_properties_updater_utils import (
     TYPE1,
