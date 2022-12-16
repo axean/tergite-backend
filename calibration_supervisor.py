@@ -191,41 +191,6 @@ async def calibrate(node, job_done_event):
     await calibration_fn(node, job_done_event)
 
 
-async def request_job(job, job_done_event):
-    job_id = job["job_id"]
-
-    # Make handle_message accept only this job_id:
-    job_done_event.requested_job_id = job_id
-
-    tmpdir = gettempdir()
-    file = Path(tmpdir) / str(uuid4())
-    with file.open("w") as dest:
-        json.dump(job, dest)
-
-    with file.open("r") as src:
-        files = {"upload_file": src}
-        url = str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["jobs"]
-        response = requests.post(url, files=files)
-
-        # Right now the Labber Connector sends a response *after*
-        # executing the scenario i.e., the POST request is *blocking*
-        # until after the measurement execution this will change in
-        # the future; it should just ack a succesful upload of a
-        # scenario and nothing more
-
-        if response:
-            file.unlink()
-            print("Job has been successfully sent")
-        else:
-            print("request_job failed")
-
-    # Wait until reply arrives(the one with our job_id).
-    await job_done_event.event.wait()
-    job_done_event.event.clear()
-
-    print("")
-
-
 # -------------------------------------------------------------------
 # Serving incoming messages
 
