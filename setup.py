@@ -32,6 +32,7 @@ REQUIREMENTS = [
     "tqcsf>=1.0.0",
     "matplotlib>=3.5.1",
     "toml>=0.10.2",
+    "scikit-learn==1.2.0"
 ]
 
 setup(
