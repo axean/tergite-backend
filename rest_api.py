@@ -29,8 +29,8 @@ import settings
 from job_supervisor import Location
 from postprocessing_worker import logfile_postprocess, postprocessing_success_callback
 from registration_worker import job_register
-from utils.uuid import validate_uuid4_str
 from request_rng import quantify_rng
+from utils.uuid import validate_uuid4_str
 
 # settings
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX
@@ -210,10 +210,12 @@ async def get_rq_info():
 
     return {"message": msg}
 
+
 @app.get("/rng/{job_id}")
-async def call_rng(job_id : UUID):
-    quantify_rng(job_id = job_id)
-    return 'Requesting RNG Numbers'
+async def call_rng(job_id: UUID):
+    quantify_rng(job_id=job_id)
+    return "Requesting RNG Numbers"
+
 
 # Webgui requests
 

@@ -16,10 +16,12 @@
 
 import argparse
 import asyncio
+import pickle
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 import Labber
+import numpy as np
 import redis
 import requests
 import tqcsf.file
@@ -124,22 +126,50 @@ def logfile_postprocess(
 # Post-processing Quantify / Qblox files
 # =========================================================================
 
+# FIXME: This is a hardcoded solution for the eX3 demo on November 7, 2022
+def _load_lda_discriminator(index: int) -> object:
+    fn = f"state-disc-q{index}.disc"
+    print("Loaded", fn, "for Loki discimination (2022-10-28)")
+    with open(fn, mode="rb") as _file:
+        lda_model = pickle.load(_file)
+    return lda_model
+
+
+# FIXME: This is a hardcoded solution for the eX3 demo on November 7, 2022
+_DISCRIMINATORS = {index: _load_lda_discriminator(index) for index in range(5)}
+
+
+# FIXME: This is a hardcoded solution for the eX3 demo on November 7, 2022
+# TODO: Fetch discriminator from external source ?
+def _hardcoded_discriminator(
+    *, qubit_idx: int, iq_points: complex
+) -> list:  # List[0/1]
+    lda_model = _DISCRIMINATORS[qubit_idx]
+
+    X = np.zeros((iq_points.shape[0], 2))
+    X[:, 0] = iq_points.real
+    X[:, 1] = iq_points.imag
+
+    return lda_model.predict(X)
+
 
 def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
-
-    update_mss_and_bcc(memory=[], job_id=sf.job_id)
-
     if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
-        pass  # TODO
+
+        # FIXME: This is a hardcoded solution for the eX3 demo on November 7, 2022
+        update_mss_and_bcc(
+            memory=sf.as_readout(discriminator=_hardcoded_discriminator),
+            job_id=sf.job_id,
+        )
 
     elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
-        pass  # TODO
+        update_mss_and_bcc(memory=[], job_id=sf.job_id)
 
     elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
-        pass  # TODO
+        update_mss_and_bcc(memory=[], job_id=sf.job_id)
 
     else:
-        pass
+        print("Warning: cannot postprocess invalid StorageFile.")
 
     # job["name"] was set to "pulse_schedule" when registered
 
