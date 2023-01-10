@@ -53,12 +53,10 @@ def generate_job():
     job = measurement_jobs.mk_job_res_spect_vna(
         freq_start=6.0e9,
         freq_stop=7.0e9,
-        if_bw=1e3,
         num_pts=10001,
         # For multiple power sweeps use: [start, stop, n_pts],
         # example:[-50, 0, 1]
         power=[-50, 0, 51],
-        num_ave=10,
         # No post-processing will take place. This measurement does not
         # exactly the same as what will be phase one or two in VNA
         # resonator spectroscopy, and there is yet no decision made

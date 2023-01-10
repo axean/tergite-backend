@@ -24,10 +24,8 @@ def mk_job_res_spect_vna(
     # Mandatory parameters for measurement job
     freq_start,
     freq_stop,
-    if_bw,
     num_pts,
     power,
-    num_ave,
     # Job meta info:
     post_processing=None,
     # Optional arguments to override calibration supervisor defaults
@@ -56,12 +54,10 @@ def mk_job_res_spect_vna(
         "params": {
             "freq_start": freq_start,
             "freq_stop": freq_stop,
-            "if_bw": if_bw,
             "num_pts": num_pts,
             # For multiple power sweeps use: [start, stop, n_pts],
             # example:[-50, 0, 1]
             "power": power,
-            "num_ave": num_ave,
             **kwargs,
         },
     }
