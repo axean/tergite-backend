@@ -21,9 +21,12 @@ from uuid import uuid4
 import redis
 import requests
 
-import measurement_jobs.measurement_jobs as measurement_jobs
 import settings
 from calibration.calibration_common import DataStatus
+from measurement_jobs.measurement_jobs import (
+    mk_job_calibrate_signal_demodulation,
+    mk_job_check_signal_demodulation,
+)
 from utils import datetime_utils
 
 # Set up Redis connection
@@ -34,15 +37,6 @@ BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
 
 REST_API_MAP = {"jobs": "/jobs"}
 
-# -------------------------------------------------------------------------
-# Mapping of measurement mk_job_ functions. Just maps strings to their
-# corresponding function symbols. Maybe this can be replaced with some
-# form of reflection: ast.literal_eval does not apply on function symbols.
-
-MK_JOB_FNS = {
-    "mk_job_check_sig_demod": measurement_jobs.mk_job_check_signal_demodulation,
-    "mk_job_calibrate_sig_demod": measurement_jobs.mk_job_calibrate_signal_demodulation,
-}
 
 # -------------------------------------------------------------------------
 # Check data procedures
@@ -50,10 +44,8 @@ MK_JOB_FNS = {
 # This function is just a template for a future implementation
 # check_data will do something like this:
 async def check_dummy(node, job_done_event) -> DataStatus:
-    # In the future this key should be found in the node, but the
     # signal demodulation measurement is used as a dummy here.
-    mk_job_fn = MK_JOB_FNS.get("mk_job_check_sig_demod")
-    job = mk_job_fn()
+    job = mk_job_check_signal_demodulation()
 
     job_id = job["job_id"]
     print(f"Requesting check job with {job_id=} for {node=} ...")
@@ -95,10 +87,8 @@ def out_of_spec(node):
 
 
 async def calibrate_dummy(node, job_done_event):
-    #  This key should be found in the node, but The signal
     # demodulation measurement is used as a dummy here.
-    mk_job_fn = MK_JOB_FNS.get("mk_job_calibrate_sig_demod")
-    job = mk_job_fn()
+    job = mk_job_calibrate_signal_demodulation()
 
     job_id = job["job_id"]
     print(f"Requesting calibration job with {job_id=} for {node=} ...")
