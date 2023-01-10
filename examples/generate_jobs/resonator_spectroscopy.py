@@ -50,7 +50,7 @@ def main():
 
 def generate_job():
 
-    job = measurement_jobs.mk_job_res_spect_vna(
+    job = measurement_jobs.mk_job_vna_resonator_spectropscopy(
         freq_start=6.0e9,
         freq_stop=7.0e9,
         num_pts=10001,

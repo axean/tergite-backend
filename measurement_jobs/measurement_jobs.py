@@ -20,7 +20,7 @@ import numpy as np
 # Calibration jobs
 
 # Performs VNA resonator spectroscopy with ZI / Labber
-def mk_job_res_spect_vna(
+def mk_job_vna_resonator_spectropscopy(
     # Mandatory parameters for measurement job
     freq_start,
     freq_stop,
