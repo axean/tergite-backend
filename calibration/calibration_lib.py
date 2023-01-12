@@ -98,9 +98,7 @@ async def calibrate_dummy(node, job_done_event):
 
     calibration_params = red.lrange(f"m_params:{node}", 0, -1)
     for calibration_param in calibration_params:
-        # Fetch unit and parameter lifetime
         unit = red.hget(f"m_params:{node}:{calibration_param}", "unit")
-        lifetime = red.hget(f"m_params:{node}:{calibration_param}", "timeout")
 
         # Fetch the values we got from the calibration's post-processing
         result_key = f"postproc:results:{job_id}"
@@ -116,10 +114,6 @@ async def calibrate_dummy(node, job_done_event):
         red.hset(f"param:{calibration_param}", "date", datetime_utils.utc_now_iso())
         red.hset(f"param:{calibration_param}", "unit", unit)
         red.hset(f"param:{calibration_param}", "value", result)
-
-        # Set expiry date
-        # TODO replace with flagging system to mark outdated nodes
-        red.expire(f"param:{calibration_param}", lifetime)
 
 
 # -------------------------------------------------------------------------

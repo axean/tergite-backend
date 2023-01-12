@@ -128,15 +128,9 @@ def build_redis_nodes(nodes):
         for param in contents["params"]:
             p_name = param["name"]
             p_unit = param["unit"]
-            p_thresh_upper = param["threshold_upper"]
-            p_thresh_lower = param["threshold_lower"]
-            p_timeout = param["timeout"]
             red.rpush(f"m_params:{node}", p_name)
             # Add measurement-specific parameter attributes
             red.hset(f"m_params:{node}:{p_name}", "unit", p_unit)
-            red.hset(f"m_params:{node}:{p_name}", "threshold_upper", p_thresh_upper)
-            red.hset(f"m_params:{node}:{p_name}", "threshold_lower", p_thresh_lower)
-            red.hset(f"m_params:{node}:{p_name}", "timeout", p_timeout)
             param_names.add(p_name)
 
 

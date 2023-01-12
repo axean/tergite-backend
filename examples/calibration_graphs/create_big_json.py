@@ -1,5 +1,3 @@
-import random
-
 n_nodes = 10000
 
 contents = ""
@@ -28,10 +26,7 @@ if __name__ == "__main__":
     "params": [
       {{
         "name": "p{i}",
-        "unit": "s",
-        "threshold_upper": 22e-6,
-        "threshold_lower": 20e-6,
-        "timeout": {int(random.random() * 50 + 10)}
+        "unit": "s"
       }}
     ]
   }}

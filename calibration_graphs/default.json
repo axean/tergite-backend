@@ -9,10 +9,7 @@
     "params": [
       {
         "name": "fid",
-        "unit": "N/A",
-        "threshold_upper": 1.0001,
-        "threshold_lower": 0.9999,
-        "timeout": 30
+        "unit": "N/A"
       }
     ]
   },
@@ -26,17 +23,11 @@
     "params": [
       {
         "name": "t1",
-        "unit": "s",
-        "threshold_upper": 22e-6,
-        "threshold_lower": 20e-6,
-        "timeout": 1000
+        "unit": "s"
       },
       {
         "name": "res_freq",
-        "unit": "Hz",
-        "threshold_upper": 1.1e6,
-        "threshold_lower": 1e6,
-        "timeout": 700
+        "unit": "Hz"
       }
     ]
   },
@@ -48,10 +39,7 @@
     "params": [
       {
         "name": "res_freq",
-        "unit": "Hz",
-        "threshold_upper": 1.1e6,
-        "threshold_lower": 1e6,
-        "timeout": 2000
+        "unit": "Hz"
       }
     ]
   },
@@ -63,10 +51,7 @@
     "params": [
       {
         "name": "drive_freq",
-        "unit": "Hz",
-        "threshold_upper": 1.1e6,
-        "threshold_lower": 1e6,
-        "timeout": 10
+        "unit": "Hz"
       }
     ]
   }
