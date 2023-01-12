@@ -17,6 +17,7 @@ import json
 import networkx as nx
 import redis
 
+import settings
 import utils.redis
 
 # Set up redis connection
@@ -135,10 +136,9 @@ def build_redis_nodes(nodes):
 
 
 if __name__ == "__main__":
-    DEFAULT_CALIBRATION_DAG = "calibration_graphs/default.json"
-    BIG_CALIBRATION_DAG = "calibration_graphs/big_graph.json"
+    CALIBRATION_DAG = settings.CALIBRATION_DAG
 
-    nodes = parse_json(DEFAULT_CALIBRATION_DAG)
+    nodes = parse_json(CALIBRATION_DAG)
 
     create_graph_structure(nodes)
 
