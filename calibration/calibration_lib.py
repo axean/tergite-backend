@@ -55,7 +55,7 @@ async def check_dummy(node, job_done_event) -> DataStatus:
     for calibration_param in calibration_params:
         # Fetch the values we got from the measurement's post-processing
         # here you can use the calibration_param
-        result_key = f"postproc:results:{job_id}"
+        result_key = f"postprocessing:results:{job_id}"
         result = red.get(result_key)
         print(
             f"check_data: For {calibration_param=}, from Redis we read {result_key} from postprocessing: {result}"
@@ -101,7 +101,7 @@ async def calibrate_dummy(node, job_done_event):
         unit = red.hget(f"m_params:{node}:{calibration_param}", "unit")
 
         # Fetch the values we got from the calibration's post-processing
-        result_key = f"postproc:results:{job_id}"
+        result_key = f"postprocessing:results:{job_id}"
         result = red.get(result_key)
         print(
             f"For {calibration_param=}, from Redis we read {result_key} from postprocessing: {result}"

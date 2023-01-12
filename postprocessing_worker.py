@@ -318,7 +318,7 @@ def postprocess_labber_logfile(labber_logfile: Labber.LogFile) -> JobID:
 
     # Post-processing was specified, either by job["name"], or by
     # job["post_processing"]
-    red.set(f"postproc:results:{job_id}", str(results))
+    red.set(f"postprocessing:results:{job_id}", repr(results))
     return job_id
 
 
