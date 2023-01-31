@@ -136,14 +136,11 @@ def _load_lda_discriminator(index: int) -> object:
 
 
 # FIXME: This is a hardcoded solution for the eX3 demo on November 7, 2022
-_DISCRIMINATORS = {index: _load_lda_discriminator(index) for index in range(5)}
-
-
-# FIXME: This is a hardcoded solution for the eX3 demo on November 7, 2022
 # TODO: Fetch discriminator from external source ?
 def _hardcoded_discriminator(
     *, qubit_idx: int, iq_points: complex
 ) -> list:  # List[0/1]
+    _DISCRIMINATORS = {index: _load_lda_discriminator(index) for index in range(5)}
     lda_model = _DISCRIMINATORS[qubit_idx]
 
     X = np.zeros((iq_points.shape[0], 2))
