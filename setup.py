@@ -1,6 +1,7 @@
 # This code is part of Tergite
 #
 # (C) Copyright Miroslav Dobsicek 2020, 2021
+# (C) Copyright David Wahlstedt 2023
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -32,7 +33,7 @@ REQUIREMENTS = [
     "tqcsf>=1.0.0",
     "matplotlib>=3.5.1",
     "toml>=0.10.2",
-    "scikit-learn==1.1.3"
+    "scikit-learn==1.1.3",
 ]
 
 setup(

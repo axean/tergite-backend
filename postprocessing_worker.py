@@ -1,7 +1,7 @@
 # This code is part of Tergite
 #
 # (C) Copyright Miroslav Dobsicek 2020, 2021
-# (C) Copyright David Wahlstedt 2021, 2022
+# (C) Copyright David Wahlstedt 2021, 2022, 2023
 # (C) Copyright Abdullah Al Amin 2021, 2022
 # (C) Copyright Axel Andersson 2022
 # (C) Andreas Bengtsson 2020
@@ -47,6 +47,7 @@ from job_supervisor import (
     register_job,
     update_job_entry,
 )
+from utils.representation import to_string
 
 # Storage settings
 
@@ -210,7 +211,11 @@ def process_resonator_spectroscopy_vna_phase_1(
 def process_resonator_spectroscopy_vna_phase_2(
     labber_logfile: Labber.LogFile,
 ) -> List[Dict[str, float]]:
-    return fit_resonator_itraces(labber_logfile, [0, 50])
+    # The indices below represent the low power sweep, median power
+    # sweep, and high power sweep, respectively. We pick the first,
+    # middle(left middle if even length), and last trace of the logfile.
+    n_traces = labber_logfile.getNumberOfEntries()
+    return fit_resonator_itraces(labber_logfile, [0, n_traces // 2, n_traces - 1])
 
 
 # (*) Note on pulsed resonator spectroscopy, two_tone, Rabi, and
@@ -318,7 +323,7 @@ def postprocess_labber_logfile(labber_logfile: Labber.LogFile) -> JobID:
 
     # Post-processing was specified, either by job["name"], or by
     # job["post_processing"]
-    red.set(f"postprocessing:results:{job_id}", repr(results))
+    red.set(f"postprocessing:results:{job_id}", to_string(results))
     return job_id
 
 
