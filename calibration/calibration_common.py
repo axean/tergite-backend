@@ -1,7 +1,7 @@
 # This code is part of Tergite
 #
 # (C) Johan Blomberg, Gustav Grännsjö 2020
-# (C) Copyright David Wahlstedt 2022
+# (C) Copyright David Wahlstedt 2022, 2023
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -11,9 +11,27 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
+import ast
 import asyncio
 from enum import Enum
+from typing import Optional, Tuple
 
+import redis
+
+from backend_properties_storage.storage import (
+    BackendProperty,
+    PropertyType,
+    T,
+    create_redis_key,
+)
+from backend_properties_storage.types import TimeStamp
+from utils.representation import to_string
+
+# Set up Redis connection
+red = redis.Redis(decode_responses=True)
+
+# Redis prefix for calibration supervisor specific storage
+CALIBRATION_SUPERVISOR_PREFIX = "calibration_supervisor"
 
 # Used by check_data to indicate outcome
 class DataStatus(Enum):
@@ -31,3 +49,65 @@ class JobDoneEvent:
     def __init__(self, event: asyncio.Event):
         self.event = event
         self.requested_job_id = None
+
+
+def write_calibration_goal(
+    node_name: str,
+    property_name: str,
+    value: T,
+    component: Optional[str] = None,
+    index: Optional[int] = None,
+    **additional_fields,
+):
+    """Save the identified backend property to Redis, and save its
+    value and timestamp together with the calibration node name, to
+    keep track on the calibration goals.
+    """
+
+    identification = {
+        "property_type": PropertyType.DEVICE,
+        "name": property_name,
+        "component": component,
+        "index": index,
+    }
+    # save the property as a backend property
+    p = BackendProperty(
+        **identification,
+        value=value,
+        source="measurement",
+        **additional_fields,
+    )
+    p.write()
+
+    # save book-keeping information about this calibration goal
+    property_key = create_redis_key(**identification)
+    key = f"{CALIBRATION_SUPERVISOR_PREFIX}:{node_name}:{property_key}"
+    # get the actual timestamp created when p was saved:
+    timestamp = BackendProperty.get_timestamp(**identification)
+    red.hset(key, "value", to_string(value))
+    red.hset(key, "timestamp", to_string(timestamp))
+
+
+def read_calibration_goal(
+    node_name: str,
+    property_name: str,
+    component: Optional[str] = None,
+    index: Optional[int] = None,
+) -> Tuple[Optional[T], Optional[TimeStamp]]:
+    """Read the value and timestamp from Redis, of the
+    identified backend property subject to calibration.
+    """
+    identification = {
+        "property_type": PropertyType.DEVICE,
+        "name": property_name,
+        "component": component,
+        "index": index,
+    }
+    # get book-keeping information about this calibration goal
+    property_key = create_redis_key(**identification)
+    key = f"{CALIBRATION_SUPERVISOR_PREFIX}:{node_name}:{property_key}"
+    raw_value = red.hget(key, "value")
+    raw_timestamp = red.hget(key, "timestamp")
+    value = ast.literal_eval(raw_value) if raw_value is not None else None
+    timestamp = ast.literal_eval(raw_timestamp) if raw_timestamp is not None else None
+    return value, timestamp

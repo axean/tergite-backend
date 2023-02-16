@@ -1,6 +1,6 @@
 # This code is part of Tergite
 #
-# (C) Copyright David Wahlstedt 2022
+# (C) Copyright David Wahlstedt 2022, 2023
 # (C) Copyright Abdullah-Al Amin 2022
 # (C) Copyright Miroslav Dobsicek 2020
 #
@@ -20,7 +20,7 @@ import numpy as np
 # Calibration jobs
 
 # Performs VNA resonator spectroscopy with ZI / Labber
-def mk_job_vna_resonator_spectropscopy(
+def mk_job_vna_resonator_spectroscopy(
     # Mandatory parameters for measurement job
     freq_start,
     freq_stop,

@@ -128,17 +128,17 @@ def build_redis_nodes(nodes):
         # Param data
         for param in contents["params"]:
             p_name = param["name"]
-            p_unit = param["unit"]
+            p_component = param.get("component") or ""
             red.rpush(f"m_params:{node}", p_name)
             # Add measurement-specific parameter attributes
-            red.hset(f"m_params:{node}:{p_name}", "unit", p_unit)
+            red.hset(f"m_params:{node}:{p_name}", "component", p_component)
             param_names.add(p_name)
 
 
 if __name__ == "__main__":
-    CALIBRATION_DAG = settings.CALIBRATION_DAG
+    CALIBRATION_GRAPH = settings.CALIBRATION_GRAPH
 
-    nodes = parse_json(CALIBRATION_DAG)
+    nodes = parse_json(CALIBRATION_GRAPH)
 
     create_graph_structure(nodes)
 

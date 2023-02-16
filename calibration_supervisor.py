@@ -2,7 +2,7 @@
 #
 # (C) Johan Blomberg, Gustav Grännsjö 2020
 # (C) Copyright Miroslav Dobsicek 2020, 2021
-# (C) Copyright David Wahlstedt 2021, 2022
+# (C) Copyright David Wahlstedt 2021, 2022, 2023
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -12,15 +12,33 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-
 import asyncio
+import logging
 import time
+from typing import Optional
 
 import redis
 
 import calibration.calibration_lib as calibration_lib
 import settings
-from calibration.calibration_common import DataStatus, JobDoneEvent
+from backend_properties_config.initialize_properties import get_n_components
+from backend_properties_storage.storage import T
+from backend_properties_storage.types import TimeStamp
+from calibration.calibration_common import (
+    DataStatus,
+    JobDoneEvent,
+    read_calibration_goal,
+)
+
+# Initialize logger
+
+logger = logging.getLogger(__name__)
+FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+logging.basicConfig(format=FORMAT)
+# The following two lines are not used yet, but can be good to have available:
+logger.setLevel(logging.INFO)
+LOGLEVEL = logging.INFO
+
 
 # Settings
 STORAGE_ROOT = settings.STORAGE_ROOT
@@ -32,8 +50,11 @@ LOCALHOST = "localhost"
 # Set up Redis connection
 red = redis.Redis(decode_responses=True)
 
-# Book-keeping of nodes that needs recalibration:
-# last result of maintain: True if and only if node was recalibrated
+# Interval between matintain_all calls (checking if recalibration is necessary)
+CALIBRATION_INTERVAL = 15
+
+# Book-keeping of nodes that needs re-calibration:
+# last result of maintain: True if and only if node was re-calibrated
 node_recalibration_statuses = {}
 
 # Maps names of check_data routines to their corresponding functions
@@ -42,10 +63,12 @@ CHECK_DATA_FUNCS = {
     "check_two-tone": calibration_lib.check_dummy,
     "check_rabi": calibration_lib.check_dummy,
     "check_fidelity": calibration_lib.check_dummy,
+    "check_return_out_of_spec": calibration_lib.check_return_out_of_spec,
 }
 
 # Maps names of calibrate routines to their corresponding functions
 CALIBRATION_FUNCS = {
+    "calibrate_vna_resonator_spectroscopy": calibration_lib.calibrate_vna_resonator_spectroscopy,
     "calibrate_resonator_spectroscopy": calibration_lib.calibrate_dummy,
     "calibrate_two-tone": calibration_lib.calibrate_dummy,
     "calibrate_rabi": calibration_lib.calibrate_dummy,
@@ -55,10 +78,10 @@ CALIBRATION_FUNCS = {
 
 # Calibration algorithm, based on "Optimus" (see doc/calibration.md)
 async def check_calibration_status(job_done_event):
-    while 1:
+    while True:
         print("Checking the status of calibration:", end=" ")
 
-        # Mimick work
+        # Mimic work
         time.sleep(1)
 
         print("\n------ STARTING MAINTAIN -------\n")
@@ -66,7 +89,7 @@ async def check_calibration_status(job_done_event):
         print("\n------ MAINTAINED -------\n")
 
         # Wait a while between checks
-        await asyncio.sleep(15)
+        await asyncio.sleep(CALIBRATION_INTERVAL)
 
 
 async def maintain_all(job_done_event):
@@ -117,13 +140,77 @@ def check_state(node):
             )
             return False
 
-    params = red.lrange(f"m_params:{node}", 0, -1)
-    for param in params:
-        data = red.hget(f"param:{param}", "value")
-        if data is None:
-            print(f"Parameter {param} didn't exist, so check_state for {node} failed")
-            return False
+    # TODO: enhance legacy graph parser Redis key names, etc
+    # m_params:{node} stores a list of property names to keep calibrated
+    # m_params:{node}:{property_name} stores (so far) if this is a resonator,
+    # qubit, or coupler property
+    properties = red.lrange(f"m_params:{node}", 0, -1)
+    for property_name in properties:
+        component = red.hget(f"m_params:{node}:{property_name}", "component")
+        if component is not None:
+            # get how many of this component type we have
+            n_components = get_n_components(component)
+            if n_components is not None:
+                # component property *with* indices:
+                for i in range(n_components):
+                    value, timestamp = read_calibration_goal(
+                        node_name=node,
+                        property_name=property_name,
+                        component=component,
+                        index=i,
+                    )
+                    if not _is_valid(
+                        node, property_name, value, timestamp, component, i
+                    ):
+                        return False
+            else:
+                # component property *without* indices:
+                value, timestamp = read_calibration_goal(
+                    node_name=node,
+                    property_name=property_name,
+                    component=component,
+                )
+                if not _is_valid(node, property_name, value, timestamp, component):
+                    return False
+        else:
+            # property *without* component (and we assume, nor index)
+            value, timestamp = read_calibration_goal(
+                node_name=node,
+                property_name=property_name,
+            )
+            if not _is_valid(node, property_name, value, timestamp):
+                return False
+    # All properties checked without returning False => success:
     return True
+
+
+def _is_valid(
+    node_name: str,
+    property_name: str,
+    value: Optional[T],
+    timestamp: Optional[TimeStamp],
+    component: Optional[str] = None,
+    index: Optional[int] = None,
+) -> bool:
+    """Based on value and timestamp we decide if the calibration goal
+    is valid or not.
+    """
+    # This should be refined in the future
+    if value is None or timestamp is None:
+        # this should be refined in the future
+        logger.info(
+            f"Parameter {property_name}, {component} {index} "
+            f"has no valid result, so check_state for {node_name} *failed*",
+            stacklevel=2,
+        )
+        return False
+    else:
+        logger.debug(
+            f"Parameter {property_name}, {component} {index} "
+            f"has a valid result, so partial check_state for {node_name} *succeeded*",
+            stacklevel=2,
+        )
+        return True
 
 
 async def check_data(node, job_done_event) -> DataStatus:
@@ -175,10 +262,10 @@ async def diagnose(node, job_done_event):
         # In spec, no further diag needed, and no recalibration
         return [], []
     if status == DataStatus.out_of_spec:
-        # Out of spec, recalibrate, but no deeper diag needed
+        # Out of spec, re-calibrate, but no deeper diag needed
         return [], [node]
     if status == DataStatus.bad_data:
-        # Noise data, diagnose deeper down, and recalibrate
+        # Noise data, diagnose deeper down, and re-calibrate
         deps = red.lrange(f"m_deps:{node}", 0, -1)
         return deps, [node]
 
@@ -235,7 +322,7 @@ async def message_server(job_done_event):
 
 
 async def main():
-    # To wait for messages from postprocessing
+    # To wait for messages from post-processing
     job_done_event = JobDoneEvent(asyncio.Event())
 
     server_task = asyncio.create_task(message_server(job_done_event))

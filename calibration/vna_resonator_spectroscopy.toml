@@ -1,0 +1,21 @@
+# This file contains measurement specific constants for
+# vna_resonator_spectroscopy.py
+
+big_sweep_start=6e9
+big_sweep_stop=7e9
+
+big_sweep_num_pts=10001
+big_sweep_power=[-50,0,2]
+
+local_sweep_num_pts=2001
+local_sweep_power=[-50, 0, 51]
+
+# minimal frequency shift, in Hz, between -50 and 0 dBm powers
+min_frequency_diff = 50e3
+
+# For each resonator's estimated resonance frequency
+# f@P_hi, at high power, and f@P_low at low power, the sweep to perform is in
+# the interval [f@P_hi - delta_span, f@P_hi + delta_span]
+# from f@0dBm - 3e6 to f@-50dBm + 3e6
+# f@0dBm is lower than f@-50dBm: more power -> lower frequency
+delta_span = 3e6

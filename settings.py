@@ -59,6 +59,6 @@ DB_MACHINE_ROOT_URL = config("DB_MACHINE_ROOT_URL", cast=URL)
 CALIBRATION_SUPERVISOR_PORT = config("CALIBRATION_SUPERVISOR_PORT", cast=int)
 
 # Calibration supervisor
-CALIBRATION_DAG = config(
-    "CALIBRATION_DAG", cast=str, default="calibration_graphs/default.json"
+CALIBRATION_GRAPH = config(
+    "CALIBRATION_GRAPH", cast=str, default="calibration_graphs/default.json"
 )

@@ -2,7 +2,7 @@
 #
 # (C) Copyright Andreas Bengtsson, Miroslav Dobsicek 2020
 # (C) Copyright Abdullah-Al Amin 2021
-# (C) Copyright David Wahlstedt 2022
+# (C) Copyright David Wahlstedt 2022, 2023
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -50,7 +50,7 @@ def main():
 
 def generate_job():
 
-    job = measurement_jobs.mk_job_vna_resonator_spectropscopy(
+    job = measurement_jobs.mk_job_vna_resonator_spectroscopy(
         freq_start=6.0e9,
         freq_stop=7.0e9,
         num_pts=10001,

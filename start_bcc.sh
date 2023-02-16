@@ -34,9 +34,10 @@ rm -fr /tmp/pingu    # FIXME: Fixed path
 
 # Remove old Redis keys, by their prefixes
 # - job_supervisor
+# - calibration_supervisor
 # - device properties
 # - post-processing results
-prefixes="job_supervisor postprocessing:results: device:"
+prefixes="job_supervisor calibration_supervisor postprocessing:results: device:"
 for prefix in $prefixes
 do
     echo deleting "\"$prefix*\"" from Redis
