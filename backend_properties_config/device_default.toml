@@ -1,0 +1,49 @@
+# Device configuration file
+#
+# This file is meant to support the values provided by the measurement
+# routines committed in the code so far. It can be used as a template
+# for configuring properties of the actual device at hand.
+
+# See load_config.py for information about the load order of layout
+# configuration, property templates, and device configuration.
+
+# --------------------------------------------------------------------------------
+# Device layout configuration section
+
+[layout]
+# The items of this section correspond to component types and their
+# sub-items correspond to their indices/identities. This also works as
+# a way to declare what components are supported/present in the
+# device.
+
+[layout.resonator.0]
+position={column=0, row=0}
+
+[layout.resonator.1]
+position={column=2, row=0}
+
+[layout.qubit.0]
+position={column=0, row=1}
+
+[layout.qubit.1]
+position={column=2, row=1}
+
+[layout.coupler.0]
+position={column=1, row=1}
+qubits=[0,1]
+
+
+# --------------------------------------------------------------------------------
+# Device section: Configures device properties with additional information:
+
+# These must be declared in property_templates TOML file to be valid:
+
+# This denotes the device section
+[device]
+
+# Example of non-indexed properties, i.e., properties of the "whole chip"
+
+# This is a "one-liner property",
+# if you just want name ("name") and value ("Experimental_2023")
+name="Experimental_2023"
+

@@ -1,0 +1,26 @@
+# This file declares device backend properties that will updated when BCC runs
+#
+# This file is meant to support the properties provided by the
+# measurement routines committed in the code so far. It can be used as
+# a template for configuring properties of the actual device at hand.
+#
+# See load_config.py for information about the load order of layout
+# configuration, property templates, and device configuration.
+
+
+# Some properties (let's say 'foo') are not indexed: they can be put
+# under [device.foo]
+
+[device.name]
+notes="Descriptive name of the device/sample"
+
+
+[device.resonator.frequency_shift]
+unit = "Hz"
+long_name = "Big sweep frequency shift"
+notes = "VNA resonator spectroscopy, big sweep: should be above a threshold for qubit to be considered functional: see measurement specific configuration."
+
+[device.resonator.resonant_frequency]
+unit = "Hz"
+long_name = "Local sweep resonant frequency"
+notes = "VNA resonator spectroscopy: resonant frequency."

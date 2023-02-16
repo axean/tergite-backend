@@ -1,0 +1,79 @@
+# Device configuration file
+#
+# This file is meant to serve as examples to illustrate how to write
+# these configuration files, as well as for testing purposes. It can
+# be used as a template for configuring properties of the actual
+# device at hand.
+#
+# See load_config.py for information about the load order of layout
+# configuration, property templates, and device configuration.
+
+# --------------------------------------------------------------------------------
+# Device layout configuration section
+
+[layout]
+# The items of this section correspond to component types and their
+# sub-items correspond to their indices/identities. This also works as
+# a way to declare what components are supported/present in the
+# device.
+
+[layout.resonator.0]
+position={column=0, row=0}
+
+[layout.resonator.1]
+position={column=2, row=0}
+
+[layout.qubit.0]
+position={column=0, row=1}
+
+[layout.qubit.1]
+position={column=2, row=1}
+
+[layout.coupler.0]
+position={column=1, row=1}
+qubits=[0,1]
+
+
+# --------------------------------------------------------------------------------
+# Device section: Configures device properties with additional information:
+
+# These must be declared in property_templates TOML file to be valid:
+
+# This denotes the device section
+[device]
+
+# Example of non-indexed properties, i.e., properties of the "whole chip"
+
+# This is a "one-liner property",
+# if you just want name ("name") and value ("Experimental_2023")
+name="Experimental_2023"
+
+[device.noise]
+value=0.0022142
+unit="dimensionless"
+notes="Property for demo purpose, called noise"
+
+# Let's assume we want to do pulsed resonator spectroscopy, and we
+# need estimates to start with, that we have got from previous VNA
+# resonator spectroscopy measurements after chip fabrication.
+
+# If the subsection is a component known from layout properties, a
+# sub-subsection is expected, interpreted as an index of that component
+
+[device.resonator.0]
+resonant_frequency=6.5466e9
+frequency_shift=5.73454e5
+
+[device.resonator.1]
+resonant_frequency=6.7234e9
+frequency_shift=5.21355e5
+
+[device.qubit.0]
+excitation_frequency=6.7777e9
+pi_pulse_amplitude=0.0261
+t1=4.7834505840e-6
+
+[device.qubit.1]
+excitation_frequency=6.8987e9
+pi_pulse_amplitude=0.0248
+t1=4.3422378725e-6
