@@ -39,9 +39,12 @@ def find_resonators(labber_logfile: Labber.LogFile) -> List[List[float]]:
     xdict, ydict = qu.file_handling.LabberParsing(labber_logfile)
     result = extract_resonance_frequencies(x, y, xdict, ydict)
     print("\n")
-    print(f"Number or resonators: {len(result[0])}")
-    print(f"Number of traces: {len(xdict['x0']['values'])}")
-    print(f"Corresponding power: {xdict['x0']['values']}")
+    for i_sweep in range(len(result)):
+        print(f"Number or resonators, sweep {i_sweep}: {len(result[i_sweep])}")
+
+    for key in xdict.keys():
+        print(f"Number of traces for {key}: {len(xdict[key]['values'])}")
+        print(f"Corresponding power: {xdict[key]['values']}")
     print(f"Resonance frequencies: {result}")
     print("\n")
     return result
