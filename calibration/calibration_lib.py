@@ -123,6 +123,7 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
     big_sweep_stop = measurement_config["big_sweep_stop"]
 
     big_sweep_num_pts = measurement_config["big_sweep_num_pts"]
+    big_sweep_num_ave = measurement_config["big_sweep_num_ave"]
     big_sweep_power = measurement_config["big_sweep_power"]
 
     local_sweep_num_pts = measurement_config["local_sweep_num_pts"]
@@ -130,6 +131,8 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
 
     min_frequency_diff = measurement_config["min_frequency_diff"]
     delta_span = measurement_config["delta_span"]
+
+    design_resonator_frequencies=measurement_config["design_resonator_frequencies"]
 
     # For set_resonator_property operation
     source = "measurement"
@@ -147,6 +150,7 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
         freq_start=big_sweep_start,
         freq_stop=big_sweep_stop,
         num_pts=big_sweep_num_pts,
+        num_ave=big_sweep_num_ave,
         power=big_sweep_power,
     )
 
@@ -168,6 +172,14 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
         # supervisor. Maybe we could have a property for the resonator,
         # if it's not responding at some frequency.
         return
+
+    """
+    Resonance frequencies: (example from LokeB, 2023-03-07)
+    [[6331400000.0, 6415800000.0, 6684500000.0, 6759800000.0, 6986700000.0],
+     [6330700000.0, 6415900000.0, 6683900000.0, 6759100000.0, 6985900000.0]]
+    For now, ignore which resonators are "right" and not: just scan
+    them, an we see in phase 2 how they look
+    """
 
     # Resonance frequency at low power > resonance frequency at high power
     # therefore, high_resonance_frequency > low_resonance_frequency below:

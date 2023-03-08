@@ -22,11 +22,30 @@ position={column=0, row=0}
 [layout.resonator.1]
 position={column=2, row=0}
 
+[layout.resonator.2]
+position={column=3, row=0}
+
+[layout.resonator.3]
+position={column=4, row=0}
+
+[layout.resonator.4]
+position={column=5, row=0}
+
+
 [layout.qubit.0]
 position={column=0, row=1}
 
 [layout.qubit.1]
 position={column=2, row=1}
+
+[layout.qubit.2]
+position={column=3, row=1}
+
+[layout.qubit.3]
+position={column=3, row=1}
+
+[layout.qubit.4]
+position={column=3, row=1}
 
 [layout.coupler.0]
 position={column=1, row=1}

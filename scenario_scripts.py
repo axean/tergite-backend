@@ -142,7 +142,8 @@ def qobj_scenario(job):
 # that have been passed through job object in order to create a simple
 # frequency sweep scenario
 def resonator_spectroscopy_scenario(job):
-    VNA = "VNA"  # "ZNB20"  # "RS"  # 'Keysight'  'Ceyear'
+    # Note: this variable should use setup config in the future
+    VNA = 'Ceyear VNA' # "VNA"  # "ZNB20"  # "RS"  # 'Keysight'  'Ceyear'
 
     job_name = job["name"]
 
@@ -408,7 +409,8 @@ def get_scenario_template_dict(job_name):
         "pulsed_two_tone_qubit_spectroscopy": "pulsed_qubit_spectroscopy_using_general_calib_template.json",
         "pulsed_resonator_spectroscopy": "pulsed_spectroscopy_scenario_template.json",
         # VNA resonator spectroscopy:
-        "resonator_spectroscopy": "resonator_spectroscopy_scenario_template_keysight_vna.json",
+        # "resonator_spectroscopy": "resonator_spectroscopy_scenario_template_keysight_vna.json",
+        "resonator_spectroscopy": "VNA_resonator_spectroscopy_loke_b_230306.json",
         "fit_resonator_spectroscopy": "resonator_spectroscopy_scenario_template_keysight_vna.json",
     }
     filename = template_dict[job_name]
