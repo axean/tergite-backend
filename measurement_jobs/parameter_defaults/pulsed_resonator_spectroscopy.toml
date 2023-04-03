@@ -8,21 +8,33 @@
 # The keys will / may be overridden by the individual TOML files for
 # the respective calibration steps.
 #
-# The keys are alphabetically sorted.
+
+# ------------------------------------------------------------------------------
+# Note:
 #
+# For documentation about parameters for
+# pulsed_resonator_spectroscopy, two_tone, Rabi, and Ramsey job below,
+# please read
+#
+# measurement_jobs/important_parameters.txt
+# ------------------------------------------------------------------------------
+
+num_pts = 201 # 20M/200 points = 1k sweep frequency resolution
+
+# drive output turned off
+drive_output_enabled = 0 # RF-Source output used to drive qubit. 0=Off, 1=On
 
 drive_amp = 0.02
 drive_amp_range_type = "Single"
 
-drive_freq = 274680000.0
-drive_freq_range_type = "Single"
+# Not used in this the standard pulsed resonator spectroscopy, but
+# might be for more advanced measurements:
+# TODO: if these two are commented out, scenario_scripts.py gets key error, l 275
+drive_frequency_if = 274680000.0
+drive_frequency_if_range_type = "Single"
 
-drive_output_enabled = 0 # RF-Source output used to drive qubit. 0=Off, 1=On
 
-num_pts = 201 # 20M/200 points = 1k sweep frequency resolution
-
-readout_freq_range_type = "Start - Stop"
-readout_freq_start = 5990000000.0
-readout_freq_stop = 6010000000.0
-
-readout_resonance_freq = 5999310000.0
+# Typically overridden by measurement parameters in job dict:
+readout_frequency_lo_range_type = "Start - Stop"
+readout_frequency_lo_start = 5990000000.0
+readout_frequency_lo_stop = 6010000000.0

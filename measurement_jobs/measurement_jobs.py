@@ -16,6 +16,19 @@ from uuid import uuid4
 
 import numpy as np
 
+
+# ------------------------------------------------------------------------------
+# Note:
+#
+# For documentation about parameters for
+# pulsed_resonator_spectroscopy, two_tone, Rabi, and Ramsey job below,
+# please read
+#
+# measurement_jobs/important_parameters.txt
+# ------------------------------------------------------------------------------
+
+
+
 # ------------------------------------------------------------------------------
 # Calibration jobs
 
@@ -70,8 +83,8 @@ def mk_job_pulsed_resonator_spectroscopy(
     num_pts,
     qa_avg,
     readout_amp,
-    readout_freq_start,
-    readout_freq_stop,
+    readout_frequency_lo_start,
+    readout_frequency_lo_stop,
     readout_power,
     # Job meta info:
     post_processing=None,
@@ -91,9 +104,9 @@ def mk_job_pulsed_resonator_spectroscopy(
         "name": name,
         "params": {
             "num_pts": num_pts,  # 20M/200 points = 1k sweep frequency resolution
-            "qa_avg": qa_avg,  # previously num_ave, 1024
-            "readout_freq_start": readout_freq_start,
-            "readout_freq_stop": readout_freq_stop,
+            "qa_avg": qa_avg,  # previously num_ave, 1024 (still num_ave for VNA)
+            "readout_frequency_lo_start": readout_frequency_lo_start,
+            "readout_frequency_lo_stop": readout_frequency_lo_stop,
             "readout_amp": readout_amp,
             "readout_power": readout_power,
             **kwargs,
@@ -104,9 +117,9 @@ def mk_job_pulsed_resonator_spectroscopy(
 
 def mk_job_two_tone(
     # Mandatory parameters for measurement job
-    drive_freq_start,
-    drive_freq_stop,
-    readout_resonance_freq,  # depends on pulsed resonator spectroscopy result
+    drive_frequency_if_start,
+    drive_frequency_if_stop,
+    readout_frequency_lo,  # depends on LO part of pulsed resonator spectroscopy result
     num_pts,
     # Job meta info:
     post_processing=None,
@@ -125,9 +138,9 @@ def mk_job_two_tone(
         "is_calibration_supervisor_job": is_calibration_supervisor_job,
         "name": name,
         "params": {
-            "drive_freq_start": drive_freq_start,
-            "drive_freq_stop": drive_freq_stop,
-            "readout_resonance_freq": readout_resonance_freq,
+            "drive_frequency_if_start": drive_frequency_if_start,
+            "drive_frequency_if_stop": drive_frequency_if_stop,
+            "readout_frequency_lo": readout_frequency_lo,
             "num_pts": num_pts,
             **kwargs,
         },
@@ -137,8 +150,8 @@ def mk_job_two_tone(
 
 def mk_job_rabi(
     # Mandatory parameters for measurement job
-    readout_resonance_freq,  # depends on pulsed resonator spectroscopy result
-    drive_freq,  # depends on two_tone
+    readout_frequency_lo,  # depends on LO part of pulsed resonator spectroscopy result
+    drive_frequency_if,  # depends on  IF part of two_tone result
     num_pts,  # maybe this doesn't need to be a parameter here?
     # Job meta info:
     post_processing=None,
@@ -156,8 +169,8 @@ def mk_job_rabi(
         "is_calibration_supervisor_job": is_calibration_supervisor_job,
         "name": name,
         "params": {
-            "readout_resonance_freq": readout_resonance_freq,
-            "drive_freq": drive_freq,
+            "readout_frequency_lo": readout_frequency_lo,
+            "drive_frequency_if": drive_frequency_if,
             "num_pts": num_pts,
             **kwargs,
         },
@@ -167,9 +180,9 @@ def mk_job_rabi(
 
 def mk_job_ramsey(
     # Mandatory parameters for measurement job
-    readout_resonance_freq,  # depends on pulsed resonator spectroscopy result
-    drive_freq,  # depends on two_tone
-    drive_amp,  # depends on rabi = result / 2
+    readout_frequency_lo,  # depends on LO part of pulsed resonator spectroscopy result
+    drive_frequency_if,  # depends on IF part of two_tone
+    drive_amp,  # dependency: = rabi_result / 2
     num_pts,  # maybe this doesn't need to be a parameter here?
     # Job meta info:
     post_processing=None,
@@ -187,8 +200,8 @@ def mk_job_ramsey(
         "is_calibration_supervisor_job": is_calibration_supervisor_job,
         "name": name,
         "params": {
-            "readout_resonance_freq": readout_resonance_freq,
-            "drive_freq": drive_freq,
+            "readout_frequency_lo": readout_frequency_lo,
+            "drive_frequency_if": drive_frequency_if,
             "num_pts": num_pts,
             **kwargs,
         },

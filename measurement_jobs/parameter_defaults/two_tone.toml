@@ -8,19 +8,35 @@
 # The keys will / may be overridden by the individual TOML files for
 # the respective calibration steps.
 #
-# The keys are alphabetically sorted.
+
+# ------------------------------------------------------------------------------
+# Note:
 #
+# For documentation about parameters for
+# pulsed_resonator_spectroscopy, two_tone, Rabi, and Ramsey job below,
+# please read
+#
+# measurement_jobs/important_parameters.txt
+# ------------------------------------------------------------------------------
 
-drive_amp = 0.02
-drive_amp_range_type = "Single"
 
-drive_freq_range_type = "Start - Stop"
-drive_freq_start = 270000000.0
-drive_freq_stop = 280000000.0
+num_pts = 201 # 20M/200 points = 1k sweep frequency resolution
 
 # RF-Source output used to drive qubit. 0=Off, 1=On
 drive_output_enabled = 1 # output On, exciting the qubit
 
-num_pts = 201 # 20M/200 points = 1k sweep frequency resolution
+drive_amp = 0.02
+drive_amp_range_type = "Single"
 
-readout_resonance_freq = 5999310000.0 # provided from pulsed resonator spectroscopy
+drive_frequency_if_range_type = "Start - Stop"
+# Will be overridden by job parameters
+drive_frequency_if_start = 250000000.0
+drive_frequency_if_stop = 260000000.0
+
+# Even if drive_frequency_lo is present in spectroscopy_common.toml,
+# maybe it should also be here, since it is used for two-tone.
+# Anyway, a job with two-tone will have that parameter and override
+# this one (if present here)
+
+# LO / high band part of pulsed result
+readout_frequency_lo = 6.0e9

@@ -1,0 +1,242 @@
+Important parameters for each measurement type
+
+This text describes the parameters that are of importance when setting
+up a measurement and generating pulsed_resonator_spectroscopy,
+two_tone, rabi, and ramsey jobs. It can / should be updated/enhanced
+along with new findings.
+
+* pulsed_resonator_spectroscopy
+- drive_output_enabled
+  - RF-Source output used to drive qubit. 0=Off, 1=On
+  - default/example value: 0
+    - output off, we do not want to perturb qubit
+- drive_frequency_lo
+  - default/example value: 4.5e9
+  - previous names: drive_if_freq, control_if_freq
+  - LO (high part) of qubit drive frequency, such that
+    drive_frequency_rf = drive_frequency_lo + drive_frequency_if
+  - *should not normally be used here*
+    - maybe for more advanced variants, but not in the measurements
+      done with this code (valid 2023-04-02)
+  - *note*
+    - before 2023-03-08, this parameter (then called control_if_freq)
+      had no impact, since it didn't occur in scenario_scripts.py
+- drive_frequency_if
+  - previous names: drive_freq
+  - default/example value: 274.68e6,
+    - should be replaced by the IF (low band) part of known drive_frequency_rf
+  - *should not normally be used here*
+    - maybe for more advanced variants, but not in the measurements
+      done with this code (valid 2023-04-02)
+- readout_frequency_lo_range_type
+  - default/example value: "Start - Stop"
+  - previous names: readout_freq_range_type
+  - Specifies that we will sweep readout_frequency_lo such that
+    readout_frequency_lo + readout_frequency_if is near the expected
+    resonant frequency
+- readout_frequency_if
+  - previous names: readout_freq
+  - default/example value: 379.17e6
+  - IF (low band) part of a previously known/measured readout
+    frequency RF value
+  - Readout MQPG frequency
+- readout_frequency_lo_start
+  - previous names: readout_freq_start, readout_start_freq
+  - default/example value: 5.99e9
+  - start value of LO (high band) sweep
+- readout_frequency_lo_stop
+  - previous names: readout_freq_stop, readout_stop_freq
+  - stop value of LO (high band) sweep
+  - default/example value: 6.01e9
+- readout_amp_range_type
+  - default/example value: "Single"
+  - Readout MQPG drive signal amplitude sweeping type
+- readout_amp
+  - default/example value: 25e-3
+  - Readout MQPG drive signal amplitude, used when "Single" or "Span" (should be "Start - Stop"?) range type is used
+- readout_duration
+  - default/example value: 3e-6
+  - Readout MQPG output pulse duration
+- readout_sampling_delay
+  - default/example value: 200e-9
+  - A delay that depends on the readout path length
+- readout_power_range_type
+  - default/example value: "Single"
+- readout_power
+  - default/example value: 16
+  - Used in RS-RF Source
+- num_pts
+  - default/example value: 201
+  - 20M/200 points = 1k sweep frequency resolution
+  - number of points of measurement
+* two_tone
+- drive_output_enabled
+  - RF-Source output used to drive qubit. 0=Off, 1=On
+  - default/example value: 1
+    - output On, exiting the qubit
+- drive_frequency_if_range_type
+  - previous names: drive_freq_range_type
+  - default/example value: "Start - Stop"
+  - Doing a sweep around the expected qubit frequency (IF / low band part)
+- drive_frequency_if_start
+  - previous names: drive_freq_start, drive_start_freq
+  - default/example value: 270e6
+- drive_frequency_if_stop
+  - previous names: drive_freq_stop, drive_stop_freq
+  - default/example value: 280e6
+- drive_frequency_lo
+  - previous names: drive_if_freq, control_if_freq
+  - default/example value: 4.5e9
+  - Drive RF-Source frequency
+  - LO (high band) part of drive frequency  
+- drive_frequency_if
+  - previous names: drive_freq
+  - default/example value: 274.68e6
+  - qubit excitation frequency = drive_frequency_lo + drive_frequency_if
+  - IF (low band) part of drive frequency
+- drive_amp_range_type
+  - default/example value: "Single"
+  - Drive MQPG drive signal amplitude sweeping type
+- drive_amp
+  - default/example value: 20e-3
+  - Drive MQPG drive signal amplitude, used when "Single" or "Span" ("Start - Stop"?)
+    range type is used
+- drive_power
+  - default/example value: -10
+  - used in RS-RF Source
+- readout_frequency_if
+  - previous names: readout_freq
+  - default/example value: 379.17e6
+  - IF (low band) part of value from pulsed resonator spectroscopy
+  - Readout MQPG frequency
+- readout_frequency_lo_range_type
+  - previous names: readout_freq_range_type
+  - default/example value: "Single"
+    - single frequency at the (LO / high band part of) resonance of the resonator
+- readout_frequency_lo
+  - previous names: readout_resonance_freq
+  - default/example value: 5.99931e9
+  - (LO / high band part of) resonance determined by
+    pulsed_resonator_spectroscopy
+- readout_amp
+  - default/example value: 25e-3
+  - Readout MQPG drive signal amplitude, used when "Single" or "Span"
+    ("Start - Stop") range type is used
+- readout_duration
+  - default/example value: 3e-6
+  - Readout MQPG output pulse duration
+- readout_power
+  - default/example value: 16
+  - used in RS-RF Source
+- num_pts
+  - default/example value: 201
+  - 10M/200 points = 50k sweep frequency resolution
+  - number of points of measurement
+* Rabi
+- drive_output_enabled
+  - RF-Source output used to drive qubit. 0=Off, 1=On
+  - default/example value: 1
+    - output On, exiting the qubit
+- drive_frequency_lo
+  - previous names: drive_if_freq, control_if_freq
+  - default/example value: 4.5e9
+  - Drive RF-Source frequency
+  - LO (high band) part of drive frequency  
+- drive_frequency_if
+  - previous names: drive_freq
+  - default/example value: 274.68e6
+  - qubit excitation frequency = drive_frequency_lo + drive_frequency_if
+  - IF (low band) part of drive frequency
+- drive_amp_range_type
+  - default/example value: "Start - Stop"
+  - Rabi power sweep
+  - Drive MQPG drive signal amplitude sweeping type
+- drive_amp_start
+  - default/example value: 1e-3
+  - Start of amplitude sweeping
+- drive_amp_stop
+  - default/example value: 200e-3
+  - Stop of amplitude sweeping
+- drive_power
+  - default/example value: -10
+  - used in RS-RF Source
+- readout_frequency_if
+  - previous names: readout_freq
+  - default/example value: 379.17e6
+  - IF (low band) part of value from pulsed resonator spectroscopy
+  - Readout MQPG frequency
+- readout_frequency_lo_range_type
+  - previous names: readout_freq_range_type
+  - default/example value: "Single"
+    - single frequency at the (LO / high band part of) resonance of the resonator
+- readout_frequency_lo
+  - previous names: readout_resonance_freq
+  - default/example value: 5.99931e9
+  - (LO / high band part of) resonance determined by
+    pulsed_resonator_spectroscopy
+- readout_amp
+  - default/example value: 25e-3
+  - Readout MQPG drive signal amplitude, used when "Single" range type
+    is used
+- readout_power
+  - default/example value: 16
+  - used in RS-RF Source
+- num_pts
+  - default/example value: 200
+  - 1 mV to 200 mV, 200 points = 1 mV sweep resolution
+  - number of points of measurement
+* Ramsey
+- drive_output_enabled
+  - RF-Source output used to drive qubit. 0=Off, 1=On
+  - default/example value: 1
+    - output On, exiting the qubit
+- drive_frequency_lo
+  - previous names: drive_if_freq, control_if_freq
+  - default/example value: 4.5e9
+  - Drive RF-Source frequency
+  - LO (high band) part of drive frequency  
+- drive_frequency_if
+  - previous names: drive_freq
+  - default/example value: 274.68e6
+  - qubit excitation frequency = drive_frequency_lo + drive_frequency_if
+  - IF (low band) part of drive frequency
+- drive_amp
+  - Drive MQPG drive signal amplitude, used when "Single" range type
+    is used
+  - default/example value: 48e-3
+  - Half the pi-pulse amplitude (result of Rabi measurement)
+- drive_pulse_spacing_range_type
+  - default/example value: "Start - Stop"
+  - doing a pulse spacing sweep
+- drive_pulse_spacing_start
+  - default/example value: 100e-9
+- drive_pulse_spacing_stop
+  - default/example value: 2e-6
+- drive_power
+  - default/example value: -10
+  - used in RS-RF Source
+- readout_frequency_if
+  - previous names: readout_freq
+  - default/example value: 379.17e6
+  - IF (low band) part of value from pulsed resonator spectroscopy
+  - Readout MQPG frequency
+- readout_frequency_lo_range_type
+  - previous names: readout_freq_range_type
+  - default/example value: "Single"
+    - single frequency at the (LO / high band part of) resonance of the resonator
+- readout_frequency_lo
+  - previous names: readout_resonance_freq
+  - default/example value: 5.99931e9
+  - (LO / high band part of) resonance determined by
+    pulsed_resonator_spectroscopy
+- readout_amp
+  - default/example value: 25e-3
+  - Readout MQPG drive signal amplitude, used when "Single" range type
+    is used
+- readout_power
+  - default/example value: 16
+  - used in RS-RF Source
+- num_pts
+  - default/example value: 191
+  - 100 ns to 2 us, 191 points = 10 ns sweep resolution
+  - number of points of measurement

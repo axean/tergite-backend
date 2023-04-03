@@ -1,7 +1,7 @@
 # This code is part of Tergite
 #
-# (C) Copyright Abdullah-Al Amin 2021
-# (C) Copyright David Wahlstedt 2022
+# (C) Copyright Abdullah-Al Amin 2021, 2023
+# (C) Copyright David Wahlstedt 2022, 2023
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -69,9 +69,10 @@ def generate_job():
 
     job = measurement_jobs.mk_job_rabi(
         # Mandatory parameters for measurement job
-        readout_resonance_freq=5.99931e9,  # depends on pulsed resonator spectroscopy result
-        drive_freq=274.68e6,  # depends on two_tone
+        readout_frequency_lo=6e9,  # depends on LO part of pulsed resonator spectroscopy result
+        drive_frequency_if=257841592.0,  # from two-tone IF part 230308
         num_pts=200,
+        readout_frequency_if=331381649.0,  # readout MQPG frequency, (lokeB q16)
         # Meta info
         post_processing="process_rabi",
         # Optional arguments to override calibration supervisor defaults

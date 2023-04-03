@@ -8,18 +8,29 @@
 # The keys will / may be overridden by the individual TOML files for
 # the respective calibration steps.
 #
-# The keys are alphabetically sorted.
+
+# ------------------------------------------------------------------------------
+# Note:
 #
+# For documentation about parameters for
+# pulsed_resonator_spectroscopy, two_tone, Rabi, and Ramsey job below,
+# please read
+#
+# measurement_jobs/important_parameters.txt
+# ------------------------------------------------------------------------------
+
+
+num_pts = 200 # 1 mV to 200 mV, 200 points = 1 mV sweep resolution
+
+drive_output_enabled = 1 # output On, exciting the qubit
 
 drive_amp_range_type = "Start - Stop"
 drive_amp_start = 0.001
 drive_amp_stop = 0.2
 
-drive_freq = 274680000.0
-drive_freq_range_type = "Single"
+drive_frequency_if_range_type = "Single"
+# Typically overridden by job parameters:
+drive_frequency_if = 274680000.0
 
-drive_output_enabled = 1 # output On, exciting the qubit
-
-num_pts = 200 # 1 mV to 200 mV, 200 points = 1 mV sweep resolation
-
-readout_resonance_freq = 5999310000.0 # provided from pulsed resonator spectroscopy
+# provided from pulsed LO (high) part of pulsed resonator spectroscopy:
+readout_frequency_lo = 5999310000.0

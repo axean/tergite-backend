@@ -1,7 +1,7 @@
 # This code is part of Tergite
 #
-# (C) Copyright Abdullah-Al Amin 2021
-# (C) Copyright David Wahlstedt 2022
+# (C) Copyright Abdullah-Al Amin 2021, 2023
+# (C) Copyright David Wahlstedt 2022, 2023
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -55,8 +55,9 @@ def generate_job():
         num_pts=201,
         qa_avg=1024,
         readout_amp=25e-3,
-        readout_freq_start=5.99e9,
-        readout_freq_stop=6.01e9,
+        readout_frequency_lo_start=5.99e9,
+        readout_frequency_lo_stop=6.01e9,
+        readout_frequency_if=331381649.0,
         readout_power=10,
         # post-processing
         post_processing="process_pulsed_resonator_spectroscopy",
@@ -64,7 +65,7 @@ def generate_job():
         is_calibration_supervisor_job=False,  # default True
         # non-mandatory arguments overriding defaults
         # just to show we can override: default in Toml file is 274.68e6
-        drive_freq=274.68e6 + 0.001e6,
+        # drive_frequency_if=274.68e6 + 0.000001e6,
     )
     return job
 
@@ -89,17 +90,19 @@ def generate_job_direct():
 """
     Parameters (needs to be updated)
     ---------
-          ##  _range_type: sweeping direction, valid values: "Start - Stop", "Span", "Single"
+    range_type: sweeping direction, valid values: "Start - Stop", "Single"
+     DW: is "Span" a valid range_type? It doesn't appear in scenario_scripts.py
 
-            "qa_avg": number of recording average
-            "num_pts": number of points of measurement
-            "readout_amp": Readout MQPG drive signal amplitude, used when "Single" or "Span" range type is used
+    "qa_avg": number of recording average
+    "num_pts": number of points of measurement
+    "readout_amp": Readout MQPG drive signal amplitude,
+                   used when "Single" range type is used
 
-            "start_freq: Start of sweeping frequency
-            "stop_freq": End of sweeping frequency
+    "start_freq: Start of sweeping frequency
+    "stop_freq": End of sweeping frequency
 
-            "power": used when "Single" or "Span" range type is used
-        """
+    "power": used when "Single" range type is used
+"""
 
 
 if __name__ == "__main__":

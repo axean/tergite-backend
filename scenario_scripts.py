@@ -1,8 +1,8 @@
 # This code is part of Tergite
 #
 # (C) Copyright Miroslav Dobsicek, Andreas Bengtsson 2020,
-# (C) Copyright Abdullah-Al Amin 2021
-# (C) Copyright David Wahlstedt 2022
+# (C) Copyright Abdullah-Al Amin 2021, 2023
+# (C) Copyright David Wahlstedt 2022, 2023
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -14,6 +14,7 @@
 
 import functools
 import json
+import logging
 from pathlib import Path
 from tempfile import gettempdir
 
@@ -25,6 +26,15 @@ import settings
 
 # Settings
 DEFAULT_FILES = settings.MEASUREMENT_DEFAULT_FILES
+
+# Initialize logger
+logger = logging.getLogger(__name__)
+FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
+logging.basicConfig(format=FORMAT)
+# The following two lines are not used yet, but can be good to have available:
+logger.setLevel(logging.INFO)
+LOGLEVEL = logging.INFO
+
 
 # ===========================================================================
 # Scenario creation functions
@@ -115,7 +125,7 @@ def qobj_scenario(job):
             calibration = json.load(f)
         update_calibration_data(s, calibration)
 
-    # Configure mulitple experiments
+    # Configure multiple experiments
     if len(qobj["experiments"]) == 1:
         s.add_step("Pulses - QObj Iterator", single=0)
     else:
@@ -143,7 +153,7 @@ def qobj_scenario(job):
 # frequency sweep scenario
 def resonator_spectroscopy_scenario(job):
     # Note: this variable should use setup config in the future
-    VNA = 'Ceyear VNA' # "VNA"  # "ZNB20"  # "RS"  # 'Keysight'  'Ceyear'
+    VNA = "Ceyear VNA"  # "VNA"  # "ZNB20"  # "RS"  # 'Keysight'  'Ceyear'
 
     job_name = job["name"]
 
@@ -197,12 +207,12 @@ def resonator_spectroscopy_scenario(job):
             scenario_dict["step_channels"][i]["step_items"][0][
                 "single"
             ] = scenario_parameters["num_ave"]
-        # update VNA - Start of Sweping frequency
+        # update VNA - Start of sweeping frequency
         elif stepchannel["channel_name"] == VNA + " - Start frequency":
             scenario_dict["step_channels"][i]["step_items"][0][
                 "single"
             ] = scenario_parameters["freq_start"]
-        # update VNA - Stop of Sweping frequency
+        # update VNA - Stop of sweeping frequency
         elif stepchannel["channel_name"] == VNA + " - Stop frequency":
             scenario_dict["step_channels"][i]["step_items"][0][
                 "single"
@@ -242,6 +252,10 @@ def generic_calib_zi_scenario(job):
 
     # The parameters from job will override those of defaults
     scenario_parameters = dict(defaults, **job["params"])
+    logger.info(
+        f"For {job['job_id']=}, {job_name=}, scenario will be populated with the following parameters based on toml default parameters and job dict:\n{scenario_parameters=}"
+    )
+
 
     # Updating Step parameters in Scenario dictionary
     for i, stepchannel in enumerate(scenario_dict["step_channels"]):
@@ -252,13 +266,17 @@ def generic_calib_zi_scenario(job):
         if stepchannel["channel_name"] == "MQPG Control - Sample rate":
             step_channel_i["single"] = scenario_parameters["mqpg_smpl_rate"]
         elif stepchannel["channel_name"] == "MQPG Control - Frequency #1":
-            step_channel_i["range_type"] = scenario_parameters["drive_freq_range_type"]
-            if scenario_parameters["drive_freq_range_type"] == "Start - Stop":
-                step_channel_i["start"] = scenario_parameters["drive_freq_start"]
-                step_channel_i["stop"] = scenario_parameters["drive_freq_stop"]
+            step_channel_i["range_type"] = scenario_parameters[
+                "drive_frequency_if_range_type"
+            ]
+            if scenario_parameters["drive_frequency_if_range_type"] == "Start - Stop":
+                step_channel_i["start"] = scenario_parameters[
+                    "drive_frequency_if_start"
+                ]
+                step_channel_i["stop"] = scenario_parameters["drive_frequency_if_stop"]
                 step_channel_i["n_pts"] = scenario_parameters["num_pts"]
-            elif scenario_parameters["drive_freq_range_type"] == "Single":
-                step_channel_i["single"] = scenario_parameters["drive_freq"]
+            elif scenario_parameters["drive_frequency_if_range_type"] == "Single":
+                step_channel_i["single"] = scenario_parameters["drive_frequency_if"]
         elif stepchannel["channel_name"] == "MQPG Control - Amplitude #1":
             step_channel_i["range_type"] = scenario_parameters["drive_amp_range_type"]
             if scenario_parameters["drive_amp_range_type"] == "Start - Stop":
@@ -291,14 +309,18 @@ def generic_calib_zi_scenario(job):
         # For Readout RF source frequency and power settings:
         elif stepchannel["channel_name"] == "QA_Carrier - Frequency":
             step_channel_i["range_type"] = scenario_parameters[
-                "readout_freq_range_type"
+                "readout_frequency_lo_range_type"
             ]
-            if scenario_parameters["readout_freq_range_type"] == "Start - Stop":
-                step_channel_i["start"] = scenario_parameters["readout_freq_start"]
-                step_channel_i["stop"] = scenario_parameters["readout_freq_stop"]
+            if scenario_parameters["readout_frequency_lo_range_type"] == "Start - Stop":
+                step_channel_i["start"] = scenario_parameters[
+                    "readout_frequency_lo_start"
+                ]
+                step_channel_i["stop"] = scenario_parameters[
+                    "readout_frequency_lo_stop"
+                ]
                 step_channel_i["n_pts"] = scenario_parameters["num_pts"]
-            elif scenario_parameters["readout_freq_range_type"] == "Single":
-                step_channel_i["single"] = scenario_parameters["readout_resonance_freq"]
+            elif scenario_parameters["readout_frequency_lo_range_type"] == "Single":
+                step_channel_i["single"] = scenario_parameters["readout_frequency_lo"]
         elif stepchannel["channel_name"] == "QA_Carrier - Power":
             step_channel_i["range_type"] = scenario_parameters[
                 "readout_power_range_type"
@@ -311,7 +333,7 @@ def generic_calib_zi_scenario(job):
                 step_channel_i["single"] = scenario_parameters["readout_power"]
         # Readout settings for MQPG
         elif stepchannel["channel_name"] == "MQPG Readout - Readout frequency #1":
-            step_channel_i["single"] = scenario_parameters["readout_freq"]
+            step_channel_i["single"] = scenario_parameters["readout_frequency_if"]
         elif stepchannel["channel_name"] == "MQPG Readout - Readout amplitude #1":
             step_channel_i["range_type"] = scenario_parameters["readout_amp_range_type"]
             if scenario_parameters["readout_amp_range_type"] == "Start - Stop":
@@ -334,7 +356,7 @@ def generic_calib_zi_scenario(job):
             elif scenario_parameters["hdawg_trigger_range_type"] == "Single":
                 step_channel_i["single"] = scenario_parameters["hdawg_trigger"]
         elif stepchannel["channel_name"] == "HDAWG - Output 1 Marker 1 duration":
-            step_channel_i["single"] = scenario_parameters["hdwag_marker_duration"]
+            step_channel_i["single"] = scenario_parameters["hdawg_marker_duration"]
         # UHFQA Settings
         elif stepchannel["channel_name"] == "QA_DEV2346 - Integration Length":
             step_channel_i["single"] = scenario_parameters["qa_integration_length"]
@@ -374,14 +396,14 @@ def qobj_dummy_scenario(job):
     selector_item = items[0]
     step = selector_item.range_items[0]
 
-    # Fetch number of experiements
+    # Fetch number of experiments
     no_experiments = len(qobj["experiments"])
     # Set up a labber sweep over the experiments (or no sweep, if only 1)
     if no_experiments > 1:
         step.range_type = "Start - Stop"
         step.start = 1
         step.stop = no_experiments
-        # Stepsize, should always be 1.
+        # Step size, should always be 1.
         step.step = 1
     else:
         step.range_type = "Single"

@@ -1,7 +1,7 @@
 # This code is part of Tergite
 #
-# (C) Copyright Abdullah-Al Amin 2021
-# (C) Copyright David Wahlstedt 2022
+# (C) Copyright Abdullah-Al Amin 2021, 2023
+# (C) Copyright David Wahlstedt 2022, 2023
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -68,9 +68,10 @@ def generate_job_direct():
 def generate_job():
     job = measurement_jobs.mk_job_two_tone(
         # Mandatory parameters for measurement job
-        drive_freq_start=270e6,
-        drive_freq_stop=280e6,
-        readout_resonance_freq=5.99931e9,  # depends on pulsed resonator spectroscopy result
+        drive_frequency_if_start=58e6,  # (q17)
+        drive_frequency_if_stop=68e6,
+        readout_frequency_lo=6.2e9, # depends on LO part of pulsed resonator spectroscopy result
+        readout_frequency_if=400032842.0,  # (IF / lower part)
         num_pts=201,
         # Meta info
         post_processing="process_two_tone",
@@ -79,6 +80,9 @@ def generate_job():
         # Optional arguments to override any other parameters from the
         # defaults TOML file in measurement_jobs/parameter_defaults/
         #
+        # other
+        qubit_drive_sgs_ip="192.0.2.44",  # for Q17, LokeB, 2023-03-14
+        drive_frequency_lo=4.0e9,  # (q17)
     )
     return job
 
@@ -87,7 +91,7 @@ def generate_job():
 
 Parameters (needs update)
 ---------
-Is this drive_freq_start and drive_freq_stop ?
+Is this drive_frequency_if_start and drive_frequency_if_stop ?
 
 "start_freq: Start of sweeping frequency
 "stop_freq": End of sweeping frequency

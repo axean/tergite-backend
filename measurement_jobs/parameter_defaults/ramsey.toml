@@ -8,19 +8,29 @@
 # The keys will / may be overridden by the individual TOML files for
 # the respective calibration steps.
 #
-# The keys are alphabetically sorted.
+
+# ------------------------------------------------------------------------------
+# Note:
 #
-
-drive_amp = 0.048 # half the pi-pulse amplitude, depends on Rabi result
-drive_amp_range_type = "Single"
-
-drive_freq = 273180000.0 # qubit excitation frequency = "drive_freq" + "drive_if_freq"
-drive_freq_range_type = "Single"
-
-drive_output_enabled = 1 # output On, exciting the qubit
-
-drive_pulse_spacing_range_type = "Start - Stop"
+# For documentation about parameters for
+# pulsed_resonator_spectroscopy, two_tone, Rabi, and Ramsey job below,
+# please read
+#
+# measurement_jobs/important_parameters.txt
+# ------------------------------------------------------------------------------
 
 num_pts = 191 # 100 ns to 2 us, 191 points = 10 ns sweep resolution
 
-readout_resonance_freq = 5999900000.0 # provided from pulsed resonator spectroscopy
+drive_output_enabled = 1 # output On, exciting the qubit
+
+drive_amp_range_type = "Single"
+drive_amp = 0.064 # half the pi-pulse amplitude, = Rabi result / 2
+
+drive_frequency_if_range_type = "Single"
+drive_frequency_if=257741592.0 # 100kHz off (q16?)
+# qubit excitation frequency = "drive_frequency_if" + "drive_frequency_lo"
+
+drive_pulse_spacing_range_type = "Start - Stop"
+
+# provided from LO part of pulsed resonator spectroscopy:
+readout_frequency_lo = 6000000000.0

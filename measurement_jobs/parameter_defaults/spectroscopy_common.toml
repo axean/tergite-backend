@@ -28,7 +28,7 @@ hdawg_trigger_start = 0.0003
 hdawg_trigger_stop = 0.0006
 hdawg_trigger_range_type = "Single" # rename to hdawg_trigger_period_range type?
 
-hdwag_marker_duration = 1e-7
+hdawg_marker_duration = 1e-7
 
 mqpg_smpl_rate = 2400000000.0 # DAC sample rate
 
@@ -36,7 +36,7 @@ num_pts_other_axis = 21 # used when another measurement sweep is required
 
 qa_avg = 1024
 qa_delay = 1000.0
-qa_integration_length = 4096 # intregation of samples to have energy value
+qa_integration_length = 4096 # integration of samples to have energy value
 
 readout_amp = 0.025 # readout MQPG drive signal amplitude
 readout_amp_range_type = "Single"
@@ -45,12 +45,16 @@ readout_amp_stop = 0.02
 
 readout_duration = 3e-6 # readout MQPG output pulse duration
 
-readout_freq = 379170000.0 # readout MQPG frequency
-readout_freq_range_type = "Single"
+readout_frequency_lo_range_type = "Single"
 
 readout_power = 10
 readout_power_range_type = "Single"
 readout_power_start = -20
 readout_power_stop = 0
 
-trace_time = 5e-6 # MPQG constructed signal length in time
+trace_time = 5e-6 # MQPG constructed signal length in time
+
+# Note: this will end up in pulsed_resonator_spectroscopy jobs, even if it
+# is not (normally) used there
+drive_frequency_lo_range_type = "Single"
+drive_frequency_lo= 3e9
