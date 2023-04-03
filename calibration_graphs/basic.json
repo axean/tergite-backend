@@ -31,5 +31,16 @@
         "component": "qubit"
       }
     ]
+  },
+  "ramsey":{
+      "dependencies": ["pulsed_resonator_spectroscopy", "two_tone", "rabi"],
+    "check_fn": "check_return_out_of_spec",
+    "calibration_fn": "calibrate_ramsey",
+    "params": [
+      {
+        "name": "excitation_frequency",
+        "component": "qubit"
+      }
+    ]
   }
 }

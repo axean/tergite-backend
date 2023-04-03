@@ -66,9 +66,11 @@ CHECK_DATA_FUNCS = {
 # Maps names of calibrate routines to their corresponding functions
 CALIBRATION_FUNCS = {
     "calibrate_pulsed_resonator_spectroscopy": calibration_lib.calibrate_pulsed_resonator_spectroscopy,
-    "calibrate_vna_resonator_spectroscopy": calibration_lib.calibrate_vna_resonator_spectroscopy,
-    "calibrate_rabi": calibration_lib.calibrate_rabi,
     "calibrate_two_tone": calibration_lib.calibrate_two_tone,
+    "calibrate_rabi": calibration_lib.calibrate_rabi,
+    "calibrate_ramsey": calibration_lib.calibrate_ramsey,
+    #
+    "calibrate_vna_resonator_spectroscopy": calibration_lib.calibrate_vna_resonator_spectroscopy,
     # Used by nodes in default.json as demo:
     "calibrate_dummy": calibration_lib.calibrate_dummy,
 }
