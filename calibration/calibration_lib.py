@@ -37,6 +37,7 @@ from calibration.calibration_common import (
 from measurement_jobs.measurement_jobs import (
     mk_job_calibrate_signal_demodulation,
     mk_job_check_signal_demodulation,
+    mk_job_pulsed_resonator_spectroscopy,
     mk_job_vna_resonator_spectroscopy,
 )
 from utils import datetime_utils
@@ -179,7 +180,7 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
     print(f"Requesting calibration job with {job_id=} for {node=} ...")
     await request_job(job, job_done_event)
 
-    # post-processed results are now available via job_id
+    # Post-processed results are now available via job_id
     result_big_sweep = get_post_processed_result(job_id)
 
     [low_power_sweep, high_power_sweep] = result_big_sweep
@@ -308,10 +309,92 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
             notes=f"VNA resonator spectroscopy: big sweep frequency shift",
         )
 
+async def calibrate_pulsed_resonator_spectroscopy(node, job_done_event):
+    """Pulsed resonator spectroscopy using Zürich Instruments/Labber
+
+    For each resonator, perform pulsed resonator spectroscopy in a
+    small intervals near previously approximated resonant frequencies,
+    e.g, obtained from VNA resonator spectroscopy, given in this
+    routine's associated TOML file.
+    """
+
+    # -------------------------------------------------------------------------
+    # Read parameters from TOML file, specific for this measurement
+    # routine (calibrate_pulsed_resonator_spectroscopy)
+
+    measurement_config = toml.load("calibration/pulsed_resonator_spectroscopy.toml")
+    common_measurement_parameters = measurement_config["common_measurement_parameters"]
+    resonator_measurement_parameters = measurement_config[
+        "resonator_measurement_parameters"
+    ]
+
+    resonators = get_component_ids("resonator")
+    # The component labels in the local measurement TOML file should
+    # correspond to system configured component ids
+    _assert_same_component_ids(
+        "resonator", list(resonator_measurement_parameters.keys()), resonators
+    )
+
+    # LO sweep interval size / 2
+    delta = measurement_config["readout_frequency_lo_delta"]
+    # Low-band part of the readout frequency
+    qa_if_limit = measurement_config["qa_if_limit"]
+
+    vna_results = {}
+    for id in resonators:
+        value = resonator_measurement_parameters[id]["vna_resonant_frequency"]
+        # Note (*):
+        # The IF parts will all be the same in the current
+        # implementation, but if we for some reason want to change the
+        # way we split the RF into LO and IF (for instance retaining
+        # the decimal fraction of the RF value in the IF part), it
+        # will be encapsulated in the splitting function. Therefore we
+        # will retrieve the IF parts from this list even if the IF
+        # value from the configuration file happens to be known here.
+        vna_results[id] = _split(value, qa_if_limit)
+
+    results = {}
+    for id in resonators:
+        readout_frequency_lo = vna_results[id]["lo"]
+        readout_frequency_lo_start = readout_frequency_lo - delta
+        readout_frequency_lo_stop = readout_frequency_lo + delta
+        job = mk_job_pulsed_resonator_spectroscopy(
+            **common_measurement_parameters,
+            readout_frequency_lo_start=readout_frequency_lo_start,
+            readout_frequency_lo_stop=readout_frequency_lo_stop,
+            readout_frequency_if=vna_results[id]["if"],
+        )
+        job_id = job["job_id"]
+        logger.info(f"Performing {node} calibration, resonator id={id}, {job=}")
+
+        await request_job(job, job_done_event)
+
+        # post-processed results are now available via job_id
+        result = get_post_processed_result(job_id)
+        # The post-processed result is a dict in a singleton list,
+        # therefore index 0:
+        results[id] = result[0]["fr"]
+
+    logger.info(f"Measurement results for {node}: {resonators=}, {results=}")
+
+    # Save results in Redis:
+    for id in resonators:
+        # Put together the LO (results) and IF frequencies
+        value = results[id] + vna_results[id]["if"]
+        # Save it for internal use *and* publish it externally:
+        write_calibration_result(
+            node,
+            property_name="resonant_frequency",
+            value=value,
+            component="resonator",
+            component_id=id,
+            notes=f"Pulsed resonator spectroscopy for {id}",
+        )
+
 
 async def calibrate_dummy(node, job_done_event):
     # Note: using this only works like a "demo", we are going to
-    # refator this later. Demodulation measurement is used as a dummy
+    # refactor this later. Demodulation measurement is used as a dummy
     # here.
     job = mk_job_calibrate_signal_demodulation()
 
@@ -346,7 +429,7 @@ async def calibrate_dummy(node, job_done_event):
 # -------------------------------------------------------------------------
 # Misc helpers
 
-
+# TODO: move this function to calibration_common.py
 async def request_job(job, job_done_event):
     job_id = job["job_id"]
 
@@ -403,6 +486,11 @@ def _get_powers(power_spec: Union[Number, List[Number]]) -> List[Number]:
         return [power_spec]
     else:  # expects a list of the form [min, max, step_size]
         return list(np.linspace((*tuple(power_spec))))
+
+
+# See note (*) in calibrate_pulsed_resonator_spectroscopy
+def _split(rf_frequency: float, if_frequency_limit: float) -> dict:
+    return {"lo": rf_frequency - if_frequency_limit, "if": if_frequency_limit}
 
 
 def _assert_same_component_ids(

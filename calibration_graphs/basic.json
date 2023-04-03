@@ -1,0 +1,13 @@
+{
+  "pulsed_resonator_spectroscopy":{
+    "dependencies": [],
+    "check_fn": "check_return_out_of_spec",
+    "calibration_fn": "calibrate_pulsed_resonator_spectroscopy",
+    "params": [
+      {
+        "name": "resonant_frequency",
+        "component": "resonator"
+      }
+    ]
+  }
+}

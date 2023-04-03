@@ -1,0 +1,63 @@
+# This file contains measurement specific constants for
+# calibration_lib.pulsed_resonator_spectroscopy
+
+# ----------------------------------------------------------------------
+# Notes:
+#
+# Let MEAS_DEFAULT_DIR be tergite-bcc/measurement_jobs/parameter_defaults/
+#
+# (a)  defined with the *same* value in
+#      MEAS_DEFAULT_DIR/spectroscopy_common.toml
+# (a') defined with *different* value in
+#      MEAS_DEFAULT_DIR/spectroscopy_common.toml
+#
+# (b)  defined with *the same* value in
+#      MEAS_DEFAULT_DIR/pulsed_resonator_spectroscopy.toml
+# (b') defined with *different* value in
+#      MEAS_DEFAULT_DIR/pulsed_resonator_spectroscopy.toml
+#
+# A reason to have this redundancy is that if any of the
+# MEAS_DEFAULT_DIR files change, the values here will override them
+# and the measurement is kept intact.
+
+# ----------------------------------------------------------------------
+# Misc measurement parameters
+
+# The IF frequency that is believed to give low power reduction on ZI,
+# below 300 MHz. The readout_frequency_if should not exceed this value.
+qa_if_limit=250e6
+
+
+# How much below and above to scan the higher part of the readout frequency
+# (i.e. the interval readout_frequency_lo_start to readout_frequency_lo_stop)
+readout_frequency_lo_delta=0.01e9
+
+
+# ----------------------------------------------------------------------
+# Measurement job parameters, common
+
+[common_measurement_parameters]
+
+num_pts = 201                       # (b)
+qa_avg = 1024                       # (a)
+
+readout_amp_range_type = "Single"   # (a)
+readout_amp = 25e-3                 # (a)
+readout_amp_start = 5e-3            # (a)
+readout_amp_stop = 20e-3            # (a)
+
+readout_power_range_type = "Single" # (a)
+readout_power = 10                  # (a)
+
+# ----------------------------------------------------------------------
+# Component specific measurement parameters
+# Pattern: {component}_measurement_parameters_{id}
+
+[resonator_measurement_parameters.16] # corresponds to q16
+
+vna_resonant_frequency=6331526039.456052 # LokeB 230307 18:49:17 UTC
+
+
+[resonator_measurement_parameters.17] # corresponds to q16
+
+vna_resonant_frequency=6986674770.877042 # LokeB 230307 20:05:07 UTC
