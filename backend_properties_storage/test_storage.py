@@ -62,7 +62,7 @@ def fixture():
 
 Run them as follows:
 (-s flag makes printouts visible, and  -o log_cli=true enables logging messages)
-pytest -o log_cli=true -vvv -s backend_properties_config/test_load_config.py
+pytest -o log_cli=true -vvv -s backend_properties_storage/test_storage.py
 """
 
 """BackendProperty tests"""
@@ -73,26 +73,29 @@ def test_write_metadata_read(fixture):
     count and the value should be undefined in Redis, but the
     timestamp should be set.
     """
-    # property_type, name, component, and index are used to identify the record
+    # property_type, name, component, and component_id are used to identify the record
     property_type = PropertyType.DEVICE
     name = "test_write_metadata_read"
     # These two are optional:
     component = "resonator"
-    index = 0
+    component_id = "1"
 
     p = BackendProperty(
         property_type=property_type,
         name=name,
         value=50.0,
         component=component,
-        index=index,
+        component_id=component_id,
         unit="Hz",
         source="test",
     )
     logger.info(f"Before write: {p=}")
     p.write_metadata()
     q, timestamp, count = BackendProperty.read(
-        property_type=property_type, name=name, component=component, index=index
+        property_type=property_type,
+        name=name,
+        component=component,
+        component_id=component_id,
     )
     logger.info(f"After read: {q=}, {timestamp=}, {count=}")
     # test that some field was actually set in Redis
@@ -111,21 +114,24 @@ def test_write_value_read(fixture):
     name = "test_write_value_read"
     # These two are optional:
     component = "resonator"
-    index = 0
+    component_id = "1"
 
     p = BackendProperty(
         property_type=property_type,
         name=name,
         value=50.0,
         component=component,
-        index=index,
+        component_id=component_id,
         unit="Hz",
         source="test",
     )
     logger.info(f"Before write: {p=}")
     p.write_value()
     q, timestamp, count = BackendProperty.read(
-        property_type=property_type, name=name, component=component, index=index
+        property_type=property_type,
+        name=name,
+        component=component,
+        component_id=component_id,
     )
     logger.info(f"After read: {q=}, {timestamp=}, {count=}")
     assert q.value == 50.0
@@ -133,8 +139,8 @@ def test_write_value_read(fixture):
 
 
 def test_write_value_read_no_component(fixture):
-    """Same as test_write_value_read, but with no component or index,
-    just to have a test that doesn't use component and index
+    """Same as test_write_value_read, but with no component or component id,
+    just to have a test that doesn't use component and component id
     """
     property_type = PropertyType.DEVICE
     name = "test_write_value_read_no_component"
@@ -160,14 +166,14 @@ def test_write_value_twice(fixture):
     name = "test_write_value_twice"
     # These two are optional:
     component = "resonator"
-    index = 0
+    component_id = "1"
 
     p = BackendProperty(
         property_type=property_type,
         name=name,
         value=50.0,
         component=component,
-        index=index,
+        component_id=component_id,
         unit="Hz",
         source="test",
     )
@@ -177,7 +183,7 @@ def test_write_value_twice(fixture):
         property_type=property_type,
         name=name,
         component=component,
-        index=index,
+        component_id=component_id,
     )
     assert count_1 == 0  # no counter increase for metadata
     p.write_value()
@@ -185,7 +191,7 @@ def test_write_value_twice(fixture):
         property_type=property_type,
         name=name,
         component=component,
-        index=index,
+        component_id=component_id,
     )
     assert count_2 == 1
     p.write_value()
@@ -193,7 +199,7 @@ def test_write_value_twice(fixture):
         property_type=property_type,
         name=name,
         component=component,
-        index=index,
+        component_id=component_id,
     )
     assert count_3 == 2
 
@@ -203,14 +209,14 @@ def test_reset_counter(fixture):
     name = "test_reset_counter"
     # These two are optional:
     component = "resonator"
-    index = 0
+    component_id = "1"
 
     p = BackendProperty(
         property_type=property_type,
         name=name,
         value=50.0,
         component=component,
-        index=index,
+        component_id=component_id,
         unit="Hz",
         source="test",
     )
@@ -222,7 +228,7 @@ def test_reset_counter(fixture):
         property_type=property_type,
         name=name,
         component=component,
-        index=index,
+        component_id=component_id,
     )
 
     assert count == 5
@@ -230,13 +236,13 @@ def test_reset_counter(fixture):
         property_type=property_type,
         name=name,
         component=component,
-        index=index,
+        component_id=component_id,
     )
     count_2 = BackendProperty.get_counter(
         property_type=property_type,
         name=name,
         component=component,
-        index=index,
+        component_id=component_id,
     )
     assert count_2 == 0
 
@@ -246,14 +252,14 @@ def test_get_timestamp(fixture):
     name = "test_get_timestamp"
     # These two are optional:
     component = "resonator"
-    index = 0
+    component_id = "1"
 
     p = BackendProperty(
         property_type=property_type,
         name=name,
         value=50.0,
         component=component,
-        index=index,
+        component_id=component_id,
         unit="Hz",
         source="test",
     )
@@ -263,7 +269,7 @@ def test_get_timestamp(fixture):
         property_type=property_type,
         name=name,
         component=component,
-        index=index,
+        component_id=component_id,
     )
     logger.info(f"{timestamp=}")
 
@@ -276,13 +282,13 @@ def test_get_timestamp_unknown(fixture):
     name = "test_get_timestamp_unknown"
     # These two are optional:
     component = "resonator"
-    index = 0
+    component_id = "1"
 
     timestamp = BackendProperty.get_timestamp(
         property_type=property_type,
         name=name,
         component=component,
-        index=index,
+        component_id=component_id,
     )
     logger.info(f"{timestamp=}")
     assert timestamp is None
@@ -294,9 +300,12 @@ def test_read_unknown(fixture):
     name = "test_read_unknown"
     # These two are optional:
     component = "resonator"
-    index = 0
+    component_id = "1"
     result = BackendProperty.read(
-        property_type=property_type, name=name, component=component, index=index
+        property_type=property_type,
+        name=name,
+        component=component,
+        component_id=component_id,
     )
     logger.info(f"After read: {result=}")
     assert result == None
@@ -307,14 +316,14 @@ def test_read_value_unknown(fixture):
     name = "test_read_value_unknown"
     # These two are optional:
     component = "resonator"
-    index = 0
+    component_id = "1"
 
     p = BackendProperty(
         property_type=property_type,
         name=name,
         value=50.0,
         component=component,
-        index=index,
+        component_id=component_id,
         unit="Hz",
         source="test",
     )
@@ -322,7 +331,7 @@ def test_read_value_unknown(fixture):
     p.write_metadata()
     # at this point, value is not set
     result = BackendProperty.read_value(
-        property_type, name, component=component, index=index
+        property_type, name, component=component, component_id=component_id
     )
 
     logger.info(f"After read_field: {result=}")
@@ -358,11 +367,11 @@ idea seems to work.
 
 def test_set_resonator_property(fixture):
     name = "test_set_resonator_property"
-    index = 0
+    component_id = "1"
     value = 6e9
-    set_resonator_property(name, index, value=value, unit="Hz")
+    set_resonator_property(name, component_id, value=value, unit="Hz")
 
-    result, timestamp, count = get_resonator_property(name, index)
+    result, timestamp, count = get_resonator_property(name, component_id)
 
     assert timestamp is not None
     assert count == 1
@@ -373,11 +382,11 @@ def test_set_resonator_property(fixture):
 
 def test_set_resonator_value(fixture):
     name = "test_set_resonator_value"
-    index = 0
+    component_id = "1"
     value = 6e9
-    set_resonator_value(name, index, value)
+    set_resonator_value(name, component_id, value)
 
-    result = get_resonator_value(name, index)
+    result = get_resonator_value(name, component_id)
 
     assert result is not None
     assert result == value
@@ -388,13 +397,13 @@ def test_delete_property(fixture):
     name = "test_read_value_unknown"
     # These two are optional:
     component = "resonator"
-    index = 0
+    component_id = "1"
     p = BackendProperty(
         property_type=property_type,
         name=name,
         value=50.0,
         component=component,
-        index=index,
+        component_id=component_id,
         unit="Hz",
         source="test",
     )
@@ -404,12 +413,12 @@ def test_delete_property(fixture):
         property_type=property_type,
         name=name,
         component=component,
-        index=index,
+        component_id=component_id,
     )
     result = BackendProperty.read(
         property_type=property_type,
         name=name,
         component=component,
-        index=index,
+        component_id=component_id,
     )
     assert result is None

@@ -69,6 +69,7 @@ class PropertyType(str, Enum):
     def __str__(self) -> str:
         return str.__str__(self)
 
+
 @dataclass
 class BackendProperty:
     property_type: PropertyType
@@ -78,7 +79,9 @@ class BackendProperty:
     unit: Optional[Unit] = None
 
     component: Optional[str] = None  # "resonator", "qubit", "coupler"
-    index: Optional[int] = None  # index of the component, when relevant
+    component_id: Optional[
+        str
+    ] = None  # component id, e.g. "1", "2", etc, or perhaps "q1", "q2", etc
 
     long_name: Optional[str] = None
     notes: Optional[str] = None
@@ -139,22 +142,34 @@ class BackendProperty:
         property_type: PropertyType,
         name: str,
         component: Optional[str] = None,
-        index: Optional[int] = None,
+        component_id: Optional[str] = None,
     ) -> Optional[Tuple[_BackendProperty, TimeStamp, Counter]]:
         """Get the backend property from Redis associated with kind,
-        name, component, and index, when relevant, together with its
+        name, component, and component_id, when relevant, together with its
         metadata fields, plus Counter and TimeStamp (that are not
         class members)
         """
 
         value_key = create_redis_key(
-            property_type, name, component=component, index=index, field="value"
+            property_type,
+            name,
+            component=component,
+            component_id=component_id,
+            field="value",
         )
         count_key = create_redis_key(
-            property_type, name, component=component, index=index, field="count"
+            property_type,
+            name,
+            component=component,
+            component_id=component_id,
+            field="count",
         )
         timestamp_key = create_redis_key(
-            property_type, name, component=component, index=index, field="timestamp"
+            property_type,
+            name,
+            component=component,
+            component_id=component_id,
+            field="timestamp",
         )
         watch_keys = [value_key, count_key, timestamp_key]
         fields = list(_included_fields)
@@ -162,7 +177,11 @@ class BackendProperty:
         def get_fields(pipe):
             for field in fields:
                 field_key = create_redis_key(
-                    property_type, name, component=component, index=index, field=field
+                    property_type,
+                    name,
+                    component=component,
+                    component_id=component_id,
+                    field=field,
                 )
                 pipe.get(field_key)
             # these two are not class members:
@@ -193,7 +212,7 @@ class BackendProperty:
                     property_type=property_type,
                     name=name,
                     component=component,
-                    index=index,
+                    component_id=component_id,
                     **field_entries,
                 ),
                 timestamp,
@@ -209,14 +228,18 @@ class BackendProperty:
         property_type: PropertyType,
         name: str,
         component: Optional[str] = None,
-        index: Optional[int] = None,
+        component_id: Optional[str] = None,
     ) -> Optional[T]:
         """Return the value associated with kind, name, component and
-        index (if relevant).
+        component_id (if relevant).
         Note: we don't use transactions here, but maybe we should?
         """
         value_key = create_redis_key(
-            property_type, name, component=component, index=index, field="value"
+            property_type,
+            name,
+            component=component,
+            component_id=component_id,
+            field="value",
         )
         result = red.get(value_key)
         return ast.literal_eval(result) if result is not None else None
@@ -226,7 +249,7 @@ class BackendProperty:
             self.property_type,
             self.name,
             component=self.component,
-            index=self.index,
+            component_id=self.component_id,
             field=field,
         )
 
@@ -236,7 +259,7 @@ class BackendProperty:
         property_type: PropertyType,
         name: str,
         component: Optional[str] = None,
-        index: Optional[int] = None,
+        component_id: Optional[str] = None,
     ) -> Optional[int]:
         # Gets the counter value of the property associated to the
         # given fields. If no counter value is set yet, but there is
@@ -247,13 +270,17 @@ class BackendProperty:
         #
         # Question: should we have this in a transaction?
         key_stem = create_redis_key(
-            property_type, name, component=component, index=index
+            property_type, name, component=component, component_id=component_id
         )
         if next(red.scan_iter(key_stem + "*"), None) is None:
             return None
 
         count_key = create_redis_key(
-            property_type, name, component=component, index=index, field="count"
+            property_type,
+            name,
+            component=component,
+            component_id=component_id,
+            field="count",
         )
         result = red.get(count_key)
         # if the metadata is set, but the counter is not yet
@@ -266,20 +293,32 @@ class BackendProperty:
         property_type: PropertyType,
         name: str,
         component: Optional[str] = None,
-        index: Optional[int] = None,
+        component_id: Optional[str] = None,
     ) -> bool:
         """Reset the associated counter. Return True if successful,
         and False otherwise.
         """
         value_key = create_redis_key(
-            property_type, name, component=component, index=index, field="value"
+            property_type,
+            name,
+            component=component,
+            component_id=component_id,
+            field="value",
         )
         count_key = create_redis_key(
-            property_type, name, component=component, index=index, field="count"
+            property_type,
+            name,
+            component=component,
+            component_id=component_id,
+            field="count",
         )
         # should we set a new timestamp when the counter is reset?
         timestamp_key = create_redis_key(
-            property_type, name, component=component, index=index, field="timestamp"
+            property_type,
+            name,
+            component=component,
+            component_id=component_id,
+            field="timestamp",
         )
         watch_keys = [value_key, count_key, timestamp_key]
 
@@ -296,14 +335,18 @@ class BackendProperty:
         property_type: PropertyType,
         name: str,
         component: Optional[str] = None,
-        index: Optional[int] = None,
+        component_id: Optional[str] = None,
     ) -> Optional[int]:
         """Returns the timestamp of the property associated with kind,
-        name, component, and index. If no property is associated,
+        name, component, and component_id. If no property is associated,
         return None.
         """
         timestamp_key = create_redis_key(
-            property_type, name, component=component, index=index, field="timestamp"
+            property_type,
+            name,
+            component=component,
+            component_id=component_id,
+            field="timestamp",
         )
         result = red.get(timestamp_key)
         # The timestamp was stored by to_string as a quoted string, and
@@ -316,13 +359,13 @@ class BackendProperty:
         property_type: PropertyType,
         name: str,
         component: Optional[str] = None,
-        index: Optional[int] = None,
+        component_id: Optional[str] = None,
     ):
         """Deletes all Redis the key-value bindings associated with
         the identified property.
         """
         key_stem = create_redis_key(
-            property_type, name, component=component, index=index
+            property_type, name, component=component, component_id=component_id
         )
         for key in red.scan_iter(key_stem + "*"):
             red.delete(key)
@@ -333,7 +376,7 @@ _all_fields = set(BackendProperty.__dataclass_fields__.keys())
 
 # These fields are part of the key (when present), so they don't need
 # to be stored as fields in Redis
-_excluded_fields = set(["property_type", "name", "component", "index"])
+_excluded_fields = set(["property_type", "name", "component", "component_id"])
 
 # Only these are stored in Redis, the others are part of the key
 _included_fields = _all_fields - _excluded_fields
@@ -385,7 +428,7 @@ def create_redis_key(
     property_type: PropertyType,
     name: str,
     component: Optional[str] = None,
-    index: Optional[int] = None,
+    component_id: Optional[str] = None,
     field: Optional[str] = None,
 ) -> str:
     """Creates a Redis key from the given arguments, identifying a
@@ -397,10 +440,10 @@ def create_redis_key(
     without relying on how it actually looks.
     """
     opt_component = f":{component}" if component else ""
-    opt_index = f":{index}" if index != None else ""
+    opt_component_id = f":{component_id}" if component_id != None else ""
     opt_field = f":{field}" if field else ""
     # f"{property_type}" == str(property_type), so we get the right string value
-    return f"{property_type}{opt_component}{opt_index}:{name}{opt_field}"
+    return f"{property_type}{opt_component}{opt_component_id}:{name}{opt_field}"
 
 
 """"Component helpers"""
@@ -409,15 +452,17 @@ def create_redis_key(
 def set_component_property(
     component: str,
     name: str,
-    index: int,
+    component_id: str,
     **fields,
 ):
     """Set the component device property identified by
-    property_type, name, component, and index, to the bindings given
+    property_type, name, component, and component_id, to the bindings given
     in fields.
     """
     property_type = PropertyType.DEVICE
-    p = BackendProperty(property_type, name, component=component, index=index, **fields)
+    p = BackendProperty(
+        property_type, name, component=component, component_id=component_id, **fields
+    )
     p.write_metadata()
     p.write_value()
 
@@ -425,117 +470,119 @@ def set_component_property(
 def get_component_property(
     component: str,
     name: str,
-    index: int,
+    component_id: str,
 ) -> Optional[Tuple[_BackendProperty, TimeStamp, Counter]]:
     property_type = PropertyType.DEVICE
-    return BackendProperty.read(property_type, name, component=component, index=index)
+    return BackendProperty.read(
+        property_type, name, component=component, component_id=component_id
+    )
 
 
 def get_component_value(
     component: str,
     name: str,
-    index: int,
+    component_id: str,
 ) -> Optional[T]:
     property_type = PropertyType.DEVICE
     return BackendProperty.read_value(
-        property_type, name, component=component, index=index
+        property_type, name, component=component, component_id=component_id
     )
 
 
 """Resonator helpers"""
 
 
-def set_resonator_property(name: str, index: int, **fields):
+def set_resonator_property(name: str, component_id: str, **fields):
     """Write given fields into Redis for resonator property identified
     by the given arguments.
     """
-    set_component_property("resonator", name, index, **fields)
+    set_component_property("resonator", name, component_id, **fields)
 
 
 def get_resonator_property(
-    name: str, index: int
+    name: str, component_id: str
 ) -> Optional[Tuple[_BackendProperty, TimeStamp, Counter]]:
     """Get all fields associated with the resonator property
     identified by the given arguments.
     """
-    return get_component_property("resonator", name, index)
+    return get_component_property("resonator", name, component_id)
 
 
-def set_resonator_value(name: str, index: int, value: T):
+def set_resonator_value(name: str, component_id: str, value: T):
     """Write given value into Redis for resonator property identified
     by the given arguments.
     """
-    set_component_property("resonator", name, index, value=value)
+    set_component_property("resonator", name, component_id, value=value)
 
 
-def get_resonator_value(name: str, index: int) -> Optional[T]:
+def get_resonator_value(name: str, component_id: str) -> Optional[T]:
     """get the value associated with the resonator property
     identified by the given arguments.
     """
-    return get_component_value("resonator", name, index)
+    return get_component_value("resonator", name, component_id)
 
 
 """Qubit helpers"""
 
 
-def set_qubit_property(name: str, index: int, **fields):
+def set_qubit_property(name: str, component_id: str, **fields):
     """Write given fields into Redis for qubit property identified
     by the given arguments.
     """
-    set_component_property("qubit", name, index, **fields)
+    set_component_property("qubit", name, component_id, **fields)
 
 
 def get_qubit_property(
-    name: str, index: int
+    name: str, component_id: str
 ) -> Optional[Tuple[_BackendProperty, TimeStamp, Counter]]:
     """Get all fields associated with the qubit property
     identified by the given arguments.
     """
-    return get_component_property("qubit", name, index)
+    return get_component_property("qubit", name, component_id)
 
 
-def set_qubit_value(name: str, index: int, value: T):
+def set_qubit_value(name: str, component_id: str, value: T):
     """Write given value into Redis for qubit property identified
     by the given arguments.
     """
-    set_component_property("qubit", name, index, value=value)
+    set_component_property("qubit", name, component_id, value=value)
 
 
-def get_qubit_value(name: str, index: int) -> Optional[T]:
+def get_qubit_value(name: str, component_id: str) -> Optional[T]:
     """get the value associated with the qubit property
     identified by the given arguments.
     """
-    return get_component_value("qubit", name, index)
+    return get_component_value("qubit", name, component_id)
 
 
 """Coupler helpers"""
 
 
-def set_coupler_property(name: str, index: int, **fields):
+def set_coupler_property(name: str, component_id: str, **fields):
     """Write given fields into Redis for coupler property identified
     by the given arguments.
     """
-    set_component_property("coupler", name, index, **fields)
+    set_component_property("coupler", name, component_id, **fields)
 
 
 def get_coupler_property(
-    name: str, index: int
+    name: str, component_id: str
 ) -> Optional[Tuple[_BackendProperty, TimeStamp, Counter]]:
     """Get all fields associated with the coupler property
     identified by the given arguments.
     """
-    return get_component_property("coupler", name, index)
+    return get_component_property("coupler", name, component_id)
 
 
-def set_coupler_value(name: str, index: int, value: T):
+def set_coupler_value(name: str, component_id: str, value: T):
     """Write given value into Redis for coupler property identified
     by the given arguments.
     """
-    set_component_property("coupler", name, index, value=value)
+    set_component_property("coupler", name, component_id, value=value)
 
 
-def get_coupler_value(name: str, index: int) -> Optional[T]:
+def get_coupler_value(name: str, component_id: str) -> Optional[T]:
     """get the value associated with the coupler property
     identified by the given arguments.
     """
-    return get_component_value("coupler", name, index)
+    return get_component_value("coupler", name, component_id)

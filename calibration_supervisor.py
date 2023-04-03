@@ -14,20 +14,19 @@
 
 import asyncio
 import logging
-import time
 from typing import Optional
 
 import redis
 
 import calibration.calibration_lib as calibration_lib
 import settings
-from backend_properties_config.initialize_properties import get_n_components
+from backend_properties_config.initialize_properties import get_component_ids
 from backend_properties_storage.storage import T
 from backend_properties_storage.types import TimeStamp
 from calibration.calibration_common import (
     DataStatus,
     JobDoneEvent,
-    read_calibration_goal,
+    read_calibration_result,
 )
 
 # Initialize logger
@@ -139,24 +138,24 @@ def check_state(node):
     for property_name in properties:
         component = red.hget(f"m_params:{node}:{property_name}", "component")
         if component is not None:
-            # get how many of this component type we have
-            n_components = get_n_components(component)
-            if n_components is not None:
-                # component property *with* indices:
-                for i in range(n_components):
-                    value, timestamp = read_calibration_goal(
+            # get the ids of this component type
+            component_ids = get_component_ids(component)
+            if component_ids is not None:
+                # component property *with* component ids:
+                for component_id in component_ids:
+                    value, timestamp = read_calibration_result(
                         node_name=node,
                         property_name=property_name,
                         component=component,
-                        index=i,
+                        component_id=component_id,
                     )
                     if not _is_valid(
-                        node, property_name, value, timestamp, component, i
+                        node, property_name, value, timestamp, component, component_id
                     ):
                         return False
             else:
-                # component property *without* indices:
-                value, timestamp = read_calibration_goal(
+                # component property *without* component ids:
+                value, timestamp = read_calibration_result(
                     node_name=node,
                     property_name=property_name,
                     component=component,
@@ -164,8 +163,8 @@ def check_state(node):
                 if not _is_valid(node, property_name, value, timestamp, component):
                     return False
         else:
-            # property *without* component (and we assume, nor index)
-            value, timestamp = read_calibration_goal(
+            # property *without* component (and we assume, nor component_id)
+            value, timestamp = read_calibration_result(
                 node_name=node,
                 property_name=property_name,
             )
@@ -181,7 +180,7 @@ def _is_valid(
     value: Optional[T],
     timestamp: Optional[TimeStamp],
     component: Optional[str] = None,
-    index: Optional[int] = None,
+    component_id: Optional[str] = None,
 ) -> bool:
     """Based on value and timestamp we decide if the calibration goal
     is valid or not.
@@ -190,14 +189,14 @@ def _is_valid(
     if value is None or timestamp is None:
         # this should be refined in the future
         logger.info(
-            f"Parameter {property_name}, {component} {index} "
+            f"Parameter {property_name}, {component} {component_id} "
             f"has no valid result, so check_state for {node_name} *failed*",
             stacklevel=2,
         )
         return False
     else:
         logger.debug(
-            f"Parameter {property_name}, {component} {index} "
+            f"Parameter {property_name}, {component} {component_id} "
             f"has a valid result, so partial check_state for {node_name} *succeeded*",
             stacklevel=2,
         )

@@ -1,5 +1,5 @@
 # This file contains measurement specific constants for
-# vna_resonator_spectroscopy.py
+# calibration_lib.vna_resonator_spectroscopy
 
 big_sweep_start=6e9
 big_sweep_stop=7.5e9 # to match the design values
@@ -31,4 +31,12 @@ delta_span = 3e6
 # Q16: 4 GHz, Q17: 4.946 GHz, Q18: 4.174 GHz (qubit freqs)
 # readout 16: 6.519 GHz, readout 17: 7.107 GHz, readout 18: 6.803 GHz
 
-design_resonator_frequencies=[6.519e9, 7.107e9, 6.803e9]
+# [resonator_design_frequencies] # not used for the moment, but here for reference
+# "16" = 6.519e9
+# "17" = 7.107e9
+# "18" = 6.803e9 # currently not supported due to instrument configuration issues
+
+[resonator_expected_frequencies]
+"16" = 6.33144e9
+"17" = 6.98678e9
+# "18" = 6.68491e9 # currently not supported due to instrument configuration issues

@@ -51,24 +51,43 @@ class JobDoneEvent:
         self.requested_job_id = None
 
 
-def write_calibration_goal(
-    node_name: str,
+def write_calibration_result(
+    node_name: str,  # name of calibration node
     property_name: str,
     value: T,
     component: Optional[str] = None,
-    index: Optional[int] = None,
+    component_id: Optional[str] = None,
+    publish: bool = True,
     **additional_fields,
 ):
-    """Save the identified backend property to Redis, and save its
-    value and timestamp together with the calibration node name, to
-    keep track on the calibration goals.
+    """This function stores a backend property based on the given arguments, and
+
+    1. Stores the value and timestamp with the same Redis key as for a
+       "public" backend property, but prefixed with
+       CALIBRATION_SUPERVISOR_PREFIX, and the calibration node name,
+       associated to the calibration supervisor, for internal
+       purposes. This way we can store values internally that
+       otherwise would be overwritten by other preocesses or
+       calibration steps.
+
+    2. If publish == True (default), also store the property in the
+       "public" Redis table for backend device properties.
+
+    The two records will have the same timestamp, so in case of
+    debugging, we know they were saved by the same occation.
+
+    Some results from measurements performed by the calibration
+    supervisor are not meant for publishing as "public" device
+    properties. In this case the flag `publish` can be set to False,
+    and the result will only be kept for calibration supervisor
+    internal purposes.
     """
 
     identification = {
         "property_type": PropertyType.DEVICE,
         "name": property_name,
         "component": component,
-        "index": index,
+        "component_id": component_id,
     }
     # save the property as a backend property
     p = BackendProperty(
@@ -77,9 +96,10 @@ def write_calibration_goal(
         source="measurement",
         **additional_fields,
     )
-    p.write()
+    if publish:
+        p.write()
 
-    # save book-keeping information about this calibration goal
+    # Save book-keeping information about this calibration goal
     property_key = create_redis_key(**identification)
     key = f"{CALIBRATION_SUPERVISOR_PREFIX}:{node_name}:{property_key}"
     # get the actual timestamp created when p was saved:
@@ -88,20 +108,22 @@ def write_calibration_goal(
     red.hset(key, "timestamp", to_string(timestamp))
 
 
-def read_calibration_goal(
+def read_calibration_result(
     node_name: str,
     property_name: str,
     component: Optional[str] = None,
-    index: Optional[int] = None,
+    component_id: Optional[str] = None,
 ) -> Tuple[Optional[T], Optional[TimeStamp]]:
-    """Read the value and timestamp from Redis, of the
-    identified backend property subject to calibration.
+    """Read the value and timestamp associated with the given
+    arguments, stored as calibration supervisor internal information,
+    from Redis.
     """
+
     identification = {
         "property_type": PropertyType.DEVICE,
         "name": property_name,
         "component": component,
-        "index": index,
+        "component_id": component_id,
     }
     # get book-keeping information about this calibration goal
     property_key = create_redis_key(**identification)

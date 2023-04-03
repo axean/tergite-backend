@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 
 import logging
-from typing import Optional
+from typing import List, Optional
 
 import toml
 
@@ -51,13 +51,13 @@ def initialize_properties() -> bool:
         for tag, tag_dict in device_template.items():
             if tag in components:  # then tag is a component property
                 for name, fields in tag_dict.items():
-                    n_components = get_n_components(tag)
-                    # Populate Redis from template for each component index
-                    for index in range(n_components):
+                    components_ids = get_component_ids(tag)
+                    # Populate Redis from template for each component id
+                    for component_id in components_ids:
                         set_component_property(
                             name=name,
                             component=tag,
-                            index=index,
+                            component_id=component_id,
                             value=None,  # serves as a placeholder in Redis
                             source="default",
                             **fields,
@@ -75,18 +75,18 @@ def initialize_properties() -> bool:
     return True
 
 
-def set_n_components(component: str, n: int):
-    property_name = f"number_of_{component}s"
+def set_component_ids(component: str, ids: List[str]):
+    property_name = f"{component}_ids"
     BackendProperty(
         property_type=PropertyType.DEVICE,
         name=property_name,
-        value=n,
+        value=ids,
         source="configuration",
     ).write()
 
 
-def get_n_components(component: str) -> Optional[int]:
-    property_name = f"number_of_{component}s"
+def get_component_ids(component: str) -> Optional[List[str]]:
+    property_name = f"{component}_ids"
     return BackendProperty.read_value(
         property_type=PropertyType.DEVICE, name=property_name
     )

@@ -18,7 +18,7 @@ import toml
 
 from backend_properties_config.initialize_properties import (
     initialize_properties,
-    set_n_components,
+    set_component_ids,
 )
 from backend_properties_storage.storage import (
     BackendProperty,
@@ -69,19 +69,18 @@ def load_device_layout_configuration(layout: dict) -> bool:
             value=component_tags,
             source=source,
         ).write()
-        for (component_tag, index_dict) in layout.items():
+        for (component_tag, id_dict) in layout.items():
             # Store number_of_ for this kind of component.
-            # We assume the index sequence don't have "gaps",
-            # i.e., not ['0','2','3'], but rather ['0','1','2','3']
-            set_n_components(component_tag, len(index_dict))
-            # Store layout properties for each index
-            for index, properties in index_dict.items():
-                # Store properties for each index
+            # id_dict contains the component ids from the layout configuration
+            set_component_ids(component_tag, sorted(list(id_dict.keys())))
+            # Store layout properties for each id
+            for component_id, properties in id_dict.items():
+                # Store properties for each id
                 for property_name, property_value in properties.items():
                     set_component_property(
                         name=property_name,
                         component=component_tag,
-                        index=int(index),
+                        component_id=component_id,
                         value=property_value,
                         source=source,
                     )
@@ -97,6 +96,7 @@ def load_device_configuration(device_config: dict) -> bool:
     """
 
     try:
+        # get the component types defined by the device layout configuration file
         components = BackendProperty.read_value(
             property_type=PropertyType.DEVICE, name="components"
         )
@@ -104,12 +104,12 @@ def load_device_configuration(device_config: dict) -> bool:
         for tag, tag_value in device_config.items():
             if tag in components:
                 # tag is a component type
-                for id, properties in tag_value.items():
+                for component_id, properties in tag_value.items():
                     for name, value in properties.items():
                         if not _save_device_property(
                             name,
                             component=tag,
-                            index=int(id),
+                            component_id=component_id,
                             value=value,
                         ):
                             return False
@@ -138,7 +138,7 @@ def load_device_configuration(device_config: dict) -> bool:
 def _save_device_property(
     name: str,
     component: Optional[str] = None,
-    index: Optional[int] = None,
+    component_id: Optional[str] = None,
     value=None,
     **kwargs,
 ) -> bool:
@@ -146,7 +146,7 @@ def _save_device_property(
         "property_type": PropertyType.DEVICE,
         "name": name,
         "component": component,
-        "index": index,
+        "component_id": component_id,
     }
     property = BackendProperty(
         **property_id,

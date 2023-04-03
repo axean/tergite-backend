@@ -28,8 +28,12 @@ import requests
 import toml
 
 import settings
-from backend_properties_config.initialize_properties import get_n_components
-from calibration.calibration_common import DataStatus, write_calibration_goal
+from backend_properties_config.initialize_properties import get_component_ids
+from calibration.calibration_common import (
+    DataStatus,
+    read_calibration_result,
+    write_calibration_result,
+)
 from measurement_jobs.measurement_jobs import (
     mk_job_calibrate_signal_demodulation,
     mk_job_check_signal_demodulation,
@@ -83,7 +87,9 @@ async def check_dummy(node, job_done_event) -> DataStatus:
             print(f"Warning: no entry found for key {result_key}")
         # TODO ensure value is within thresholds
 
-    # TODO return status based on the above param checks instead of deciding at random
+    # TODO return status based on the above param checks instead of
+    # deciding at random (will be done when check_data is implemented
+    # for the respective function)
     num = random()
     if num < 0.8:
         print(f"Check_data for {node} gives IN_SPEC")
@@ -109,11 +115,6 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
     """VNA resonator spectroscopy (for Labber compatible equipment)"""
 
     # -------------------------------------------------------------------------
-    # Read some configuration from Redis
-
-    n_resonators = get_n_components("resonator")
-
-    # -------------------------------------------------------------------------
     # Read parameters from TOML file, specific for this measurement
     # routine (calibrate_vna_resonator_spectroscopy)
 
@@ -132,13 +133,30 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
     min_frequency_diff = measurement_config["min_frequency_diff"]
     delta_span = measurement_config["delta_span"]
 
-    design_resonator_frequencies=measurement_config["design_resonator_frequencies"]
+    resonators = get_component_ids("resonator")
+
+    # The following values are better than the design values. The
+    # problem (LokeB 2023-03-29) with the "design" values is that they
+    # differ more from the actual values than the difference between
+    # the resonators' actual values. Currently we don't have any
+    # obvious method to automatically find out which measurement
+    # results belong to "our" resonators and not, given only the
+    # design values. The "expected" values are used instead, to
+    # demonstrate the concept.
+    resonator_expected_frequencies = measurement_config[
+        "resonator_expected_frequencies"
+    ]
+    # The component labels in the local measurement TOML file should
+    # correspond to system configured component ids
+    _assert_same_component_ids(
+        "resonator", list(resonator_expected_frequencies.keys()), resonators
+    )
 
     # For set_resonator_property operation
     source = "measurement"
 
     # -------------------------------------------------------------------------
-    # Initialize some meta-information
+    # Initialize some meta-information (only used in a "notes" field below)
     local_sweep_powers = _get_powers(local_sweep_power)
     local_sweep_middle_index = len(local_sweep_powers) // 2
     local_sweep_median_power = local_sweep_powers[local_sweep_middle_index]
@@ -150,6 +168,8 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
         freq_start=big_sweep_start,
         freq_stop=big_sweep_stop,
         num_pts=big_sweep_num_pts,
+        # N.B. Called num_ave for VNA RS and qa_avg for pulsed
+        # spectroscopy
         num_ave=big_sweep_num_ave,
         power=big_sweep_power,
     )
@@ -162,23 +182,22 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
     # post-processed results are now available via job_id
     result_big_sweep = get_post_processed_result(job_id)
 
-    # post-processed results are now successfully extracted into result_big_sweep
     [low_power_sweep, high_power_sweep] = result_big_sweep
-    if min(len(low_power_sweep), len(high_power_sweep)) < n_resonators:
-        message = f"Critical error: too few resonators found: low power sweep:{len(low_power_sweep)}, high power sweep:{len(high_power_sweep)}"
-        print(message)
-        # what to do?  This kind of failure is above the job level, so
-        # it shouldn't be the job supervisor, rather the calibration
-        # supervisor. Maybe we could have a property for the resonator,
-        # if it's not responding at some frequency.
-        return
+    if min(len(low_power_sweep), len(high_power_sweep)) < len(resonators):
+        message = f"Critical error: too few fits found: low power sweep:{len(low_power_sweep)}, high power sweep:{len(high_power_sweep)}"
+        logger.error(message)
+        # TODO: better error handling
+        exit(1)
+    if len(low_power_sweep) != len(high_power_sweep):
+        message = f"Critical error:  low and high power sweeps have different number of fits: low power sweep:{len(low_power_sweep)}, high power sweep:{len(high_power_sweep)}"
+        logger.error(message)
+        # TODO: better error handling
+        exit(1)
 
     """
     Resonance frequencies: (example from LokeB, 2023-03-07)
     [[6331400000.0, 6415800000.0, 6684500000.0, 6759800000.0, 6986700000.0],
      [6330700000.0, 6415900000.0, 6683900000.0, 6759100000.0, 6985900000.0]]
-    For now, ignore which resonators are "right" and not: just scan
-    them, an we see in phase 2 how they look
     """
 
     # Resonance frequency at low power > resonance frequency at high power
@@ -191,35 +210,22 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
     ]
     enumerated_frequency_shifts = list(enumerate(frequency_shifts))
     logger.info(
-        f"Big sweep frequency shifts for the resonators:{enumerated_frequency_shifts}"
+        "Big sweep frequency shifts for the negative peaks "
+        f"in the order they were found:{enumerated_frequency_shifts}"
     )
 
-    # Populate backend properties with frequency shifts
+    # Check which frequency shifts look OK
     for i, shift in enumerated_frequency_shifts:
-        # NOTE:
-        # Alternatively, one could recast this property into a qubit
-        # property "functional", with a boolean value, True if and only if
-        # frequency_shift is above specified level. Would that be better?
-        #
-        # As mentioned before, one could also add a note about at what
-        # powers this was measured.
-        write_calibration_goal(
-            node,
-            property_name="frequency_shift",
-            value=shift,
-            component="resonator",
-            index=i,
-        )
         if shift >= min_frequency_diff:
-            print(f"Qubit {i} OK for resonator {i}")
+            print(f"Qubit {i} OK for fit {i}")
         else:
             print(
-                f"Qubit {i} NOT OK for resonator {i}, {shift=}, "
+                f"Qubit {i} NOT OK for fit {i}, {shift=}, "
                 f"but should be {min_frequency_diff}"
             )
 
     # -------------------------------------------------------------------------
-    # Local sweep for each resonator, for closer resonance frequency estimates
+    # Local sweep for each big sweep fit, for closer frequency estimates
     # -------------------------------------------------------------------------
 
     local_start_frequency = lambda i: result_big_sweep[1][i] - delta_span
@@ -231,11 +237,17 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
             freq_stop=local_stop_frequency(i),
             num_pts=local_sweep_num_pts,
             power=local_sweep_power,
+            # Note that we use a "custom" post-processing function:
             post_processing="process_resonator_spectroscopy_vna_phase_2",
         )
-        for i in range(n_resonators)
+        # index the jobs as the fits we found in the big sweep
+        for i in range(len(result_big_sweep[0]))
     ]
 
+    # We don't know yet which fits actually correspond to "our"
+    # resonators, but we measure them all anyway, to have the results
+    # reported in the terminal:
+    median_power_results = {}  # collect results
     for i, job in enumerate(local_sweep_jobs):
         job_id = job["job_id"]
         await request_job(job, job_done_event)
@@ -247,7 +259,7 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
         chi_01 = result_local_sweep[0]["fr"] - result_local_sweep[2]["fr"]
 
         logger.info(
-            f"Local sweep for resonator {i}, "
+            f"Local sweep for fit {i}, "
             f"interval=[{local_start_frequency(i)}, "
             f"{local_stop_frequency(i)}], "
             f"resonance at {local_sweep_power[1]} dBm: "
@@ -258,21 +270,42 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
         )
 
         # Select the median power as a good guess, if defined.
-        write_calibration_goal(
+        # result_local_sweep comes from postprocessing_worker,
+        # process_resonator_spectroscopy_vna_phase_2:
+        # position 0: min power, 1: median of powers, 2: max power
+        median_power_results[i] = result_local_sweep[1]["fr"]
+
+    logger.debug(f"{median_power_results=}")
+    # Choose the values closest to the configured "expected" values (see above)
+    for id in resonators:
+        expected_frequency = resonator_expected_frequencies[id]
+        diffs = [
+            (abs(expected_frequency - fr), i, fr)
+            for (i, fr) in median_power_results.items()
+        ]
+        logger.debug("{diffs=}")
+
+        (_, i, frequency) = min(diffs)
+        logger.info(
+            f"For resonator {id}, fit {i=} {frequency=} was closest to "
+            f"{expected_frequency=}, "
+        )
+        write_calibration_result(
             node,
             property_name="resonant_frequency",
-            # result_local_sweep comes from postprocessing_worker,
-            # process_resonator_spectroscopy_vna_phase_2:
-            # position 0: min power, 1: median of powers, 2: max power
-            value=result_local_sweep[1]["fr"],
+            value=frequency,
             component="resonator",
-            index=i,
-            # This note could perhaps be added before the
-            # measurements start, but then we need a way to know the
-            # power from there. This is a simple solution for now, to
-            # see what you think. We could as well just remove it.
+            component_id=id,
             notes=f"VNA resonator spectroscopy: resonant frequency at "
             f"{local_sweep_median_power} dBm",
+        )
+        write_calibration_result(
+            node,
+            property_name="frequency_shift",
+            value=frequency_shifts[i],
+            component="resonator",
+            component_id=id,
+            notes=f"VNA resonator spectroscopy: big sweep frequency shift",
         )
 
 
@@ -370,3 +403,25 @@ def _get_powers(power_spec: Union[Number, List[Number]]) -> List[Number]:
         return [power_spec]
     else:  # expects a list of the form [min, max, step_size]
         return list(np.linspace((*tuple(power_spec))))
+
+
+def _assert_same_component_ids(
+    component: str, local_ids: List[str], system_ids: List[str]
+):
+    """Requires that the two string lists are equal, and exit
+    otherwise. This is to assure that the component ids in the local
+    measurement configuration file match the system configured
+    component ids.
+    """
+    if system_ids != sorted(local_ids):  # the system_ids are already sorted
+        logger.error(
+            f"Local {component} measurement config ids {local_ids} "
+            f"not consistent with system configured {component} ids {system_ids}",
+            stacklevel=2,
+        )
+        # NOTE: alternatively we could require just that the toml ids
+        # are a subset of the system configured ids. However,
+        # currently we do have parameters for all ids, and if, by some
+        # reason, we have an id without parameters, we can just have
+        # an empty entry for it.
+        exit(1)
