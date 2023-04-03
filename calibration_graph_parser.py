@@ -19,6 +19,7 @@ import redis
 
 import settings
 import utils.redis
+from calibration.calibration_common import CALIBRATION_SUPERVISOR_PREFIX
 
 # Set up redis connection
 red = redis.Redis(decode_responses=True)
@@ -100,7 +101,8 @@ def create_graph_structure(nodes):
 
 def build_redis_nodes(nodes):
     # Remove entries we might have created previously
-    utils.redis.del_keys(red, regex="^(topo_order|(m_deps|m_params|measurement):)")
+    prefix=CALIBRATION_SUPERVISOR_PREFIX # TODO: cleanup Redis key names
+    utils.redis.del_keys(red, regex=f"^({prefix}|topo_order|(m_deps|m_params|measurement):)")
 
     # Store topological node order
     for node in topo_order:

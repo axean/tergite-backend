@@ -221,12 +221,13 @@ def process_resonator_spectroscopy_vna_phase_2(
 # (*) Note on pulsed resonator spectroscopy, two_tone, Rabi, and
 #     Ramsey post-processing:
 #
-# Currently, this only supports one qubit, and the index list of
-# traces is [0] below. To adapt this to multiple qubits, we need to
-# figure out whether we can have Labber to put all the relevant traces
-# in one logfile, or if they would come in one logfile for each
-# qubit. Based on this we will be able to select which trace incides
-# will be passed to the analysis functions.
+# Currently, this only supports one trace per measurement, and the
+# index list of traces is [0] below. To adapt this to multiple
+# resonators/qubits per measurement, we need to figure out whether we
+# can have Labber to put all the relevant traces in one logfile, or if
+# they would come in one logfile for each resonator/qubit. Based on
+# this we will be able to select which trace incides will be passed to
+# the analysis functions.
 
 # Pulsed resonator spectroscopy
 def process_pulsed_resonator_spectroscopy(

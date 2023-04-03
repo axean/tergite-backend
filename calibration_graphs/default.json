@@ -3,8 +3,8 @@
     "dependencies": [
       "rabi"
     ],
-    "calibration_fn": "calibrate_fidelity",
-    "check_fn": "check_fidelity",
+    "calibration_fn": "calibrate_dummy",
+    "check_fn": "check_dummy",
     "fidelity_measurement": true,
     "params": [
       {
@@ -18,8 +18,8 @@
       "two-tone",
       "resonator_spectroscopy"
     ],
-    "calibration_fn": "calibrate_rabi",
-    "check_fn": "check_rabi",
+    "calibration_fn": "calibrate_dummy",
+    "check_fn": "check_dummy",
     "params": [
       {
         "name": "t1",
@@ -34,8 +34,8 @@
 
   "resonator_spectroscopy":{
     "dependencies": [],
-    "calibration_fn": "calibrate_resonator_spectroscopy",
-    "check_fn": "check_resonator_spectroscopy",
+    "calibration_fn": "calibrate_dummy",
+    "check_fn": "check_dummy",
     "params": [
       {
         "name": "res_freq",
@@ -46,8 +46,8 @@
 
   "two-tone":{
     "dependencies": ["resonator_spectroscopy"],
-    "calibration_fn": "calibrate_two-tone",
-    "check_fn": "check_two-tone",
+    "calibration_fn": "calibrate_dummy",
+    "check_fn": "check_dummy",
     "params": [
       {
         "name": "drive_freq",

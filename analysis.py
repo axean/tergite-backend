@@ -102,6 +102,7 @@ def fit_resonator_itraces(
         if POSTPROC_PLOTTING:
             port1.plotall()
 
+    print(f"Results of fit_resonator_itraces for traces {itraces}: {results}")
     return results
 
 

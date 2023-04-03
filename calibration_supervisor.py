@@ -51,6 +51,7 @@ LOCALHOST = "localhost"
 red = redis.Redis(decode_responses=True)
 
 # Interval between matintain_all calls (checking if recalibration is necessary)
+# TODO: Put this in settings
 CALIBRATION_INTERVAL = 15
 
 # Book-keeping of nodes that needs re-calibration:
@@ -59,31 +60,21 @@ node_recalibration_statuses = {}
 
 # Maps names of check_data routines to their corresponding functions
 CHECK_DATA_FUNCS = {
-    "check_resonator_spectroscopy": calibration_lib.check_dummy,
-    "check_two-tone": calibration_lib.check_dummy,
-    "check_rabi": calibration_lib.check_dummy,
-    "check_fidelity": calibration_lib.check_dummy,
     "check_return_out_of_spec": calibration_lib.check_return_out_of_spec,
+    "check_dummy": calibration_lib.check_dummy,
 }
 
 # Maps names of calibrate routines to their corresponding functions
 CALIBRATION_FUNCS = {
     "calibrate_vna_resonator_spectroscopy": calibration_lib.calibrate_vna_resonator_spectroscopy,
-    "calibrate_resonator_spectroscopy": calibration_lib.calibrate_dummy,
-    "calibrate_two-tone": calibration_lib.calibrate_dummy,
-    "calibrate_rabi": calibration_lib.calibrate_dummy,
-    "calibrate_fidelity": calibration_lib.calibrate_dummy,
+    # Used by nodes in default.json as demo:
+    "calibrate_dummy": calibration_lib.calibrate_dummy,
 }
 
 
 # Calibration algorithm, based on "Optimus" (see doc/calibration.md)
 async def check_calibration_status(job_done_event):
     while True:
-        print("Checking the status of calibration:", end=" ")
-
-        # Mimic work
-        time.sleep(1)
-
         print("\n------ STARTING MAINTAIN -------\n")
         await maintain_all(job_done_event)
         print("\n------ MAINTAINED -------\n")
