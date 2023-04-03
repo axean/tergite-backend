@@ -38,6 +38,7 @@ from measurement_jobs.measurement_jobs import (
     mk_job_calibrate_signal_demodulation,
     mk_job_check_signal_demodulation,
     mk_job_pulsed_resonator_spectroscopy,
+    mk_job_rabi,
     mk_job_two_tone,
     mk_job_vna_resonator_spectroscopy,
 )
@@ -393,6 +394,7 @@ async def calibrate_pulsed_resonator_spectroscopy(node, job_done_event):
             notes=f"Pulsed resonator spectroscopy for {id}",
         )
 
+
 async def calibrate_two_tone(node, job_done_event):
     """Pulsed two-tone spectroscopy using Zürich Instruments/Labber"""
 
@@ -457,6 +459,75 @@ async def calibrate_two_tone(node, job_done_event):
             # publish=False,
             notes=f"Pulsed two-tone qubit spectroscopy for {id}",
         )
+
+
+async def calibrate_rabi(node, job_done_event):
+    """Pulsed Rabi spectroscopy using Zürich Instruments/Labber"""
+
+    # -------------------------------------------------------------------------
+    # Read parameters from TOML file, specific for this measurement
+    # routine (calibrate_rabi)
+
+    measurement_config = toml.load("calibration/rabi.toml")
+    common_measurement_parameters = measurement_config["common_measurement_parameters"]
+    qubit_measurement_parameters = measurement_config["qubit_measurement_parameters"]
+
+    # We will need a few parameters from the two_tone config later:
+    measurement_config_two_tone = toml.load("calibration/two_tone.toml")
+    two_tone_qubit_measurement_parameters = measurement_config_two_tone[
+        "qubit_measurement_parameters"
+    ]
+
+    qubits = get_component_ids("qubit")
+    # The component labels in the local measurement TOML file should
+    # correspond to system configured component ids
+    _assert_same_component_ids(
+        "qubit", list(qubit_measurement_parameters.keys()), qubits
+    )
+
+    # See note (**) in calibrate_two_tone
+    resonators = get_component_ids("resonator")
+
+    qa_if_limit = measurement_config["qa_if_limit"]
+
+    pulsed_results = _get_results_pulsed_resonator_spectroscopy(qa_if_limit)
+
+    two_tone_results = _get_results_two_tone(two_tone_qubit_measurement_parameters)
+
+    results = {}
+    for id, r_id in zip(qubits, resonators):
+        job = mk_job_rabi(
+            **common_measurement_parameters,
+            **qubit_measurement_parameters[id],
+            readout_frequency_if=pulsed_results[r_id]["if"],
+            readout_frequency_lo=pulsed_results[r_id]["lo"],
+            drive_frequency_if=two_tone_results[id]["if"],
+            drive_frequency_lo=two_tone_results[id]["lo"],
+        )
+        job_id = job["job_id"]
+        logger.info(f"Performing {node} calibration, qubit id={id}, {job=}")
+
+        await request_job(job, job_done_event)
+
+        # post-processed results are now available via job_id
+        result = get_post_processed_result(job_id)
+        # The post-processed result is a singleton list, therefore index 0:
+        results[id] = result[0]
+
+    logger.info(f"Measurement results for {node}: {qubits=}, {results=}")
+
+    # Save in Redis:
+    for id in qubits:
+        value = results[id]
+        write_calibration_result(
+            node,
+            property_name="pi_pulse_amplitude",
+            value=value,
+            component="qubit",
+            component_id=id,
+            notes=f"Rabi pi-pulse amplitude for {id}",
+        )
+
 
 async def calibrate_dummy(node, job_done_event):
     # Note: using this only works like a "demo", we are going to
@@ -595,3 +666,21 @@ def _get_results_pulsed_resonator_spectroscopy(qa_if_limit: float) -> List[dict]
         pulsed_results[id] = _split(value, qa_if_limit)
 
     return pulsed_results
+
+
+def _get_results_two_tone(qubit_measurement_parameters: dict) -> List[dict]:
+    qubits = get_component_ids("qubit")
+
+    two_tone_results = {}
+    for id in qubits:
+        value, _timestamp = read_calibration_result(
+            "two_tone",
+            "excitation_frequency",
+            component="qubit",
+            component_id=id,
+        )
+        drive_frequency_lo = qubit_measurement_parameters[id]["drive_frequency_lo"]
+        drive_frequency_if = value - drive_frequency_lo
+        two_tone_results[id] = _split(value, drive_frequency_if)
+
+    return two_tone_results

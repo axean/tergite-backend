@@ -67,6 +67,7 @@ CHECK_DATA_FUNCS = {
 CALIBRATION_FUNCS = {
     "calibrate_pulsed_resonator_spectroscopy": calibration_lib.calibrate_pulsed_resonator_spectroscopy,
     "calibrate_vna_resonator_spectroscopy": calibration_lib.calibrate_vna_resonator_spectroscopy,
+    "calibrate_rabi": calibration_lib.calibrate_rabi,
     "calibrate_two_tone": calibration_lib.calibrate_two_tone,
     # Used by nodes in default.json as demo:
     "calibrate_dummy": calibration_lib.calibrate_dummy,

@@ -20,5 +20,16 @@
         "component": "qubit"
       }
     ]
+  },
+  "rabi":{
+    "dependencies": ["pulsed_resonator_spectroscopy", "two_tone"],
+    "check_fn": "check_return_out_of_spec",
+    "calibration_fn": "calibrate_rabi",
+    "params": [
+      {
+        "name": "pi_pulse_amplitude",
+        "component": "qubit"
+      }
+    ]
   }
 }

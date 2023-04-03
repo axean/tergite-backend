@@ -28,3 +28,7 @@ long_name = "Resonator resonant frequency"
 [device.qubit.excitation_frequency]
 unit = "Hz"
 long_name = "Qubit excitation frequency"
+
+[device.qubit.pi_pulse_amplitude]
+unit = "V"
+long_name = "Rabi pi pulse amplitude"

@@ -1,0 +1,50 @@
+# This file contains measurement specific constants for
+# calibration_lib.calibrate_rabi
+
+# Configured for LokeB during 230307-230314
+
+# ----------------------------------------------------------------------
+# Notes:
+#
+# Let MEAS_DEFAULT_DIR be tergite-bcc/measurement_jobs/parameter_defaults/
+#
+# (a)  defined with the *same* value in
+#      MEAS_DEFAULT_DIR/spectroscopy_common.toml
+# (a') defined with *different* value in
+#      MEAS_DEFAULT_DIR/spectroscopy_common.toml
+#
+# (b)  defined with *the same* value in
+#      MEAS_DEFAULT_DIR/rabi.toml
+# (b') defined with *different* value in
+#      MEAS_DEFAULT_DIR/rabi.toml
+#
+# A reason to have this redundancy is that if any of the
+# MEAS_DEFAULT_DIR files change, the values here will override them
+# and the measurement is kept intact.
+
+# ----------------------------------------------------------------------
+# Misc measurement parameters
+
+# The IF frequency that is believed to give low power reduction on ZI,
+# below 300 MHz. The readout_frequency_if should not exceed this value.
+qa_if_limit=250e6
+
+
+# ----------------------------------------------------------------------
+# Measurement job parameters, common for all qubits
+[common_measurement_parameters]
+
+num_pts=200 # (b)
+
+
+# ----------------------------------------------------------------------
+# Component specific measurement parameters, specific per qubit
+# Key pattern: {component}_measurement_parameters_{id}
+
+[qubit_measurement_parameters.16] # corresponds to q16
+
+qubit_drive_sgs_ip="192.0.2.10"
+
+[qubit_measurement_parameters.17] # corresponds to q17
+
+qubit_drive_sgs_ip="192.0.2.44"
