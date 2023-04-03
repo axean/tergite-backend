@@ -17,10 +17,14 @@ notes="Descriptive name of the device/sample"
 
 [device.resonator.frequency_shift]
 unit = "Hz"
-long_name = "Big sweep frequency shift"
-notes = "VNA resonator spectroscopy, big sweep: should be above a threshold for qubit to be considered functional: see measurement specific configuration."
+long_name = "VNA big sweep frequency shift"
+
 
 [device.resonator.resonant_frequency]
 unit = "Hz"
-long_name = "Local sweep resonant frequency"
-notes = "VNA resonator spectroscopy: resonant frequency."
+long_name = "Resonator resonant frequency"
+
+
+[device.qubit.excitation_frequency]
+unit = "Hz"
+long_name = "Qubit excitation frequency"

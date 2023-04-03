@@ -1,0 +1,67 @@
+# This file contains measurement specific constants for
+# calibration_lib.calibrate_two_tone
+
+# Configured for LokeB during 230307-230314
+
+# ----------------------------------------------------------------------
+# Notes:
+#
+# Let MEAS_DEFAULT_DIR be tergite-bcc/measurement_jobs/parameter_defaults/
+#
+# (a)  defined with the *same* value in
+#      MEAS_DEFAULT_DIR/spectroscopy_common.toml
+# (a') defined with *different* value in
+#      MEAS_DEFAULT_DIR/spectroscopy_common.toml
+#
+# (b)  defined with *the same* value in
+#      MEAS_DEFAULT_DIR/two_tone.toml
+# (b') defined with *different* value in
+#      MEAS_DEFAULT_DIR/two_tone.toml
+#
+# A reason to have this redundancy is that if any of the
+# MEAS_DEFAULT_DIR files change, the values here will override them
+# and the measurement is kept intact.
+
+# ----------------------------------------------------------------------
+# Misc measurement parameters
+
+# The IF frequency that is believed to give low power reduction on ZI,
+# below 300 MHz. The readout_frequency_if should not exceed this value.
+qa_if_limit=250e6
+
+# ----------------------------------------------------------------------
+# Measurement job parameters, common
+
+[common_measurement_parameters]
+
+num_pts = 201                        # (b)
+qa_avg = 1024                        # (a)
+
+readout_amp_range_type = "Single"    # (a)
+readout_amp = 25e-3                  # (a)
+readout_amp_start = 5e-3             # (a)
+readout_amp_stop = 20e-3             # (a)
+
+readout_power_range_type = "Single"  # (a)
+readout_power = 10                   # (a)
+
+[qubit_measurement_parameters.16]
+
+# Low frequency part of qubit frequency design value
+drive_frequency_if_start=250e6
+drive_frequency_if_stop=260e6
+
+# High frequency part of qubit frequency design value
+drive_frequency_lo=3.0e9
+
+qubit_drive_sgs_ip="192.0.2.10"
+
+[qubit_measurement_parameters.17]
+
+# Low frequency part of qubit frequency design value
+drive_frequency_if_start=58e6
+drive_frequency_if_stop=68e6
+
+# High frequency part of qubit frequency design value
+drive_frequency_lo=4.0e9
+qubit_drive_sgs_ip="192.0.2.44"

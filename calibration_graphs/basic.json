@@ -9,5 +9,16 @@
         "component": "resonator"
       }
     ]
+  },
+  "two_tone":{
+    "dependencies": ["pulsed_resonator_spectroscopy"],
+    "check_fn": "check_return_out_of_spec",
+    "calibration_fn": "calibrate_two_tone",
+    "params": [
+      {
+        "name": "excitation_frequency",
+        "component": "qubit"
+      }
+    ]
   }
 }
