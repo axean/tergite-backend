@@ -12,19 +12,23 @@
         },
         {
             "instrument": "HDAWG",
-            "quantity": "Channel 3 - Waveform"
+            "quantity": "Channel 3 - Waveform",
+            "signal_source": "MQPG Control - Trace - I1"
         },
         {
             "instrument": "HDAWG",
-            "quantity": "Channel 4 - Waveform"
+            "quantity": "Channel 4 - Waveform",
+            "signal_source": "MQPG Control - Trace - Q1"
         },
         {
             "instrument": "HDAWG",
-            "quantity": "Channel 5 - Waveform"
+            "quantity": "Channel 5 - Waveform",
+            "signal_source": "MQPG Control - Trace - I1"
         },
         {
             "instrument": "HDAWG",
-            "quantity": "Channel 6 - Waveform"
+            "quantity": "Channel 6 - Waveform",
+            "signal_source": "MQPG Control - Trace - I1"
         },
         {
             "instrument": "HDAWG",
@@ -1366,7 +1370,7 @@
                 "Timeout": 5.0,
                 "Use VICP protocol": false,
                 "Use specific TCP port": false,
-                "address": "192.0.2.20",
+                "address": "192.0.2.32",
                 "interface": "TCPIP",
                 "lock": false,
                 "name": "QA_Carrier",
@@ -1381,7 +1385,7 @@
             },
             "values": {
                 "Automatic levelling control (ALC)": "OFF",
-                "Frequency": 5999010000.0,
+                "Frequency": 6000000000.0,
                 "I/Q modulation": false,
                 "I/Q wideband": true,
                 "LO Frequency": "10MHZ",
@@ -1414,7 +1418,7 @@
                 "Timeout": 5.0,
                 "Use VICP protocol": false,
                 "Use specific TCP port": false,
-                "address": "192.0.2.49",
+                "address": "192.0.2.10",
                 "interface": "TCPIP",
                 "lock": false,
                 "name": "Qubit 2B",
@@ -1430,7 +1434,7 @@
             "values": {
                 "Automatic levelling control (ALC)": "OFF",
                 "Calibrate IQ at current frequency": true,
-                "Frequency": 4500000000.0,
+                "Frequency": 3000000000.0,
                 "Gain imbalance": 0.0,
                 "I offset": 0.0,
                 "I/Q Adjustments": true,
@@ -1468,7 +1472,7 @@
                 "Timeout": 10.0,
                 "Use VICP protocol": false,
                 "Use specific TCP port": false,
-                "address": "dev8114",
+                "address": "dev8115",
                 "interface": "USB",
                 "lock": false,
                 "name": "HDAWG",
@@ -1476,7 +1480,7 @@
                 "show_advanced": false,
                 "startup": "Set config"
             },
-            "hardware": "Zurich Instruments HDAWG Other",
+            "hardware": "Zurich Instruments HDAWG",
             "options": {
                 "model": "HDAWG",
                 "options": []
@@ -1522,7 +1526,7 @@
                 "Channel 3 - Delay": 0.0,
                 "Channel 3 - Filter": false,
                 "Channel 3 - Offset": 0.0,
-                "Channel 3 - Output": false,
+                "Channel 3 - Output": true,
                 "Channel 3 - Range": "+/- 1 V",
                 "Channel 3 - Waveform": {
                     "__ndarray__": [],
@@ -1538,7 +1542,7 @@
                 "Channel 4 - Delay": 0.0,
                 "Channel 4 - Filter": false,
                 "Channel 4 - Offset": 0.0,
-                "Channel 4 - Output": false,
+                "Channel 4 - Output": true,
                 "Channel 4 - Range": "+/- 1 V",
                 "Channel 4 - Waveform": {
                     "__ndarray__": [],
@@ -1967,7 +1971,7 @@
                 "Timeout": 10.0,
                 "Use VICP protocol": false,
                 "Use specific TCP port": false,
-                "address": "dev2346",
+                "address": "dev2475",
                 "interface": "USB",
                 "lock": false,
                 "name": "QA_DEV2346",

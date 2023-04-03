@@ -1348,7 +1348,7 @@
                 "Timeout": 5.0,
                 "Use VICP protocol": false,
                 "Use specific TCP port": false,
-                "address": "192.0.2.20",
+                "address": "192.0.2.32",
                 "interface": "TCPIP",
                 "lock": false,
                 "name": "QA_Carrier",
@@ -1363,7 +1363,7 @@
             },
             "values": {
                 "Automatic levelling control (ALC)": "OFF",
-                "Frequency": 5990000000.0,
+                "Frequency": 6000000000.0,
                 "I/Q modulation": false,
                 "I/Q wideband": true,
                 "LO Frequency": "10MHZ",
@@ -1396,7 +1396,7 @@
                 "Timeout": 5.0,
                 "Use VICP protocol": false,
                 "Use specific TCP port": false,
-                "address": "192.0.2.49",
+                "address": "192.0.2.10",
                 "interface": "TCPIP",
                 "lock": false,
                 "name": "Qubit 2B",
@@ -1450,7 +1450,7 @@
                 "Timeout": 10.0,
                 "Use VICP protocol": false,
                 "Use specific TCP port": false,
-                "address": "dev8114",
+                "address": "dev8115",
                 "interface": "USB",
                 "lock": false,
                 "name": "HDAWG",
@@ -1458,7 +1458,7 @@
                 "show_advanced": false,
                 "startup": "Set config"
             },
-            "hardware": "Zurich Instruments HDAWG Other",
+            "hardware": "Zurich Instruments HDAWG",
             "options": {
                 "model": "HDAWG",
                 "options": []
@@ -1949,7 +1949,7 @@
                 "Timeout": 10.0,
                 "Use VICP protocol": false,
                 "Use specific TCP port": false,
-                "address": "dev2346",
+                "address": "dev2475",
                 "interface": "USB",
                 "lock": false,
                 "name": "QA_DEV2346",

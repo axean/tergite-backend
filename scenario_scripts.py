@@ -256,6 +256,15 @@ def generic_calib_zi_scenario(job):
         f"For {job['job_id']=}, {job_name=}, scenario will be populated with the following parameters based on toml default parameters and job dict:\n{scenario_parameters=}"
     )
 
+    for instrument_dict in scenario_dict["instruments"]:  # a list is expected
+        if instrument_dict["com_config"]["name"] == "Qubit 2B":
+            # maybe "Qubit 2B" should also be a parameter?
+            qubit_drive_sgs_ip = scenario_parameters.get("qubit_drive_sgs_ip")
+            if qubit_drive_sgs_ip:
+                instrument_dict["com_config"]["address"] = qubit_drive_sgs_ip
+            drive_frequency_lo = scenario_parameters.get("drive_frequency_lo")
+            if drive_frequency_lo:
+                instrument_dict["values"]["Frequency"] = drive_frequency_lo
 
     # Updating Step parameters in Scenario dictionary
     for i, stepchannel in enumerate(scenario_dict["step_channels"]):
@@ -299,6 +308,20 @@ def generic_calib_zi_scenario(job):
                 step_channel_i["single"] = scenario_parameters["drive_pulse_spacing"]
         elif stepchannel["channel_name"] == "Qubit 2B - Output":
             step_channel_i["single"] = scenario_parameters["drive_output_enabled"]
+        # Qubit drive SGS start ==>
+        elif stepchannel["channel_name"] == "Qubit 2B - Frequency":
+            step_channel_i["range_type"] = scenario_parameters[
+                "drive_frequency_lo_range_type"
+            ]
+            if scenario_parameters["drive_frequency_lo_range_type"] == "Start - Stop":
+                step_channel_i["start"] = scenario_parameters[
+                    "drive_frequency_lo_start"
+                ]
+                step_channel_i["stop"] = scenario_parameters["drive_frequency_lo_stop"]
+                step_channel_i["n_pts"] = scenario_parameters["num_pts"]
+            elif scenario_parameters["drive_frequency_lo_range_type"] == "Single":
+                step_channel_i["single"] = scenario_parameters["drive_frequency_lo"]
+        # Qubit drive SGS end <==
         elif stepchannel["channel_name"] == "Qubit 2B - Power":
             if scenario_parameters["drive_power_range_type"] == "Start - Stop":
                 step_channel_i["start"] = scenario_parameters["drive_power_start"]
