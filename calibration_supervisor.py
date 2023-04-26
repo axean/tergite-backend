@@ -14,7 +14,7 @@
 
 import asyncio
 import logging
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import redis
 
@@ -24,13 +24,14 @@ from backend_properties_config.initialize_properties import get_component_ids
 from backend_properties_storage.storage import T
 from backend_properties_storage.types import TimeStamp
 from calibration.calibration_common import (
+    CALIBRATION_SUPERVISOR_PREFIX,
     DataStatus,
     JobDoneEvent,
+    check_return_out_of_spec,
     read_calibration_result,
 )
 
 # Initialize logger
-
 logger = logging.getLogger(__name__)
 FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
 logging.basicConfig(format=FORMAT)
@@ -49,6 +50,9 @@ LOCALHOST = "localhost"
 # Set up Redis connection
 red = redis.Redis(decode_responses=True)
 
+# Redis key prefix for calibration supervisor
+CALIBRATION_GRAPH_PREFIX = f"{CALIBRATION_SUPERVISOR_PREFIX}:graph"
+
 # Interval between matintain_all calls (checking if recalibration is necessary)
 # TODO: Put this in settings
 CALIBRATION_INTERVAL = 15
@@ -59,7 +63,7 @@ node_recalibration_statuses = {}
 
 # Maps names of check_data routines to their corresponding functions
 CHECK_DATA_FUNCS = {
-    "check_return_out_of_spec": calibration_lib.check_return_out_of_spec,
+    "check_return_out_of_spec": check_return_out_of_spec,
     "check_dummy": calibration_lib.check_dummy,
 }
 
@@ -77,7 +81,7 @@ CALIBRATION_FUNCS = {
 
 
 # Calibration algorithm, based on "Optimus" (see doc/calibration.md)
-async def check_calibration_status(job_done_event):
+async def check_calibration_status(job_done_event: JobDoneEvent):
     while True:
         print("\n------ STARTING MAINTAIN -------\n")
         await maintain_all(job_done_event)
@@ -87,9 +91,9 @@ async def check_calibration_status(job_done_event):
         await asyncio.sleep(CALIBRATION_INTERVAL)
 
 
-async def maintain_all(job_done_event):
+async def maintain_all(job_done_event: JobDoneEvent):
     # Get the topological order of DAG nodes
-    topo_order = red.lrange("topo_order", 0, -1)
+    topo_order = red.lrange(f"{CALIBRATION_GRAPH_PREFIX}:topo_order", 0, -1)
     global node_recalibration_statuses
     node_recalibration_statuses = {}
 
@@ -97,7 +101,7 @@ async def maintain_all(job_done_event):
         node_recalibration_statuses[node] = await maintain(node, job_done_event)
 
 
-async def maintain(node, job_done_event):
+async def maintain(node: str, job_done_event: JobDoneEvent):
     print(f"Maintaining node {node}")
 
     state_ok = check_state(node)
@@ -115,7 +119,7 @@ async def maintain(node, job_done_event):
 
     if status == DataStatus.bad_data:
         print(f"Check_data returned bad_data for node {node}. Diagnosing dependencies.")
-        deps = red.lrange(f"m_deps:{node}", 0, -1)
+        deps = red.lrange(f"{CALIBRATION_GRAPH_PREFIX}:dependencies:{node}", 0, -1)
         await diagnose_loop(deps, job_done_event)
     # Status is out of spec: no need to diagnose, go directly to calibration
     print(f"Calibration necessary for node {node}. Calibrating...")
@@ -123,9 +127,13 @@ async def maintain(node, job_done_event):
     return True
 
 
-def check_state(node):
+def check_state(node: str) -> bool:
+    """Returns True if and only if `node` has a valid calibration
+    result in Redis and none of its dependencies has been
+    re-calibrated according to `node_recalibration_statuses`
+    """
     # Find dependencies
-    deps = red.lrange(f"m_deps:{node}", 0, -1)
+    deps = red.lrange(f"{CALIBRATION_GRAPH_PREFIX}:dependencies:{node}", 0, -1)
 
     for dep in deps:
         dep_recalibrated = node_recalibration_statuses[dep]
@@ -135,13 +143,14 @@ def check_state(node):
             )
             return False
 
-    # TODO: enhance legacy graph parser Redis key names, etc
-    # m_params:{node} stores a list of property names to keep calibrated
-    # m_params:{node}:{property_name} stores (so far) if this is a resonator,
-    # qubit, or coupler property
-    properties = red.lrange(f"m_params:{node}", 0, -1)
+    # goal_parameters:{node} stores a list of property names to keep calibrated
+    # goal_parameters:{node}:{property_name} stores which component
+    # this goal concerns, i.e. a resonator, qubit, or coupler
+    properties = red.lrange(f"{CALIBRATION_GRAPH_PREFIX}:goal_parameters:{node}", 0, -1)
     for property_name in properties:
-        component = red.hget(f"m_params:{node}:{property_name}", "component")
+        component = red.hget(
+            f"{CALIBRATION_GRAPH_PREFIX}:goal_parameters:{node}:{property_name}", "component"
+        )
         if component is not None:
             # get the ids of this component type
             component_ids = get_component_ids(component)
@@ -208,14 +217,16 @@ def _is_valid(
         return True
 
 
-async def check_data(node, job_done_event) -> DataStatus:
+async def check_data(node: str, job_done_event: JobDoneEvent) -> DataStatus:
     # Run the node's associated measurement to check the node's data
-    check_data_fn = CHECK_DATA_FUNCS[red.hget(f"measurement:{node}", "check_fn")]
+    check_data_fn = CHECK_DATA_FUNCS[
+        red.hget(f"{CALIBRATION_GRAPH_PREFIX}:measurement:{node}", "check_fn")
+    ]
     status = await check_data_fn(node, job_done_event)
     return status
 
 
-async def diagnose_loop(initial_nodes, job_done_event):
+async def diagnose_loop(initial_nodes: List[str], job_done_event: JobDoneEvent):
     print(f"Starting diagnose for nodes {initial_nodes}")
     # To avoid recursion(calibration graphs may in principle be very
     # large), we use this while loop to perform a depth-first
@@ -243,7 +254,7 @@ async def diagnose_loop(initial_nodes, job_done_event):
         print(f"To_diag = {nodes_to_diag}, to_measure = {nodes_to_measure}")
 
     # Sort nodes to measure in topological order
-    topo_order = red.lrange("topo_order", 0, -1)
+    topo_order = red.lrange("{prefix}:topo_order", 0, -1)
     nodes_to_measure = [x for x in topo_order for y in nodes_to_measure if x == y]
 
     for node in nodes_to_measure:
@@ -251,7 +262,9 @@ async def diagnose_loop(initial_nodes, job_done_event):
         await calibrate(node, job_done_event)
 
 
-async def diagnose(node, job_done_event):
+async def diagnose(
+    node: str, job_done_event: JobDoneEvent
+) -> Tuple[List[str], List[str]]:
     status = await check_data(node, job_done_event)
     if status == DataStatus.in_spec:
         # In spec, no further diag needed, and no recalibration
@@ -261,14 +274,14 @@ async def diagnose(node, job_done_event):
         return [], [node]
     if status == DataStatus.bad_data:
         # Noise data, diagnose deeper down, and re-calibrate
-        deps = red.lrange(f"m_deps:{node}", 0, -1)
+        deps = red.lrange(f"{CALIBRATION_GRAPH_PREFIX}:dependencies:{node}", 0, -1)
         return deps, [node]
 
 
-async def calibrate(node, job_done_event):
+async def calibrate(node: str, job_done_event: JobDoneEvent):
     print("")
     calibration_fn = CALIBRATION_FUNCS[
-        red.hget(f"measurement:{node}", "calibration_fn")
+        red.hget(f"{CALIBRATION_GRAPH_PREFIX}:measurement:{node}", "calibration_fn")
     ]
     await calibration_fn(node, job_done_event)
 
@@ -277,8 +290,7 @@ async def calibrate(node, job_done_event):
 # Serving incoming messages
 
 
-async def handle_message(reader, writer, job_done_event):
-
+async def handle_message(reader, writer, job_done_event: JobDoneEvent):
     addr = writer.get_extra_info("peername")
     data = await reader.read(100)
     message = data.decode()
@@ -302,7 +314,7 @@ async def handle_message(reader, writer, job_done_event):
     writer.close()
 
 
-async def message_server(job_done_event):
+async def message_server(job_done_event: JobDoneEvent):
     server = await asyncio.start_server(
         lambda reader, writer: handle_message(reader, writer, job_done_event),
         LOCALHOST,

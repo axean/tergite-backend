@@ -24,9 +24,6 @@ from calibration.calibration_common import CALIBRATION_SUPERVISOR_PREFIX
 # Set up redis connection
 red = redis.Redis(decode_responses=True)
 
-# Measurement parameter names
-param_names = set()
-
 # Networkx representation of measurement graph
 graph = nx.DiGraph()
 
@@ -101,40 +98,42 @@ def create_graph_structure(nodes):
 
 def build_redis_nodes(nodes):
     # Remove entries we might have created previously
-    prefix=CALIBRATION_SUPERVISOR_PREFIX # TODO: cleanup Redis key names
-    utils.redis.del_keys(red, regex=f"^({prefix}|topo_order|(m_deps|m_params|measurement):)")
+    prefix=f"{CALIBRATION_SUPERVISOR_PREFIX}:graph"
+    utils.redis.del_keys(red, regex=f"^{prefix}")
 
     # Store topological node order
     for node in topo_order:
-        red.rpush("topo_order", node)
+        red.rpush(f"{prefix}:topo_order", node)
 
     # Set up measurement nodes
     for node in nodes:
         contents = nodes[node]
         # Main node info
-        red.hset(f"measurement:{node}", "calibration_fn", contents["calibration_fn"])
-        red.hset(f"measurement:{node}", "check_fn", contents["check_fn"])
+        red.hset(f"{prefix}:measurement:{node}", "calibration_fn", contents["calibration_fn"])
+        red.hset(f"{prefix}:measurement:{node}", "check_fn", contents["check_fn"])
         if "fidelity_measurement" in contents:
             red.hset(
-                f"measurement:{node}",
+                f"{prefix}:measurement:{node}",
                 "fidelity_measurement",
                 str(contents["fidelity_measurement"]),
             )
         else:
-            red.hset(f"measurement:{node}", "fidelity_measurement", "False")
+            red.hset(f"{prefix}:measurement:{node}", "fidelity_measurement", "False")
 
         # Dependency info
         for dep_edge in graph.edges(node):
-            red.rpush(f"m_deps:{node}", dep_edge[1])
+            red.rpush(f"{prefix}:dependencies:{node}", dep_edge[1])
 
         # Param data
-        for param in contents["params"]:
-            p_name = param["name"]
-            p_component = param.get("component") or ""
-            red.rpush(f"m_params:{node}", p_name)
-            # Add measurement-specific parameter attributes
-            red.hset(f"m_params:{node}:{p_name}", "component", p_component)
-            param_names.add(p_name)
+        for goal_parameter in contents["goal_parameters"]:
+            parameter_name = goal_parameter["name"]
+            component = goal_parameter.get("component") or ""
+            # Add the name of the goal parameter, i.e., the name of
+            # the result quantity that is measured by the calibration
+            # specified by the node
+            red.rpush(f"{prefix}:goal_parameters:{node}", parameter_name)
+            # Add the component type that the goal parameter concerns
+            red.hset(f"{prefix}:goal_parameters:{node}:{parameter_name}", "component", component)
 
 
 if __name__ == "__main__":

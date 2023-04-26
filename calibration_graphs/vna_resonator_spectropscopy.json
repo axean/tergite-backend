@@ -3,7 +3,7 @@
     "dependencies": [],
     "check_fn": "check_return_out_of_spec",
     "calibration_fn": "calibrate_vna_resonator_spectroscopy",
-    "params": [
+    "goal_parameters": [
       {
         "name": "resonant_frequency",
         "component": "resonator"

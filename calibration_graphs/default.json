@@ -6,7 +6,7 @@
     "calibration_fn": "calibrate_dummy",
     "check_fn": "check_dummy",
     "fidelity_measurement": true,
-    "params": [
+    "goal_parameters": [
       {
         "name": "fid",
         "unit": "N/A"
@@ -20,7 +20,7 @@
     ],
     "calibration_fn": "calibrate_dummy",
     "check_fn": "check_dummy",
-    "params": [
+    "goal_parameters": [
       {
         "name": "t1",
         "unit": "s"
@@ -36,7 +36,7 @@
     "dependencies": [],
     "calibration_fn": "calibrate_dummy",
     "check_fn": "check_dummy",
-    "params": [
+    "goal_parameters": [
       {
         "name": "res_freq",
         "unit": "Hz"
@@ -48,7 +48,7 @@
     "dependencies": ["resonator_spectroscopy"],
     "calibration_fn": "calibrate_dummy",
     "check_fn": "check_dummy",
-    "params": [
+    "goal_parameters": [
       {
         "name": "drive_freq",
         "unit": "Hz"

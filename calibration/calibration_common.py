@@ -13,11 +13,17 @@
 
 import ast
 import asyncio
+import json
 from enum import Enum
-from typing import Optional, Tuple
+from pathlib import Path
+from tempfile import gettempdir
+from typing import Any, Optional, Tuple
+from uuid import uuid4
 
 import redis
+import requests
 
+import settings
 from backend_properties_storage.storage import (
     BackendProperty,
     PropertyType,
@@ -25,13 +31,22 @@ from backend_properties_storage.storage import (
     create_redis_key,
 )
 from backend_properties_storage.types import TimeStamp
+from job_supervisor import inform_failure
 from utils.representation import to_string
+
+JobID = str
+
+# Settings
+BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
+REST_API_MAP = {"jobs": "/jobs"}
+
+
+# Redis prefix for calibration supervisor specific storage
+CALIBRATION_SUPERVISOR_PREFIX = "calibration_supervisor"
 
 # Set up Redis connection
 red = redis.Redis(decode_responses=True)
 
-# Redis prefix for calibration supervisor specific storage
-CALIBRATION_SUPERVISOR_PREFIX = "calibration_supervisor"
 
 # Used by check_data to indicate outcome
 class DataStatus(Enum):
@@ -51,6 +66,72 @@ class JobDoneEvent:
         self.requested_job_id = None
 
 
+async def request_job(job: dict, job_done_event: JobDoneEvent):
+    job_id = job["job_id"]
+
+    # Updating for handle_message to accept only this job_id:
+    job_done_event.requested_job_id = job_id
+
+    tmpdir = gettempdir()
+    file = Path(tmpdir) / str(uuid4())
+    with file.open("w") as dest:
+        json.dump(job, dest)
+
+    with file.open("r") as src:
+        files = {"upload_file": src}
+        url = str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["jobs"]
+        response = requests.post(url, files=files)
+
+        # Right now the Labber Connector sends a response *after*
+        # executing the scenario i.e., the POST request is *blocking*
+        # until after the measurement execution this will change in
+        # the future; it should just ack a successful upload of a
+        # scenario and nothing more
+
+        if response:
+            file.unlink()
+            print("Job has been successfully sent")
+        else:
+            print("request_job failed")
+            return
+
+    # Wait until reply arrives(the one with our job_id).
+    await job_done_event.event.wait()
+    job_done_event.event.clear()
+
+    print("")
+
+
+async def check_return_out_of_spec(
+    node: str, _job_done_event: JobDoneEvent
+) -> DataStatus:
+    """A 'check_data' function to be used by calibration nodes that
+    don't yet have check_data implemented
+    """
+
+    print(f"check_data not implemented for {node}, forcing calibration ...")
+    return DataStatus.out_of_spec
+
+
+def get_post_processed_result(job_id: JobID) -> Any:
+    """Get the result of post-processing, associated with job_id, and
+    interpret it as a python literal
+    """
+
+    result_key = f"postprocessing:results:{job_id}"
+    try:
+        result_repr = red.get(result_key)
+        result = ast.literal_eval(result_repr)
+    except Exception as err:
+        message = (
+            f"Failed to obtain post-processed results from key {result_key}, {err=}"
+        )
+        print(message)
+        inform_failure(job_id, message)
+        return
+    return result
+
+
 def write_calibration_result(
     node_name: str,  # name of calibration node
     property_name: str,
@@ -67,7 +148,7 @@ def write_calibration_result(
        CALIBRATION_SUPERVISOR_PREFIX, and the calibration node name,
        associated to the calibration supervisor, for internal
        purposes. This way we can store values internally that
-       otherwise would be overwritten by other preocesses or
+       otherwise would be overwritten by other processes or
        calibration steps.
 
     2. If publish == True (default), also store the property in the

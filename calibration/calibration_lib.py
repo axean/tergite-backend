@@ -12,28 +12,24 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-import math
-import ast
-import json
 import logging
+import math
 from numbers import Number
-from pathlib import Path
 from random import random
-from tempfile import gettempdir
-from typing import Any, List, Union
-from uuid import uuid4
+from typing import Dict, List, Union
 
 import numpy as np
 import redis
-import requests
 import toml
 from scipy.optimize import curve_fit
 
-import settings
 from backend_properties_config.initialize_properties import get_component_ids
 from calibration.calibration_common import (
     DataStatus,
+    JobDoneEvent,
+    get_post_processed_result,
     read_calibration_result,
+    request_job,
     write_calibration_result,
 )
 from measurement_jobs.measurement_jobs import (
@@ -45,7 +41,6 @@ from measurement_jobs.measurement_jobs import (
     mk_job_two_tone,
     mk_job_vna_resonator_spectroscopy,
 )
-from utils import datetime_utils
 
 # Initialize logger
 
@@ -59,10 +54,6 @@ LOGLEVEL = logging.INFO
 # Set up Redis connection
 red = redis.Redis(decode_responses=True)
 
-# Settings
-BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
-
-REST_API_MAP = {"jobs": "/jobs"}
 
 # Type aliases
 JobID = str
@@ -72,7 +63,7 @@ JobID = str
 
 # This function is just a template for a future implementation
 # check_data will do something like this:
-async def check_dummy(node, job_done_event) -> DataStatus:
+async def check_dummy(node: str, job_done_event: JobDoneEvent) -> DataStatus:
     # signal demodulation measurement is used as a dummy here.
     job = mk_job_check_signal_demodulation()
 
@@ -80,7 +71,7 @@ async def check_dummy(node, job_done_event) -> DataStatus:
     print(f"Requesting check job with {job_id=} for {node=} ...")
     await request_job(job, job_done_event)
 
-    calibration_params = red.lrange(f"m_params:{node}", 0, -1)
+    calibration_params = red.lrange(f"{prefix}:goal_parameters:{node}", 0, -1)
     for calibration_param in calibration_params:
         # Fetch the values we got from the measurement's post-processing
         # here you can use the calibration_param
@@ -107,17 +98,11 @@ async def check_dummy(node, job_done_event) -> DataStatus:
     return DataStatus.bad_data
 
 
-# To be used by calibration nodes that don't yet have check_data implemented
-async def check_return_out_of_spec(node, _job_done_event):
-    print(f"check_data not implemented for {node}, forcing calibration ...")
-    return DataStatus.out_of_spec
-
-
 # -------------------------------------------------------------------------
 # Calibration procedures
 
 
-async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
+async def calibrate_vna_resonator_spectroscopy(node: str, job_done_event: JobDoneEvent):
     """VNA resonator spectroscopy (for Labber compatible equipment)"""
 
     # -------------------------------------------------------------------------
@@ -157,9 +142,6 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
     _assert_same_component_ids(
         "resonator", list(resonator_expected_frequencies.keys()), resonators
     )
-
-    # For set_resonator_property operation
-    source = "measurement"
 
     # -------------------------------------------------------------------------
     # Initialize some meta-information (only used in a "notes" field below)
@@ -315,7 +297,9 @@ async def calibrate_vna_resonator_spectroscopy(node, job_done_event):
         )
 
 
-async def calibrate_pulsed_resonator_spectroscopy(node, job_done_event):
+async def calibrate_pulsed_resonator_spectroscopy(
+    node: str, job_done_event: JobDoneEvent
+):
     """Pulsed resonator spectroscopy using Zürich Instruments/Labber
 
     For each resonator, perform pulsed resonator spectroscopy in a
@@ -398,7 +382,7 @@ async def calibrate_pulsed_resonator_spectroscopy(node, job_done_event):
         )
 
 
-async def calibrate_two_tone(node, job_done_event):
+async def calibrate_two_tone(node: str, job_done_event: JobDoneEvent):
     """Pulsed two-tone spectroscopy using Zürich Instruments/Labber"""
 
     # -------------------------------------------------------------------------
@@ -464,7 +448,7 @@ async def calibrate_two_tone(node, job_done_event):
         )
 
 
-async def calibrate_rabi(node, job_done_event):
+async def calibrate_rabi(node: str, job_done_event: JobDoneEvent):
     """Pulsed Rabi spectroscopy using Zürich Instruments/Labber"""
 
     # -------------------------------------------------------------------------
@@ -532,7 +516,7 @@ async def calibrate_rabi(node, job_done_event):
         )
 
 
-async def calibrate_ramsey(node, job_done_event):
+async def calibrate_ramsey(node: str, job_done_event: JobDoneEvent):
     """Pulsed Ramsey spectroscopy using Zürich Instruments/Labber"""
 
     # -------------------------------------------------------------------------
@@ -628,7 +612,7 @@ async def calibrate_ramsey(node, job_done_event):
         )
 
 
-async def calibrate_dummy(node, job_done_event):
+async def calibrate_dummy(node: str, job_done_event: JobDoneEvent):
     # Note: using this only works like a "demo", we are going to
     # refactor this later. Demodulation measurement is used as a dummy
     # here.
@@ -640,11 +624,8 @@ async def calibrate_dummy(node, job_done_event):
 
     print("")
 
-    calibration_params = red.lrange(f"m_params:{node}", 0, -1)
+    calibration_params = red.lrange(f"{prefix}:goal_parameters:{node}", 0, -1)
     for calibration_param in calibration_params:
-        # Note: unit is from now on stored elsewhere. See
-        # initialize_properties.py
-        unit = red.hget(f"m_params:{node}:{calibration_param}", "unit")
 
         # Fetch the values we got from the calibration's post-processing
         result_key = f"postprocessing:results:{job_id}"
@@ -656,65 +637,18 @@ async def calibrate_dummy(node, job_done_event):
             print(f"Warning: no entry found for key {result_key}")
             result = "not found"  # TODO: better error handling
 
-        red.hset(f"param:{calibration_param}", "name", calibration_param)
-        red.hset(f"param:{calibration_param}", "date", datetime_utils.utc_now_iso())
-        red.hset(f"param:{calibration_param}", "unit", unit or "")
-        red.hset(f"param:{calibration_param}", "value", result)
+        # TODO: This is behind bcc_dev2. The calibration_param is
+        # associated with a component type that has a list of
+        # component_id's. We should iterate over that and call
+        # write_calibration_result, so it gets stored in Redis. since
+        # this is just demo code, it isn't critical right now. The
+        # effect of not having implemented this is that the
+        # calibration will be re-run each time the main loop checks if
+        # calibration is needed.
 
 
 # -------------------------------------------------------------------------
 # Misc helpers
-
-# TODO: move this function to calibration_common.py
-async def request_job(job, job_done_event):
-    job_id = job["job_id"]
-
-    # Updating for handle_message to accept only this job_id:
-    job_done_event.requested_job_id = job_id
-
-    tmpdir = gettempdir()
-    file = Path(tmpdir) / str(uuid4())
-    with file.open("w") as dest:
-        json.dump(job, dest)
-
-    with file.open("r") as src:
-        files = {"upload_file": src}
-        url = str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["jobs"]
-        response = requests.post(url, files=files)
-
-        # Right now the Labber Connector sends a response *after*
-        # executing the scenario i.e., the POST request is *blocking*
-        # until after the measurement execution this will change in
-        # the future; it should just ack a successful upload of a
-        # scenario and nothing more
-
-        if response:
-            file.unlink()
-            print("Job has been successfully sent")
-        else:
-            print("request_job failed")
-            return
-
-    # Wait until reply arrives(the one with our job_id).
-    await job_done_event.event.wait()
-    job_done_event.event.clear()
-
-    print("")
-
-
-def get_post_processed_result(job_id: JobID) -> Any:
-    result_key = f"postprocessing:results:{job_id}"
-    try:
-        result_repr = red.get(result_key)
-        result = ast.literal_eval(result_repr)
-    except Exception as err:
-        message = (
-            f"Failed to obtain post-processed results from key {result_key}, {err=}"
-        )
-        print(message)
-        inform_failure(job_id, message)
-        return
-    return result
 
 
 def _get_powers(power_spec: Union[Number, List[Number]]) -> List[Number]:
@@ -725,7 +659,7 @@ def _get_powers(power_spec: Union[Number, List[Number]]) -> List[Number]:
 
 
 # See note (*) in calibrate_pulsed_resonator_spectroscopy
-def _split(rf_frequency: float, if_frequency_limit: float) -> dict:
+def _split(rf_frequency: float, if_frequency_limit: float) -> Dict[str, float]:
     return {"lo": rf_frequency - if_frequency_limit, "if": if_frequency_limit}
 
 
@@ -751,7 +685,9 @@ def _assert_same_component_ids(
         exit(1)
 
 
-def _get_results_pulsed_resonator_spectroscopy(qa_if_limit: float) -> List[dict]:
+def _get_results_pulsed_resonator_spectroscopy(
+    qa_if_limit: float,
+) -> Dict[str, Dict[str, float]]:
     resonators = get_component_ids("resonator")
 
     pulsed_results = {}
@@ -767,7 +703,9 @@ def _get_results_pulsed_resonator_spectroscopy(qa_if_limit: float) -> List[dict]
     return pulsed_results
 
 
-def _get_results_two_tone(qubit_measurement_parameters: dict) -> List[dict]:
+def _get_results_two_tone(
+    qubit_measurement_parameters: Dict[str, Dict[str, float]],
+) -> Dict[str, Dict[str, float]]:
     qubits = get_component_ids("qubit")
 
     two_tone_results = {}
@@ -785,7 +723,7 @@ def _get_results_two_tone(qubit_measurement_parameters: dict) -> List[dict]:
     return two_tone_results
 
 
-def _get_results_rabi():
+def _get_results_rabi() -> Dict[str, float]:
     qubits = get_component_ids("qubit")
 
     rabi_results = {}
