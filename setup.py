@@ -23,7 +23,7 @@ REQUIREMENTS = [
     "requests>=2.25.1",
     "rq>=1.10.0",
     "uvicorn>=0.13.4",
-    "numpy>=1.20.3",
+    "numpy==1.23.5",
     "PyQt5>=5.15.4",
     "h5py>=3.2.1",
     "scipy>=1.4.1",
