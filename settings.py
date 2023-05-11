@@ -48,6 +48,14 @@ MEASUREMENT_DEFAULT_FILES = config(
     default="measurement_jobs/parameter_defaults/default_files.toml",
 )
 
+# Definition of backend property names
+# See also backend_properties_config/device_*.toml
+BACKEND_PROPERTIES_TEMPLATE = config(
+    "BACKEND_PROPERTIES_TEMPLATE",
+    cast=str,
+    default="backend_properties_config/property_templates_default.toml",
+)
+
 # Connectivity settings
 
 LABBER_MACHINE_ROOT_URL = config("LABBER_MACHINE_ROOT_URL", cast=URL)

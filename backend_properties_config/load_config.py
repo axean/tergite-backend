@@ -184,13 +184,13 @@ if __name__ == "__main__":
     device_configuration_file = args.device
 
     layout = None
-    additional_device_config = None
+    default_values = None
 
     try:
         device_config = toml.load(device_configuration_file)
         layout = device_config.get("layout")
         # The section's name is the same as the property type's str value:
-        additional_device_config = device_config.get(str(PropertyType.DEVICE))
+        default_values = device_config.get(str(PropertyType.DEVICE))
     except Exception as err:
         logger.error(
             f"Failed to load configuration from {device_configuration_file}: {err=}"
@@ -208,14 +208,13 @@ if __name__ == "__main__":
     if not initialize_properties():
         logger.error(f"Failed to initialize backend properties")
         exit(1)
-    if not (
-        additional_device_config and load_device_configuration(additional_device_config)
-    ):
-        logger.error(
-            f"Failed to load additional backend properties "
-            f"from {device_configuration_file}"
-        )
-        exit(1)
+    if default_values:
+        if not load_device_configuration(default_values):
+            logger.error(
+                f"Failed to load additional backend properties "
+                f"from {device_configuration_file}"
+            )
+            exit(1)
 
     if unknown:
         # Unrecognized arguments, can be passed back to caller if wanted:

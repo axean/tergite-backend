@@ -122,7 +122,7 @@ class BackendProperty:
         timestamp_key = self._create_redis_key("timestamp")
 
         def set_fields(pipe):
-            for (field, value) in metadata:
+            for field, value in metadata:
                 field_key = self._create_redis_key(field)
                 pipe.set(field_key, to_string(value))
             pipe.set(timestamp_key, to_string(utc_now_iso()))
@@ -446,7 +446,7 @@ def create_redis_key(
     return f"{property_type}{opt_component}{opt_component_id}:{name}{opt_field}"
 
 
-""""Component helpers"""
+"""Component helpers"""
 
 
 def set_component_property(
@@ -516,7 +516,7 @@ def set_resonator_value(name: str, component_id: str, value: T):
 
 
 def get_resonator_value(name: str, component_id: str) -> Optional[T]:
-    """get the value associated with the resonator property
+    """Get the value associated with the resonator property
     identified by the given arguments.
     """
     return get_component_value("resonator", name, component_id)
@@ -549,7 +549,7 @@ def set_qubit_value(name: str, component_id: str, value: T):
 
 
 def get_qubit_value(name: str, component_id: str) -> Optional[T]:
-    """get the value associated with the qubit property
+    """Get the value associated with the qubit property
     identified by the given arguments.
     """
     return get_component_value("qubit", name, component_id)
@@ -582,7 +582,7 @@ def set_coupler_value(name: str, component_id: str, value: T):
 
 
 def get_coupler_value(name: str, component_id: str) -> Optional[T]:
-    """get the value associated with the coupler property
+    """Get the value associated with the coupler property
     identified by the given arguments.
     """
     return get_component_value("coupler", name, component_id)

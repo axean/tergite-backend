@@ -15,6 +15,7 @@ from typing import List, Optional
 
 import toml
 
+import settings
 from backend_properties_storage.storage import (
     BackendProperty,
     PropertyType,
@@ -36,7 +37,8 @@ LOGLEVEL = logging.INFO
 
 # Question: where should this filepath be defined? .env?
 # For testing purposes it is good if this path can be configured.
-TEMPLATE_FILE = "backend_properties_config/property_templates_default.toml"
+TEMPLATE_FILE = settings.BACKEND_PROPERTIES_TEMPLATE
+
 
 # precondition: device layout configuration has been loaded,
 # which means: we know which components are present, and in what numbers
