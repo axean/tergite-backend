@@ -1,0 +1,44 @@
+{
+  "a": {
+    "dependencies": [],
+    "check_fn": "",
+      "calibration_fn": "",
+    "goal_parameters": []
+  },
+  "b": {
+    "dependencies": ["a"],
+    "check_fn": "",
+      "calibration_fn": "",
+    "goal_parameters": []
+  },
+  "c": {
+    "dependencies": ["a"],
+    "check_fn": "",
+      "calibration_fn": "",
+    "goal_parameters": []
+  },
+  "d": {
+      "dependencies": ["b", "c", "a", "g"],
+    "check_fn": "",
+      "calibration_fn": "",
+    "goal_parameters": []
+  },
+  "e": {
+      "dependencies": ["b", "c"],
+    "check_fn": "",
+      "calibration_fn": "",
+    "goal_parameters": []
+  },
+  "f": {
+      "dependencies": ["d", "e"],
+    "check_fn": "",
+      "calibration_fn": "",
+    "goal_parameters": []
+  },
+  "g": {
+      "dependencies": [],
+    "check_fn": "",
+      "calibration_fn": "",
+    "goal_parameters": []
+  }
+}

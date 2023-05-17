@@ -12,7 +12,7 @@
 
 
 from starlette.config import Config
-from starlette.datastructures import URL
+from starlette.datastructures import URL, CommaSeparatedStrings
 
 # NOTE: shell env variables take precedence over the configuration file
 config = Config(".env")
@@ -66,7 +66,11 @@ DB_MACHINE_ROOT_URL = config("DB_MACHINE_ROOT_URL", cast=URL)
 
 CALIBRATION_SUPERVISOR_PORT = config("CALIBRATION_SUPERVISOR_PORT", cast=int)
 
-# Calibration supervisor
+# Calibration supervisor settings
+
 CALIBRATION_GRAPH = config(
     "CALIBRATION_GRAPH", cast=str, default="calibration_graphs/default.json"
+)
+CALIBRATION_GOALS = list(
+    config("CALIBRATION_GOALS", cast=CommaSeparatedStrings, default=[])
 )

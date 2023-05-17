@@ -25,6 +25,7 @@ from scipy.optimize import curve_fit
 
 from backend_properties_config.initialize_properties import get_component_ids
 from calibration.calibration_common import (
+    CALIBRATION_SUPERVISOR_PREFIX,
     DataStatus,
     JobDoneEvent,
     get_post_processed_result,
@@ -54,12 +55,15 @@ LOGLEVEL = logging.INFO
 # Set up Redis connection
 red = redis.Redis(decode_responses=True)
 
+# For calibration graph Redis entries
+CALIBRATION_GRAPH_PREFIX = f"{CALIBRATION_SUPERVISOR_PREFIX}:graph"
 
 # Type aliases
 JobID = str
 
 # -------------------------------------------------------------------------
 # Check data procedures
+
 
 # This function is just a template for a future implementation
 # check_data will do something like this:
@@ -71,7 +75,9 @@ async def check_dummy(node: str, job_done_event: JobDoneEvent) -> DataStatus:
     print(f"Requesting check job with {job_id=} for {node=} ...")
     await request_job(job, job_done_event)
 
-    calibration_params = red.lrange(f"{prefix}:goal_parameters:{node}", 0, -1)
+    calibration_params = red.lrange(
+        f"{CALIBRATION_GRAPH_PREFIX}:goal_parameters:{node}", 0, -1
+    )
     for calibration_param in calibration_params:
         # Fetch the values we got from the measurement's post-processing
         # here you can use the calibration_param
@@ -624,9 +630,10 @@ async def calibrate_dummy(node: str, job_done_event: JobDoneEvent):
 
     print("")
 
-    calibration_params = red.lrange(f"{prefix}:goal_parameters:{node}", 0, -1)
+    calibration_params = red.lrange(
+        f"{CALIBRATION_GRAPH_PREFIX}:goal_parameters:{node}", 0, -1
+    )
     for calibration_param in calibration_params:
-
         # Fetch the values we got from the calibration's post-processing
         result_key = f"postprocessing:results:{job_id}"
         result = red.get(result_key)
@@ -655,7 +662,7 @@ def _get_powers(power_spec: Union[Number, List[Number]]) -> List[Number]:
     if isinstance(power_spec, Number):
         return [power_spec]
     else:  # expects a list of the form [min, max, step_size]
-        return list(np.linspace((*tuple(power_spec))))
+        return list(np.linspace(*tuple(power_spec)))
 
 
 # See note (*) in calibrate_pulsed_resonator_spectroscopy

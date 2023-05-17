@@ -24,6 +24,9 @@ from calibration.calibration_common import CALIBRATION_SUPERVISOR_PREFIX
 # Set up redis connection
 red = redis.Redis(decode_responses=True)
 
+# For calibration graph Redis entries
+CALIBRATION_GRAPH_PREFIX = f"{CALIBRATION_SUPERVISOR_PREFIX}:graph"
+
 # Networkx representation of measurement graph
 graph = nx.DiGraph()
 
@@ -41,6 +44,7 @@ def create_graph_structure(nodes):
     Creates a NetworkX graph from the JSON file(s). Checks that all graphs
     are free from cycles, and that all dependencies point to existing nodes.
     """
+    global graph
     # List to keep track of node names
     names = []
 
@@ -89,40 +93,63 @@ def create_graph_structure(nodes):
                     break
     print(f"Done! Removed {removed} dependencies.")
 
+    # Generate subgraph with the nodes reachable from the specified
+    # goal nodes, given in settings.py:
+    goals = settings.CALIBRATION_GOALS
+    if goals:
+        print(f"{goals=}")
+        goal_nodes = set()
+        for goal in goals:
+            goal_nodes = goal_nodes | nx.descendants(graph, goal)
+            goal_graph = graph.subgraph(goal_nodes | set(goals))
+
+        # Henceforth, the graph to consider is what is reachable from
+        # the goal nodes:
+        graph = goal_graph
+
     # Topologically sort the graph to get a linear order we can go through it in
     global topo_order
     print("Starting topo sort...")
-    topo_order = reversed(list(nx.topological_sort(graph)))
+    topo_order = list(reversed(list(nx.topological_sort(graph))))
+    print(f"{topo_order=}")
+
     print("Finished!")
 
 
-def build_redis_nodes(nodes):
-    # Remove entries we might have created previously
-    prefix=f"{CALIBRATION_SUPERVISOR_PREFIX}:graph"
-    utils.redis.del_keys(red, regex=f"^{prefix}")
+def build_redis_nodes(nodes: dict):
+    # Remove Redis entries we might have created previously
+    utils.redis.del_keys(red, regex=f"^{CALIBRATION_GRAPH_PREFIX}")
 
     # Store topological node order
+
+    # The global 'graph' variable now contains those nodes we selected
+    # in create_graph_structure, by providing CALIBRATION_GOALS, and
+    # these are going to be represented in Redis. If CALIBRATION_GOALS
+    # was not set, the whole JSON file is used.
+
+    # topo_order was generated from graph's contents, so it already
+    # consists of the selected nodes
     for node in topo_order:
-        red.rpush(f"{prefix}:topo_order", node)
+        red.rpush(f"{CALIBRATION_GRAPH_PREFIX}:topo_order", node)
 
     # Set up measurement nodes
-    for node in nodes:
+    for node in graph.nodes():
         contents = nodes[node]
         # Main node info
-        red.hset(f"{prefix}:measurement:{node}", "calibration_fn", contents["calibration_fn"])
-        red.hset(f"{prefix}:measurement:{node}", "check_fn", contents["check_fn"])
-        if "fidelity_measurement" in contents:
-            red.hset(
-                f"{prefix}:measurement:{node}",
-                "fidelity_measurement",
-                str(contents["fidelity_measurement"]),
-            )
-        else:
-            red.hset(f"{prefix}:measurement:{node}", "fidelity_measurement", "False")
+        red.hset(
+            f"{CALIBRATION_GRAPH_PREFIX}:measurement:{node}",
+            "calibration_fn",
+            contents["calibration_fn"],
+        )
+        red.hset(
+            f"{CALIBRATION_GRAPH_PREFIX}:measurement:{node}",
+            "check_fn",
+            contents["check_fn"],
+        )
 
         # Dependency info
         for dep_edge in graph.edges(node):
-            red.rpush(f"{prefix}:dependencies:{node}", dep_edge[1])
+            red.rpush(f"{CALIBRATION_GRAPH_PREFIX}:dependencies:{node}", dep_edge[1])
 
         # Param data
         for goal_parameter in contents["goal_parameters"]:
@@ -131,9 +158,15 @@ def build_redis_nodes(nodes):
             # Add the name of the goal parameter, i.e., the name of
             # the result quantity that is measured by the calibration
             # specified by the node
-            red.rpush(f"{prefix}:goal_parameters:{node}", parameter_name)
+            red.rpush(
+                f"{CALIBRATION_GRAPH_PREFIX}:goal_parameters:{node}", parameter_name
+            )
             # Add the component type that the goal parameter concerns
-            red.hset(f"{prefix}:goal_parameters:{node}:{parameter_name}", "component", component)
+            red.hset(
+                f"{CALIBRATION_GRAPH_PREFIX}:goal_parameters:{node}:{parameter_name}",
+                "component",
+                component,
+            )
 
 
 if __name__ == "__main__":
