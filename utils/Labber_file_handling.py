@@ -1,0 +1,107 @@
+import numpy as np
+#import typing
+#import h5py
+import Labber
+
+
+def LabberParsing(labber_logfile: Labber.LogFile):
+    '''
+    Parse a Labber LogFile to return a dictionary with only the swept  Step
+    Channels as well as the Log Channels formatted to the proper shape
+
+    args:
+        labber_logfile (Labber.LogFile):
+            Labber logfile object corresponding to the Labber hdf5 file
+
+    returns:
+        xdict (Dict):
+            A formatted dictionary containing the data associated with each
+            channel that was swept if any.
+
+        ydict (Dict):
+            A formatted dictionary containing the data associated with each
+            log channel with its values sorted to the shape of what was swept
+    '''
+    xdict = getStepData(labber_logfile)
+    ydict = getLogData(labber_logfile)
+    xshape = []
+    # Labber records step channels top down, but stores y data from the bottom
+    # up so the reverse is needed
+    for key, d in xdict.items():
+        xlen = len(d['values'])
+        xshape.append(xlen)
+    xshape.reverse()
+    #reshape y data based on whether the data is a vector or not
+    for key in ydict.keys():
+        # If the output y-data is a vector the last index is the number of
+        # entries in that vector
+        if ydict[key]['meta']['vector']:
+            ydict[key]['values'] = np.reshape(ydict[key]['values'],
+                                              [*xshape, -1])
+        # If the data is just a single x-sweep or single point it is formated
+        elif (len(xshape)==1) or (len(xshape)==0):
+            pass
+        # If the data is a higher order sweep it needs to format
+        else:
+            ydict[key]['values'] = np.reshape(ydict[key]['values'],
+                                              xshape)
+
+    return xdict, ydict
+
+def getMetaData(file, name_list):
+    log = Labber.LogFile(file)
+    chan_dict = log.getChannelValuesAsDict(True)
+    meta_dict = {}
+    for name in name_list:
+        temp_lst = list(filter(lambda x: name in x, chan_dict.keys()))
+        # If there is only one entry flatten it to the top level dictionary
+        if len(temp_lst) == 1:
+            meta_dict[name] = chan_dict[temp_lst[0]]
+        # Otherwise not enough information at this stage to make a determination
+        # just return all entries and let the higher level decide the format
+        else:
+            meta_dict[name] = {key: chan_dict[key] for key in temp_lst}
+    return meta_dict  
+
+
+
+def getStepData(log):
+    '''
+    Wrapper around a Labber LogFile to extract out any channel sweep and
+    return those channels
+
+    args:
+        log (Labber LogFile):
+            Input logfile you want to parse
+
+    returns:
+        d (Dict):
+            A dictionary containing the entries of the Step Channels that
+            were swept
+    '''
+    StepData = log.getStepChannels()
+    d = {}
+    for i, data in enumerate(StepData):
+        if len(data['values'])>1:
+            d['x{}'.format(i)] = data
+    return d
+
+def getLogData(log):
+    '''
+    Wrapper around a Labber LogFile to extract out all log channels of the
+    measurement.
+
+    args:
+        log (Labber LogFile):
+            Input logfile to parse the results from
+
+    returns:
+        d (Dict)
+            A dictionary containing the entries of the Log Channels
+    '''
+    LogChannels = log.getLogChannels()
+    d = {}
+    for i, chan in enumerate(LogChannels):
+        d['y{}'.format(i)] = {'meta': chan,
+                                'values': log.getData(chan['name'])}
+    return d
