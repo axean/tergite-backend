@@ -16,7 +16,7 @@ from typing import Dict, List
 import Labber
 import matplotlib.pyplot as plt
 import numpy as np
-import utils.Labber_file_handling as qu
+import utils.labber_file_handling as qu
 import scipy.signal
 from resonator_tools import circuit
 from scipy.optimize import curve_fit
@@ -33,7 +33,7 @@ def find_resonators(labber_logfile: Labber.LogFile) -> List[List[float]]:
     # only x value is used for sweeped frequency array
     x, y = labber_logfile.getTraceXY()
 
-    # Extracting data using qtl-analysis repo, xdict contains third dimension of
+    # Extracting data form Labber logfile, xdict contains third dimension of
     # data, for example sweeped power values, ydict contains values of the traces
 
     xdict, ydict = qu.LabberParsing(labber_logfile)

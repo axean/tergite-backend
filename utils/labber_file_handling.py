@@ -1,6 +1,4 @@
 import numpy as np
-#import typing
-#import h5py
 import Labber
 
 
