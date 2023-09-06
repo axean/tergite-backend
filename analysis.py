@@ -36,7 +36,7 @@ def find_resonators(labber_logfile: Labber.LogFile) -> List[List[float]]:
     # Extracting data form Labber logfile, xdict contains third dimension of
     # data, for example sweeped power values, ydict contains values of the traces
 
-    xdict, ydict = qu.LabberParsing(labber_logfile)
+    xdict, ydict = qu.labber_parsing(labber_logfile)
     result = extract_resonance_frequencies(x, y, xdict, ydict)
     print("\n")
     for i_sweep in range(len(result)):
@@ -90,7 +90,7 @@ def fit_resonator_itraces(
 
     x, y = labber_logfile.getTraceXY()
 
-    xdict, ydict = qu.LabberParsing(labber_logfile)
+    xdict, ydict = qu.labber_parsing(labber_logfile)
 
     results = []
 
@@ -111,7 +111,7 @@ def gaussian_fit_itraces(
     labber_logfile: Labber.LogFile, itraces: List[int]
 ) -> List[float]:
 
-    xdict, ydict = qu.LabberParsing(labber_logfile)
+    xdict, ydict = qu.labber_parsing(labber_logfile)
 
     results = []
 
@@ -161,7 +161,7 @@ def fit_oscillation_itraces(
     labber_logfile: Labber.LogFile, itraces: List[int]
 ) -> List[Dict[str, float]]:
 
-    xdict, ydict = qu.LabberParsing(labber_logfile)
+    xdict, ydict = qu.labber_parsing(labber_logfile)
 
     results = []
 

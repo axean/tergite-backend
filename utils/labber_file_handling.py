@@ -1,8 +1,22 @@
+# This code is part of Tergite
+# (C) Copyright Chris Warren 2021
+# (C) Copyright Abdullah Al Amin 2022
+# (C) Copyright David Wahlstedt 2022
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
+
 import numpy as np
 import Labber
 
 
-def LabberParsing(labber_logfile: Labber.LogFile):
+def labber_parsing(labber_logfile: Labber.LogFile):
     '''
     Parse a Labber LogFile to return a dictionary with only the swept  Step
     Channels as well as the Log Channels formatted to the proper shape
@@ -20,8 +34,8 @@ def LabberParsing(labber_logfile: Labber.LogFile):
             A formatted dictionary containing the data associated with each
             log channel with its values sorted to the shape of what was swept
     '''
-    xdict = getStepData(labber_logfile)
-    ydict = getLogData(labber_logfile)
+    xdict = get_step_data(labber_logfile)
+    ydict = get_log_data(labber_logfile)
     xshape = []
     # Labber records step channels top down, but stores y data from the bottom
     # up so the reverse is needed
@@ -46,7 +60,7 @@ def LabberParsing(labber_logfile: Labber.LogFile):
 
     return xdict, ydict
 
-def getMetaData(file, name_list):
+def get_meta_data(file, name_list):
     log = Labber.LogFile(file)
     chan_dict = log.getChannelValuesAsDict(True)
     meta_dict = {}
@@ -63,7 +77,7 @@ def getMetaData(file, name_list):
 
 
 
-def getStepData(log):
+def get_step_data(log):
     '''
     Wrapper around a Labber LogFile to extract out any channel sweep and
     return those channels
@@ -77,14 +91,14 @@ def getStepData(log):
             A dictionary containing the entries of the Step Channels that
             were swept
     '''
-    StepData = log.getStepChannels()
+    step_data = log.getStepChannels()
     d = {}
-    for i, data in enumerate(StepData):
+    for i, data in enumerate(step_data):
         if len(data['values'])>1:
             d['x{}'.format(i)] = data
     return d
 
-def getLogData(log):
+def get_log_data(log):
     '''
     Wrapper around a Labber LogFile to extract out all log channels of the
     measurement.
@@ -97,9 +111,9 @@ def getLogData(log):
         d (Dict)
             A dictionary containing the entries of the Log Channels
     '''
-    LogChannels = log.getLogChannels()
+    log_channels = log.getLogChannels()
     d = {}
-    for i, chan in enumerate(LogChannels):
+    for i, chan in enumerate(log_channels):
         d['y{}'.format(i)] = {'meta': chan,
                                 'values': log.getData(chan['name'])}
     return d
