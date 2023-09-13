@@ -28,8 +28,8 @@ PORT_NUMBER="${PORT_CONFIG#*=}"                  # extract the number
 
 
 # Clean start
-rq empty loki_job_registration loki_job_preprocessing loki_job_execution loki_logfile_postprocessing
-rm -fr /tmp/loki    # FIXME: Fixed path
+rq empty loke_job_registration loke_job_preprocessing loke_job_execution loke_logfile_postprocessing
+rm -fr /tmp/loke    # FIXME: Fixed path
 
 
 # Remove old Redis keys, by their prefixes
@@ -58,10 +58,10 @@ if test -n "$unrecognized_args"; then
 fi
 
 # Worker processes
-rq worker loki_job_registration &
-rq worker loki_job_preprocessing &
-rq worker loki_job_execution &
-rq worker loki_logfile_postprocessing &
+rq worker loke_job_registration &
+rq worker loke_job_preprocessing &
+rq worker loke_job_execution &
+rq worker loke_logfile_postprocessing &
 
 # REST-API
 uvicorn --host 0.0.0.0 --port "$PORT_NUMBER" rest_api:app --reload
