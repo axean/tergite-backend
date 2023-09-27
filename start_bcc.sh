@@ -14,22 +14,35 @@
 
 set -e # exit if any step fails
 
-exit_with_error () {
+port_configuration_error () {
     echo "Port configuration failed. Use BCC_PORT=<num> in the .env file."
+    exit 1
+}
+
+prefix_configuration_error () {
+    echo "Reading the prefix configuration failed. Use DEFAULT_PREFIX=<str> in the .env file."
     exit 1
 }
 
 # Port handling
 PORT_CONFIG=$(grep BCC_PORT= .env)               # eg: BCC_PORT=5000
 PORT_NUMBER="${PORT_CONFIG#*=}"                  # extract the number
-[[ -z "$PORT_NUMBER" ]]  &&  exit_with_error     # validation
-[[ ! "$PORT_NUMBER" =~ ^[0-9]+$ ]]  &&  exit_with_error
+[[ -z "$PORT_NUMBER" ]]  &&  port_configuration_error     # validation
+[[ ! "$PORT_NUMBER" =~ ^[0-9]+$ ]]  &&  port_configuration_error
 
+# Extract the default prefix
+DEFAULT_PREFIX_CONFIG=$(grep DEFAULT_PREFIX= .env)
+DEFAULT_PREFIX="${DEFAULT_PREFIX_CONFIG#*=}"
+[[ -z "$DEFAULT_PREFIX" ]]  &&  prefix_configuration_error
+[[ ! -n "$DEFAULT_PREFIX" ]]  &&  prefix_configuration_error
 
 
 # Clean start
-rq empty loke_job_registration loke_job_preprocessing loke_job_execution loke_logfile_postprocessing
-rm -fr /tmp/loke    # FIXME: Fixed path
+rq empty "${DEFAULT_PREFIX}_job_registration"
+rq empty "${DEFAULT_PREFIX}_job_preprocessing"
+rq empty "${DEFAULT_PREFIX}_job_execution"
+rq empty "${DEFAULT_PREFIX}_logfile_postprocessing"
+rm -fr "/tmp/${DEFAULT_PREFIX}"
 
 
 # Remove old Redis keys, by their prefixes
@@ -58,10 +71,10 @@ if test -n "$unrecognized_args"; then
 fi
 
 # Worker processes
-rq worker loke_job_registration &
-rq worker loke_job_preprocessing &
-rq worker loke_job_execution &
-rq worker loke_logfile_postprocessing &
+rq worker "${DEFAULT_PREFIX}_job_registration" &
+rq worker "${DEFAULT_PREFIX}_job_preprocessing" &
+rq worker "${DEFAULT_PREFIX}_job_execution" &
+rq worker "${DEFAULT_PREFIX}_logfile_postprocessing" &
 
 # REST-API
 uvicorn --host 0.0.0.0 --port "$PORT_NUMBER" rest_api:app --reload

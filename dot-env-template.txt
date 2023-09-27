@@ -11,11 +11,52 @@ JOB_UPLOAD_POOL_DIRNAME=job_upload_pool
 JOB_EXECUTION_POOL_DIRNAME=job_execution_pool
 JOB_PRE_PROC_POOL_DIRNAME=job_pre_proc_pool
 
-# this has to be set
+# This first block can be left as is
+# It contains definitions for the temporary directories and file names
+DEFAULT_PREFIX=loke
+STORAGE_ROOT=/tmp
+LOGFILE_DOWNLOAD_POOL_DIRNAME=logfile_download_pool
+LOGFILE_UPLOAD_POOL_DIRNAME=logfile_upload_pool
+JOB_UPLOAD_POOL_DIRNAME=job_upload_pool
+JOB_PRE_PROC_POOL_DIRNAME=job_preproc_pool
+JOB_EXECUTION_POOL_DIRNAME=job_execution_pool
+
+# 1 MSS
+# Running it locally:
 MSS_MACHINE_ROOT_URL=http://host:port
-BCC_MACHINE_ROOT_URL=http://host:port
-QUANTIFY_MACHINE_ROOT_URL=http://host:port
+# Or a remote VM:
+# MSS_MACHINE_ROOT_URL=http://host:port
+MSS_PORT=8002
+
+# 2 BCC
+# Running it locally:
+BCC_MACHINE_ROOT_URL=http://qtl-stefanhi.mc2.chalmers.se:8000
+# Or a remote VM:
+# BCC_MACHINE_ROOT_URL=http://qtl-bcc-1.qdp.chalmers.se:8002
+BCC_PORT=8000
+
+# 3 Instrument server
+# Labber
 LABBER_MACHINE_ROOT_URL=http://host:port
-DB_MACHINE_ROOT_URL=mongodb://user:pass@host:port
-BCC_PORT=num
-CALIBRATION_SUPERVISOR_PORT=num
+# Quantify
+QUANTIFY_MACHINE_ROOT_URL=http://host:port
+
+# 4 MongoDB
+DB_MACHINE_ROOT_URL=mongodb://user:password@host:port
+# Ask someone for the password!
+# You can also run MongoDB locally, and then you don't need authentication:
+# You will then need to install the mongodb software package on your local host.
+# DB_MACHINE_ROOT_URL=mongodb://localhost
+
+# Settings for automatic calibration:
+
+# A job requested by the calibration supervisor will cause a "job done"
+# message to be sent to this port on the BCC host when it has been
+# post-processed successfully.
+CALIBRATION_SUPERVISOR_PORT=8003
+# The following JSON file will define the partial order that
+# regulates the dependencies between calibration steps:
+CALIBRATION_GRAPH="calibration_graphs/quantify_calibration.json"
+
+POSTPROC_PLOTTING=False
+QUANTIFY_REST_ID="dummy_cluster"
