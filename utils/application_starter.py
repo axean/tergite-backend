@@ -15,9 +15,3 @@ class BCCApplication:
 
     def run(self):
         uvicorn.run(app, host=self.host, port=self.port)
-
-
-if __name__ == "__main__":
-    application = BCCApplication(host='0.0.0.0',
-                                 port=8000)
-    application.run()

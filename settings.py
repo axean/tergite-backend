@@ -17,13 +17,11 @@ from starlette.datastructures import URL, CommaSeparatedStrings
 # NOTE: shell env variables take precedence over the configuration file
 config = Config(".env")
 
-
 # Misc settings
 
 # Plotting during post-processing, only for interactive use, *not*
 # when running as a server
 POSTPROC_PLOTTING = config("POSTPROC_PLOTTING", cast=bool, default=False)
-
 
 # Storage settings
 
@@ -75,3 +73,6 @@ CALIBRATION_GRAPH = config(
 CALIBRATION_GOALS = list(
     config("CALIBRATION_GOALS", cast=CommaSeparatedStrings, default=[])
 )
+
+# Labber
+IMPORT_LABBER = config("IMPORT_LABBER", cast=bool)
