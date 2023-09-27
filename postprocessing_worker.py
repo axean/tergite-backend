@@ -141,7 +141,8 @@ def _load_lda_discriminator(index: int) -> object:
 def _hardcoded_discriminator(
     *, qubit_idx: int, iq_points: complex
 ) -> list:  # List[0/1]
-    _DISCRIMINATORS = {index: _load_lda_discriminator(index) for index in range(5)}
+    # _DISCRIMINATORS = {index: _load_lda_discriminator(index) for index in range(5)}
+    _DISCRIMINATORS = {0: _load_lda_discriminator(0)}
     lda_model = _DISCRIMINATORS[qubit_idx]
 
     X = np.zeros((iq_points.shape[0], 2))
