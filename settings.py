@@ -75,4 +75,7 @@ CALIBRATION_GOALS = list(
 )
 
 # Labber
-IMPORT_LABBER = config("IMPORT_LABBER", cast=bool)
+try:
+    IMPORT_LABBER = config("IMPORT_LABBER", cast=bool)
+except:
+    IMPORT_LABBER = True
