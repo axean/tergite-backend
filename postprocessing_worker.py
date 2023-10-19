@@ -19,9 +19,13 @@ import asyncio
 import pickle
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
+from sklearn.utils.extmath import safe_sparse_dot
+import json
+import functools
 
 import Labber
 import numpy as np
+import numpy.typing as npt
 import redis
 import requests
 import tqcsf.file
@@ -72,6 +76,7 @@ REST_API_MAP = {
     "jobs": "/jobs",
     "logfiles": "/logfiles",
     "download_url": "/download_url",
+    "backends": "/backends",
 }
 
 # Type aliases
@@ -150,13 +155,45 @@ def _hardcoded_discriminator(
 
     return lda_model.predict(X)
 
+def _fetch_discriminator(
+    lda_parameters: dict, qubit_idx: int, iq_points: npt.NDArray[np.complex128]
+) -> npt.NDArray[np.int_]:
+
+    level = "threeState" if settings.DISCRIMINATE_TWO_STATE else "twoState"
+    coef = np.array(lda_parameters[f"q{qubit_idx}"][level]["coef"])
+    intercept = np.array(lda_parameters[f"q{qubit_idx}"][level]["intercept"])
+
+    X = np.zeros((iq_points.shape[0], 2))
+    X[:, 0] = iq_points.real
+    X[:, 1] = iq_points.imag
+
+    scores = safe_sparse_dot(X, coef.T, dense_output=True) + intercept
+
+    if settings.DISCRIMINATE_TWO_STATE:
+        return scores.argmax(axis=1)
+    else:
+        return (scores.ravel() > 0).astype(np.int_)
 
 def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
     if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
+        discriminator_fn = _hardcoded_discriminator
+        
+        if settings.FETCH_DISCRIMINATOR:
+            backend: str = sf.header["qobj"]["backend"].attrs["backend_name"] 
+            MSS_JOB: str = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["backends"] + "/" + backend
+            response = requests.get(MSS_JOB).json() 
 
-        # FIXME: This is a hardcoded solution for the eX3 demo on November 7, 2022
+            if response.status_code == 200 and response["properties"]["lda_parameters"]:
+                discriminator_fn = functools.partial(
+                    _fetch_discriminator,
+                    response
+                )
+
         update_mss_and_bcc(
-            memory=sf.as_readout(discriminator=_hardcoded_discriminator),
+            memory=sf.as_readout(
+                discriminator=discriminator_fn,
+                disc_two_state=settings.DISCRIMINATE_TWO_STATE
+            ),
             job_id=sf.job_id,
         )
 

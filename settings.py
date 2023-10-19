@@ -20,6 +20,10 @@ config = Config(".env")
 
 # Misc settings
 
+# Discrimination settings
+DISCRIMINATE_TWO_STATE = config("DISCRIMINATE_TWO_STATE", cast=bool, default=False)
+FETCH_DISCRIMINATOR = config("FETCH_DISCRIMINATOR", cast=bool, default=False)
+
 # Plotting during post-processing, only for interactive use, *not*
 # when running as a server
 POSTPROC_PLOTTING = config("POSTPROC_PLOTTING", cast=bool, default=False)
