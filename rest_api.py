@@ -28,6 +28,7 @@ import job_supervisor
 import settings
 from job_supervisor import Location
 from postprocessing_worker import logfile_postprocess, postprocessing_success_callback
+from backend_properties_updater.mss_backend_updater import create_backend_snapshot
 from registration_worker import job_register
 from request_rng import quantify_rng
 from utils.uuid import validate_uuid4_str
@@ -57,7 +58,7 @@ rq_logfile_postprocessing = Queue(
 # application
 app = FastAPI(
     title="Backend Control Computer",
-    description="Controls Pingu qubits via REST API",
+    description="Interfaces Quntum processor via REST API",
     version="0.0.1",
 )
 
@@ -217,8 +218,14 @@ async def call_rng(job_id: UUID):
     return "Requesting RNG Numbers"
 
 
-# Webgui requests
+@app.get("/backend_properties")
+async def create_current_snapshot():
+    current_backend_snapshot = create_backend_snapshot()
+    snapshot = json.dumps(current_backend_snapshot, indent=4)
+    return json.loads(snapshot)
 
+
+# Webgui requests
 
 @app.get("/web-gui")
 async def snapshot():

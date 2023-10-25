@@ -58,6 +58,12 @@ BACKEND_PROPERTIES_TEMPLATE = config(
     default="backend_properties_config/property_templates_default.toml",
 )
 
+BACKEND_SETTINGS = config(
+    "BACKEND_SETTINGS",
+    cast=str,
+    default="backend_properties_config/backend_config_default.toml",
+)
+
 # Connectivity settings
 
 LABBER_MACHINE_ROOT_URL = config("LABBER_MACHINE_ROOT_URL", cast=URL)
