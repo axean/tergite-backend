@@ -242,7 +242,11 @@ class BackendProperty:
             field="value",
         )
         result = red.get(value_key)
-        return ast.literal_eval(result) if result is not None else None
+        return (
+            ast.literal_eval(result)
+            if result is not None and str(result).lower() != "nan"
+            else None
+        )
 
     def _create_redis_key(self, field: Optional[str] = None) -> str:
         return create_redis_key(
@@ -351,7 +355,11 @@ class BackendProperty:
         result = red.get(timestamp_key)
         # The timestamp was stored by to_string as a quoted string, and
         # will now be turned into an unquoted string
-        return ast.literal_eval(result) if result is not None else None
+        return (
+            ast.literal_eval(result)
+            if result is not None and str(result).lower() != "nan"
+            else None
+        )
 
     @classmethod
     def delete_property(
