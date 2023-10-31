@@ -80,10 +80,11 @@ def create_backend_snapshot() -> dict:
     }
 
 
-def update_mss():
+def update_mss(collection:str):
     current_backend_snapshot = create_backend_snapshot()
     backend_snapshot_json = json.dumps(current_backend_snapshot, indent=4)
-    backend_name = current_backend_snapshot["name"]
-    response = requests.put(mss_url + "/backends", backend_snapshot_json)
+    response = requests.put(mss_url + "/backends" + f"/{collection}", backend_snapshot_json)
     if response:
-        print(f"'{backend_name}'backend configuration is sent to mss")
+        print(f"'{current_backend_snapshot['name']}' backend configuration is sent to mss")
+    else:
+        print(f"Could not send '{current_backend_snapshot['name']} 'backend configuration to mss")
