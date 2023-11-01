@@ -180,15 +180,17 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
         
         if settings.FETCH_DISCRIMINATOR:
             backend: str = sf.header["qobj"]["backend"].attrs["backend_name"] 
-            MSS_JOB: str = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["backends"] + "/" + backend
-            response = requests.get(MSS_JOB).json() 
+            MSS_JOB: str = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["backends"] + "/" + backend + "/properties/lda_parameters"
+            response = requests.get(MSS_JOB)
             print(response)
 
-            if response["properties"]["lda_parameters"]:
+            if response.status_code == 200:
                 discriminator_fn = functools.partial(
                     _fetch_discriminator,
-                    response["properties"]["lda_parameters"]
+                    response.json()
                 )
+            else:
+                print(f"Response error {response}")
 
         update_mss_and_bcc(
             memory=sf.as_readout(
