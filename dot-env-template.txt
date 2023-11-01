@@ -19,3 +19,7 @@ LABBER_MACHINE_ROOT_URL=http://host:port
 DB_MACHINE_ROOT_URL=mongodb://user:pass@host:port
 BCC_PORT=num
 CALIBRATION_SUPERVISOR_PORT=num
+
+# determine the handling of state discrimination, default to False
+DISCRIMINATE_TWO_STATE=False
+FETCH_DISCRIMINATOR=False
