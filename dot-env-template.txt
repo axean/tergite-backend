@@ -60,3 +60,7 @@ CALIBRATION_GRAPH="calibration_graphs/quantify_calibration.json"
 
 POSTPROC_PLOTTING=False
 QUANTIFY_REST_ID="dummy_cluster"
+
+# determine the handling of state discrimination, default to False
+DISCRIMINATE_TWO_STATE=False
+FETCH_DISCRIMINATOR=False
