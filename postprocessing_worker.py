@@ -181,7 +181,7 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
         
         if settings.FETCH_DISCRIMINATOR:
             backend: str = sf.header["qobj"]["backend"].attrs["backend_name"] 
-            MSS_JOB: str = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["backends"] + "/" + backend + "/properties/lda_parameters"
+            MSS_JOB: str = f'{str(MSS_MACHINE_ROOT_URL)}{REST_API_MAP["backends"]}/{backend}/properties/lda_parameters'
             response = requests.get(MSS_JOB)
             print(response)
 
