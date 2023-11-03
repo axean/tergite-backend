@@ -77,9 +77,3 @@ CALIBRATION_GRAPH = config(
 CALIBRATION_GOALS = list(
     config("CALIBRATION_GOALS", cast=CommaSeparatedStrings, default=[])
 )
-
-# Labber
-try:
-    IMPORT_LABBER = config("IMPORT_LABBER", cast=bool)
-except:
-    IMPORT_LABBER = True
