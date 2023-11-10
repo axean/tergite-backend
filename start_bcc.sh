@@ -12,27 +12,26 @@
 # ln -s FILEPATH ./device.toml
 # where FILEPATH is the full path to the desired TOML file.
 
-set -e # exit if any step fails
-
 exit_with_error () {
   echo "$1"
   exit 1
 }
 
-PORT_CONFIGURATION_ERROR="Port configuration failed. Use BCC_PORT=<num> in the .env file."
-PREFIX_CONFIGURATION_ERROR="Reading the prefix configuration failed. Use DEFAULT_PREFIX=<str> in the .env file."
+extract_env_var () {
+  local env_name="$1"
+  local res=$(grep "^[[:space:]]*${env_name}=" .env | grep -v '^[[:space:]]*#' | sed "s/^[[:space:]]*${env_name}=//" | head -n 1)
+  [[ -z "$res" ]]  &&  exit_with_error "Config Error: Use ${env_name}=<value> in the .env file."
+  echo $res
+}
 
-# Port handling
-PORT_CONFIG=$(grep BCC_PORT= .env)               # eg: BCC_PORT=5000
-PORT_NUMBER="${PORT_CONFIG#*=}"                  # extract the number
-[[ -z "$PORT_NUMBER" ]]  &&  exit_with_error "$PORT_CONFIGURATION_ERROR"
-[[ ! "$PORT_NUMBER" =~ ^[0-9]+$ ]]  &&  exit_with_error "$PORT_CONFIGURATION_ERROR"
+PORT_NUMBER=$(extract_env_var "BCC_PORT")
+[[ ! "$PORT_NUMBER" =~ ^[0-9]+$ ]]  &&  exit_with_error "Config Error. Use BCC_PORT=<int> in the .env file."
 
-# Extract the default prefix
-DEFAULT_PREFIX_CONFIG=$(grep DEFAULT_PREFIX= .env)
-DEFAULT_PREFIX="${DEFAULT_PREFIX_CONFIG#*=}"
-[[ -z "$DEFAULT_PREFIX" ]]  &&  exit_with_error "$PREFIX_CONFIGURATION_ERROR"
+DEFAULT_PREFIX=$(extract_env_var "DEFAULT_PREFIX")
 
+# NOTE: careful, this causes the script to fail silently.
+# Keep below the env variable extraction procedures
+set -e # exit if any step fails
 
 # Clean start
 rq empty "${DEFAULT_PREFIX}_job_registration"
