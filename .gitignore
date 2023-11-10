@@ -142,7 +142,3 @@ config.ini
 Labber/
 
 .idea
-
-# Debugging utilities
-start_bcc.py
-utils/application_starter.py
