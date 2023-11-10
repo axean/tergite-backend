@@ -32,7 +32,6 @@ PORT_NUMBER="${PORT_CONFIG#*=}"                  # extract the number
 DEFAULT_PREFIX_CONFIG=$(grep DEFAULT_PREFIX= .env)
 DEFAULT_PREFIX="${DEFAULT_PREFIX_CONFIG#*=}"
 [[ -z "$DEFAULT_PREFIX" ]]  &&  exit_with_error "$PREFIX_CONFIGURATION_ERROR"
-[[ ! -n "$DEFAULT_PREFIX" ]]  &&  exit_with_error "$PREFIX_CONFIGURATION_ERROR"
 
 
 # Clean start
