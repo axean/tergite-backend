@@ -58,7 +58,7 @@ rq_logfile_postprocessing = Queue(
 # application
 app = FastAPI(
     title="Backend Control Computer",
-    description="Interfaces Quntum processor via REST API",
+    description="Interfaces Qauntum processor via REST API",
     version="0.0.1",
 )
 
