@@ -20,6 +20,7 @@ config = Config(".env")
 # Misc settings
 
 # Discrimination settings
+# If FETCH_DISCRIMINATOR is set to True it will try to fetch all values from mongoDB
 DISCRIMINATE_TWO_STATE = config("DISCRIMINATE_TWO_STATE", cast=bool, default=False)
 FETCH_DISCRIMINATOR = config("FETCH_DISCRIMINATOR", cast=bool, default=False)
 
