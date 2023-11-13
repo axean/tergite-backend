@@ -36,6 +36,7 @@ def create_backend_snapshot() -> dict:
         qubit_parameters = config["device_config"]["qubit_parameters"]
         resonator_parameters = config["device_config"]["resonator_parameters"]
         coupling_map = config["device_config"]["coupling_map"]
+        meas_map = config["device_config"]["meas_map"]
         gate_configs = config["gates"]
 
     # updating and constructing components
@@ -76,6 +77,7 @@ def create_backend_snapshot() -> dict:
         **{"qubit_ids": qubit_ids},
         **device_properties,
         **{"coupling_map": coupling_map},
+        **{"meas_map": meas_map},
         **{"gates": gate_configs},
     }
 
