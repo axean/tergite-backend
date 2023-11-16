@@ -21,7 +21,7 @@ qubit_ids = [ 'q16','q17','q18','q19','q20','q21','q22','q23','q24','q25']
 
 coupling_map = [ [ 0, 1 ], [ 1, 0 ] ]
 
-meas_map = [ [ 0, 1, 2 ] ]
+meas_map = [ [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ] ]
 
 qubit_parameters = [
   "id",
