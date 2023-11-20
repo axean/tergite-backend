@@ -41,6 +41,8 @@ def create_backend_snapshot() -> dict:
 
     # updating and constructing components
     qubits = []
+    resonators = []
+
     for qubit_id in qubit_ids:
         id = str(qubit_id).strip("q")
         qubit = {}
@@ -53,9 +55,6 @@ def create_backend_snapshot() -> dict:
             qubit.update({parameter: value})
         qubits.append(qubit)
 
-    resonators = []
-    for qubit_id in qubit_ids:
-        id = str(qubit_id).strip("q")
         resonator = {}
         for parameter in resonator_parameters:
             if parameter == "id":
@@ -82,10 +81,14 @@ def create_backend_snapshot() -> dict:
     }
 
 
-def update_mss(collection:str):
+def update_mss(collection:str=None):
     current_backend_snapshot = create_backend_snapshot()
     backend_snapshot_json = json.dumps(current_backend_snapshot, indent=4)
-    response = requests.put(mss_url + "/backends" + f"/{collection}", backend_snapshot_json)
+    if collection:
+        response = requests.put(mss_url + f"/backends?collection={collection}", backend_snapshot_json)
+    else:
+        response = requests.put(mss_url + "/backends", backend_snapshot_json)
+    
     if response:
         print(f"'{current_backend_snapshot['name']}' backend configuration is sent to mss")
     else:
