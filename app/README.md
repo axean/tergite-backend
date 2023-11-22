@@ -14,6 +14,7 @@ If BCC is to ever be extracted from this project, only the following will be nec
 - LICENSE.txt
 - setup.py (maybe)
 - start_bcc.sh
+- backend_properties_config/ (probably)
 
 ## License
 
