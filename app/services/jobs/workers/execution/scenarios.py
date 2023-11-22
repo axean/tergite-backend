@@ -14,7 +14,6 @@
 
 import functools
 import json
-import logging
 from pathlib import Path
 from tempfile import gettempdir
 
@@ -87,9 +86,9 @@ def qobj_scenario(job):
         ]
     )
     scenario_template_filepath = Path(
-        "../../../../../qiskit_qasm_scenario_template.json"
+        "scenario_templates/qiskit_qasm_scenario_template.json"
     )
-    calibration_filepath = Path("../../../../../qiskit_qasm_calibration_config.json")
+    calibration_filepath = Path("scenario_templates/qiskit_qasm_calibration_config.json")
 
     qobj = job["params"]["qobj"]
 
@@ -403,7 +402,7 @@ def generic_calib_zi_scenario(job):
 
 def qobj_dummy_scenario(job):
     scenario_template_filepath = Path(
-        "../../../../../__stub__qiskit_qasm_scenario_template.json"
+        "scenario_templates/__stub__qiskit_qasm_scenario_template.json"
     )
 
     qobj = job["params"]["qobj"]
