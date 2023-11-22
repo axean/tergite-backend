@@ -20,20 +20,17 @@ from tempfile import gettempdir
 
 import numpy as np
 import toml
-from Labber import Scenario, ScriptTools
 
 import settings
+from Labber import Scenario, ScriptTools
+
+from .....utils.logging import get_logger
 
 # Settings
 DEFAULT_FILES = settings.MEASUREMENT_DEFAULT_FILES
 
 # Initialize logger
-logger = logging.getLogger(__name__)
-FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
-logging.basicConfig(format=FORMAT)
-# The following two lines are not used yet, but can be good to have available:
-logger.setLevel(logging.INFO)
-LOGLEVEL = logging.INFO
+logger = get_logger()
 
 
 # ===========================================================================
@@ -60,7 +57,7 @@ def demodulation_scenario(signal_array, demod_array):
     # add log channels
     s.add_log("Demod - Value")
 
-    set_default_metadata(s)
+    _set_default_metadata(s)
 
     # set timing info
     s.wait_between = 0.01
@@ -89,8 +86,10 @@ def qobj_scenario(job):
             "barrier",
         ]
     )
-    scenario_template_filepath = Path("./qiskit_qasm_scenario_template.json")
-    calibration_filepath = Path("./qiskit_qasm_calibration_config.json")
+    scenario_template_filepath = Path(
+        "../../../../../qiskit_qasm_scenario_template.json"
+    )
+    calibration_filepath = Path("../../../../../qiskit_qasm_calibration_config.json")
 
     qobj = job["params"]["qobj"]
 
@@ -117,13 +116,13 @@ def qobj_scenario(job):
     mqpg.values["QObj JSON"] = json.dumps(qobj["experiments"])
 
     # configure number of shots
-    update_step_single_value(s, "QA - Samples", qobj["config"].get("shots", 1024))
+    _update_step_single_value(s, "QA - Samples", qobj["config"].get("shots", 1024))
 
     # update with latest calibration data, if it exists
     if calibration_filepath.exists():
         with open(calibration_filepath, "r") as f:
             calibration = json.load(f)
-        update_calibration_data(s, calibration)
+        _update_calibration_data(s, calibration)
 
     # Configure multiple experiments
     if len(qobj["experiments"]) == 1:
@@ -135,11 +134,11 @@ def qobj_scenario(job):
     extraction = job.get("hdf5_log_extraction", None)
     if extraction:
         if extraction.get("waveforms", False):
-            add_waveforms(s, n_qubits)
+            _add_waveforms(s, n_qubits)
         if extraction.get("voltages", False):
-            add_readout_voltages(s, n_qubits)
+            _add_readout_voltages(s, n_qubits)
 
-    set_default_metadata(s)
+    _set_default_metadata(s)
 
     # set timing info
     s.wait_between = 0.2
@@ -157,9 +156,9 @@ def resonator_spectroscopy_scenario(job):
 
     job_name = job["name"]
 
-    scenario_dict = get_scenario_template_dict(job_name)
+    scenario_dict = _get_scenario_template_dict(job_name)
 
-    defaults = get_default_params(job_name)
+    defaults = _get_default_params(job_name)
 
     # The parameters from job will override those of defaults
     scenario_parameters = dict(defaults, **job["params"])
@@ -230,7 +229,7 @@ def resonator_spectroscopy_scenario(job):
     # Loading Scenario as object
     s = Scenario(temp_dir + "/tmp.json")
 
-    set_default_metadata(s)
+    _set_default_metadata(s)
 
     # set timing info
     s.wait_between = 0.2
@@ -243,12 +242,11 @@ def resonator_spectroscopy_scenario(job):
 # Labber. It can be used to create related measurement scenarios as
 # well (if the code is updated accordingly).
 def generic_calib_zi_scenario(job):
-
     job_name = job["name"]
 
-    scenario_dict = get_scenario_template_dict(job_name)
+    scenario_dict = _get_scenario_template_dict(job_name)
 
-    defaults = get_default_params(job_name)
+    defaults = _get_default_params(job_name)
 
     # The parameters from job will override those of defaults
     scenario_parameters = dict(defaults, **job["params"])
@@ -395,7 +393,7 @@ def generic_calib_zi_scenario(job):
     # Loading Scenario as object
     s = Scenario(temp_dir + "/tmp.json")
 
-    set_default_metadata(s)
+    _set_default_metadata(s)
 
     # set timing info
     s.wait_between = 0.2
@@ -404,7 +402,9 @@ def generic_calib_zi_scenario(job):
 
 
 def qobj_dummy_scenario(job):
-    scenario_template_filepath = Path("./__stub__qiskit_qasm_scenario_template.json")
+    scenario_template_filepath = Path(
+        "../../../../../__stub__qiskit_qasm_scenario_template.json"
+    )
 
     qobj = job["params"]["qobj"]
 
@@ -435,7 +435,7 @@ def qobj_dummy_scenario(job):
     instr.values["QObj JSON"] = json.dumps(qobj)
     instr.values["QObj ID"] = qobj["qobj_id"]
 
-    set_default_metadata(s)
+    _set_default_metadata(s)
 
     # set timing info
     s.wait_between = 0.2
@@ -447,7 +447,7 @@ def qobj_dummy_scenario(job):
 # Misc helpers
 
 
-def get_scenario_template_dict(job_name):
+def _get_scenario_template_dict(job_name):
     template_dict = {
         "ramsey_qubit_freq_correction": "ramsey_using_general_calib_template.json",
         "rabi_qubit_pi_pulse_estimation": "rabi_using_general_calib_template.json",
@@ -466,7 +466,7 @@ def get_scenario_template_dict(job_name):
 
 
 # Returns a dictionary of the default measurement parameters for the associated job name
-def get_default_params(job_name):
+def _get_default_params(job_name):
     # Each entry maps to a list of default configurations. These are
     # applied in a left to right order, overriding previously defined
     # keys.
@@ -482,11 +482,11 @@ def get_default_params(job_name):
     return functools.reduce(lambda d1, d2: {**d1, **d2}, dicts)
 
 
-def update_step_single_value(scenario, name, value):
+def _update_step_single_value(scenario, name, value):
     scenario.get_step(name).range_items[0].single = value
 
 
-def translate_parameter_name(id_, calibration_parameter):
+def _translate_parameter_name(id_, calibration_parameter):
     parameters = {
         "qubit_frequency": "Qubit {id} Frequency",
         "pi_amplitude": "Qubit {id} Amplitude",
@@ -498,7 +498,7 @@ def translate_parameter_name(id_, calibration_parameter):
     return parameters[calibration_parameter].format(id=str(id_))
 
 
-def update_calibration_data(scenario, calibration):
+def _update_calibration_data(scenario, calibration):
     for qubit in calibration["qubits"]:
         id_ = qubit["id"]
         for parameter in qubit:
@@ -532,12 +532,14 @@ def update_calibration_data(scenario, calibration):
                         np.real(tmp) + 1j * qubit[parameter]
                     )
             else:
-                update_step_single_value(
-                    scenario, translate_parameter_name(id_, parameter), qubit[parameter]
+                _update_step_single_value(
+                    scenario,
+                    _translate_parameter_name(id_, parameter),
+                    qubit[parameter],
                 )
 
 
-def add_waveforms(scenario, n_qubits):
+def _add_waveforms(scenario, n_qubits):
     channel = "Pulses - Trace - {waveform}{id}"
     # Add waveforms for qubit XY and Z lines
     for i in range(n_qubits):
@@ -549,13 +551,13 @@ def add_waveforms(scenario, n_qubits):
     scenario.add_log("Readout - Trace - Readout Q")
 
 
-def add_readout_voltages(scenario, n_qubits):
+def _add_readout_voltages(scenario, n_qubits):
     channel = "QA - Result {id}"
     for i in range(n_qubits):
         scenario.add_log(channel.format(id=str(i + 1)))
 
 
-def set_default_metadata(s):
+def _set_default_metadata(s):
     s.comment = "Default comment for log"
     s.tags.project = "Default project"
     s.tags.user = "Default user"

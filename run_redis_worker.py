@@ -3,11 +3,6 @@ from rq import Queue, Worker
 
 import multiprocessing
 
-from registration_worker import job_register
-from preprocessing_worker import job_preprocess
-from execution_worker import job_execute
-from postprocessing_worker import *
-
 import settings
 
 WORKER_QUEUES = ['job_registration',

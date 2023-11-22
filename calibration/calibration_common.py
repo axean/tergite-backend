@@ -24,15 +24,15 @@ import redis
 import requests
 
 import settings
-from backend_properties_storage.storage import (
+from app.utils.storage import (
     BackendProperty,
     PropertyType,
     T,
     create_redis_key,
 )
-from backend_properties_storage.types import TimeStamp
-from job_supervisor import inform_failure
-from utils.representation import to_string
+from app.utils.storage import TimeStamp
+from app.services.jobs.service import inform_failure
+from app.utils.representation import to_string
 
 JobID = str
 

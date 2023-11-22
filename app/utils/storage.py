@@ -11,27 +11,37 @@
 # that they have been altered from the originals.
 
 import ast
-import logging
 from dataclasses import dataclass
 from enum import Enum, unique
 from typing import Any, List, Optional, Tuple, TypeVar
 
 import redis
 
-from backend_properties_storage.types import TimeStamp, Unit
-from utils.datetime_utils import utc_now_iso
-from utils.representation import to_string
+from app.utils.representation import to_string
+
+from .date_time import utc_now_iso
+from .logging import get_logger
+
+# ============================================================================
+# Types
+# ============================================================================
+Unit = str
+
+TimeStamp = str  # in ISO 8601 UTC Z with microsecond precision
+
+# Types for some measurement data
+
+Frequency = float
+Voltage = float
+
+Hex = str  # type(hex(5))
+
 
 # ============================================================================
 # Logging initialization
 # ============================================================================
 
-logger = logging.getLogger(__name__)
-FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
-logging.basicConfig(format=FORMAT)
-# The following two lines are not used yet, but can be good to have available:
-logger.setLevel(logging.INFO)
-LOGLEVEL = logging.DEBUG
+logger = get_logger()
 
 
 # ============================================================================

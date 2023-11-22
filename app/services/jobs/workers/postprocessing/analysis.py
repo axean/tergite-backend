@@ -13,21 +13,21 @@
 
 from typing import Dict, List
 
-import Labber
 import matplotlib.pyplot as plt
 import numpy as np
-import utils.labber_file_handling as qu
 import scipy.signal
 from resonator_tools import circuit
 from scipy.optimize import curve_fit
 
+import Labber
 import settings
+
+from .....utils import labber as qu
 
 POSTPROC_PLOTTING = settings.POSTPROC_PLOTTING
 
 
 def find_resonators(labber_logfile: Labber.LogFile) -> List[List[float]]:
-
     # Labber api function, y value is not used scince it is not well defined, for
     # multiple y traces, y represents only the last one, not usable in this case
     # only x value is used for sweeped frequency array
@@ -36,8 +36,8 @@ def find_resonators(labber_logfile: Labber.LogFile) -> List[List[float]]:
     # Extracting data form Labber logfile, xdict contains third dimension of
     # data, for example sweeped power values, ydict contains values of the traces
 
-    xdict, ydict = qu.labber_parsing(labber_logfile)
-    result = extract_resonance_frequencies(x, y, xdict, ydict)
+    xdict, ydict = qu.parse_labber_logfile(labber_logfile)
+    result = _extract_resonance_frequencies(x, y, xdict, ydict)
     print("\n")
     for i_sweep in range(len(result)):
         print(f"Number or resonators, sweep {i_sweep}: {len(result[i_sweep])}")
@@ -55,7 +55,7 @@ def find_resonators(labber_logfile: Labber.LogFile) -> List[List[float]]:
 # may fail in some measurement/traces, improvement required.
 # parameter y and xdict is not used, passed for possible
 # future uses.
-def extract_resonance_frequencies(x, y, xdict, ydict) -> List[List[float]]:
+def _extract_resonance_frequencies(x, y, xdict, ydict) -> List[List[float]]:
     resonance_frequencies = []
     for _idx, trace in enumerate(ydict["y0"]["values"]):
         abs_trace = np.absolute(trace)
@@ -87,10 +87,9 @@ def extract_resonance_frequencies(x, y, xdict, ydict) -> List[List[float]]:
 def fit_resonator_itraces(
     labber_logfile: Labber.LogFile, itraces: List[int]
 ) -> List[float]:
-
     x, y = labber_logfile.getTraceXY()
 
-    xdict, ydict = qu.labber_parsing(labber_logfile)
+    xdict, ydict = qu.parse_labber_logfile(labber_logfile)
 
     results = []
 
@@ -110,8 +109,7 @@ def fit_resonator_itraces(
 def gaussian_fit_itraces(
     labber_logfile: Labber.LogFile, itraces: List[int]
 ) -> List[float]:
-
-    xdict, ydict = qu.labber_parsing(labber_logfile)
+    xdict, ydict = qu.parse_labber_logfile(labber_logfile)
 
     results = []
 
@@ -160,8 +158,7 @@ def gaussian_fit_itraces(
 def fit_oscillation_itraces(
     labber_logfile: Labber.LogFile, itraces: List[int]
 ) -> List[Dict[str, float]]:
-
-    xdict, ydict = qu.labber_parsing(labber_logfile)
+    xdict, ydict = qu.parse_labber_logfile(labber_logfile)
 
     results = []
 

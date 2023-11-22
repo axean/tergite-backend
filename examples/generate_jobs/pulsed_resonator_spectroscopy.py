@@ -80,7 +80,7 @@ def generate_job_direct():
         "name": "pulsed_resonator_spectroscopy",
         # post-processing
         "post_processing": "process_pulsed_resonator_spectroscopy",
-        # Defaults for "params" are loaded in scenario_scripts.py from
+        # Defaults for "params" are loaded in scenarios.py from
         # measurement_jobs/parameter_defaults/vna_resonator_spectroscopy.toml
         "params": {},
     }
@@ -91,7 +91,7 @@ def generate_job_direct():
     Parameters (needs to be updated)
     ---------
     range_type: sweeping direction, valid values: "Start - Stop", "Single"
-     DW: is "Span" a valid range_type? It doesn't appear in scenario_scripts.py
+     DW: is "Span" a valid range_type? It doesn't appear in scenarios.py
 
     "qa_avg": number of recording average
     "num_pts": number of points of measurement

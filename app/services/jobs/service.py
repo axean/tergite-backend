@@ -9,6 +9,10 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+#
+# Modified:
+#
+# - Martin Ahindura, 2023
 
 import json
 from enum import Enum, unique
@@ -20,7 +24,8 @@ from rq.command import send_stop_job_command
 from rq.job import Job
 
 import settings
-from utils import datetime_utils
+
+from ...utils import date_time
 
 STORAGE_ROOT = settings.STORAGE_ROOT
 LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL
@@ -90,7 +95,7 @@ class JobNotFound(Exception):
 
 def now() -> str:
     """Returns the current time formatted"""
-    return datetime_utils.utc_now_iso()
+    return date_time.utc_now_iso()
 
 
 def fetch_redis_entry(job_id: str) -> Entry:

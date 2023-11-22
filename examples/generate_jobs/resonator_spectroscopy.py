@@ -78,7 +78,7 @@ def generate_job_direct():
         "job_id": str(uuid4()),
         "type": "script",
         "name": "resonator_spectroscopy",
-        # Defaults for "params" are loaded in scenario_scripts.py from
+        # Defaults for "params" are loaded in scenarios.py from
         # measurement_jobs/parameter_defaults/vna_resonator_spectroscopy.toml
         "params": {
             "freq_start": 6.0e9 + 0.01e9,  # demonstrating it can be overridden

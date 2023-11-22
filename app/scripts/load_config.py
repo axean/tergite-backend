@@ -9,31 +9,22 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-
+#
+# Modified:
+#
+# - Martin Ahindura 2023
 import argparse
-import logging
 from typing import Optional
 
 import toml
 
-from backend_properties_config.initialize_properties import (
-    initialize_properties,
-    set_component_ids,
-)
-from backend_properties_storage.storage import (
-    BackendProperty,
-    PropertyType,
-    set_component_property,
-)
+from ..utils.logging import get_logger
+from ..utils.storage import BackendProperty, PropertyType, set_component_property
+from .init_device_properties import initialize_properties, set_component_ids
 
 """Logging initialization"""
 
-logger = logging.getLogger(__name__)
-FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
-logging.basicConfig(format=FORMAT)
-# The following two lines are not used yet, but can be good to have available:
-logger.setLevel(logging.INFO)
-LOGLEVEL = logging.INFO
+logger = get_logger()
 
 
 # =============================================================================
@@ -69,7 +60,7 @@ def load_device_layout_configuration(layout: dict) -> bool:
             value=component_tags,
             source=source,
         ).write()
-        for (component_tag, id_dict) in layout.items():
+        for component_tag, id_dict in layout.items():
             # Store number_of_ for this kind of component.
             # id_dict contains the component ids from the layout configuration
             set_component_ids(component_tag, sorted(list(id_dict.keys())))
@@ -175,6 +166,7 @@ def _save_device_property(
 # Main
 
 if __name__ == "__main__":
+    import os
 
     parser = argparse.ArgumentParser(description="Load configuration files")
     parser.add_argument("--device", type=str, required=True)
@@ -182,6 +174,14 @@ if __name__ == "__main__":
     args, unknown = parser.parse_known_args()
 
     device_configuration_file = args.device
+    if (
+        not os.path.isabs(device_configuration_file)
+        and "/" not in device_configuration_file
+    ):
+        # Passing just a file that exists in backend_properties_config should load the file.
+        device_configuration_file = os.path.abspath(
+            f"../../backend_properties_config/{args.device}"
+        )
 
     layout = None
     default_values = None

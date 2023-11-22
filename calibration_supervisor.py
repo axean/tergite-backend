@@ -20,9 +20,8 @@ import redis
 
 import calibration.calibration_lib as calibration_lib
 import settings
-from backend_properties_config.initialize_properties import get_component_ids
-from backend_properties_storage.storage import T
-from backend_properties_storage.types import TimeStamp
+from app.scripts.init_device_properties import get_component_ids
+from app.utils.storage import T, TimeStamp
 from calibration.calibration_common import (
     CALIBRATION_SUPERVISOR_PREFIX,
     DataStatus,

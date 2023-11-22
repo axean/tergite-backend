@@ -29,7 +29,7 @@ drive_amp_range_type = "Single"
 
 # Not used in this the standard pulsed resonator spectroscopy, but
 # might be for more advanced measurements:
-# TODO: if these two are commented out, scenario_scripts.py gets key error, l 275
+# TODO: if these two are commented out, scenarios.py gets key error, l 275
 drive_frequency_if = 274680000.0
 drive_frequency_if_range_type = "Single"
 

@@ -10,6 +10,10 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+#
+# Modified:
+#
+# - Martin Ahindura 2023
 
 
 import json
@@ -23,14 +27,18 @@ from fastapi.responses import FileResponse
 from redis import Redis
 from rq import Queue, Worker
 
-import enums
-import job_supervisor
 import settings
-from job_supervisor import Location
-from postprocessing_worker import logfile_postprocess, postprocessing_success_callback
-from registration_worker import job_register
-from request_rng import quantify_rng
-from utils.uuid import validate_uuid4_str
+
+from ..services.jobs import service as jobs_service
+from ..services.jobs.workers.postprocessing import (
+    dtos,
+    logfile_postprocess,
+    postprocessing_success_callback,
+)
+from ..services.jobs.workers.postprocessing.dtos import LogfileType
+from ..services.jobs.workers.registration import job_register
+from ..services.random import service as rng_service
+from ..utils.uuid import validate_uuid4_str
 
 # settings
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX
@@ -61,6 +69,7 @@ app = FastAPI(
     version="0.0.1",
 )
 
+
 # routing
 @app.get("/")
 async def root():
@@ -69,7 +78,6 @@ async def root():
 
 @app.post("/jobs")
 async def upload_job(upload_file: UploadFile = File(...)):
-
     # get job_id and validate it
     job_dict = json.load(upload_file.file)
     job_id = job_dict.get("job_id", None)
@@ -91,31 +99,31 @@ async def upload_job(upload_file: UploadFile = File(...)):
 
     # enqueue for registration
     rq_job_registration.enqueue(
-        job_register, store_file, job_id=job_id + f"_{Location.REG_Q.name}"
+        job_register, store_file, job_id=job_id + f"_{jobs_service.Location.REG_Q.name}"
     )
     return {"message": file_name}
 
 
 @app.get("/jobs")
 async def fetch_all_jobs():
-    return job_supervisor.fetch_all_jobs()
+    return jobs_service.fetch_all_jobs()
 
 
 @app.get("/jobs/{job_id}")
 async def fetch_job(job_id: str):
-    job = job_supervisor.fetch_job(job_id)
+    job = jobs_service.fetch_job(job_id)
     return {"message": job or f"job {job_id} not found"}
 
 
 @app.get("/jobs/{job_id}/status")
 async def fetch_job_status(job_id: str):
-    status = job_supervisor.fetch_job(job_id, "status", format=True)
+    status = jobs_service.fetch_job(job_id, "status", format=True)
     return {"message": status or f"job {job_id} not found"}
 
 
 @app.get("/jobs/{job_id}/result")
 async def fetch_job_result(job_id: str):
-    job = job_supervisor.fetch_job(job_id)
+    job = jobs_service.fetch_job(job_id)
 
     if not job:
         return {"message": f"job {job_id} not found"}
@@ -127,18 +135,17 @@ async def fetch_job_result(job_id: str):
 
 @app.delete("/jobs/{job_id}")
 async def remove_job(job_id: str):
-    job_supervisor.remove_job(job_id)
+    jobs_service.remove_job(job_id)
 
 
 @app.post("/jobs/{job_id}/cancel")
 async def cancel_job(job_id: str, reason: Optional[str] = Body(None, embed=False)):
     print(f"Cancelling job {job_id}")
-    job_supervisor.cancel_job(job_id, reason)
+    jobs_service.cancel_job(job_id, reason)
 
 
 @app.get("/logfiles/{logfile_id}")
 async def download_logfile(logfile_id: UUID):
-
     file_name = str(logfile_id) + ".hdf5"
     file = (
         Path(STORAGE_ROOT)
@@ -164,7 +171,7 @@ def upload_logfile(
     file_name = Path(upload_file.filename).stem
 
     # Cancels postprocessing if job is labelled as cancelled
-    status = job_supervisor.fetch_job(file_name, "status")
+    status = jobs_service.fetch_job(file_name, "status")
     if status["cancelled"]["time"]:
         print("Job cancelled, postprocessing halted")
         return
@@ -183,20 +190,19 @@ def upload_logfile(
     rq_logfile_postprocessing.enqueue(
         logfile_postprocess,
         on_success=postprocessing_success_callback,
-        job_id=file_name + f"_{Location.PST_PROC_Q.name}",
+        job_id=file_name + f"_{jobs_service.Location.PST_PROC_Q.name}",
         args=(store_file,),
-        kwargs=dict(logfile_type=enums.LogfileType(logfile_type)),
+        kwargs=dict(logfile_type=LogfileType(logfile_type)),
     )
 
     # inform supervisor
-    job_supervisor.inform_location(file_name, Location.PST_PROC_Q)
+    jobs_service.inform_location(file_name, jobs_service.Location.PST_PROC_Q)
 
     return {"message": "ok"}
 
 
 @app.get("/rq-info")
 async def get_rq_info():
-
     workers = Worker.all(connection=redis_connection)
     print(str(workers))
     if workers == []:
@@ -213,15 +219,12 @@ async def get_rq_info():
 
 @app.get("/rng/{job_id}")
 async def call_rng(job_id: UUID):
-    quantify_rng(job_id=job_id)
+    rng_service.quantify_rng(job_id=job_id)
     return "Requesting RNG Numbers"
 
 
-# Webgui requests
-
-
 @app.get("/web-gui")
-async def snapshot():
+async def get_snapshot():
     snapshot = redis_connection.get("current_snapshot")
     return json.loads(snapshot)
 

@@ -16,30 +16,24 @@
 
 import argparse
 import asyncio
+import functools
 import pickle
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
-from sklearn.utils.extmath import safe_sparse_dot
-import json
-import functools
 
-import Labber
 import numpy as np
 import numpy.typing as npt
 import redis
 import requests
 import tqcsf.file
+from sklearn.utils.extmath import safe_sparse_dot
 from syncer import sync
 
-import enums
+import Labber
 import settings
-from analysis import (
-    find_resonators,
-    fit_oscillation_itraces,
-    fit_resonator_itraces,
-    gaussian_fit_itraces,
-)
-from job_supervisor import (
+
+from .....utils.representation import to_string
+from ...service import (
     JobNotFound,
     Location,
     cancel_job,
@@ -51,7 +45,13 @@ from job_supervisor import (
     register_job,
     update_job_entry,
 )
-from utils.representation import to_string
+from .analysis import (
+    find_resonators,
+    fit_oscillation_itraces,
+    fit_resonator_itraces,
+    gaussian_fit_itraces,
+)
+from .dtos import LogfileType
 
 # Storage settings
 
@@ -93,9 +93,8 @@ red = redis.Redis(decode_responses=True)
 
 
 def logfile_postprocess(
-    logfile: Path, *, logfile_type: enums.LogfileType = enums.LogfileType.LABBER_LOGFILE
+    logfile: Path, *, logfile_type: LogfileType = LogfileType.LABBER_LOGFILE
 ) -> JobID:
-
     print(f"Postprocessing logfile {str(logfile)}")
 
     # Move the logfile to logfile download pool area
@@ -117,7 +116,7 @@ def logfile_postprocess(
     inform_location(new_file_name, Location.PST_PROC_W)
 
     # The return value will be passed to postprocessing_success_callback
-    if logfile_type == enums.LogfileType.TQC_STORAGE:
+    if logfile_type == LogfileType.TQC_STORAGE:
         print("Identified TQC storage file, reading file using tqcsf")
         sf = tqcsf.file.StorageFile(new_file, mode="r")
         return postprocess_tqcsf(sf)
@@ -131,6 +130,7 @@ def logfile_postprocess(
 # =========================================================================
 # Post-processing Quantify / Qblox files
 # =========================================================================
+
 
 # FIXME: This is a hardcoded solution for the eX3 demo on November 7, 2022
 def _load_lda_discriminator(index: int) -> object:
@@ -156,10 +156,10 @@ def _hardcoded_discriminator(
 
     return lda_model.predict(X)
 
+
 def _fetch_discriminator(
     lda_parameters: dict, qubit_idx: int, iq_points: npt.NDArray[np.complex128]
 ) -> npt.NDArray[np.int_]:
-
     level = "threeState" if settings.DISCRIMINATE_TWO_STATE else "twoState"
     coef = np.array(lda_parameters[f"q{qubit_idx}"][level]["coef"])
     intercept = np.array(lda_parameters[f"q{qubit_idx}"][level]["intercept"])
@@ -175,20 +175,20 @@ def _fetch_discriminator(
     else:
         return (scores.ravel() > 0).astype(np.int_)
 
+
 def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
     if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
         discriminator_fn = _hardcoded_discriminator
-        
+
         if settings.FETCH_DISCRIMINATOR:
-            backend: str = sf.header["qobj"]["backend"].attrs["backend_name"] 
+            backend: str = sf.header["qobj"]["backend"].attrs["backend_name"]
             MSS_JOB: str = f'{str(MSS_MACHINE_ROOT_URL)}{REST_API_MAP["backends"]}/{backend}/properties/lda_parameters'
             response = requests.get(MSS_JOB)
             print(response)
 
             if response.status_code == 200:
                 discriminator_fn = functools.partial(
-                    _fetch_discriminator,
-                    response.json()
+                    _fetch_discriminator, response.json()
                 )
             else:
                 print(f"Response error {response}")
@@ -196,7 +196,7 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
         update_mss_and_bcc(
             memory=sf.as_readout(
                 discriminator=discriminator_fn,
-                disc_two_state=settings.DISCRIMINATE_TWO_STATE
+                disc_two_state=settings.DISCRIMINATE_TWO_STATE,
             ),
             job_id=sf.job_id,
         )
@@ -270,6 +270,7 @@ def process_resonator_spectroscopy_vna_phase_2(
 # this we will be able to select which trace incides will be passed to
 # the analysis functions.
 
+
 # Pulsed resonator spectroscopy
 def process_pulsed_resonator_spectroscopy(
     labber_logfile: Labber.LogFile,
@@ -338,7 +339,6 @@ PROCESSING_STR_TO_FUNCTION = {
 
 
 def postprocess_labber_logfile(labber_logfile: Labber.LogFile) -> JobID:
-
     job_id = get_job_id_labber(labber_logfile)
     (job_name, is_calibration_supervisor_job, post_processing) = get_metainfo(job_id)
 
@@ -465,9 +465,9 @@ def get_metainfo(job_id: str) -> Tuple[str, str, str]:
 # BCC / MSS updating
 # =========================================================================
 
+
 # TODO: check the type of "memory" below
 def update_mss_and_bcc(memory, job_id: JobID):
-
     # Helper printout with first 5 outcomes
     print("Measurement results:")
     for experiment_memory in memory:

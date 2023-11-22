@@ -58,7 +58,7 @@ def generate_job_direct():
         "type": "script",
         "name": "pulsed_two_tone_qubit_spectroscopy",
         "post_processing": "process_two_tone",
-        # Defaults for "params" are loaded in scenario_scripts.py from
+        # Defaults for "params" are loaded in scenarios.py from
         # measurement_jobs/parameter_defaults/two_tone.toml
         "params": {},
     }

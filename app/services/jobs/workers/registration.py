@@ -17,9 +17,10 @@ from redis import Redis
 from rq import Queue
 
 import settings
-from job_supervisor import Location, inform_location, register_job, update_job_entry
-from preprocessing_worker import job_preprocess
-from utils.json_utils import get_items_from_json
+
+from ....utils.json import get_items_from_json
+from ..service import Location, inform_location, register_job, update_job_entry
+from .preprocessing import job_preprocess
 
 # settings
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX

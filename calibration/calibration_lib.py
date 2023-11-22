@@ -23,7 +23,7 @@ import redis
 import toml
 from scipy.optimize import curve_fit
 
-from backend_properties_config.initialize_properties import get_component_ids
+from app.scripts.init_device_properties import get_component_ids
 from calibration.calibration_common import (
     CALIBRATION_SUPERVISOR_PREFIX,
     DataStatus,

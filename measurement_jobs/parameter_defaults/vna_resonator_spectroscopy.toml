@@ -1,7 +1,7 @@
 #
 # Default values for VNA resonator spectroscopy using ZI / Keysight / Labber
 #
-# Used to populate scenarios created by scenario_scripts.py for jobs
+# Used to populate scenarios created by scenarios.py for jobs
 # with name field "resonator_spectroscopy", or
 # "fit_resonator_spectroscopy". Creating such a job with
 # measurement_jobs/measurement_jobs.py allows these values to be

@@ -21,8 +21,9 @@ from uuid import uuid4
 import requests
 
 import settings
-from job_supervisor import Location, inform_failure, inform_location
-from scenario_scripts import (
+
+from ...service import Location, inform_failure, inform_location
+from .scenarios import (
     demodulation_scenario,
     generic_calib_zi_scenario,
     qobj_dummy_scenario,
@@ -62,7 +63,6 @@ def post_schedule_file(job_dict: dict, /):
 
 
 def post_scenario_file(job_dict: dict, /):
-
     job_id = job_dict["job_id"]
 
     # Inform supervisor

@@ -17,8 +17,9 @@ from redis import Redis
 from rq import Queue
 
 import settings
-from execution_worker import job_execute
-from job_supervisor import Location, inform_location
+
+from ..service import Location, inform_location
+from .execution import job_execute
 
 # settings
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX
@@ -33,7 +34,6 @@ rq_job_execution = Queue(DEFAULT_PREFIX + "_job_execution", connection=redis_con
 
 
 def job_preprocess(job_file: Path):
-
     job_id = job_file.stem
 
     # Inform supervisor about job being in pre-processing worker

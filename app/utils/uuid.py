@@ -9,9 +9,18 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+#
+# Modified:
+#
+# - Martin Ahindura 2023
+#
 
 
 import uuid
+
+
+def validate_uuid4_str(id_str):
+    return validate_uuid_str(id_str, 4)
 
 
 def validate_uuid_str(id_str, version):
@@ -20,7 +29,3 @@ def validate_uuid_str(id_str, version):
     except (ValueError, TypeError):
         return False
     return str(temp_uuid) == id_str
-
-
-def validate_uuid4_str(id_str):
-    return validate_uuid_str(id_str, 4)

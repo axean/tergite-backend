@@ -10,22 +10,25 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-
+#
+# Modified:
+#
+# - Martin Ahindura 2023
 
 import numpy as np
+
 import Labber
 
 
-def labber_parsing(labber_logfile: Labber.LogFile):
-    '''
+def parse_labber_logfile(file: Labber.LogFile):
+    """
     Parse a Labber LogFile to return a dictionary with only the swept  Step
     Channels as well as the Log Channels formatted to the proper shape
 
-    args:
-        labber_logfile (Labber.LogFile):
-            Labber logfile object corresponding to the Labber hdf5 file
+    Args:
+        file: Labber logfile object corresponding to the Labber hdf5 file
 
-    returns:
+    Returns:
         xdict (Dict):
             A formatted dictionary containing the data associated with each
             channel that was swept if any.
@@ -33,32 +36,31 @@ def labber_parsing(labber_logfile: Labber.LogFile):
         ydict (Dict):
             A formatted dictionary containing the data associated with each
             log channel with its values sorted to the shape of what was swept
-    '''
-    xdict = get_step_data(labber_logfile)
-    ydict = get_log_data(labber_logfile)
+    """
+    xdict = _get_step_data(file)
+    ydict = _get_log_data(file)
     xshape = []
     # Labber records step channels top down, but stores y data from the bottom
     # up so the reverse is needed
     for key, d in xdict.items():
-        xlen = len(d['values'])
+        xlen = len(d["values"])
         xshape.append(xlen)
     xshape.reverse()
-    #reshape y data based on whether the data is a vector or not
+    # reshape y data based on whether the data is a vector or not
     for key in ydict.keys():
         # If the output y-data is a vector the last index is the number of
         # entries in that vector
-        if ydict[key]['meta']['vector']:
-            ydict[key]['values'] = np.reshape(ydict[key]['values'],
-                                              [*xshape, -1])
+        if ydict[key]["meta"]["vector"]:
+            ydict[key]["values"] = np.reshape(ydict[key]["values"], [*xshape, -1])
         # If the data is just a single x-sweep or single point it is formated
-        elif (len(xshape)==1) or (len(xshape)==0):
+        elif (len(xshape) == 1) or (len(xshape) == 0):
             pass
         # If the data is a higher order sweep it needs to format
         else:
-            ydict[key]['values'] = np.reshape(ydict[key]['values'],
-                                              xshape)
+            ydict[key]["values"] = np.reshape(ydict[key]["values"], xshape)
 
     return xdict, ydict
+
 
 def get_meta_data(file, name_list):
     log = Labber.LogFile(file)
@@ -73,12 +75,11 @@ def get_meta_data(file, name_list):
         # just return all entries and let the higher level decide the format
         else:
             meta_dict[name] = {key: chan_dict[key] for key in temp_lst}
-    return meta_dict  
+    return meta_dict
 
 
-
-def get_step_data(log):
-    '''
+def _get_step_data(log):
+    """
     Wrapper around a Labber LogFile to extract out any channel sweep and
     return those channels
 
@@ -90,16 +91,17 @@ def get_step_data(log):
         d (Dict):
             A dictionary containing the entries of the Step Channels that
             were swept
-    '''
+    """
     step_data = log.getStepChannels()
     d = {}
     for i, data in enumerate(step_data):
-        if len(data['values'])>1:
-            d['x{}'.format(i)] = data
+        if len(data["values"]) > 1:
+            d["x{}".format(i)] = data
     return d
 
-def get_log_data(log):
-    '''
+
+def _get_log_data(log):
+    """
     Wrapper around a Labber LogFile to extract out all log channels of the
     measurement.
 
@@ -110,10 +112,9 @@ def get_log_data(log):
     returns:
         d (Dict)
             A dictionary containing the entries of the Log Channels
-    '''
+    """
     log_channels = log.getLogChannels()
     d = {}
     for i, chan in enumerate(log_channels):
-        d['y{}'.format(i)] = {'meta': chan,
-                                'values': log.getData(chan['name'])}
+        d["y{}".format(i)] = {"meta": chan, "values": log.getData(chan["name"])}
     return d

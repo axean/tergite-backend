@@ -58,7 +58,7 @@ def generate_job_direct():
         "type": "script",
         "name": "rabi_qubit_pi_pulse_estimation",
         "post_processing": "process_rabi",
-        # Defaults for "params" are loaded in scenario_scripts.py from
+        # Defaults for "params" are loaded in scenarios.py from
         # measurement_jobs/parameter_defaults/rabi.toml
         "params": {},
     }

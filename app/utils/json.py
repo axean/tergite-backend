@@ -9,6 +9,10 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+#
+# Modified:
+#
+# - Martin Ahindura 2023
 
 import json
 from pathlib import Path
@@ -20,7 +24,6 @@ from typing import Any, Dict, List
 # and uses only what's needed, instead of loading the whole file into
 # memory
 def get_items_from_json(file_path: Path, keys: List[str]) -> Dict[str, Any]:
-
     with open(file_path, "rb") as f:
         contents = json.load(f)
 

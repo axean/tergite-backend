@@ -10,28 +10,12 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-import logging
 from numbers import Number
 from typing import Hashable, Optional
 
-# ============================================================================
-# Logging initialization
-# ============================================================================
+from .logging import get_logger
 
-logger = logging.getLogger(__name__)
-FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
-logging.basicConfig(format=FORMAT)
-# The following two lines are not used yet, but can be good to have availabe:
-logger.setLevel(logging.INFO)
-LOGLEVEL = logging.DEBUG
-
-
-def _quote_key(key: Hashable) -> Hashable:
-    """Quotes a dict key if it is a string, and otherwise just returns it"""
-    if isinstance(key, str):
-        return f"'{key}'"
-    else:
-        return key
+logger = get_logger()
 
 
 def to_string(o: object) -> Optional[str]:
@@ -66,3 +50,11 @@ def to_string(o: object) -> Optional[str]:
         logger.error(f"Unsupported object: {o}")
         logger.error("(was the calling function)", stacklevel=2)
         return None
+
+
+def _quote_key(key: Hashable) -> Hashable:
+    """Quotes a dict key if it is a string, and otherwise just returns it"""
+    if isinstance(key, str):
+        return f"'{key}'"
+    else:
+        return key

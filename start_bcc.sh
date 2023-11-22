@@ -60,7 +60,7 @@ done
 # for now load_config expects only one option: "--device DEVICE_FILE_PATH"
 # other possible arguments in $@ will be passed back as "unrecognized_args",
 # so they can be used if needed, in later parts of this script
-unrecognized_args=$(python backend_properties_config/load_config.py "$@")
+unrecognized_args=$(python -m app.scripts.load_config.py "$@")
 
 if test -n "$unrecognized_args"; then
    echo "Arguments unrecognized by load_config.py: $unrecognized_args, in case needed below"
@@ -73,4 +73,4 @@ rq worker "${DEFAULT_PREFIX}_job_execution" &
 rq worker "${DEFAULT_PREFIX}_logfile_postprocessing" &
 
 # REST-API
-uvicorn --host 0.0.0.0 --port "$PORT_NUMBER" rest_api:app --reload
+uvicorn --host 0.0.0.0 --port "$PORT_NUMBER" app.api:app --reload

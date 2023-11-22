@@ -9,27 +9,23 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+#
+# Modified:
+#
+# - Martin Ahindura 2023
 
-import logging
 from typing import List, Optional
 
 import toml
 
 import settings
-from backend_properties_storage.storage import (
-    BackendProperty,
-    PropertyType,
-    set_component_property,
-)
+
+from ..utils.logging import get_logger
+from ..utils.storage import BackendProperty, PropertyType, set_component_property
 
 """Logging initialization"""
 
-logger = logging.getLogger(__name__)
-FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
-logging.basicConfig(format=FORMAT)
-# The following two lines are not used yet, but can be good to have available:
-logger.setLevel(logging.INFO)
-LOGLEVEL = logging.INFO
+logger = get_logger()
 
 
 # =============================================================================

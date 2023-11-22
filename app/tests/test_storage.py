@@ -10,12 +10,11 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-import logging
-
 import pytest
 import redis
 
-from backend_properties_storage.storage import (
+from ..utils.logging import get_logger
+from ..utils.storage import (
     BackendProperty,
     PropertyType,
     get_resonator_property,
@@ -26,12 +25,7 @@ from backend_properties_storage.storage import (
 
 """Logging initialization"""
 
-logger = logging.getLogger(__name__)
-FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
-logging.basicConfig(format=FORMAT)
-# The following two lines are not used yet, but can be good to have available:
-logger.setLevel(logging.INFO)
-LOGLEVEL = logging.INFO
+logger = get_logger()
 
 
 """Redis initialization"""
@@ -39,14 +33,6 @@ red = redis.Redis()
 
 
 """Test fixture"""
-
-
-def _del_keys():
-    # All the Redis keys will have this prefix. This exposes the Redis
-    # key structure, but we only do it in this test module.
-    keys = red.keys(f"*test_*")
-    for key in keys:
-        red.delete(key)
 
 
 @pytest.fixture
@@ -422,3 +408,11 @@ def test_delete_property(fixture):
         component_id=component_id,
     )
     assert result is None
+
+
+def _del_keys():
+    # All the Redis keys will have this prefix. This exposes the Redis
+    # key structure, but we only do it in this test module.
+    keys = red.keys(f"*test_*")
+    for key in keys:
+        red.delete(key)

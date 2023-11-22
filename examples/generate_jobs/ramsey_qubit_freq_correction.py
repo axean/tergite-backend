@@ -58,7 +58,7 @@ def generate_job_direct():
         "type": "script",
         "name": "ramsey_qubit_freq_correction",
         "post_processing": "process_ramsey",
-        # Defaults for "params" are loaded in scenario_scripts.py from
+        # Defaults for "params" are loaded in scenarios.py from
         # measurement_jobs/parameter_defaults/ramsey.toml
         "params": {},
     }
