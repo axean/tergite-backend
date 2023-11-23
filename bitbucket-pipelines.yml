@@ -1,0 +1,36 @@
+image: python:3.8
+
+pipelines:
+  pull-requests:
+    '**':
+      - step:
+          name: check target branch
+          script:
+            - if [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "bcc_dev2" ] && [ "${BITBUCKET_PR_DESTINATION_BRANCH}" != "main"]; then printf "not a target branch we want to check"; exit; fi
+            - printf 'running pipeline'
+      - step:
+          name: Lint and test
+          caches:
+            - pip
+          script:
+            - if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+            - black --check app
+            - pytest app
+
+  tags:
+    "*":
+      - step:
+          name: check for Dockerfile
+          script:
+            - if [ -f Dockerfile ]; then printf "building docker image"; else printf "no Dockerfile found"; exit; fi
+      - step:
+          name: Build docker image
+          services:
+            - docker
+          script:
+            # using the self-hosted container registry provided by https://bitbucket.org/qtlteam/tergite-registry
+            # its domain is saved in CONTAINER_REGISTRY workspace secret variable in format domain.com:port
+            # $DOCKER_USERNAME and $DOCKER_PASSWORD are also workspace secret variables
+            - docker login ${CONTAINER_REGISTRY} -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+            - docker build -t ${CONTAINER_REGISTRY}/tergite-bcc:$BITBUCKET_TAG .
+            - docker push ${CONTAINER_REGISTRY}/tergite-bcc:$BITBUCKET_TAG
