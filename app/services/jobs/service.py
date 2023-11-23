@@ -29,7 +29,6 @@ from ...utils import date_time
 
 STORAGE_ROOT = settings.STORAGE_ROOT
 LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL
-BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
 JOB_SUPERVISOR_LOG = settings.JOB_SUPERVISOR_LOG
 STORAGE_PREFIX_DIRNAME = settings.STORAGE_PREFIX_DIRNAME
 
@@ -251,11 +250,11 @@ def _load_json(json_str: str) -> Entry:
     return entry
 
 
-def fetch_all_jobs() -> List[Entry]:
+def fetch_all_jobs() -> Dict[str, Any]:
     """Fetches all jobs from redis
 
     Returns:
-        List[Entry]: The list of job entires.
+        The dict of job entires.
     """
     entries = red.hgetall("job_supervisor")
     return {k: _load_json(v) for k, v in entries.items()}

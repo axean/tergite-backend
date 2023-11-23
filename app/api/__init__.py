@@ -85,7 +85,7 @@ async def upload_job(upload_file: UploadFile = File(...)):
         print("The job does not have a valid UUID4 job_id")
         return {"message": "failed"}
 
-    # store the recieved file in the job upload pool
+    # store the received file in the job upload pool
     file_name = job_id
     file_path = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / JOB_UPLOAD_POOL_DIRNAME
     file_path.mkdir(parents=True, exist_ok=True)

@@ -88,7 +88,9 @@ def qobj_scenario(job):
     scenario_template_filepath = Path(
         "scenario_templates/qiskit_qasm_scenario_template.json"
     )
-    calibration_filepath = Path("scenario_templates/qiskit_qasm_calibration_config.json")
+    calibration_filepath = Path(
+        "scenario_templates/qiskit_qasm_calibration_config.json"
+    )
 
     qobj = job["params"]["qobj"]
 
