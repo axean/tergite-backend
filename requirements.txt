@@ -22,3 +22,5 @@ pytest>=7.4.0
 httpx>=0.25.1
 pytest-mock>=3.12.0
 fakeredis>=2.20.0
+black>=23.11.0
+isort>=5.12.0
