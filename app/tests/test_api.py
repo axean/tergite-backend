@@ -1,12 +1,19 @@
+import json
+from datetime import datetime, timezone
+from os import path
+from pathlib import Path
+from typing import Any, Dict
+
 import pytest
 
 from app.tests.utils.fixtures import load_json_fixture
 from app.tests.utils.redis import insert_in_hash
 
+_PARENT_FOLDER = path.dirname(path.abspath(__file__))
 _JOBS_LIST = load_json_fixture("job_list.json")
+_JOBS_FOR_UPLOAD = load_json_fixture("jobs_to_upload.json")
 _JOB_ID_FIELD = "job_id"
 _JOB_IDS = [item[_JOB_ID_FIELD] for item in _JOBS_LIST]
-
 _JOBS_HASH_NAME = "job_supervisor"
 
 
@@ -116,4 +123,101 @@ def test_fetch_job_status(redis_client, client, job_id: str):
         assert got == expected
 
 
-# TODO: Add more tests
+@pytest.mark.parametrize("job", _JOBS_FOR_UPLOAD)
+def test_upload_job(client, redis_client, client_jobs_folder, freezer, rq_worker, job):
+    """POST to '/jobs' uploads a new job"""
+    job_id = job[_JOB_ID_FIELD]
+    job_file_path = _save_job_file(folder=client_jobs_folder, job=job)
+    timestamp = datetime.now(tz=timezone.utc).isoformat("T").replace("+00:00", "Z")
+
+    # using context manager to ensure on_startup runs
+    with client as client:
+        with open(job_file_path, "rb") as file:
+            response = client.post("/jobs", files={"upload_file": file})
+
+        got = response.json()
+        expected = {"message": job_id}
+        expected_job_in_redis = {
+            "id": job_id,
+            "priorities": {
+                "global": 0,
+                "local": {"pre_processing": 0, "execution": 0, "post_processing": 0},
+            },
+            "status": {
+                "location": 4 if job["name"] == "pulse_schedule" else 5,
+                "started": timestamp,
+                "finished": None,
+                "cancelled": {"time": None, "reason": None},
+                "failed": {"time": None, "reason": None},
+            },
+            "result": None,
+            "name": job["name"],
+            "post_processing": job["post_processing"],
+            "is_calibration_supervisor_job": job["is_calibration_supervisor_job"],
+        }
+
+        rq_worker.work(burst=True)
+        raw_job_in_redis = redis_client.hget(_JOBS_HASH_NAME, job_id)
+        job_in_redis = json.loads(raw_job_in_redis)
+        assert response.status_code == 200
+        assert got == expected
+        assert job_in_redis == expected_job_in_redis
+
+
+def test_remove_job():
+    """DELETE to '/jobs/{job_id}' deletes the given job"""
+    assert False
+
+
+def test_cancel_job():
+    """POST to '/jobs/{job_id}/cancel' cancels the givne job"""
+    assert False
+
+
+def test_download_logfile():
+    """GET to '/logfiles/{logfile_id}' downloads the given logfile"""
+    assert False
+
+
+def test_upload_logfile():
+    """POST to '/logfiles' uploads the given logfile"""
+    assert False
+
+
+def test_get_rq_info():
+    """GET to '/rq-info' retrieves information about the running rq workers"""
+    assert False
+
+
+def test_call_rng():
+    """GET to '/rng/{job_id}' retrieves random numbers"""
+    assert False
+
+
+def test_get_snapshot():
+    """Get to '/web-gui' retrieves the current snapshot of the backend properties"""
+    assert False
+
+
+def test_web_config():
+    """Get to '/web-gui/config' retrieves the config of this backend"""
+    assert False
+
+
+def _save_job_file(folder: Path, job: Dict[str, Any]) -> Path:
+    """Saves the given job to a file and returns the Path
+
+    Args:
+        folder: the folder to save the job in
+        job: the job to save
+
+    Returns:
+        the path where the job was saved
+    """
+    job_id = job[_JOB_ID_FIELD]
+    file_path = folder / f"{job_id}.json"
+
+    with open(file_path, "w") as file:
+        json.dump(job, file)
+
+    return file_path

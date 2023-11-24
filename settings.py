@@ -18,6 +18,7 @@ from starlette.datastructures import URL, CommaSeparatedStrings
 config = Config(".env")
 
 # Misc settings
+APP_SETTINGS = config("APP_SETTINGS", cast=str, default="production")
 
 # Discrimination settings
 DISCRIMINATE_TWO_STATE = config("DISCRIMINATE_TWO_STATE", cast=bool, default=False)

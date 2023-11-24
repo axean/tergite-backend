@@ -15,6 +15,7 @@
 
 
 import json
+import logging
 from pathlib import Path
 from uuid import uuid4
 
@@ -56,7 +57,10 @@ def post_schedule_file(job_dict: dict, /):
 
         url = str(QUANTIFY_MACHINE_ROOT_URL) + REST_API_MAP["qobj"]
         print("Sending the pulse schedule to Quantify")
-        response = requests.post(url, files=files)
+        try:
+            response = requests.post(url, files=files)
+        except Exception as exp:
+            logging.error(exp)
 
     tmp_file.unlink()
     return response
@@ -143,7 +147,7 @@ def job_execute(job_file: Path):
 
     if response.ok:
         # clean up
-        job_file.unlink()
+        job_file.unlink(missing_ok=True)
 
         print("Job executed successfully")
         return {"message": "ok"}

@@ -31,13 +31,13 @@ import settings
 
 from ..services.jobs import service as jobs_service
 from ..services.jobs.workers.postprocessing import (
-    dtos,
     logfile_postprocess,
     postprocessing_success_callback,
 )
 from ..services.jobs.workers.postprocessing.dtos import LogfileType
 from ..services.jobs.workers.registration import job_register
 from ..services.random import service as rng_service
+from ..utils.queues import QueuePool
 from ..utils.uuid import validate_uuid4_str
 
 # settings
@@ -54,13 +54,7 @@ redis_connection = Redis()
 
 
 # redis queues
-rq_job_registration = Queue(
-    DEFAULT_PREFIX + "_job_registration", connection=redis_connection
-)
-
-rq_logfile_postprocessing = Queue(
-    DEFAULT_PREFIX + "_logfile_postprocessing", connection=redis_connection
-)
+rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 
 # application
 app = FastAPI(
@@ -98,7 +92,7 @@ async def upload_job(upload_file: UploadFile = File(...)):
     upload_file.file.close()
 
     # enqueue for registration
-    rq_job_registration.enqueue(
+    rq_queues.job_registration_queue.enqueue(
         job_register, store_file, job_id=job_id + f"_{jobs_service.Location.REG_Q.name}"
     )
     return {"message": file_name}
@@ -187,7 +181,7 @@ def upload_logfile(
     upload_file.file.close()
 
     # enqueue for post-processing
-    rq_logfile_postprocessing.enqueue(
+    rq_queues.logfile_postprocessing_queue.enqueue(
         logfile_postprocess,
         on_success=postprocessing_success_callback,
         job_id=file_name + f"_{jobs_service.Location.PST_PROC_Q.name}",

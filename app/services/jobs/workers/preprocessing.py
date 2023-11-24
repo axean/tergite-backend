@@ -17,6 +17,7 @@ from redis import Redis
 from rq import Queue
 
 import settings
+from app.utils.queues import QueuePool
 
 from ..service import Location, inform_location
 from .execution import job_execute
@@ -30,7 +31,7 @@ JOB_EXECUTION_POOL_DIRNAME = settings.JOB_EXECUTION_POOL_DIRNAME
 # redis connection
 redis_connection = Redis()
 
-rq_job_execution = Queue(DEFAULT_PREFIX + "_job_execution", connection=redis_connection)
+rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 
 
 def job_preprocess(job_file: Path):
@@ -51,7 +52,7 @@ def job_preprocess(job_file: Path):
 
     job_file.replace(new_file)
 
-    rq_job_execution.enqueue(
+    rq_queues.job_execution_queue.enqueue(
         job_execute, new_file, job_id=job_id + f"_{Location.EXEC_Q.name}"
     )
 

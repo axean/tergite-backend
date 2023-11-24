@@ -19,6 +19,7 @@ from rq import Queue
 import settings
 
 from ....utils.json import get_items_from_json
+from ....utils.queues import QueuePool
 from ..service import Location, inform_location, register_job, update_job_entry
 from .preprocessing import job_preprocess
 
@@ -31,9 +32,7 @@ JOB_PRE_PROC_POOL_DIRNAME = settings.JOB_PRE_PROC_POOL_DIRNAME
 # redis connection
 redis_connection = Redis()
 # preprocessing queue
-rq_job_preprocessing = Queue(
-    DEFAULT_PREFIX + "_job_preprocessing", connection=redis_connection
-)
+rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 
 
 def job_register(job_file: Path) -> None:
@@ -51,7 +50,7 @@ def job_register(job_file: Path) -> None:
     new_file = new_file_path / new_file_name
     job_file.replace(new_file)
     # add job to pre-processing queue and notify job supervisor
-    rq_job_preprocessing.enqueue(
+    rq_queues.job_preprocessing_queue.enqueue(
         job_preprocess, new_file, job_id=job_id + f"_{Location.PRE_PROC_Q.name}"
     )
     inform_location(job_id, Location.PRE_PROC_Q)
