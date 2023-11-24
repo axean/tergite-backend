@@ -188,9 +188,53 @@ def test_remove_job(client, redis_client, client_jobs_folder, rq_worker, job):
         assert job_in_redis is None
 
 
-def test_cancel_job():
-    """POST to '/jobs/{job_id}/cancel' cancels the givne job"""
-    assert False
+@pytest.mark.parametrize("job", _JOBS_FOR_UPLOAD)
+def test_cancel_job(client, redis_client, client_jobs_folder, freezer, rq_worker, job):
+    """POST to '/jobs/{job_id}/cancel' cancels the given job"""
+    job_id = job[_JOB_ID_FIELD]
+    job_file_path = _save_job_file(folder=client_jobs_folder, job=job)
+    cancellation_reason = "just testing"
+    timestamp = datetime.now(tz=timezone.utc).isoformat("T").replace("+00:00", "Z")
+
+    # using context manager to ensure on_startup runs
+    with client as client:
+        with open(job_file_path, "rb") as file:
+            response = client.post("/jobs", files={"upload_file": file})
+            assert response.status_code == 200
+
+        # start the job registration but stop there
+        rq_worker.work(burst=True, max_jobs=1)
+        # initiate delete
+        cancellation_response = client.post(
+            f"/jobs/{job_id}/cancel", json=cancellation_reason
+        )
+        # run the rest of the tasks
+        rq_worker.work(burst=True)
+
+        expected_job_in_redis = {
+            "id": job_id,
+            "priorities": {
+                "global": 0,
+                "local": {"pre_processing": 0, "execution": 0, "post_processing": 0},
+            },
+            "status": {
+                "location": 2,
+                "started": timestamp,
+                "finished": None,
+                "cancelled": {"time": timestamp, "reason": cancellation_reason},
+                "failed": {"time": None, "reason": None},
+            },
+            "result": None,
+            "name": job["name"],
+            "post_processing": job["post_processing"],
+            "is_calibration_supervisor_job": job["is_calibration_supervisor_job"],
+        }
+
+        raw_job_in_redis = redis_client.hget(_JOBS_HASH_NAME, job_id)
+        job_in_redis = json.loads(raw_job_in_redis)
+
+        assert cancellation_response.status_code == 200
+        assert job_in_redis == expected_job_in_redis
 
 
 def test_download_logfile():
