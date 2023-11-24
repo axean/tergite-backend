@@ -180,7 +180,7 @@ if __name__ == "__main__":
     ):
         # Passing just a file that exists in backend_properties_config should load the file.
         device_configuration_file = os.path.abspath(
-            f"../../backend_properties_config/{args.device}"
+            f"backend_properties_config/{args.device}"
         )
 
     layout = None
