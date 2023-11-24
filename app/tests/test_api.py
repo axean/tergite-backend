@@ -164,9 +164,28 @@ def test_upload_job(client, redis_client, client_jobs_folder, freezer, rq_worker
         assert job_in_redis == expected_job_in_redis
 
 
-def test_remove_job():
+@pytest.mark.parametrize("job", _JOBS_FOR_UPLOAD)
+def test_remove_job(client, redis_client, client_jobs_folder, rq_worker, job):
     """DELETE to '/jobs/{job_id}' deletes the given job"""
-    assert False
+    job_id = job[_JOB_ID_FIELD]
+    job_file_path = _save_job_file(folder=client_jobs_folder, job=job)
+
+    # using context manager to ensure on_startup runs
+    with client as client:
+        with open(job_file_path, "rb") as file:
+            response = client.post("/jobs", files={"upload_file": file})
+            assert response.status_code == 200
+
+        # start the job registration but stop there
+        rq_worker.work(burst=True, max_jobs=1)
+        # initiate delete
+        deletion_response = client.delete(f"/jobs/{job_id}")
+        # run the rest of the tasks
+        rq_worker.work(burst=True)
+
+        job_in_redis = redis_client.hget(_JOBS_HASH_NAME, job_id)
+        assert deletion_response.status_code == 200
+        assert job_in_redis is None
 
 
 def test_cancel_job():
