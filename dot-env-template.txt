@@ -30,9 +30,9 @@ MSS_PORT=8002
 
 # 2 BCC
 # Running it locally:
-BCC_MACHINE_ROOT_URL=http://qtl-stefanhi.mc2.chalmers.se:8000
+BCC_MACHINE_ROOT_URL=http://host:port
 # Or a remote VM:
-# BCC_MACHINE_ROOT_URL=http://qtl-bcc-1.qdp.chalmers.se:8002
+# BCC_MACHINE_ROOT_URL=http://host:port
 BCC_PORT=8000
 
 # 3 Instrument server
