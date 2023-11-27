@@ -1,4 +1,5 @@
 import json
+import uuid
 from os import path
 from pathlib import Path
 from typing import Any, Dict
@@ -6,7 +7,7 @@ from typing import Any, Dict
 import pytest
 
 from app.tests.conftest import CLIENT_AND_RQ_WORKER_TUPLES, CLIENTS, MOCK_NOW
-from app.tests.utils.fixtures import load_json_fixture
+from app.tests.utils.fixtures import load_json_fixture, get_fixture_path
 from app.tests.utils.redis import insert_in_hash
 
 _PARENT_FOLDER = path.dirname(path.abspath(__file__))
@@ -15,6 +16,8 @@ _JOBS_FOR_UPLOAD = load_json_fixture("jobs_to_upload.json")
 _JOB_ID_FIELD = "job_id"
 _JOB_IDS = [item[_JOB_ID_FIELD] for item in _JOBS_LIST]
 _JOBS_HASH_NAME = "job_supervisor"
+
+# params
 _UPLOAD_JOB_PARAMS = [
     (client, redis_client, rq_worker, job)
     for job in _JOBS_FOR_UPLOAD
@@ -256,6 +259,7 @@ def test_download_logfile(
     """GET to '/logfiles/{logfile_id}' downloads the given logfile"""
     job_id = job[_JOB_ID_FIELD]
     _save_job_file(folder=logfile_download_folder, job=job, ext=".hdf5")
+
     # using context manager to ensure on_startup runs
     with client as client:
         response = client.get(f"/logfiles/{job_id}")
@@ -264,9 +268,57 @@ def test_download_logfile(
         assert file_content == job
 
 
-def test_upload_logfile():
+@pytest.mark.parametrize("client, redis_client, rq_worker, job", _UPLOAD_JOB_PARAMS)
+def test_upload_logfile(logfile_download_folder, client, redis_client, rq_worker, client_jobs_folder, job):
     """POST to '/logfiles' uploads the given logfile"""
-    assert False
+    logfile_path = get_fixture_path("logfile.hdf5")
+    job_id = job[_JOB_ID_FIELD]
+    logfile_name = f"{job_id}.hdf5"
+    timestamp = MOCK_NOW.replace("+00:00", "Z")
+
+    job_file_path = _save_job_file(folder=client_jobs_folder, job=job)
+
+    # using context manager to ensure on_startup runs
+    with client as client:
+        with open(job_file_path, "rb") as file:
+            response = client.post("/jobs", files={"upload_file": file})
+
+        assert response.status_code == 200
+        rq_worker.work(burst=True)
+
+        with open(logfile_path, "rb") as file:
+            response = client.post("/logfiles", files={"upload_file": (logfile_name, file)}, data={"logfile_type": "TQC_STORAGE"})
+
+        expected = {"message": "ok"}
+        got = response.json()
+        expected_job_in_redis = {
+            "id": job_id,
+            "priorities": {
+                "global": 0,
+                "local": {"pre_processing": 0, "execution": 0, "post_processing": 0},
+            },
+            "status": {
+                "location": 9,
+                "started": timestamp,
+                "finished": True,
+                "result": {
+                    "memory": [["0x0"]]
+                },
+                "cancelled": {"time": None, "reason": None},
+                "failed": {"time": None, "reason": None},
+            },
+            "result": None,
+            "name": job["name"],
+            "post_processing": job["post_processing"],
+            "is_calibration_supervisor_job": job["is_calibration_supervisor_job"],
+        }
+
+        rq_worker.work(burst=True)
+        raw_job_in_redis = redis_client.hget(_JOBS_HASH_NAME, job_id)
+        job_in_redis = json.loads(raw_job_in_redis)
+        assert response.status_code == 200
+        assert got == expected
+        assert job_in_redis == expected_job_in_redis
 
 
 def test_get_rq_info():

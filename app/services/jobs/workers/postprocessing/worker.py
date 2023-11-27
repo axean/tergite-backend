@@ -17,6 +17,7 @@
 import argparse
 import asyncio
 import functools
+import logging
 import pickle
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -182,7 +183,7 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
 
         if settings.FETCH_DISCRIMINATOR:
             backend: str = sf.header["qobj"]["backend"].attrs["backend_name"]
-            MSS_JOB: str = f'{str(MSS_MACHINE_ROOT_URL)}{REST_API_MAP["backends"]}/{backend}/properties/lda_parameters'
+            MSS_JOB: str = f'{MSS_MACHINE_ROOT_URL}{REST_API_MAP["backends"]}/{backend}/properties/lda_parameters'
             response = requests.get(MSS_JOB)
             print(response)
 
@@ -193,13 +194,18 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
             else:
                 print(f"Response error {response}")
 
-        update_mss_and_bcc(
-            memory=sf.as_readout(
+
+        try:
+            memory = sf.as_readout(
                 discriminator=discriminator_fn,
                 disc_two_state=settings.DISCRIMINATE_TWO_STATE,
-            ),
-            job_id=sf.job_id,
-        )
+            )
+            update_mss_and_bcc(
+                memory=memory,
+                job_id=sf.job_id,
+            )
+        except Exception as exp:
+            logging.error(exp)
 
     elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
         update_mss_and_bcc(memory=[], job_id=sf.job_id)

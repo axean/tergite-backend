@@ -15,12 +15,12 @@ def load_json_fixture(file_name: str) -> Union[Dict[str, Any], List[Dict[str, An
     Returns:
         the list of dicts or the dict got from the json fixture file
     """
-    fixture_path = _get_fixture_path(file_name)
+    fixture_path = get_fixture_path(file_name)
     with open(fixture_path, "rb") as file:
         return json.load(file)
 
 
-def _get_fixture_path(*paths: str) -> str:
+def get_fixture_path(*paths: str) -> str:
     """Gets the path to the fixture
 
     Args:

@@ -5,8 +5,9 @@ from .utils.env import (
     TEST_QUANTIFY_MACHINE_ROOT_URL,
     TEST_STORAGE_PREFIX_DIRNAME,
     TEST_STORAGE_ROOT,
-    setup_test_env,
+    setup_test_env, TEST_MSS_MACHINE_ROOT_URL,
 )
+from .utils.fixtures import load_json_fixture
 
 # set up the environment before any other import
 setup_test_env()
@@ -27,6 +28,7 @@ from .utils.http import MockHttpResponse
 from .utils.modules import remove_modules
 from .utils.rq import get_rq_worker
 
+_lda_parameters_fixture = load_json_fixture("lda_parameters.json")
 _real_redis = Redis(db=2)
 _fake_redis = FakeStrictRedis()
 _async_queue_pool = QueuePool(
@@ -67,6 +69,11 @@ def mock_post_requests(url: str, **kwargs):
         return MockHttpResponse(status_code=200)
 
 
+def mock_get_requests(url: str, **kwargs):
+    if url.endswith("properties/lda_parameters"):
+        return MockHttpResponse(status_code=200, json=_lda_parameters_fixture)
+
+
 @pytest.fixture
 def real_redis_client() -> Redis:
     """A mock redis client"""
@@ -101,6 +108,7 @@ def async_fastapi_client(mocker) -> TestClient:
     mocker.patch("redis.Redis", return_value=_real_redis)
     mocker.patch("app.utils.queues.QueuePool", return_value=_async_queue_pool)
     mocker.patch("requests.post", side_effect=mock_post_requests)
+    mocker.patch("requests.get", side_effect=mock_get_requests)
 
     from app.api import app
 
@@ -116,6 +124,7 @@ def sync_fastapi_client(mocker) -> TestClient:
     mocker.patch("redis.Redis", return_value=_fake_redis)
     mocker.patch("app.utils.queues.QueuePool", return_value=_sync_queue_pool)
     mocker.patch("requests.post", side_effect=mock_post_requests)
+    mocker.patch("requests.get", side_effect=mock_get_requests)
 
     from app.api import app
 

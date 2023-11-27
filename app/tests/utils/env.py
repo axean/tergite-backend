@@ -46,3 +46,5 @@ def setup_test_env():
     environ["BCC_PORT"] = f"{TEST_BCC_PORT}"
     environ["DB_MACHINE_ROOT_URL"] = TEST_DB_MACHINE_ROOT_URL
     environ["CALIBRATION_SUPERVISOR_PORT"] = f"{TEST_CALIBRATION_SUPERVISOR_PORT}"
+
+    environ["FETCH_DISCRIMINATOR"] = f"True"

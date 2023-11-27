@@ -168,6 +168,7 @@ def upload_logfile(
     status = jobs_service.fetch_job(file_name, "status")
     if status["cancelled"]["time"]:
         print("Job cancelled, postprocessing halted")
+        # FIXME: Probably provide an error message to the client also
         return
     file_path = (
         Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / LOGFILE_UPLOAD_POOL_DIRNAME

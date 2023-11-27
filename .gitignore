@@ -135,6 +135,7 @@ config.ini
 
 # hdf5 binary files
 *.hdf5
+!app/tests/fixtures/*.hdf5
 
 # ssh keys
 *.pem
