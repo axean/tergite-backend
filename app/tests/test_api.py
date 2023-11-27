@@ -249,9 +249,19 @@ def test_cancel_job(client, redis_client, client_jobs_folder, rq_worker, job):
         assert job_in_redis == expected_job_in_redis
 
 
-def test_download_logfile():
+@pytest.mark.parametrize("client, redis_client, rq_worker, job", _UPLOAD_JOB_PARAMS)
+def test_download_logfile(
+    logfile_download_folder, client, redis_client, rq_worker, job
+):
     """GET to '/logfiles/{logfile_id}' downloads the given logfile"""
-    assert False
+    job_id = job[_JOB_ID_FIELD]
+    _save_job_file(folder=logfile_download_folder, job=job, ext=".hdf5")
+    # using context manager to ensure on_startup runs
+    with client as client:
+        response = client.get(f"/logfiles/{job_id}")
+        file_content = json.loads(response.content)
+        assert response.status_code == 200
+        assert file_content == job
 
 
 def test_upload_logfile():
@@ -279,7 +289,7 @@ def test_web_config():
     assert False
 
 
-def _save_job_file(folder: Path, job: Dict[str, Any]) -> Path:
+def _save_job_file(folder: Path, job: Dict[str, Any], ext: str = ".json") -> Path:
     """Saves the given job to a file and returns the Path
 
     Args:
@@ -290,7 +300,7 @@ def _save_job_file(folder: Path, job: Dict[str, Any]) -> Path:
         the path where the job was saved
     """
     job_id = job[_JOB_ID_FIELD]
-    file_path = folder / f"{job_id}.json"
+    file_path = folder / f"{job_id}{ext}"
 
     with open(file_path, "w") as file:
         json.dump(job, file)

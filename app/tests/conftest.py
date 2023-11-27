@@ -1,7 +1,10 @@
 from .utils.env import (
     TEST_DEFAULT_PREFIX,
     TEST_LABBER_MACHINE_ROOT_URL,
+    TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME,
     TEST_QUANTIFY_MACHINE_ROOT_URL,
+    TEST_STORAGE_PREFIX_DIRNAME,
+    TEST_STORAGE_ROOT,
     setup_test_env,
 )
 
@@ -124,6 +127,20 @@ def sync_fastapi_client(mocker) -> TestClient:
 def client_jobs_folder() -> Path:
     """A temporary folder for the client where jobs can be saved"""
     folder_path = Path("./tmp/jobs")
+    folder_path.mkdir(parents=True, exist_ok=True)
+
+    yield folder_path
+    shutil.rmtree(folder_path, ignore_errors=True)
+
+
+@pytest.fixture
+def logfile_download_folder() -> Path:
+    """A temporary folder for the server where logfiles can be downloaded from"""
+    folder_path = (
+        Path(TEST_STORAGE_ROOT)
+        / TEST_STORAGE_PREFIX_DIRNAME
+        / TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME
+    )
     folder_path.mkdir(parents=True, exist_ok=True)
 
     yield folder_path
