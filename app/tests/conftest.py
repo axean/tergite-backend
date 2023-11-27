@@ -1,14 +1,9 @@
-import sys
-
-from redis.client import Redis
-
 from .utils.env import (
     TEST_DEFAULT_PREFIX,
     TEST_LABBER_MACHINE_ROOT_URL,
     TEST_QUANTIFY_MACHINE_ROOT_URL,
     setup_test_env,
 )
-from .utils.rq import WindowsSimpleWorker
 
 # set up the environment before any other import
 setup_test_env()
@@ -17,16 +12,48 @@ import shutil
 from pathlib import Path
 
 import pytest
+from fakeredis import FakeStrictRedis
 from fastapi.testclient import TestClient
+from freezegun import freeze_time
+from pytest_lazyfixture import lazy_fixture
+from redis.client import Redis
 from rq import SimpleWorker
 
 from ..utils.queues import QueuePool
 from .utils.http import MockHttpResponse
+from .utils.modules import remove_modules
+from .utils.rq import get_rq_worker
 
-_mock_redis = Redis(db=2)
-_mock_queue_pool = QueuePool(
-    prefix=TEST_DEFAULT_PREFIX, connection=_mock_redis, is_async=True
+_real_redis = Redis(db=2)
+_fake_redis = FakeStrictRedis()
+_async_queue_pool = QueuePool(
+    prefix=TEST_DEFAULT_PREFIX, connection=_real_redis, is_async=True
 )
+_sync_queue_pool = QueuePool(
+    prefix=TEST_DEFAULT_PREFIX, connection=_fake_redis, is_async=False
+)
+
+MOCK_NOW = "2023-11-27T12:46:48.851656+00:00"
+
+CLIENTS = [
+    (lazy_fixture("async_fastapi_client"), lazy_fixture("real_redis_client")),
+    # FIXME: See issue https://bitbucket.org/qtlteam/tergite-bcc/issues/1/inform-job-location-stage-logic-is
+    # (lazy_fixture("sync_fastapi_client"), lazy_fixture("fake_redis_client")),
+]
+
+CLIENT_AND_RQ_WORKER_TUPLES = [
+    (
+        lazy_fixture("async_fastapi_client"),
+        lazy_fixture("real_redis_client"),
+        lazy_fixture("async_rq_worker"),
+    ),
+    # FIXME: See issue https://bitbucket.org/qtlteam/tergite-bcc/issues/1/inform-job-location-stage-logic-is
+    # (
+    #     lazy_fixture("sync_fastapi_client"),
+    #     lazy_fixture("fake_redis_client"),
+    #     lazy_fixture("sync_rq_worker"),
+    # ),
+]
 
 
 def mock_post_requests(url: str, **kwargs):
@@ -38,56 +65,59 @@ def mock_post_requests(url: str, **kwargs):
 
 
 @pytest.fixture
-def redis_client() -> Redis:
+def real_redis_client() -> Redis:
     """A mock redis client"""
-    yield _mock_redis
-    _mock_redis.flushall()
+    yield _real_redis
+    _real_redis.flushall()
 
 
 @pytest.fixture
-def queue_pool() -> QueuePool:
-    """A mock QueuePool"""
-    yield _mock_queue_pool
+def fake_redis_client() -> Redis:
+    """A mock redis client"""
+    yield _fake_redis
+    _fake_redis.flushall()
 
 
 @pytest.fixture
-def rq_worker(queue_pool: QueuePool) -> SimpleWorker:
-    """Get the rq worker for running async tasks"""
-    if sys.platform.startswith("win32"):
-        return WindowsSimpleWorker(
-            [
-                queue_pool.job_registration_queue,
-                queue_pool.logfile_postprocessing_queue,
-                queue_pool.job_execution_queue,
-                queue_pool.job_preprocessing_queue,
-            ],
-            connection=queue_pool.connection,
-        )
-    return SimpleWorker(
-        [
-            queue_pool.job_registration_queue,
-            queue_pool.logfile_postprocessing_queue,
-            queue_pool.job_execution_queue,
-            queue_pool.job_preprocessing_queue,
-        ],
-        connection=queue_pool.connection,
-    )
+def async_rq_worker() -> SimpleWorker:
+    """Get the rq worker for running async tasks asynchronously"""
+    yield get_rq_worker(_async_queue_pool)
 
 
 @pytest.fixture
-def external_services(mocker):
-    """External services like MSS, Quantify connector and Labber machine"""
-    mocker.patch("redis.Redis", return_value=_mock_redis)
-    mocker.patch("app.utils.queues.QueuePool", return_value=_mock_queue_pool)
+def sync_rq_worker() -> SimpleWorker:
+    """Get the rq worker for running tasks synchronously"""
+    yield get_rq_worker(_sync_queue_pool)
+
+
+@pytest.fixture
+def async_fastapi_client(mocker) -> TestClient:
+    """A test client for fast api when rq is running asynchronously"""
+    remove_modules(["app"])
+
+    mocker.patch("redis.Redis", return_value=_real_redis)
+    mocker.patch("app.utils.queues.QueuePool", return_value=_async_queue_pool)
     mocker.patch("requests.post", side_effect=mock_post_requests)
 
-
-@pytest.fixture
-def client(external_services) -> TestClient:
-    """A test client for fast api"""
     from app.api import app
 
-    yield TestClient(app)
+    with freeze_time(MOCK_NOW):
+        yield TestClient(app)
+
+
+@pytest.fixture
+def sync_fastapi_client(mocker) -> TestClient:
+    """A test client for fast api when rq is running asynchronously"""
+    remove_modules(["app"])
+
+    mocker.patch("redis.Redis", return_value=_fake_redis)
+    mocker.patch("app.utils.queues.QueuePool", return_value=_sync_queue_pool)
+    mocker.patch("requests.post", side_effect=mock_post_requests)
+
+    from app.api import app
+
+    with freeze_time(MOCK_NOW):
+        yield TestClient(app)
 
 
 @pytest.fixture

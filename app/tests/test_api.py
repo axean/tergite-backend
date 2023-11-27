@@ -1,11 +1,11 @@
 import json
-from datetime import datetime, timezone
 from os import path
 from pathlib import Path
 from typing import Any, Dict
 
 import pytest
 
+from app.tests.conftest import CLIENT_AND_RQ_WORKER_TUPLES, CLIENTS, MOCK_NOW
 from app.tests.utils.fixtures import load_json_fixture
 from app.tests.utils.redis import insert_in_hash
 
@@ -15,9 +15,20 @@ _JOBS_FOR_UPLOAD = load_json_fixture("jobs_to_upload.json")
 _JOB_ID_FIELD = "job_id"
 _JOB_IDS = [item[_JOB_ID_FIELD] for item in _JOBS_LIST]
 _JOBS_HASH_NAME = "job_supervisor"
+_UPLOAD_JOB_PARAMS = [
+    (client, redis_client, rq_worker, job)
+    for job in _JOBS_FOR_UPLOAD
+    for client, redis_client, rq_worker in CLIENT_AND_RQ_WORKER_TUPLES
+]
+_FETCH_JOB_PARAMS = [
+    (client, redis_client, job_id)
+    for job_id in _JOB_IDS
+    for client, redis_client in CLIENTS
+]
 
 
-def test_root(client):
+@pytest.mark.parametrize("client, _", CLIENTS)
+def test_root(client, _):
     """GET / returns "message": "Welcome to BCC machine"""
     with client as client:
         response = client.get("/")
@@ -25,6 +36,7 @@ def test_root(client):
         assert response.json() == {"message": "Welcome to BCC machine"}
 
 
+@pytest.mark.parametrize("client, redis_client", CLIENTS)
 def test_fetch_all_jobs(redis_client, client):
     """Get to /jobs returns tall jobs"""
     insert_in_hash(
@@ -44,7 +56,7 @@ def test_fetch_all_jobs(redis_client, client):
         assert got == expected
 
 
-@pytest.mark.parametrize("job_id", _JOB_IDS)
+@pytest.mark.parametrize("client, redis_client, job_id", _FETCH_JOB_PARAMS)
 def test_fetch_job(redis_client, client, job_id: str):
     """Get to /jobs/{job_id} returns the job for the given job_id"""
     insert_in_hash(
@@ -66,7 +78,7 @@ def test_fetch_job(redis_client, client, job_id: str):
         assert got == expected
 
 
-@pytest.mark.parametrize("job_id", _JOB_IDS)
+@pytest.mark.parametrize("client, redis_client, job_id", _FETCH_JOB_PARAMS)
 def test_fetch_job_result(redis_client, client, job_id: str):
     """Get to /jobs/{job_id}/result returns the job result for the given job_id"""
     insert_in_hash(
@@ -91,7 +103,7 @@ def test_fetch_job_result(redis_client, client, job_id: str):
         assert got == expected
 
 
-@pytest.mark.parametrize("job_id", _JOB_IDS)
+@pytest.mark.parametrize("client, redis_client, job_id", _FETCH_JOB_PARAMS)
 def test_fetch_job_status(redis_client, client, job_id: str):
     """Get to /jobs/{job_id}/status returns the job status for the given job_id"""
     # importing this here so that patching of redis.Redis does not get messed up
@@ -123,12 +135,12 @@ def test_fetch_job_status(redis_client, client, job_id: str):
         assert got == expected
 
 
-@pytest.mark.parametrize("job", _JOBS_FOR_UPLOAD)
-def test_upload_job(client, redis_client, client_jobs_folder, freezer, rq_worker, job):
+@pytest.mark.parametrize("client, redis_client, rq_worker, job", _UPLOAD_JOB_PARAMS)
+def test_upload_job(client, redis_client, client_jobs_folder, rq_worker, job):
     """POST to '/jobs' uploads a new job"""
     job_id = job[_JOB_ID_FIELD]
     job_file_path = _save_job_file(folder=client_jobs_folder, job=job)
-    timestamp = datetime.now(tz=timezone.utc).isoformat("T").replace("+00:00", "Z")
+    timestamp = MOCK_NOW.replace("+00:00", "Z")
 
     # using context manager to ensure on_startup runs
     with client as client:
@@ -164,7 +176,7 @@ def test_upload_job(client, redis_client, client_jobs_folder, freezer, rq_worker
         assert job_in_redis == expected_job_in_redis
 
 
-@pytest.mark.parametrize("job", _JOBS_FOR_UPLOAD)
+@pytest.mark.parametrize("client, redis_client, rq_worker, job", _UPLOAD_JOB_PARAMS)
 def test_remove_job(client, redis_client, client_jobs_folder, rq_worker, job):
     """DELETE to '/jobs/{job_id}' deletes the given job"""
     job_id = job[_JOB_ID_FIELD]
@@ -188,13 +200,13 @@ def test_remove_job(client, redis_client, client_jobs_folder, rq_worker, job):
         assert job_in_redis is None
 
 
-@pytest.mark.parametrize("job", _JOBS_FOR_UPLOAD)
-def test_cancel_job(client, redis_client, client_jobs_folder, freezer, rq_worker, job):
+@pytest.mark.parametrize("client, redis_client, rq_worker, job", _UPLOAD_JOB_PARAMS)
+def test_cancel_job(client, redis_client, client_jobs_folder, rq_worker, job):
     """POST to '/jobs/{job_id}/cancel' cancels the given job"""
     job_id = job[_JOB_ID_FIELD]
     job_file_path = _save_job_file(folder=client_jobs_folder, job=job)
     cancellation_reason = "just testing"
-    timestamp = datetime.now(tz=timezone.utc).isoformat("T").replace("+00:00", "Z")
+    timestamp = MOCK_NOW.replace("+00:00", "Z")
 
     # using context manager to ensure on_startup runs
     with client as client:

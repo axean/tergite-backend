@@ -23,6 +23,8 @@ class QueuePool:
         logfile_postprocessing_queue: the queue for handling logfile postprocessing
         job_preprocessing_queue: the queue for handling job preprocessing
         job_execution_queue: the queue for handling job execution
+        connection: the redis connection where the queue pool is to run
+        is_async: whether the queues are to be run asynchronously or not
     """
 
     def __init__(self, prefix: str, connection: "Redis", is_async: bool = True):
@@ -33,6 +35,7 @@ class QueuePool:
             is_async: whether to dispatch the enqueued tasks in other workers
         """
         self.connection = connection
+        self.is_async = is_async
 
         self.job_registration_queue = Queue(
             f"{prefix}_job_registration", connection=connection, is_async=is_async
