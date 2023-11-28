@@ -1,17 +1,17 @@
 import json
-import uuid
 from os import path
 from pathlib import Path
 from typing import Any, Dict
 
 import pytest
+import redis
 from rq import Worker
 
 from app.tests.conftest import CLIENT_AND_RQ_WORKER_TUPLES, CLIENTS, MOCK_NOW
 from app.tests.utils.env import (
+    TEST_MSS_MACHINE_ROOT_URL,
     TEST_QUANTIFY_MACHINE_ROOT_URL,
     TEST_STORAGE_ROOT,
-    TEST_MSS_MACHINE_ROOT_URL,
 )
 from app.tests.utils.fixtures import get_fixture_path, load_json_fixture
 from app.tests.utils.redis import insert_in_hash
@@ -22,6 +22,10 @@ _JOBS_FOR_UPLOAD = load_json_fixture("jobs_to_upload.json")
 _JOB_ID_FIELD = "job_id"
 _JOB_IDS = [item[_JOB_ID_FIELD] for item in _JOBS_LIST]
 _JOBS_HASH_NAME = "job_supervisor"
+_DUMMY_JSON = {
+    "foo": "bar",
+    "os": "system",
+}
 
 # params
 _UPLOAD_JOB_PARAMS = [
@@ -374,14 +378,26 @@ def test_call_rng(client, redis_client, job_id):
             assert sent_file.read() == expected_file.read()
 
 
-def test_get_snapshot():
+@pytest.mark.parametrize("client, redis_client", CLIENTS)
+def test_get_snapshot(client, redis_client: redis.Redis):
     """Get to '/web-gui' retrieves the current snapshot of the backend properties"""
-    assert False
+    redis_client.set("current_snapshot", json.dumps(_DUMMY_JSON))
+    # using context manager to ensure on_startup runs
+    with client as client:
+        response = client.get("/web-gui")
+        assert response.status_code == 200
+        assert response.json() == _DUMMY_JSON
 
 
-def test_web_config():
+@pytest.mark.parametrize("client, redis_client", CLIENTS)
+def test_web_config(client, redis_client: redis.Redis):
     """Get to '/web-gui/config' retrieves the config of this backend"""
-    assert False
+    redis_client.set("config", json.dumps(_DUMMY_JSON))
+    # using context manager to ensure on_startup runs
+    with client as client:
+        response = client.get("/web-gui/config")
+        assert response.status_code == 200
+        assert response.json() == _DUMMY_JSON
 
 
 def _save_job_file(folder: Path, job: Dict[str, Any], ext: str = ".json") -> Path:

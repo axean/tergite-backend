@@ -196,6 +196,7 @@ def upload_logfile(
     return {"message": "ok"}
 
 
+# FIXME: this endpoint might be unnecessary going forward or might need to return proper JSON data
 @app.get("/rq-info")
 async def get_rq_info():
     workers = Worker.all(connection=redis_connection)
@@ -212,18 +213,21 @@ async def get_rq_info():
     return {"message": msg}
 
 
+# FIXME: this endpoint might be unnecessary
 @app.get("/rng/{job_id}")
 async def call_rng(job_id: UUID):
     rng_service.quantify_rng(job_id=job_id)
     return "Requesting RNG Numbers"
 
 
+# FIXME: this endpoint might be unnecessary
 @app.get("/web-gui")
 async def get_snapshot():
     snapshot = redis_connection.get("current_snapshot")
     return json.loads(snapshot)
 
 
+# FIXME: this endpoint might be unnecessary
 @app.get("/web-gui/config")
 async def web_config():
     snapshot = redis_connection.get("config")
