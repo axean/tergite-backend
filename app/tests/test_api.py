@@ -5,9 +5,10 @@ from pathlib import Path
 from typing import Any, Dict
 
 import pytest
+from rq import Worker
 
 from app.tests.conftest import CLIENT_AND_RQ_WORKER_TUPLES, CLIENTS, MOCK_NOW
-from app.tests.utils.fixtures import load_json_fixture, get_fixture_path
+from app.tests.utils.fixtures import get_fixture_path, load_json_fixture
 from app.tests.utils.redis import insert_in_hash
 
 _PARENT_FOLDER = path.dirname(path.abspath(__file__))
@@ -269,7 +270,9 @@ def test_download_logfile(
 
 
 @pytest.mark.parametrize("client, redis_client, rq_worker, job", _UPLOAD_JOB_PARAMS)
-def test_upload_logfile(logfile_download_folder, client, redis_client, rq_worker, client_jobs_folder, job):
+def test_upload_logfile(
+    logfile_download_folder, client, redis_client, rq_worker, client_jobs_folder, job
+):
     """POST to '/logfiles' uploads the given logfile"""
     logfile_path = get_fixture_path("logfile.hdf5")
     job_id = job[_JOB_ID_FIELD]
@@ -287,7 +290,11 @@ def test_upload_logfile(logfile_download_folder, client, redis_client, rq_worker
         rq_worker.work(burst=True)
 
         with open(logfile_path, "rb") as file:
-            response = client.post("/logfiles", files={"upload_file": (logfile_name, file)}, data={"logfile_type": "TQC_STORAGE"})
+            response = client.post(
+                "/logfiles",
+                files={"upload_file": (logfile_name, file)},
+                data={"logfile_type": "TQC_STORAGE"},
+            )
 
         expected = {"message": "ok"}
         got = response.json()
@@ -301,9 +308,7 @@ def test_upload_logfile(logfile_download_folder, client, redis_client, rq_worker
                 "location": 9,
                 "started": timestamp,
                 "finished": True,
-                "result": {
-                    "memory": [["0x0"]]
-                },
+                "result": {"memory": [["0x0"]]},
                 "cancelled": {"time": None, "reason": None},
                 "failed": {"time": None, "reason": None},
             },
@@ -321,9 +326,22 @@ def test_upload_logfile(logfile_download_folder, client, redis_client, rq_worker
         assert job_in_redis == expected_job_in_redis
 
 
-def test_get_rq_info():
+# client, redis_client, rq_worker in CLIENT_AND_RQ_WORKER_TUPLES
+@pytest.mark.parametrize("client, redis_client, rq_worker", CLIENT_AND_RQ_WORKER_TUPLES)
+def test_get_rq_info(client, redis_client, rq_worker):
     """GET to '/rq-info' retrieves information about the running rq workers"""
-    assert False
+    # using context manager to ensure on_startup runs
+    with client as client:
+        rq_worker.register_birth()
+        response = client.get("/rq-info")
+        got = response.json()
+        workers = Worker.all(connection=redis_client)
+        worker_info_list = [
+            f"hostname: {worker.hostname},pid: {worker.pid}" for worker in workers
+        ]
+        expected = {"message": f"{{{''.join(worker_info_list)}}}"}
+        assert response.status_code == 200
+        assert got == expected
 
 
 def test_call_rng():

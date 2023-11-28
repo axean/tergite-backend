@@ -200,7 +200,7 @@ def upload_logfile(
 async def get_rq_info():
     workers = Worker.all(connection=redis_connection)
     print(str(workers))
-    if workers == []:
+    if len(workers) == 0:
         return {"message": "No worker registered"}
 
     msg = "{"

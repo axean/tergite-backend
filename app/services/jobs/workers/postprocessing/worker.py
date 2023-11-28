@@ -194,7 +194,6 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
             else:
                 print(f"Response error {response}")
 
-
         try:
             memory = sf.as_readout(
                 discriminator=discriminator_fn,

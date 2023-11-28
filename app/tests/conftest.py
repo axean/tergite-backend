@@ -2,10 +2,11 @@ from .utils.env import (
     TEST_DEFAULT_PREFIX,
     TEST_LABBER_MACHINE_ROOT_URL,
     TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME,
+    TEST_MSS_MACHINE_ROOT_URL,
     TEST_QUANTIFY_MACHINE_ROOT_URL,
     TEST_STORAGE_PREFIX_DIRNAME,
     TEST_STORAGE_ROOT,
-    setup_test_env, TEST_MSS_MACHINE_ROOT_URL,
+    setup_test_env,
 )
 from .utils.fixtures import load_json_fixture
 
