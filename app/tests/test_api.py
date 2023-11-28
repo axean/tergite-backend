@@ -8,6 +8,11 @@ import pytest
 from rq import Worker
 
 from app.tests.conftest import CLIENT_AND_RQ_WORKER_TUPLES, CLIENTS, MOCK_NOW
+from app.tests.utils.env import (
+    TEST_QUANTIFY_MACHINE_ROOT_URL,
+    TEST_STORAGE_ROOT,
+    TEST_MSS_MACHINE_ROOT_URL,
+)
 from app.tests.utils.fixtures import get_fixture_path, load_json_fixture
 from app.tests.utils.redis import insert_in_hash
 
@@ -326,7 +331,6 @@ def test_upload_logfile(
         assert job_in_redis == expected_job_in_redis
 
 
-# client, redis_client, rq_worker in CLIENT_AND_RQ_WORKER_TUPLES
 @pytest.mark.parametrize("client, redis_client, rq_worker", CLIENT_AND_RQ_WORKER_TUPLES)
 def test_get_rq_info(client, redis_client, rq_worker):
     """GET to '/rq-info' retrieves information about the running rq workers"""
@@ -344,9 +348,30 @@ def test_get_rq_info(client, redis_client, rq_worker):
         assert got == expected
 
 
-def test_call_rng():
+@pytest.mark.parametrize("client, redis_client, job_id", _FETCH_JOB_PARAMS)
+def test_call_rng(client, redis_client, job_id):
     """GET to '/rng/{job_id}' retrieves random numbers"""
-    assert False
+    # using context manager to ensure on_startup runs
+    with client as client:
+        import requests
+
+        response = client.get(f"/rng/{job_id}")
+        assert response.status_code == 200
+        assert response.text == '"Requesting RNG Numbers"'
+
+        tmp_file = Path(TEST_STORAGE_ROOT) / f"{job_id}.to_quantify"
+        mock_quantify_call_args = requests.post.call_args
+        files_sent = mock_quantify_call_args.kwargs["files"]
+        assert mock_quantify_call_args.args == (
+            f"{TEST_QUANTIFY_MACHINE_ROOT_URL}/rng_LokiB",
+        )
+        assert files_sent["mss_url"] == (None, TEST_MSS_MACHINE_ROOT_URL)
+        assert files_sent["upload_file"][0] == tmp_file.name
+
+        with open(tmp_file, "r") as expected_file, open(
+            files_sent["upload_file"][1].name
+        ) as sent_file:
+            assert sent_file.read() == expected_file.read()
 
 
 def test_get_snapshot():
