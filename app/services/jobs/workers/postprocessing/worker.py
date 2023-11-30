@@ -161,6 +161,8 @@ def _hardcoded_discriminator(
 def _fetch_discriminator(
     lda_parameters: dict, qubit_idx: int, iq_points: npt.NDArray[np.complex128]
 ) -> npt.NDArray[np.int_]:
+    # FIXME: This is currently only used in the simulator, but we have to find a way to use it everywhere
+
     level = "threeState" if settings.DISCRIMINATE_TWO_STATE else "twoState"
     coef = np.array(lda_parameters[f"q{qubit_idx}"][level]["coef"])
     intercept = np.array(lda_parameters[f"q{qubit_idx}"][level]["intercept"])

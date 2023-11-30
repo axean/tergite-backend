@@ -28,6 +28,7 @@ from redis import Redis
 from rq import Queue, Worker
 
 import settings
+from backend_properties_updater.mss_backend_updater import create_backend_snapshot
 
 from ..services.jobs import service as jobs_service
 from ..services.jobs.workers.postprocessing import (
@@ -59,7 +60,7 @@ rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 # application
 app = FastAPI(
     title="Backend Control Computer",
-    description="Controls Pingu qubits via REST API",
+    description="Interfaces Qauntum processor via REST API",
     version="0.0.1",
 )
 
@@ -218,6 +219,13 @@ async def get_rq_info():
 async def call_rng(job_id: UUID):
     rng_service.quantify_rng(job_id=job_id)
     return "Requesting RNG Numbers"
+
+
+@app.get("/backend_properties")
+async def create_current_snapshot():
+    current_backend_snapshot = create_backend_snapshot()
+    snapshot = json.dumps(current_backend_snapshot, indent=4)
+    return json.loads(snapshot)
 
 
 # FIXME: this endpoint might be unnecessary

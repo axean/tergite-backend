@@ -21,6 +21,7 @@ config = Config(".env")
 APP_SETTINGS = config("APP_SETTINGS", cast=str, default="production")
 
 # Discrimination settings
+# If FETCH_DISCRIMINATOR is set to True it will try to fetch all values from mongoDB
 DISCRIMINATE_TWO_STATE = config("DISCRIMINATE_TWO_STATE", cast=bool, default=False)
 FETCH_DISCRIMINATOR = config("FETCH_DISCRIMINATOR", cast=bool, default=False)
 
@@ -57,6 +58,12 @@ BACKEND_PROPERTIES_TEMPLATE = config(
     "BACKEND_PROPERTIES_TEMPLATE",
     cast=str,
     default="backend_properties_config/property_templates_default.toml",
+)
+
+BACKEND_SETTINGS = config(
+    "BACKEND_SETTINGS",
+    cast=str,
+    default="backend_properties_config/backend_config_default.toml",
 )
 
 # Connectivity settings
