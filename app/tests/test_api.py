@@ -1,8 +1,10 @@
 import json
+import shutil
 from os import path
 from pathlib import Path
 from typing import Any, Dict
 
+import h5py
 import pytest
 import redis
 from rq import Worker
@@ -18,6 +20,7 @@ from app.tests.utils.redis import insert_in_hash
 
 _PARENT_FOLDER = path.dirname(path.abspath(__file__))
 _JOBS_LIST = load_json_fixture("job_list.json")
+_DEFAULT_LOGFILE_PATH = get_fixture_path("logfile.hdf5")
 _BACKEND_PROPERTIES = load_json_fixture("backend_properties.json")
 _JOBS_FOR_UPLOAD = load_json_fixture("jobs_to_upload.json")
 _JOB_ID_FIELD = "job_id"
@@ -284,12 +287,12 @@ def test_upload_logfile(
     logfile_download_folder, client, redis_client, rq_worker, client_jobs_folder, job
 ):
     """POST to '/logfiles' uploads the given logfile"""
-    logfile_path = get_fixture_path("logfile.hdf5")
+
     job_id = job[_JOB_ID_FIELD]
-    logfile_name = f"{job_id}.hdf5"
     timestamp = MOCK_NOW.replace("+00:00", "Z")
 
     job_file_path = _save_job_file(folder=client_jobs_folder, job=job)
+    logfile_path = _save_hdf5_logfile(folder=client_jobs_folder, job_id=job_id)
 
     # using context manager to ensure on_startup runs
     with client as client:
@@ -302,7 +305,7 @@ def test_upload_logfile(
         with open(logfile_path, "rb") as file:
             response = client.post(
                 "/logfiles",
-                files={"upload_file": (logfile_name, file)},
+                files={"upload_file": file},
                 data={"logfile_type": "TQC_STORAGE"},
             )
 
@@ -317,12 +320,11 @@ def test_upload_logfile(
             "status": {
                 "location": 9,
                 "started": timestamp,
-                "finished": True,
-                "result": {"memory": [["0x0"]]},
+                "finished": timestamp,
                 "cancelled": {"time": None, "reason": None},
                 "failed": {"time": None, "reason": None},
             },
-            "result": None,
+            "result": {"memory": [["0x0"] * 2000]},
             "name": job["name"],
             "post_processing": job["post_processing"],
             "is_calibration_supervisor_job": job["is_calibration_supervisor_job"],
@@ -427,5 +429,24 @@ def _save_job_file(folder: Path, job: Dict[str, Any], ext: str = ".json") -> Pat
 
     with open(file_path, "w") as file:
         json.dump(job, file)
+
+    return file_path
+
+
+def _save_hdf5_logfile(folder: Path, job_id: str) -> Path:
+    """Saves the given job to a file and returns the Path
+
+    Args:
+        folder: the folder to save the job in
+        job_id: the job id whose logfile is to be saved
+
+    Returns:
+        the path where the job was saved
+    """
+    file_path = folder / f"{job_id}.hdf5"
+    shutil.copyfile(_DEFAULT_LOGFILE_PATH, file_path)
+
+    with h5py.File(file_path, mode="r+") as file:
+        file.attrs["job_id"] = job_id
 
     return file_path

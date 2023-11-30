@@ -62,19 +62,60 @@ CLIENT_AND_RQ_WORKER_TUPLES = [
 ]
 
 
+"""
+    MSS_JOB = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["jobs"] + "/" + job_id
+
+    # NOTE: When MSS adds support for the 'whole job' update
+    # this will be just one PUT request
+    # Memory could contain more than one experiment, for now just use index 0
+    response = requests.put(MSS_JOB + REST_API_MAP["result"], json=memory)
+    if response:
+        print("Pushed result to MSS")
+
+    response = requests.post(MSS_JOB + REST_API_MAP["timelog"], json="RESULT")
+    if response:
+        print("Updated job timelog on MSS")
+
+    response = requests.put(MSS_JOB + REST_API_MAP["status"], json="DONE")
+    if response:
+        print("Updated job status on MSS to DONE")
+
+    download_url = (
+        str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["logfiles"] + "/" + job_id  # correct?
+    )
+    print(f"Download url: {download_url}")
+    response = requests.put(MSS_JOB + REST_API_MAP["download_url"], json=download_url)
+    if response:
+        print("Updated job download_url on MSS")
+"""
+
+
 def mock_post_requests(url: str, **kwargs):
-    """Mock post requests for testing"""
+    """Mock POST requests for testing"""
     if url == f"{TEST_QUANTIFY_MACHINE_ROOT_URL}/qobj":
         return MockHttpResponse(status_code=200)
     if url == f"{TEST_LABBER_MACHINE_ROOT_URL}/scenarios":
         return MockHttpResponse(status_code=200)
     if url == f"{TEST_QUANTIFY_MACHINE_ROOT_URL}/rng_LokiB":
         return MockHttpResponse(status_code=200)
+    if url == f"{TEST_MSS_MACHINE_ROOT_URL}/timelog":
+        return MockHttpResponse(status_code=200)
 
 
 def mock_get_requests(url: str, **kwargs):
+    """Mock GET requests for testing"""
     if url.endswith("properties/lda_parameters"):
         return MockHttpResponse(status_code=200, json=_lda_parameters_fixture)
+
+
+def mock_put_requests(url: str, **kwargs):
+    """Mock PUT requests for testing"""
+    if url == f"{TEST_MSS_MACHINE_ROOT_URL}/jobs":
+        return MockHttpResponse(status_code=200)
+    if url == f"{TEST_MSS_MACHINE_ROOT_URL}/status":
+        return MockHttpResponse(status_code=200)
+    if url == f"{TEST_MSS_MACHINE_ROOT_URL}/download_url":
+        return MockHttpResponse(status_code=200)
 
 
 @pytest.fixture
@@ -112,6 +153,7 @@ def async_fastapi_client(mocker) -> TestClient:
     mocker.patch("app.utils.queues.QueuePool", return_value=_async_queue_pool)
     mocker.patch("requests.post", side_effect=mock_post_requests)
     mocker.patch("requests.get", side_effect=mock_get_requests)
+    mocker.patch("requests.put", side_effect=mock_put_requests)
 
     from app.api import app
 
@@ -128,6 +170,7 @@ def sync_fastapi_client(mocker) -> TestClient:
     mocker.patch("app.utils.queues.QueuePool", return_value=_sync_queue_pool)
     mocker.patch("requests.post", side_effect=mock_post_requests)
     mocker.patch("requests.get", side_effect=mock_get_requests)
+    mocker.patch("requests.put", side_effect=mock_put_requests)
 
     from app.api import app
 
