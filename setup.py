@@ -27,7 +27,7 @@ REQUIREMENTS = [
     "numpy==1.23.5",
     "PyQt5>=5.15.4",
     "h5py>=3.2.1",
-    "scipy>=1.4.1",
+    "scipy>=1.8.0",
     "networkx>=2.5.1",
     "syncer>=1.3.0",
     "tqcsf>=1.0.0",
