@@ -18,6 +18,7 @@ from app.tests.utils.redis import insert_in_hash
 
 _PARENT_FOLDER = path.dirname(path.abspath(__file__))
 _JOBS_LIST = load_json_fixture("job_list.json")
+_BACKEND_PROPERTIES = load_json_fixture("backend_properties.json")
 _JOBS_FOR_UPLOAD = load_json_fixture("jobs_to_upload.json")
 _JOB_ID_FIELD = "job_id"
 _JOB_IDS = [item[_JOB_ID_FIELD] for item in _JOBS_LIST]
@@ -376,6 +377,17 @@ def test_call_rng(client, redis_client, job_id):
             files_sent["upload_file"][1].name
         ) as sent_file:
             assert sent_file.read() == expected_file.read()
+
+
+@pytest.mark.parametrize("client, redis_client", CLIENTS)
+def test_get_backend_properties(client, redis_client: redis.Redis):
+    """Get to '/backend_properties' retrieves the current snapshot of the backend properties"""
+    # using context manager to ensure on_startup runs
+    with client as client:
+        response = client.get("/backend_properties")
+        got = response.json()
+        assert response.status_code == 200
+        assert got == _BACKEND_PROPERTIES
 
 
 @pytest.mark.parametrize("client, redis_client", CLIENTS)

@@ -9,26 +9,34 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+#
+# Modified:
+#
+# - Martin Ahindura, 2023
 
 import json
-import toml
-import settings
+from os import path
+from pathlib import Path
+
 import requests
-from backend_properties_storage.storage import get_component_value
+import toml
+
+import settings
+from app.utils.storage import get_component_value
 
 mss_url = str(settings.MSS_MACHINE_ROOT_URL)
-backend_settings = settings.BACKEND_SETTINGS
-
-
-# ==================================================
-# Creates a dictionary resambling the mongodb
-# collection of backend, this backend is updated
-# by mss thruogh put("/backends") rest-api
-# endpoint directly with dictionary converted json.
-# ==================================================
+_project_root = path.dirname(
+    path.dirname(path.dirname(path.dirname(path.abspath(__file__))))
+)
+backend_settings = Path(_project_root) / settings.BACKEND_SETTINGS
 
 
 def create_backend_snapshot() -> dict:
+    """Creates a dict containing the properties of this backend
+
+    This dictionary is later saved in the MSS storage by
+    PUTing it to the `/backends` MSS endpoint
+    """
     with open(backend_settings, "r") as f:
         config = toml.load(f)
         general_config = config["general_config"]
@@ -81,15 +89,22 @@ def create_backend_snapshot() -> dict:
     }
 
 
-def update_mss(collection:str=None):
+def update_mss(collection: str = None):
+    """Pushes the snapshot of this backend to the given collection in MSS"""
     current_backend_snapshot = create_backend_snapshot()
     backend_snapshot_json = json.dumps(current_backend_snapshot, indent=4)
     if collection:
-        response = requests.put(mss_url + f"/backends?collection={collection}", backend_snapshot_json)
+        response = requests.put(
+            mss_url + f"/backends?collection={collection}", backend_snapshot_json
+        )
     else:
         response = requests.put(mss_url + "/backends", backend_snapshot_json)
-    
+
     if response:
-        print(f"'{current_backend_snapshot['name']}' backend configuration is sent to mss")
+        print(
+            f"'{current_backend_snapshot['name']}' backend configuration is sent to mss"
+        )
     else:
-        print(f"Could not send '{current_backend_snapshot['name']} 'backend configuration to mss")
+        print(
+            f"Could not send '{current_backend_snapshot['name']} 'backend configuration to mss"
+        )

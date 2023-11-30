@@ -25,10 +25,9 @@ from uuid import UUID
 from fastapi import Body, FastAPI, File, Form, UploadFile
 from fastapi.responses import FileResponse
 from redis import Redis
-from rq import Queue, Worker
+from rq import Worker
 
 import settings
-from backend_properties_updater.mss_backend_updater import create_backend_snapshot
 
 from ..services.jobs import service as jobs_service
 from ..services.jobs.workers.postprocessing import (
@@ -37,6 +36,7 @@ from ..services.jobs.workers.postprocessing import (
 )
 from ..services.jobs.workers.postprocessing.dtos import LogfileType
 from ..services.jobs.workers.registration import job_register
+from ..services.properties import service as props_service
 from ..services.random import service as rng_service
 from ..utils.queues import QueuePool
 from ..utils.uuid import validate_uuid4_str
@@ -223,9 +223,7 @@ async def call_rng(job_id: UUID):
 
 @app.get("/backend_properties")
 async def create_current_snapshot():
-    current_backend_snapshot = create_backend_snapshot()
-    snapshot = json.dumps(current_backend_snapshot, indent=4)
-    return json.loads(snapshot)
+    return props_service.create_backend_snapshot()
 
 
 # FIXME: this endpoint might be unnecessary
