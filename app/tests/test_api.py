@@ -31,6 +31,12 @@ _DUMMY_JSON = {
     "os": "system",
 }
 
+_REGISTRATION_STAGE = "registration"
+_PRE_PROCESSING_STAGE = "pre_processing"
+_EXECUTION_STAGE = "execution"
+_POST_PROCESSING_STAGE = "post_processing"
+_FINAL_STAGE = "final"
+
 # params
 _UPLOAD_JOB_PARAMS = [
     (client, redis_client, rq_worker, job)
@@ -173,11 +179,18 @@ def test_upload_job(client, redis_client, client_jobs_folder, rq_worker, job):
                 "local": {"pre_processing": 0, "execution": 0, "post_processing": 0},
             },
             "status": {
-                "location": 4 if job["name"] == "pulse_schedule" else 5,
+                "location": 5,
                 "started": timestamp,
                 "finished": None,
                 "cancelled": {"time": None, "reason": None},
                 "failed": {"time": None, "reason": None},
+            },
+            "timestamps": {
+                _REGISTRATION_STAGE: {"started": timestamp, "finished": timestamp},
+                _PRE_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
+                _EXECUTION_STAGE: {"started": timestamp, "finished": None},
+                _POST_PROCESSING_STAGE: {"started": None, "finished": None},
+                _FINAL_STAGE: {"started": None, "finished": None},
             },
             "result": None,
             "name": job["name"],
@@ -253,6 +266,13 @@ def test_cancel_job(client, redis_client, client_jobs_folder, rq_worker, job):
                 "cancelled": {"time": timestamp, "reason": cancellation_reason},
                 "failed": {"time": None, "reason": None},
             },
+            "timestamps": {
+                _REGISTRATION_STAGE: {"started": timestamp, "finished": timestamp},
+                _PRE_PROCESSING_STAGE: {"started": None, "finished": None},
+                _EXECUTION_STAGE: {"started": None, "finished": None},
+                _POST_PROCESSING_STAGE: {"started": None, "finished": None},
+                _FINAL_STAGE: {"started": None, "finished": None},
+            },
             "result": None,
             "name": job["name"],
             "post_processing": job["post_processing"],
@@ -323,6 +343,13 @@ def test_upload_logfile(
                 "finished": timestamp,
                 "cancelled": {"time": None, "reason": None},
                 "failed": {"time": None, "reason": None},
+            },
+            "timestamps": {
+                _REGISTRATION_STAGE: {"started": timestamp, "finished": timestamp},
+                _PRE_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
+                _EXECUTION_STAGE: {"started": timestamp, "finished": timestamp},
+                _POST_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
+                _FINAL_STAGE: {"started": timestamp, "finished": timestamp},
             },
             "result": {"memory": [["0x0"] * 2000]},
             "name": job["name"],

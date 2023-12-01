@@ -17,7 +17,7 @@
 import json
 from enum import Enum, unique
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import redis
 from rq.command import send_stop_job_command
@@ -31,8 +31,15 @@ STORAGE_ROOT = settings.STORAGE_ROOT
 LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL
 JOB_SUPERVISOR_LOG = settings.JOB_SUPERVISOR_LOG
 STORAGE_PREFIX_DIRNAME = settings.STORAGE_PREFIX_DIRNAME
+_SUPERVISOR_HASH_KEY = "job_supervisor"
 
 LOCALHOST = "localhost"
+
+_REGISTRATION_STAGE = "registration"
+_PRE_PROCESSING_STAGE = "pre_processing"
+_EXECUTION_STAGE = "execution"
+_POST_PROCESSING_STAGE = "post_processing"
+_FINAL_STAGE = "final"
 
 # Redis connection
 red = redis.Redis()
@@ -72,6 +79,17 @@ STR_LOC: Dict[Location, str] = {
     Location.FINAL_W: "finalization worker",
 }
 
+_LOCATION_TIMESTAMP_MAP: Dict[Location, Tuple[str, str, str]] = {
+    Location.REG_W: ("timestamps", _REGISTRATION_STAGE, "started"),
+    Location.PRE_PROC_Q: ("timestamps", _REGISTRATION_STAGE, "finished"),
+    Location.PRE_PROC_W: ("timestamps", _PRE_PROCESSING_STAGE, "started"),
+    Location.EXEC_Q: ("timestamps", _PRE_PROCESSING_STAGE, "finished"),
+    Location.EXEC_W: ("timestamps", _EXECUTION_STAGE, "started"),
+    Location.PST_PROC_Q: ("timestamps", _EXECUTION_STAGE, "finished"),
+    Location.PST_PROC_W: ("timestamps", _POST_PROCESSING_STAGE, "started"),
+    Location.FINAL_Q: ("timestamps", _POST_PROCESSING_STAGE, "finished"),
+}
+
 
 class EnumEncoder(json.JSONEncoder):
     """Encodes children of enumerable classes"""
@@ -99,7 +117,7 @@ def now() -> str:
 
 def fetch_redis_entry(job_id: str) -> Entry:
     """Query redis for job supervisor entry."""
-    entry = red.hget("job_supervisor", job_id)
+    entry = red.hget(_SUPERVISOR_HASH_KEY, job_id)
 
     if not entry:
         log(f"Job {job_id} not found", level=LogLevel.ERROR)
@@ -123,34 +141,41 @@ def register_job(job_id: str) -> None:
             "cancelled": {"time": None, "reason": None},
             "failed": {"time": None, "reason": None},
         },
+        "timestamps": {
+            _REGISTRATION_STAGE: {"started": now(), "finished": None},
+            _PRE_PROCESSING_STAGE: {"started": None, "finished": None},
+            _EXECUTION_STAGE: {"started": None, "finished": None},
+            _POST_PROCESSING_STAGE: {"started": None, "finished": None},
+            _FINAL_STAGE: {"started": None, "finished": None},
+        },
         "result": None,
     }
-    red.hset("job_supervisor", job_id, json.dumps(entry, cls=EnumEncoder))
+    red.hset(_SUPERVISOR_HASH_KEY, job_id, json.dumps(entry, cls=EnumEncoder))
 
     # log entry
     log(f"Registered entry for job {job_id}")
 
 
-def update_job_entry(job_id: str, value: Any, *keys: List[str]) -> None:
+def update_job_entry(job_id: str, value: Any, *keys: str) -> None:
     """Updates job dict entry with given key(s).
 
     Args:
-        job_id (str): identifier of job to be updated
-        value (Any): new value of dictionary entry
-        keys (List[str]): nested keys of dictionary
+        job_id: identifier of job to be updated
+        value: new value of dictionary entry
+        keys: nested keys of dictionary
     """
     entry: Entry = fetch_redis_entry(job_id)
     _deep_update(entry, value, keys)
-    red.hset("job_supervisor", job_id, json.dumps(entry, cls=EnumEncoder))
+    red.hset(_SUPERVISOR_HASH_KEY, job_id, json.dumps(entry, cls=EnumEncoder))
 
 
-def _deep_update(dict: Entry, value: Any, keys: List[str]) -> Entry:
+def _deep_update(dict: Entry, value: Any, keys: Tuple[str]) -> Entry:
     """Update a nested dictionary.
 
     Args:
-        dict (Entry): nested dictionary to be updated
-        value (Any): value to set
-        keys (List[str]): nested keys
+        dict: nested dictionary to be updated
+        value: value to set
+        keys: nested keys
 
     Returns:
         Entry: the updated entry
@@ -197,8 +222,13 @@ def cancel_job(job_id: str, reason: str) -> None:
     log(log_message)
 
 
-def inform_result(job_id: str, result: Result) -> None:
-    """Upload result to redis."""
+def save_result(job_id: str, result: Dict[str, Any]):
+    """Upload result to redis.
+
+    Args:
+        job_id: the ID of the job
+        result: the result dict to be set on the 'result' property of the job
+    """
     update_job_entry(job_id, now(), "status", "finished")
     update_job_entry(job_id, result, "result")
 
@@ -206,11 +236,41 @@ def inform_result(job_id: str, result: Result) -> None:
 
 
 def inform_location(job_id: str, location: Location) -> None:
-    """ "Update job location."""
+    """Update job location."""
     update_job_entry(job_id, location, "status", "location")
+    _update_location_timestamp(job_id, location)
 
     # log updated job position
     log(f"{job_id} arrived at {STR_LOC[location]}")
+
+
+def update_final_location_timestamp(
+    job_id: str,
+    status: Literal["started", "finished"],
+    timestamp: Optional[str] = None,
+):
+    """Update timestamp for the final location of the job.
+
+    The final stage is special because it has no queue, and it typically runs in the
+    `on_success` callback of the post_processing task.
+    Thus, its timestamps have to be set explicitly
+
+    Args:
+        job_id: the ID of the job
+        status: whether the final stage is 'started' or 'finished'.
+        timestamp: the timestamp to save in the location. If None, it is set to current timestamp
+    """
+    value = timestamp if timestamp is not None else now()
+    update_job_entry(job_id, value, "timestamps", _FINAL_STAGE, status)
+
+
+def _update_location_timestamp(job_id: str, location: Location):
+    """Updates the timestamps of the job given the current location"""
+    try:
+        keys = _LOCATION_TIMESTAMP_MAP[location]
+        update_job_entry(job_id, now(), *keys)
+    except KeyError:
+        pass
 
 
 def inform_failure(job_id: str, reason: str = None) -> None:
@@ -256,7 +316,7 @@ def fetch_all_jobs() -> Dict[str, Any]:
     Returns:
         The dict of job entires.
     """
-    entries = red.hgetall("job_supervisor")
+    entries = red.hgetall(_SUPERVISOR_HASH_KEY)
     return {k: _load_json(v) for k, v in entries.items()}
 
 
@@ -285,7 +345,7 @@ def remove_job(job_id: str) -> None:
         job_id (str): Identifier of the job to be deleted
     """
     cancel_job(job_id, f"Job ID {job_id} was deleted")
-    red.hdel("job_supervisor", job_id)
+    red.hdel(_SUPERVISOR_HASH_KEY, job_id)
     log(f"Job {job_id} was deleted")
 
 

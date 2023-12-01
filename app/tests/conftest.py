@@ -1,3 +1,5 @@
+import dataclasses
+
 from .utils.env import (
     TEST_DEFAULT_PREFIX,
     TEST_LABBER_MACHINE_ROOT_URL,
@@ -62,34 +64,6 @@ CLIENT_AND_RQ_WORKER_TUPLES = [
 ]
 
 
-"""
-    MSS_JOB = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["jobs"] + "/" + job_id
-
-    # NOTE: When MSS adds support for the 'whole job' update
-    # this will be just one PUT request
-    # Memory could contain more than one experiment, for now just use index 0
-    response = requests.put(MSS_JOB + REST_API_MAP["result"], json=memory)
-    if response:
-        print("Pushed result to MSS")
-
-    response = requests.post(MSS_JOB + REST_API_MAP["timelog"], json="RESULT")
-    if response:
-        print("Updated job timelog on MSS")
-
-    response = requests.put(MSS_JOB + REST_API_MAP["status"], json="DONE")
-    if response:
-        print("Updated job status on MSS to DONE")
-
-    download_url = (
-        str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["logfiles"] + "/" + job_id  # correct?
-    )
-    print(f"Download url: {download_url}")
-    response = requests.put(MSS_JOB + REST_API_MAP["download_url"], json=download_url)
-    if response:
-        print("Updated job download_url on MSS")
-"""
-
-
 def mock_post_requests(url: str, **kwargs):
     """Mock POST requests for testing"""
     if url == f"{TEST_QUANTIFY_MACHINE_ROOT_URL}/qobj":
@@ -97,8 +71,6 @@ def mock_post_requests(url: str, **kwargs):
     if url == f"{TEST_LABBER_MACHINE_ROOT_URL}/scenarios":
         return MockHttpResponse(status_code=200)
     if url == f"{TEST_QUANTIFY_MACHINE_ROOT_URL}/rng_LokiB":
-        return MockHttpResponse(status_code=200)
-    if url == f"{TEST_MSS_MACHINE_ROOT_URL}/timelog":
         return MockHttpResponse(status_code=200)
 
 
@@ -110,11 +82,7 @@ def mock_get_requests(url: str, **kwargs):
 
 def mock_put_requests(url: str, **kwargs):
     """Mock PUT requests for testing"""
-    if url == f"{TEST_MSS_MACHINE_ROOT_URL}/jobs":
-        return MockHttpResponse(status_code=200)
-    if url == f"{TEST_MSS_MACHINE_ROOT_URL}/status":
-        return MockHttpResponse(status_code=200)
-    if url == f"{TEST_MSS_MACHINE_ROOT_URL}/download_url":
+    if url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/jobs"):
         return MockHttpResponse(status_code=200)
 
 

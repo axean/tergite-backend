@@ -69,9 +69,6 @@ def post_schedule_file(job_dict: dict, /):
 def post_scenario_file(job_dict: dict, /):
     job_id = job_dict["job_id"]
 
-    # Inform supervisor
-    inform_location(job_id, Location.EXEC_W)
-
     # Create scenario
 
     print(f"Job script type: {job_dict['name']}")
@@ -138,6 +135,9 @@ def job_execute(job_file: Path):
         job_dict = json.load(f)
 
     job_id = job_dict["job_id"]
+
+    # Inform supervisor
+    inform_location(job_id, Location.EXEC_W)
 
     # this is where the quantify redirect is
     if job_dict["name"] == "pulse_schedule":

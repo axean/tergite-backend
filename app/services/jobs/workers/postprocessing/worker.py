@@ -5,6 +5,7 @@
 # (C) Copyright Abdullah Al Amin 2021, 2022
 # (C) Copyright Axel Andersson 2022
 # (C) Andreas Bengtsson 2020
+# (C) Martin Ahindura 2023
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -28,11 +29,13 @@ import numpy.typing as npt
 import redis
 import requests
 import tqcsf.file
+from requests import Response
 from sklearn.utils.extmath import safe_sparse_dot
 from syncer import sync
 
 import Labber
 import settings
+from app.utils import date_time
 
 from .....utils.representation import to_string
 from ...service import (
@@ -43,8 +46,9 @@ from ...service import (
     fetch_redis_entry,
     inform_failure,
     inform_location,
-    inform_result,
     register_job,
+    save_result,
+    update_final_location_timestamp,
     update_job_entry,
 )
 from .analysis import (
@@ -72,12 +76,9 @@ LOCALHOST = "localhost"
 # REST API
 
 REST_API_MAP = {
-    "result": "/result",
-    "status": "/status",
     "timelog": "/timelog",
     "jobs": "/jobs",
     "logfiles": "/logfiles",
-    "download_url": "/download_url",
     "backends": "/backends",
 }
 
@@ -185,10 +186,9 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
         discriminator_fn = _hardcoded_discriminator
 
         if settings.FETCH_DISCRIMINATOR:
-            backend: str = sf.header["qobj"]["backend"].attrs["backend_name"]
-            MSS_JOB: str = f'{MSS_MACHINE_ROOT_URL}{REST_API_MAP["backends"]}/{backend}/properties/lda_parameters'
-            response = requests.get(MSS_JOB)
-            print(response)
+            backend = sf.header["qobj"]["backend"].attrs["backend_name"]
+            discriminator_url = f'{MSS_MACHINE_ROOT_URL}{REST_API_MAP["backends"]}/{backend}/properties/lda_parameters'
+            response = requests.get(discriminator_url)
 
             if response.status_code == 200:
                 discriminator_fn = functools.partial(
@@ -202,18 +202,15 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
                 discriminator=discriminator_fn,
                 disc_two_state=settings.DISCRIMINATE_TWO_STATE,
             )
-            update_mss_and_bcc(
-                memory=memory,
-                job_id=sf.job_id,
-            )
+            update_memory_result_in_mss_and_bcc(memory=memory, job_id=sf.job_id)
         except Exception as exp:
             logging.error(exp)
 
     elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
-        update_mss_and_bcc(memory=[], job_id=sf.job_id)
+        update_memory_result_in_mss_and_bcc(memory=[], job_id=sf.job_id)
 
     elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
-        update_mss_and_bcc(memory=[], job_id=sf.job_id)
+        update_memory_result_in_mss_and_bcc(memory=[], job_id=sf.job_id)
 
     else:
         print("Warning: cannot postprocess invalid StorageFile.")
@@ -244,7 +241,7 @@ def process_qiskit_qasm(labber_logfile: Labber.LogFile) -> str:
     # Extract System state
     memory = extract_system_state_as_hex(labber_logfile)
 
-    update_mss_and_bcc(memory, job_id)
+    update_memory_result_in_mss_and_bcc(memory, job_id)
 
     # DW: I guess something else should be returned? memory or parts of it?
     return job_id
@@ -398,6 +395,7 @@ def postprocessing_success_callback(
     # From logfile_postprocess:
     job_id = result
     inform_location(job_id, Location.FINAL_Q)
+    update_final_location_timestamp(job_id, status="started")
 
     (script_name, is_calibration_supervisor_job, post_processing) = get_metainfo(job_id)
 
@@ -407,6 +405,7 @@ def postprocessing_success_callback(
         print(
             f"Job {job_id}, {script_name=}, {post_processing=} has failed: aborting. Status: {status}"
         )
+        _update_location_timestamps_in_mss(job_id)
         return
 
     print(f"Job with ID {job_id}, {script_name=} has finished")
@@ -419,6 +418,15 @@ def postprocessing_success_callback(
         sync(notify_job_done(job_id))
 
     inform_location(job_id, Location.FINAL_W)
+    update_final_location_timestamp(job_id, status="finished")
+    _update_location_timestamps_in_mss(job_id)
+
+
+def postprocessing_failure_callback(
+    _rq_job, _rq_connection, result: JobID, *args, **kwargs
+):
+    """Callback to be called when postprocessing fails"""
+    _update_location_timestamps_in_mss(result)
 
 
 # =========================================================================
@@ -474,48 +482,70 @@ def get_metainfo(job_id: str) -> Tuple[str, str, str]:
 # =========================================================================
 
 
-# TODO: check the type of "memory" below
-def update_mss_and_bcc(memory, job_id: JobID):
-    # Helper printout with first 5 outcomes
+def update_memory_result_in_mss_and_bcc(memory, job_id: JobID):
+    """Updates both MSS and BCC with the memory part of the result
+
+    Args:
+        memory: the memory part of the result, usually saved as {'result': {'memory': [...]}}
+        job_id: the ID of the job
+    """
+    _debug_job_memory_list(memory)
+    result = {"memory": memory}
+    payload = {
+        "result": result,
+        "status": "DONE",
+        "download_url": f'{BCC_MACHINE_ROOT_URL}{REST_API_MAP["logfiles"]}/{job_id}',
+        "timelog.RESULT": date_time.utc_now_iso(),
+    }
+
+    # update BCC's redis database
+    save_result(job_id, result)
+
+    # update MSS
+    response = _update_job_in_mss(job_id=job_id, payload=payload)
+    if response:
+        print("Pushed update to MSS")
+
+
+def _update_location_timestamps_in_mss(job_id: JobID):
+    """Updates the job entry in MSS with the timestamps that have been saved for each pipeline location
+
+    Args:
+        job_id: the ID of the job
+    """
+    entry = fetch_redis_entry(job_id)
+    try:
+        response = _update_job_in_mss(job_id=job_id, payload=entry["timestamps"])
+        if not response.ok:
+            raise ValueError(
+                f"failed to push timestamps for job {job_id}", response.text
+            )
+    except Exception as exp:
+        logging.error(exp)
+        raise exp
+
+
+def _update_job_in_mss(job_id: JobID, payload: dict) -> Response:
+    """Updates the job in MSS with the given payload
+
+    Args:
+        job_id: the ID of the job
+        payload: the new updates to apply to the given job in MSS
+    """
+    mss_job_url = f'{MSS_MACHINE_ROOT_URL}{REST_API_MAP["jobs"]}/{job_id}'
+    return requests.put(mss_job_url, json=payload)
+
+
+def _debug_job_memory_list(memory: list):
+    """
+    Helper printout with first 5 outcomes
+    """
     print("Measurement results:")
     for experiment_memory in memory:
         s = str(experiment_memory[:5])
         if experiment_memory[5:6]:
             s = s.replace("]", ", ...]")
         print(s)
-
-    # FIXME: Updating redis with result might not be desirable especially for huge results
-    #   but it looks like there is an api endpoint (/jobs/{job_id}/result) that expects redis to have these.
-    #   In future, this update of redis should be removed.
-    #   I am assuming though that since the value passed here is 'memory', we expect the value
-    #   to be saved in memory in redis so maybe the check to determine if to save value in memory or not should be
-    #   done before the `update_mss_and_bcc` function call
-    inform_result(job_id, {"memory": memory})
-
-    MSS_JOB = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["jobs"] + "/" + job_id
-
-    # NOTE: When MSS adds support for the 'whole job' update
-    # this will be just one PUT request
-    # Memory could contain more than one experiment, for now just use index 0
-    response = requests.put(MSS_JOB + REST_API_MAP["result"], json=memory)
-    if response:
-        print("Pushed result to MSS")
-
-    response = requests.post(MSS_JOB + REST_API_MAP["timelog"], json="RESULT")
-    if response:
-        print("Updated job timelog on MSS")
-
-    response = requests.put(MSS_JOB + REST_API_MAP["status"], json="DONE")
-    if response:
-        print("Updated job status on MSS to DONE")
-
-    download_url = (
-        str(BCC_MACHINE_ROOT_URL) + REST_API_MAP["logfiles"] + "/" + job_id  # correct?
-    )
-    print(f"Download url: {download_url}")
-    response = requests.put(MSS_JOB + REST_API_MAP["download_url"], json=download_url)
-    if response:
-        print("Updated job download_url on MSS")
 
 
 # =========================================================================

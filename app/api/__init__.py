@@ -32,6 +32,7 @@ import settings
 from ..services.jobs import service as jobs_service
 from ..services.jobs.workers.postprocessing import (
     logfile_postprocess,
+    postprocessing_failure_callback,
     postprocessing_success_callback,
 )
 from ..services.jobs.workers.postprocessing.dtos import LogfileType
@@ -186,6 +187,7 @@ def upload_logfile(
     rq_queues.logfile_postprocessing_queue.enqueue(
         logfile_postprocess,
         on_success=postprocessing_success_callback,
+        on_failure=postprocessing_failure_callback,
         job_id=file_name + f"_{jobs_service.Location.PST_PROC_Q.name}",
         args=(store_file,),
         kwargs=dict(logfile_type=LogfileType(logfile_type)),
