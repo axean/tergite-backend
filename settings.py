@@ -85,3 +85,5 @@ CALIBRATION_GRAPH = config(
 CALIBRATION_GOALS = list(
     config("CALIBRATION_GOALS", cast=CommaSeparatedStrings, default=[])
 )
+
+MSS_APP_TOKEN = config("MSS_APP_TOKEN", cast=str, default="")

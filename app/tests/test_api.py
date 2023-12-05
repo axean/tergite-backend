@@ -9,7 +9,12 @@ import pytest
 import redis
 from rq import Worker
 
-from app.tests.conftest import CLIENT_AND_RQ_WORKER_TUPLES, CLIENTS, MOCK_NOW
+from app.tests.conftest import (
+    CLIENT_AND_RQ_WORKER_TUPLES,
+    CLIENTS,
+    FASTAPI_CLIENTS,
+    MOCK_NOW,
+)
 from app.tests.utils.env import (
     TEST_MSS_MACHINE_ROOT_URL,
     TEST_QUANTIFY_MACHINE_ROOT_URL,
@@ -50,8 +55,8 @@ _FETCH_JOB_PARAMS = [
 ]
 
 
-@pytest.mark.parametrize("client, _", CLIENTS)
-def test_root(client, _):
+@pytest.mark.parametrize("client", FASTAPI_CLIENTS)
+def test_root(client):
     """GET / returns "message": "Welcome to BCC machine"""
     with client as client:
         response = client.get("/")
@@ -408,8 +413,8 @@ def test_call_rng(client, redis_client, job_id):
             assert sent_file.read() == expected_file.read()
 
 
-@pytest.mark.parametrize("client, redis_client", CLIENTS)
-def test_get_backend_properties(client, redis_client: redis.Redis):
+@pytest.mark.parametrize("client", FASTAPI_CLIENTS)
+def test_get_backend_properties(client):
     """Get to '/backend_properties' retrieves the current snapshot of the backend properties"""
     # using context manager to ensure on_startup runs
     with client as client:

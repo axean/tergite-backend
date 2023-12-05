@@ -65,3 +65,9 @@ QUANTIFY_REST_ID="dummy_cluster"
 # This is added with the simulator to fetch data from the mongoDB
 DISCRIMINATE_TWO_STATE=False
 FETCH_DISCRIMINATOR=False
+
+# Authentication
+# the app token used to authenticate this BCC with MSS.
+# A system user (user with the system role) should log in to QAL 9000, generate an app token
+# and set it here
+# MSS_APP_TOKEN=

@@ -36,6 +36,7 @@ from syncer import sync
 import Labber
 import settings
 from app.utils import date_time
+from app.utils.http import get_mss_client
 
 from .....utils.representation import to_string
 from ...service import (
@@ -182,40 +183,47 @@ def _fetch_discriminator(
 
 
 def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
-    if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
-        discriminator_fn = _hardcoded_discriminator
+    with get_mss_client() as mss_client:
+        if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
+            discriminator_fn = _hardcoded_discriminator
 
-        if settings.FETCH_DISCRIMINATOR:
-            backend = sf.header["qobj"]["backend"].attrs["backend_name"]
-            discriminator_url = f'{MSS_MACHINE_ROOT_URL}{REST_API_MAP["backends"]}/{backend}/properties/lda_parameters'
-            response = requests.get(discriminator_url)
+            if settings.FETCH_DISCRIMINATOR:
+                backend = sf.header["qobj"]["backend"].attrs["backend_name"]
+                discriminator_url = f'{MSS_MACHINE_ROOT_URL}{REST_API_MAP["backends"]}/{backend}/properties/lda_parameters'
+                response = mss_client.get(discriminator_url)
 
-            if response.status_code == 200:
-                discriminator_fn = functools.partial(
-                    _fetch_discriminator, response.json()
+                if response.status_code == 200:
+                    discriminator_fn = functools.partial(
+                        _fetch_discriminator, response.json()
+                    )
+                else:
+                    print(f"Response error {response}")
+
+            try:
+                memory = sf.as_readout(
+                    discriminator=discriminator_fn,
+                    disc_two_state=settings.DISCRIMINATE_TWO_STATE,
                 )
-            else:
-                print(f"Response error {response}")
+                save_result_in_mss_and_bcc(
+                    mss_client=mss_client, memory=memory, job_id=sf.job_id
+                )
+            except Exception as exp:
+                logging.error(exp)
 
-        try:
-            memory = sf.as_readout(
-                discriminator=discriminator_fn,
-                disc_two_state=settings.DISCRIMINATE_TWO_STATE,
+        elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
+            save_result_in_mss_and_bcc(
+                mss_client=mss_client, memory=[], job_id=sf.job_id
             )
-            update_memory_result_in_mss_and_bcc(memory=memory, job_id=sf.job_id)
-        except Exception as exp:
-            logging.error(exp)
 
-    elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
-        update_memory_result_in_mss_and_bcc(memory=[], job_id=sf.job_id)
+        elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
+            save_result_in_mss_and_bcc(
+                mss_client=mss_client, memory=[], job_id=sf.job_id
+            )
 
-    elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
-        update_memory_result_in_mss_and_bcc(memory=[], job_id=sf.job_id)
+        else:
+            print("Warning: cannot postprocess invalid StorageFile.")
 
-    else:
-        print("Warning: cannot postprocess invalid StorageFile.")
-
-    # job["name"] was set to "pulse_schedule" when registered
+        # job["name"] was set to "pulse_schedule" when registered
 
     return sf.job_id
 
@@ -241,7 +249,8 @@ def process_qiskit_qasm(labber_logfile: Labber.LogFile) -> str:
     # Extract System state
     memory = extract_system_state_as_hex(labber_logfile)
 
-    update_memory_result_in_mss_and_bcc(memory, job_id)
+    with get_mss_client() as mss_client:
+        save_result_in_mss_and_bcc(mss_client=mss_client, memory=memory, job_id=job_id)
 
     # DW: I guess something else should be returned? memory or parts of it?
     return job_id
@@ -401,32 +410,34 @@ def postprocessing_success_callback(
 
     status = fetch_job(job_id, "status")
 
-    if status["failed"]["time"]:
-        print(
-            f"Job {job_id}, {script_name=}, {post_processing=} has failed: aborting. Status: {status}"
-        )
-        _update_location_timestamps_in_mss(job_id)
-        return
+    with get_mss_client() as mss_client:
+        if status["failed"]["time"]:
+            print(
+                f"Job {job_id}, {script_name=}, {post_processing=} has failed: aborting. Status: {status}"
+            )
+            _update_location_timestamps_in_mss(mss_client=mss_client, job_id=job_id)
+            return
 
-    print(f"Job with ID {job_id}, {script_name=} has finished")
-    if post_processing:
-        print(
-            f"Results post-processed by '{post_processing}' available by job_id in Redis."
-        )
-    if is_calibration_supervisor_job:
-        print(f"Job was requested by calibration_supervisor: notifying caller.")
-        sync(notify_job_done(job_id))
+        print(f"Job with ID {job_id}, {script_name=} has finished")
+        if post_processing:
+            print(
+                f"Results post-processed by '{post_processing}' available by job_id in Redis."
+            )
+        if is_calibration_supervisor_job:
+            print(f"Job was requested by calibration_supervisor: notifying caller.")
+            sync(notify_job_done(job_id))
 
-    inform_location(job_id, Location.FINAL_W)
-    update_final_location_timestamp(job_id, status="finished")
-    _update_location_timestamps_in_mss(job_id)
+        inform_location(job_id, Location.FINAL_W)
+        update_final_location_timestamp(job_id, status="finished")
+        _update_location_timestamps_in_mss(mss_client=mss_client, job_id=job_id)
 
 
 def postprocessing_failure_callback(
     _rq_job, _rq_connection, result: JobID, *args, **kwargs
 ):
     """Callback to be called when postprocessing fails"""
-    _update_location_timestamps_in_mss(result)
+    with get_mss_client() as mss_client:
+        _update_location_timestamps_in_mss(mss_client=mss_client, job_id=result)
 
 
 # =========================================================================
@@ -482,10 +493,11 @@ def get_metainfo(job_id: str) -> Tuple[str, str, str]:
 # =========================================================================
 
 
-def update_memory_result_in_mss_and_bcc(memory, job_id: JobID):
+def save_result_in_mss_and_bcc(mss_client: requests.Session, memory, job_id: JobID):
     """Updates both MSS and BCC with the memory part of the result
 
     Args:
+        mss_client: the requests.Session that can query MSS
         memory: the memory part of the result, usually saved as {'result': {'memory': [...]}}
         job_id: the ID of the job
     """
@@ -502,20 +514,23 @@ def update_memory_result_in_mss_and_bcc(memory, job_id: JobID):
     save_result(job_id, result)
 
     # update MSS
-    response = _update_job_in_mss(job_id=job_id, payload=payload)
+    response = _update_job_in_mss(mss_client=mss_client, job_id=job_id, payload=payload)
     if response:
         print("Pushed update to MSS")
 
 
-def _update_location_timestamps_in_mss(job_id: JobID):
+def _update_location_timestamps_in_mss(mss_client: requests.Session, job_id: JobID):
     """Updates the job entry in MSS with the timestamps that have been saved for each pipeline location
 
     Args:
+        mss_client: the requests.Session that can query MSS
         job_id: the ID of the job
     """
     entry = fetch_redis_entry(job_id)
     try:
-        response = _update_job_in_mss(job_id=job_id, payload=entry["timestamps"])
+        response = _update_job_in_mss(
+            mss_client=mss_client, job_id=job_id, payload=entry["timestamps"]
+        )
         if not response.ok:
             raise ValueError(
                 f"failed to push timestamps for job {job_id}", response.text
@@ -525,15 +540,21 @@ def _update_location_timestamps_in_mss(job_id: JobID):
         raise exp
 
 
-def _update_job_in_mss(job_id: JobID, payload: dict) -> Response:
+def _update_job_in_mss(
+    mss_client: requests.Session, job_id: JobID, payload: dict
+) -> Response:
     """Updates the job in MSS with the given payload
 
     Args:
+        mss_client: the requests.Session that can query MSS
         job_id: the ID of the job
         payload: the new updates to apply to the given job in MSS
+
+    Returns:
+        the requests.Response received after request to MSS
     """
     mss_job_url = f'{MSS_MACHINE_ROOT_URL}{REST_API_MAP["jobs"]}/{job_id}'
-    return requests.put(mss_job_url, json=payload)
+    return mss_client.put(mss_job_url, json=payload)
 
 
 def _debug_job_memory_list(memory: list):

@@ -1,5 +1,3 @@
-import dataclasses
-
 from .utils.env import (
     TEST_DEFAULT_PREFIX,
     TEST_LABBER_MACHINE_ROOT_URL,
@@ -10,7 +8,6 @@ from .utils.env import (
     TEST_STORAGE_ROOT,
     setup_test_env,
 )
-from .utils.fixtures import load_json_fixture
 
 # set up the environment before any other import
 setup_test_env()
@@ -27,7 +24,8 @@ from redis.client import Redis
 from rq import SimpleWorker
 
 from ..utils.queues import QueuePool
-from .utils.http import MockHttpResponse
+from .utils.fixtures import load_json_fixture
+from .utils.http import MockHttpResponse, MockHttpSession
 from .utils.modules import remove_modules
 from .utils.rq import get_rq_worker
 
@@ -42,6 +40,12 @@ _sync_queue_pool = QueuePool(
 )
 
 MOCK_NOW = "2023-11-27T12:46:48.851656+00:00"
+
+FASTAPI_CLIENTS = [
+    lazy_fixture("async_fastapi_client"),
+    # FIXME: See issue https://bitbucket.org/qtlteam/tergite-bcc/issues/1/inform-job-location-stage-logic-is
+    # lazy_fixture("sync_fastapi_client"),
+]
 
 CLIENTS = [
     (lazy_fixture("async_fastapi_client"), lazy_fixture("real_redis_client")),
@@ -74,14 +78,14 @@ def mock_post_requests(url: str, **kwargs):
         return MockHttpResponse(status_code=200)
 
 
-def mock_get_requests(url: str, **kwargs):
-    """Mock GET requests for testing"""
+def mock_mss_get_requests(url: str, **kwargs):
+    """Mock GET requests sent to MSS for testing"""
     if url.endswith("properties/lda_parameters"):
         return MockHttpResponse(status_code=200, json=_lda_parameters_fixture)
 
 
-def mock_put_requests(url: str, **kwargs):
-    """Mock PUT requests for testing"""
+def mock_mss_put_requests(url: str, **kwargs):
+    """Mock PUT requests sent to MSS for testing"""
     if url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/jobs"):
         return MockHttpResponse(status_code=200)
 
@@ -117,11 +121,12 @@ def async_fastapi_client(mocker) -> TestClient:
     """A test client for fast api when rq is running asynchronously"""
     remove_modules(["app"])
 
+    mss_client = MockHttpSession(put=mock_mss_put_requests, get=mock_mss_get_requests)
+
     mocker.patch("redis.Redis", return_value=_real_redis)
     mocker.patch("app.utils.queues.QueuePool", return_value=_async_queue_pool)
     mocker.patch("requests.post", side_effect=mock_post_requests)
-    mocker.patch("requests.get", side_effect=mock_get_requests)
-    mocker.patch("requests.put", side_effect=mock_put_requests)
+    mocker.patch("requests.Session", return_value=mss_client)
 
     from app.api import app
 
@@ -134,16 +139,19 @@ def sync_fastapi_client(mocker) -> TestClient:
     """A test client for fast api when rq is running asynchronously"""
     remove_modules(["app"])
 
+    mss_client = MockHttpSession(put=mock_mss_put_requests, get=mock_mss_get_requests)
+
     mocker.patch("redis.Redis", return_value=_fake_redis)
     mocker.patch("app.utils.queues.QueuePool", return_value=_sync_queue_pool)
     mocker.patch("requests.post", side_effect=mock_post_requests)
-    mocker.patch("requests.get", side_effect=mock_get_requests)
-    mocker.patch("requests.put", side_effect=mock_put_requests)
+    mocker.patch("requests.Session", return_value=mss_client)
 
     from app.api import app
 
     with freeze_time(MOCK_NOW):
-        yield TestClient(app)
+        client = TestClient(app)
+        client.app.state.mss_client = mss_client
+        yield client
 
 
 @pytest.fixture

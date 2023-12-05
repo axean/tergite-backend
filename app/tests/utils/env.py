@@ -20,6 +20,8 @@ TEST_BCC_PORT = 8000
 TEST_DB_MACHINE_ROOT_URL = "mongodb://localhost:27017"
 TEST_CALIBRATION_SUPERVISOR_PORT = 8003
 
+TEST_MSS_APP_TOKEN = "some-mss-app-token-for-testing"
+
 
 def setup_test_env():
     """Sets up the test environment.
@@ -48,3 +50,4 @@ def setup_test_env():
     environ["CALIBRATION_SUPERVISOR_PORT"] = f"{TEST_CALIBRATION_SUPERVISOR_PORT}"
 
     environ["FETCH_DISCRIMINATOR"] = f"True"
+    environ["MSS_APP_TOKEN"] = TEST_MSS_APP_TOKEN
