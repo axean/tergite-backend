@@ -19,6 +19,13 @@ config = Config(".env")
 
 # Misc settings
 APP_SETTINGS = config("APP_SETTINGS", cast=str, default="production")
+IS_AUTH_ENABLED = config("IS_AUTH_ENABLED", cast=bool, default=True)
+_is_production = APP_SETTINGS == "production"
+
+if not IS_AUTH_ENABLED and _is_production:
+    raise ValueError(
+        "'IS_AUTH_ENABLED' environment variable has been set to false in production."
+    )
 
 # Discrimination settings
 # If FETCH_DISCRIMINATOR is set to True it will try to fetch all values from mongoDB

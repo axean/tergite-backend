@@ -70,4 +70,6 @@ FETCH_DISCRIMINATOR=False
 # the app token used to authenticate this BCC with MSS.
 # A system user (user with the system role) should log in to QAL 9000, generate an app token
 # and set it here
-# MSS_APP_TOKEN=
+MSS_APP_TOKEN=
+# Default is true. Setting this to False in production will raise a ValueError at startup.
+IS_AUTH_ENABLED=True
