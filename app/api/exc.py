@@ -10,7 +10,12 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 """Exceptions specific to the API"""
+from app.utils.exc import BaseBccException
 
 
-class IpNotAllowedError(Exception):
+class IpNotAllowedError(BaseBccException):
+    pass
+
+
+class InvalidJobIdInUploadedFileError(BaseBccException):
     pass

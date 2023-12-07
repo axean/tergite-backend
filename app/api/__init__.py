@@ -19,7 +19,7 @@
 import json
 import shutil
 from pathlib import Path
-from typing import Optional
+from typing import Annotated, Optional
 from uuid import UUID
 
 from fastapi import (
@@ -33,8 +33,8 @@ from fastapi import (
     status,
 )
 from fastapi.requests import Request
-from fastapi.responses import FileResponse, Response
-from redis import Redis
+from fastapi.responses import FileResponse, JSONResponse, Response
+from redis.client import Redis
 from rq import Worker
 
 import settings
@@ -50,11 +50,14 @@ from ..services.jobs.workers.postprocessing.dtos import LogfileType
 from ..services.jobs.workers.registration import job_register
 from ..services.properties import service as props_service
 from ..services.random import service as rng_service
-from ..utils.api import get_bearer_token
 from ..utils.queues import QueuePool
-from ..utils.uuid import validate_uuid4_str
-from .dependencies import get_whitelisted_ip
-from .exc import IpNotAllowedError
+from .dependencies import (
+    get_bearer_token,
+    get_redis_connection,
+    get_valid_credentials_dep,
+    get_whitelisted_ip,
+)
+from .exc import InvalidJobIdInUploadedFileError, IpNotAllowedError
 
 # settings
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX
@@ -64,13 +67,12 @@ LOGFILE_UPLOAD_POOL_DIRNAME = settings.LOGFILE_UPLOAD_POOL_DIRNAME
 LOGFILE_DOWNLOAD_POOL_DIRNAME = settings.LOGFILE_DOWNLOAD_POOL_DIRNAME
 JOB_UPLOAD_POOL_DIRNAME = settings.JOB_UPLOAD_POOL_DIRNAME
 
-
-# redis connection
-redis_connection = Redis()
+# dependencies
+RedisDep = Annotated[Redis, Depends(get_redis_connection)]
 
 
 # redis queues
-rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
+rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=get_redis_connection())
 
 # application
 app = FastAPI(
@@ -80,9 +82,38 @@ app = FastAPI(
 )
 
 
+@app.exception_handler(InvalidJobIdInUploadedFileError)
+async def invalid_job_id_in_file_exception_handler(
+    request: Request, exp: InvalidJobIdInUploadedFileError
+):
+    """A custom exception handler to handle InvalidJobIdInUploadedFileError.
+
+    This handler is only here to maintain the original way of responding
+    when the job_id in the uploaded file was non-existent or was not a
+    proper UUID
+    """
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"message": "failed"},
+    )
+
+
 @app.middleware("http")
 async def limit_access_to_ip_whitelist(request: Request, call_next):
-    """Limits access to only the given IP addresses in the white list"""
+    """Limits access to only the given IP addresses in the white list.
+
+    This middleware adds the 'whitelisted_ip' property to the request.state
+    if the IP of the request is in the CLIENT_IP_WHITELIST.
+    Some endpoints will raise an IpNotAllowedError if the 'whitelisted_ip'
+    property does not exist. Others will ignore it and work normally.
+
+    The endpoints that raise an IpNotAllowedError are those that are
+    essentially private.
+
+    Args:
+        request: the current FastAPI request object
+        call_next: the callback that calls the next middleware or route handler
+    """
     ip = f"{request.client.host}"
 
     if ip in settings.CLIENT_IP_WHITELIST:
@@ -97,13 +128,15 @@ async def limit_access_to_ip_whitelist(request: Request, call_next):
 
 # routing
 @app.get("/", dependencies=[Depends(get_whitelisted_ip)])
-async def root(request: Request):
-    return {"message": "Welcome to BCC machine", "host": f"{request.client.host}"}
+async def root():
+    return {"message": "Welcome to BCC machine"}
 
 
 @app.post("/auth")
-async def register_credentials(body: auth_service.Credentials):
-    """Registers the credentials to"""
+async def register_credentials(
+    body: auth_service.Credentials, redis_connection: RedisDep
+):
+    """Registers the credentials passed to it"""
     try:
         auth_service.save_credentials(redis_connection, payload=body)
     except auth_service.JobAlreadyExists as exp:
@@ -112,21 +145,14 @@ async def register_credentials(body: auth_service.Credentials):
 
 
 @app.post("/jobs")
-async def upload_job(request: Request, upload_file: UploadFile = File(...)):
-    # get job_id and validate it
-    job_dict = json.load(upload_file.file)
-    job_id = job_dict.get("job_id", None)
-    if job_id is None or validate_uuid4_str(job_id) is False:
-        print("The job does not have a valid UUID4 job_id")
-        return {"message": "failed"}
-
-    # raise authentication and authorization errors where appropriate
-    _authenticate_request(
-        request, job_id=job_id, expected_status=auth_service.JobStatus.REGISTERED
-    )
-
+async def upload_job(
+    upload_file: UploadFile = File(...),
+    credentials: auth_service.Credentials = Depends(
+        get_valid_credentials_dep(expected_status=auth_service.JobStatus.REGISTERED)
+    ),
+):
     # store the received file in the job upload pool
-    file_name = job_id
+    file_name = credentials.job_id
     file_path = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / JOB_UPLOAD_POOL_DIRNAME
     file_path.mkdir(parents=True, exist_ok=True)
     store_file = file_path / file_name
@@ -139,7 +165,9 @@ async def upload_job(request: Request, upload_file: UploadFile = File(...)):
 
     # enqueue for registration
     rq_queues.job_registration_queue.enqueue(
-        job_register, store_file, job_id=job_id + f"_{jobs_service.Location.REG_Q.name}"
+        job_register,
+        store_file,
+        job_id=credentials.job_id + f"_{jobs_service.Location.REG_Q.name}",
     )
     return {"message": file_name}
 
@@ -149,29 +177,20 @@ async def fetch_all_jobs():
     return jobs_service.fetch_all_jobs()
 
 
-@app.get("/jobs/{job_id}")
-async def fetch_job(request: Request, job_id: str):
-    # raise authentication and authorization errors where appropriate
-    _authenticate_request(request, job_id=job_id)
-
+@app.get("/jobs/{job_id}", dependencies=[Depends(get_valid_credentials_dep())])
+async def fetch_job(job_id: str):
     job = jobs_service.fetch_job(job_id)
     return {"message": job or f"job {job_id} not found"}
 
 
-@app.get("/jobs/{job_id}/status")
-async def fetch_job_status(request: Request, job_id: str):
-    # raise authentication and authorization errors where appropriate
-    _authenticate_request(request, job_id=job_id)
-
-    status = jobs_service.fetch_job(job_id, "status", format=True)
-    return {"message": status or f"job {job_id} not found"}
+@app.get("/jobs/{job_id}/status", dependencies=[Depends(get_valid_credentials_dep())])
+async def fetch_job_status(job_id: str):
+    job_status = jobs_service.fetch_job(job_id, "status", format=True)
+    return {"message": job_status or f"job {job_id} not found"}
 
 
-@app.get("/jobs/{job_id}/result")
-async def fetch_job_result(request: Request, job_id: str):
-    # raise authentication and authorization errors where appropriate
-    _authenticate_request(request, job_id=job_id)
-
+@app.get("/jobs/{job_id}/result", dependencies=[Depends(get_valid_credentials_dep())])
+async def fetch_job_result(job_id: str):
     job = jobs_service.fetch_job(job_id)
 
     if not job:
@@ -182,30 +201,22 @@ async def fetch_job_result(request: Request, job_id: str):
         return {"message": "job has not finished"}
 
 
-@app.delete("/jobs/{job_id}")
-async def remove_job(request: Request, job_id: str):
-    # raise authentication and authorization errors where appropriate
-    _authenticate_request(request, job_id=job_id)
-
+@app.delete("/jobs/{job_id}", dependencies=[Depends(get_valid_credentials_dep())])
+async def remove_job(job_id: str):
     jobs_service.remove_job(job_id)
 
 
-@app.post("/jobs/{job_id}/cancel")
-async def cancel_job(
-    request: Request, job_id: str, reason: Optional[str] = Body(None, embed=False)
-):
-    # raise authentication and authorization errors where appropriate
-    _authenticate_request(request, job_id=job_id)
-
+@app.post("/jobs/{job_id}/cancel", dependencies=[Depends(get_valid_credentials_dep())])
+async def cancel_job(job_id: str, reason: Optional[str] = Body(None, embed=False)):
     print(f"Cancelling job {job_id}")
     jobs_service.cancel_job(job_id, reason)
 
 
-@app.get("/logfiles/{logfile_id}")
-async def download_logfile(request: Request, logfile_id: UUID):
-    # raise authentication and authorization errors where appropriate
-    _authenticate_request(request, job_id=str(logfile_id))
-
+@app.get(
+    "/logfiles/{logfile_id}",
+    dependencies=[Depends(get_valid_credentials_dep(job_id_field="logfile_id"))],
+)
+async def download_logfile(logfile_id: UUID):
     file_name = f"{logfile_id}.hdf5"
     file = (
         Path(STORAGE_ROOT)
@@ -227,12 +238,12 @@ def upload_logfile(
 ):
     print(f"Received logfile {upload_file.filename}")
 
-    # store the recieved file in the logfile upload pool
+    # store the received file in the logfile upload pool
     file_name = Path(upload_file.filename).stem
 
     # Cancels postprocessing if job is labelled as cancelled
-    status = jobs_service.fetch_job(file_name, "status")
-    if status["cancelled"]["time"]:
+    job_status = jobs_service.fetch_job(file_name, "status")
+    if job_status["cancelled"]["time"]:
         print("Job cancelled, postprocessing halted")
         # FIXME: Probably provide an error message to the client also
         return
@@ -265,7 +276,7 @@ def upload_logfile(
 
 # FIXME: this endpoint might be unnecessary going forward or might need to return proper JSON data
 @app.get("/rq-info", dependencies=[Depends(get_whitelisted_ip)])
-async def get_rq_info():
+async def get_rq_info(redis_connection: RedisDep):
     workers = Worker.all(connection=redis_connection)
     print(str(workers))
     if len(workers) == 0:
@@ -294,43 +305,13 @@ async def create_current_snapshot():
 
 # FIXME: this endpoint might be unnecessary
 @app.get("/web-gui", dependencies=[Depends(get_whitelisted_ip)])
-async def get_snapshot():
+async def get_snapshot(redis_connection: RedisDep):
     snapshot = redis_connection.get("current_snapshot")
     return json.loads(snapshot)
 
 
 # FIXME: this endpoint might be unnecessary
 @app.get("/web-gui/config", dependencies=[Depends(get_whitelisted_ip)])
-async def web_config():
+async def web_config(redis_connection: RedisDep):
     snapshot = redis_connection.get("config")
     return json.loads(snapshot)
-
-
-def _authenticate_request(
-    request: Request,
-    job_id: str,
-    expected_status: Optional[auth_service.JobStatus] = None,
-):
-    """Authenticates the given request, raising appropriate HTTP errors where necessary
-
-    Args:
-        request: the FastAPI request object to authenticate
-        job_id: the job id for which authentication is to be done
-        expected_status: the status that the job should be at. If None, status does not matter
-
-    Raises:
-        HTTPException: status_code=401, detail=job {credentials.job_id} does not exist for current user
-        HTTPException: status_code=403, detail=job {credentials.job_id} is already {auth_log.status}
-    """
-    app_token = get_bearer_token(request, raise_if_error=settings.IS_AUTH_ENABLED)
-    credentials = auth_service.Credentials(job_id=job_id, app_token=app_token)
-    try:
-        auth_service.authenticate(
-            redis_connection,
-            credentials=credentials,
-            expected_status=expected_status,
-        )
-    except auth_service.AuthenticationError as exp:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{exp}")
-    except auth_service.AuthorizationError as exp:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"{exp}")
