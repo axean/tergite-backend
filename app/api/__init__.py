@@ -22,9 +22,18 @@ from pathlib import Path
 from typing import Optional
 from uuid import UUID
 
-from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile, status
+from fastapi import (
+    Body,
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+    status,
+)
 from fastapi.requests import Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from redis import Redis
 from rq import Worker
 
@@ -44,6 +53,8 @@ from ..services.random import service as rng_service
 from ..utils.api import get_bearer_token
 from ..utils.queues import QueuePool
 from ..utils.uuid import validate_uuid4_str
+from .dependencies import get_whitelisted_ip
+from .exc import IpNotAllowedError
 
 # settings
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX
@@ -69,11 +80,25 @@ app = FastAPI(
 )
 
 
+@app.middleware("http")
+async def limit_access_to_ip_whitelist(request: Request, call_next):
+    """Limits access to only the given IP addresses in the white list"""
+    ip = f"{request.client.host}"
+
+    if ip in settings.CLIENT_IP_WHITELIST:
+        request.state.whitelisted_ip = ip
+
+    try:
+        return await call_next(request)
+    except IpNotAllowedError:
+        # return an empty response mimicking 404
+        return Response(status_code=status.HTTP_404_NOT_FOUND)
+
+
 # routing
-@app.get("/")
-async def root():
-    # FIXME: block access to this except for the white-listed IPs
-    return {"message": "Welcome to BCC machine"}
+@app.get("/", dependencies=[Depends(get_whitelisted_ip)])
+async def root(request: Request):
+    return {"message": "Welcome to BCC machine", "host": f"{request.client.host}"}
 
 
 @app.post("/auth")
@@ -119,9 +144,8 @@ async def upload_job(request: Request, upload_file: UploadFile = File(...)):
     return {"message": file_name}
 
 
-@app.get("/jobs")
+@app.get("/jobs", dependencies=[Depends(get_whitelisted_ip)])
 async def fetch_all_jobs():
-    # FIXME: block access to this except for the white-listed IPs
     return jobs_service.fetch_all_jobs()
 
 
@@ -196,12 +220,11 @@ async def download_logfile(request: Request, logfile_id: UUID):
         return {"message": "logfile not found"}
 
 
-@app.post("/logfiles")
+@app.post("/logfiles", dependencies=[Depends(get_whitelisted_ip)])
 def upload_logfile(
     upload_file: UploadFile = File(...),
     logfile_type: str = Form(default="LABBER_LOGFILE"),
 ):
-    # FIXME: block access to this except for the white-listed IPs
     print(f"Received logfile {upload_file.filename}")
 
     # store the recieved file in the logfile upload pool
@@ -241,9 +264,8 @@ def upload_logfile(
 
 
 # FIXME: this endpoint might be unnecessary going forward or might need to return proper JSON data
-@app.get("/rq-info")
+@app.get("/rq-info", dependencies=[Depends(get_whitelisted_ip)])
 async def get_rq_info():
-    # FIXME: block access to this except for the white-listed IPs
     workers = Worker.all(connection=redis_connection)
     print(str(workers))
     if len(workers) == 0:
@@ -259,31 +281,27 @@ async def get_rq_info():
 
 
 # FIXME: this endpoint might be unnecessary
-@app.get("/rng/{job_id}")
+@app.get("/rng/{job_id}", dependencies=[Depends(get_whitelisted_ip)])
 async def call_rng(job_id: UUID):
-    # FIXME: block access to this except for the white-listed IPs
     rng_service.quantify_rng(job_id=job_id)
     return "Requesting RNG Numbers"
 
 
-@app.get("/backend_properties")
+@app.get("/backend_properties", dependencies=[Depends(get_whitelisted_ip)])
 async def create_current_snapshot():
-    # FIXME: block access to this except for the white-listed IPs
     return props_service.create_backend_snapshot()
 
 
 # FIXME: this endpoint might be unnecessary
-@app.get("/web-gui")
+@app.get("/web-gui", dependencies=[Depends(get_whitelisted_ip)])
 async def get_snapshot():
-    # FIXME: block access to this except for the white-listed IPs
     snapshot = redis_connection.get("current_snapshot")
     return json.loads(snapshot)
 
 
 # FIXME: this endpoint might be unnecessary
-@app.get("/web-gui/config")
+@app.get("/web-gui/config", dependencies=[Depends(get_whitelisted_ip)])
 async def web_config():
-    # FIXME: block access to this except for the white-listed IPs
     snapshot = redis_connection.get("config")
     return json.loads(snapshot)
 

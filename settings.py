@@ -10,6 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
+import socket
 
 from starlette.config import Config
 from starlette.datastructures import URL, CommaSeparatedStrings
@@ -93,4 +94,17 @@ CALIBRATION_GOALS = list(
     config("CALIBRATION_GOALS", cast=CommaSeparatedStrings, default=[])
 )
 
+# Authentication
+
 MSS_APP_TOKEN = config("MSS_APP_TOKEN", cast=str, default="")
+
+# BCC should be hidden from the internet except for a few endpoints, and IPs
+# WhiteLIST is actually a dict to ensure O(1) lookup time everytime
+CLIENT_IP_WHITELIST = {
+    socket.gethostbyname(v.hostname): True
+    for v in [
+        MSS_MACHINE_ROOT_URL,
+        QUANTIFY_MACHINE_ROOT_URL,
+        LABBER_MACHINE_ROOT_URL,
+    ]
+}
