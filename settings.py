@@ -9,7 +9,7 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-
+import os
 import socket
 
 from starlette.config import Config
@@ -108,6 +108,6 @@ CLIENT_IP_WHITELIST = {
         LABBER_MACHINE_ROOT_URL,
     ]
 }
-# allow test client to access api
-if APP_SETTINGS == "test":
+# allow test client to access api when BLACKLISTED is not set
+if APP_SETTINGS == "test" and not os.environ["BLACKLISTED"]:
     CLIENT_IP_WHITELIST["testclient"] = True

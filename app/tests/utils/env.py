@@ -2,7 +2,7 @@ from os import environ
 
 TEST_POSTPROC_PLOTTING = "False"
 TEST_DEFAULT_PREFIX = "test"
-TEST_STORAGE_ROOT = "/tmp"
+TEST_STORAGE_ROOT = "/tmp/jobs"
 
 TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME = "logfile_download_pool"
 TEST_LOGFILE_UPLOAD_POOL_DIRNAME = "logfile_upload_pool"

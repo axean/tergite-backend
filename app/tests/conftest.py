@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 
 from .utils.env import (
@@ -49,11 +50,25 @@ FASTAPI_CLIENTS = [
     # FIXME: See issue https://bitbucket.org/qtlteam/tergite-bcc/issues/1/inform-job-location-stage-logic-is
     # lazy_fixture("sync_fastapi_client"),
 ]
+BLACKLISTED_FASTAPI_CLIENTS = [
+    lazy_fixture("blacklisted_async_fastapi_client"),
+    # FIXME: See issue https://bitbucket.org/qtlteam/tergite-bcc/issues/1/inform-job-location-stage-logic-is
+    # lazy_fixture("blacklisted_sync_fastapi_client"),
+]
 
 CLIENTS = [
     (lazy_fixture("async_fastapi_client"), lazy_fixture("real_redis_client")),
     # FIXME: See issue https://bitbucket.org/qtlteam/tergite-bcc/issues/1/inform-job-location-stage-logic-is
     # (lazy_fixture("sync_fastapi_client"), lazy_fixture("fake_redis_client")),
+]
+
+BLACKLISTED_CLIENTS = [
+    (
+        lazy_fixture("blacklisted_async_fastapi_client"),
+        lazy_fixture("real_redis_client"),
+    ),
+    # FIXME: See issue https://bitbucket.org/qtlteam/tergite-bcc/issues/1/inform-job-location-stage-logic-is
+    # (lazy_fixture("blacklisted_sync_fastapi_client"), lazy_fixture("fake_redis_client")),
 ]
 
 CLIENT_AND_RQ_WORKER_TUPLES = [
@@ -65,6 +80,20 @@ CLIENT_AND_RQ_WORKER_TUPLES = [
     # FIXME: See issue https://bitbucket.org/qtlteam/tergite-bcc/issues/1/inform-job-location-stage-logic-is
     # (
     #     lazy_fixture("sync_fastapi_client"),
+    #     lazy_fixture("fake_redis_client"),
+    #     lazy_fixture("sync_rq_worker"),
+    # ),
+]
+
+BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES = [
+    (
+        lazy_fixture("blacklisted_async_fastapi_client"),
+        lazy_fixture("real_redis_client"),
+        lazy_fixture("async_rq_worker"),
+    ),
+    # FIXME: See issue https://bitbucket.org/qtlteam/tergite-bcc/issues/1/inform-job-location-stage-logic-is
+    # (
+    #     lazy_fixture("blacklisted_sync_fastapi_client"),
     #     lazy_fixture("fake_redis_client"),
     #     lazy_fixture("sync_rq_worker"),
     # ),
@@ -122,14 +151,8 @@ def sync_rq_worker() -> SimpleWorker:
 @pytest.fixture
 def async_fastapi_client(mocker) -> TestClient:
     """A test client for fast api when rq is running asynchronously"""
-    remove_modules(["app"])
-
-    mss_client = MockHttpSession(put=mock_mss_put_requests, get=mock_mss_get_requests)
-
-    mocker.patch("redis.Redis", return_value=_real_redis)
-    mocker.patch("app.utils.queues.QueuePool", return_value=_async_queue_pool)
-    mocker.patch("requests.post", side_effect=mock_post_requests)
-    mocker.patch("requests.Session", return_value=mss_client)
+    remove_modules(["app", "settings"])
+    _patch_async_client(mocker)
 
     from app.api import app
 
@@ -139,22 +162,40 @@ def async_fastapi_client(mocker) -> TestClient:
 
 @pytest.fixture
 def sync_fastapi_client(mocker) -> TestClient:
-    """A test client for fast api when rq is running asynchronously"""
-    remove_modules(["app"])
-
-    mss_client = MockHttpSession(put=mock_mss_put_requests, get=mock_mss_get_requests)
-
-    mocker.patch("redis.Redis", return_value=_fake_redis)
-    mocker.patch("app.utils.queues.QueuePool", return_value=_sync_queue_pool)
-    mocker.patch("requests.post", side_effect=mock_post_requests)
-    mocker.patch("requests.Session", return_value=mss_client)
+    """A test client for fast api when rq is running synchronously"""
+    remove_modules(["app", "settings"])
+    _patch_sync_client(mocker)
 
     from app.api import app
 
     with freeze_time(MOCK_NOW):
-        client = TestClient(app)
-        client.app.state.mss_client = mss_client
-        yield client
+        yield TestClient(app)
+
+
+@pytest.fixture
+def blacklisted_async_fastapi_client(mocker) -> TestClient:
+    """A test client with black listed ip for fast api when rq is running asynchronously"""
+    remove_modules(["app", "settings"])
+    _patch_async_client(mocker)
+    os.environ["BLACKLISTED"] = "True"
+
+    from app.api import app
+
+    with freeze_time(MOCK_NOW):
+        yield TestClient(app)
+
+
+@pytest.fixture
+def blacklisted_sync_fastapi_client(mocker) -> TestClient:
+    """A test client for fast api when rq is running synchronously and its IP is blacklisted"""
+    remove_modules(["app", "settings"])
+    _patch_sync_client(mocker)
+    os.environ["BLACKLISTED"] = "True"
+
+    from app.api import app
+
+    with freeze_time(MOCK_NOW):
+        yield TestClient(app)
 
 
 @pytest.fixture
@@ -182,7 +223,38 @@ def logfile_download_folder() -> Path:
 
 
 @pytest.fixture
+def storage_root():
+    """root where files are stored temporarily"""
+    path = Path(TEST_STORAGE_ROOT)
+    path.mkdir(parents=True, exist_ok=True)
+    yield path
+    shutil.rmtree(path, ignore_errors=True)
+
+
+@pytest.fixture
 def app_token_header() -> Dict[str, str]:
     """the authorization header with the app token"""
 
     yield {"Authorization": f"Bearer {TEST_APP_TOKEN_STRING}"}
+
+
+def _patch_async_client(mocker):
+    """Patches the async client"""
+    mss_client = MockHttpSession(put=mock_mss_put_requests, get=mock_mss_get_requests)
+
+    mocker.patch("redis.Redis", return_value=_real_redis)
+    mocker.patch("app.utils.queues.QueuePool", return_value=_async_queue_pool)
+    mocker.patch("requests.post", side_effect=mock_post_requests)
+    mocker.patch("requests.Session", return_value=mss_client)
+    os.environ["BLACKLISTED"] = ""
+
+
+def _patch_sync_client(mocker):
+    """Patches the sync client"""
+    mss_client = MockHttpSession(put=mock_mss_put_requests, get=mock_mss_get_requests)
+
+    mocker.patch("redis.Redis", return_value=_fake_redis)
+    mocker.patch("app.utils.queues.QueuePool", return_value=_sync_queue_pool)
+    mocker.patch("requests.post", side_effect=mock_post_requests)
+    mocker.patch("requests.Session", return_value=mss_client)
+    os.environ["BLACKLISTED"] = ""
