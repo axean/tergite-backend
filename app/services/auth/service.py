@@ -25,10 +25,11 @@ def save_credentials(redis_db: Redis, payload: Credentials):
     if redis_db.hexists(_AUTH_HASH_KEY, redis_key):
         raise JobAlreadyExists(f"job id '{payload.job_id}' already exists")
 
+    timestamp = datetime.utcnow()
     auth_log = AuthLog(
         status=JobStatus.REGISTERED,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=timestamp,
+        updated_at=timestamp,
     )
 
     redis_db.hset(_AUTH_HASH_KEY, redis_key, auth_log.model_dump_json())

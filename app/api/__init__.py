@@ -19,7 +19,7 @@
 import json
 import shutil
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Optional
 from uuid import UUID
 
 from fastapi import (
@@ -36,6 +36,7 @@ from fastapi.requests import Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 from redis.client import Redis
 from rq import Worker
+from typing_extensions import Annotated
 
 import settings
 

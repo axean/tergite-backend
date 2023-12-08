@@ -108,3 +108,6 @@ CLIENT_IP_WHITELIST = {
         LABBER_MACHINE_ROOT_URL,
     ]
 }
+# allow test client to access api
+if APP_SETTINGS == "test":
+    CLIENT_IP_WHITELIST["testclient"] = True

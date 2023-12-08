@@ -15,7 +15,7 @@ from typing import Optional
 
 from fastapi import Depends, HTTPException, UploadFile, status
 from fastapi.requests import Request
-from redis.client import Redis
+from redis import Redis
 
 import settings
 
@@ -76,9 +76,9 @@ async def get_job_id_from_uploaded_file(
         InvalidJobIdInUploadedFileError: f"The job does not have a valid UUID4 {job_id_field}"
     """
     try:
-        async with await request.form() as form:
-            upload_file: UploadFile = form["upload_file"]
-            job_dict = json.load(upload_file.file)
+        form = await request.form()
+        upload_file: UploadFile = form["upload_file"]
+        job_dict = json.load(upload_file.file)
 
         job_id = job_dict[job_id_field]
         if validate_uuid4_str(job_id):

@@ -1,8 +1,24 @@
 """Utilities for HTTP related stuff"""
-from typing import Callable
+from typing import Callable, Dict, Optional
 
 import httpx
 import requests
+
+
+def get_headers(app_token: Optional[str]) -> Dict[str, str]:
+    """Generates headers based on the app_token
+
+    If app_token is None, an empty dict of headers is returned
+
+    Args:
+        app_token: the app token for authenticating requests
+
+    Returns:
+        dict of headers
+    """
+    if app_token is None:
+        return {}
+    return {"Authorization": f"Bearer {app_token}"}
 
 
 class MockHttpResponse(httpx.Response):

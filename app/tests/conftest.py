@@ -1,3 +1,5 @@
+from typing import Dict
+
 from .utils.env import (
     TEST_DEFAULT_PREFIX,
     TEST_LABBER_MACHINE_ROOT_URL,
@@ -40,6 +42,7 @@ _sync_queue_pool = QueuePool(
 )
 
 MOCK_NOW = "2023-11-27T12:46:48.851656+00:00"
+TEST_APP_TOKEN_STRING = "eecbf107ad103f70187923f49c1a1141219da95f1ab3906f"
 
 FASTAPI_CLIENTS = [
     lazy_fixture("async_fastapi_client"),
@@ -176,3 +179,10 @@ def logfile_download_folder() -> Path:
 
     yield folder_path
     shutil.rmtree(folder_path, ignore_errors=True)
+
+
+@pytest.fixture
+def app_token_header() -> Dict[str, str]:
+    """the authorization header with the app token"""
+
+    yield {"Authorization": f"Bearer {TEST_APP_TOKEN_STRING}"}
