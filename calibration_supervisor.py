@@ -79,7 +79,7 @@ CALIBRATION_FUNCS = {
 }
 
 
-# Calibration algorithm, based on "Optimus" (see doc/calibration.md)
+# Calibration algorithm, based on "Optimus" (see docs/calibration.md)
 async def check_calibration_status(job_done_event: JobDoneEvent):
     while True:
         print("\n------ STARTING MAINTAIN -------\n")
