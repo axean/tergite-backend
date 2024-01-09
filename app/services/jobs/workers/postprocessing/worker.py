@@ -396,6 +396,7 @@ def postprocessing_success_callback(
 ):
     # From logfile_postprocess:
     job_id = result
+    inform_location(job_id, Location.FINAL_Q)
 
     (script_name, is_calibration_supervisor_job, post_processing) = get_metainfo(job_id)
 
@@ -407,9 +408,6 @@ def postprocessing_success_callback(
         )
         return
 
-    # Inform job supervisor about results
-    inform_result(job_id, result)
-
     print(f"Job with ID {job_id}, {script_name=} has finished")
     if post_processing:
         print(
@@ -418,6 +416,8 @@ def postprocessing_success_callback(
     if is_calibration_supervisor_job:
         print(f"Job was requested by calibration_supervisor: notifying caller.")
         sync(notify_job_done(job_id))
+
+    inform_location(job_id, Location.FINAL_W)
 
 
 # =========================================================================
@@ -482,6 +482,14 @@ def update_mss_and_bcc(memory, job_id: JobID):
         if experiment_memory[5:6]:
             s = s.replace("]", ", ...]")
         print(s)
+
+    # FIXME: Updating redis with result might not be desirable especially for huge results
+    #   but it looks like there is an api endpoint (/jobs/{job_id}/result) that expects redis to have these.
+    #   In future, this update of redis should be removed.
+    #   I am assuming though that since the value passed here is 'memory', we expect the value
+    #   to be saved in memory in redis so maybe the check to determine if to save value in memory or not should be
+    #   done before the `update_mss_and_bcc` function call
+    inform_result(job_id, {"memory": memory})
 
     MSS_JOB = str(MSS_MACHINE_ROOT_URL) + REST_API_MAP["jobs"] + "/" + job_id
 
