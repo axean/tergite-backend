@@ -76,6 +76,8 @@ def mock_post_requests(url: str, **kwargs):
         return MockHttpResponse(status_code=200)
     if url == f"{TEST_QUANTIFY_MACHINE_ROOT_URL}/rng_LokiB":
         return MockHttpResponse(status_code=200)
+    if url == f"{TEST_MSS_MACHINE_ROOT_URL}/timelog":
+        return MockHttpResponse(status_code=200)
 
 
 def mock_mss_get_requests(url: str, **kwargs):
