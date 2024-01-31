@@ -18,7 +18,6 @@
 import argparse
 import asyncio
 import functools
-import json
 import logging
 import pickle
 from pathlib import Path
