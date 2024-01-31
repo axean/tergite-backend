@@ -1,5 +1,5 @@
 aiofiles>=0.7.0
-fastapi>=0.65.1
+fastapi>=0.65.1,<0.109.0
 motor>=2.4.0
 python-multipart>=0.0.5
 redis>=3.5.3
