@@ -16,7 +16,7 @@
     "result": {
       "memory": [["0x0"]]
     },
-    "download_url": "http://129.16.140.132:8000/logfiles/5b11de5b-34d2-4618-bbc2-a25112981b44"
+    "download_url": "http://127.0.0.1:8000/logfiles/5b11de5b-34d2-4618-bbc2-a25112981b44"
   },
   {
     "job_id": "17ddd1b7-b867-4ba3-ad0e-2cea04215e56",
