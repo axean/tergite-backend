@@ -61,6 +61,8 @@ def post_schedule_file(job_dict: dict, /):
             response = requests.post(url, files=files)
         except Exception as exp:
             logging.error(exp)
+            response = requests.Response()
+            response.status_code = 500
 
     tmp_file.unlink()
     return response
