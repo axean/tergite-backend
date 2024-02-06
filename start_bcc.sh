@@ -12,6 +12,10 @@
 # ln -s FILEPATH ./device.toml
 # where FILEPATH is the full path to the desired TOML file.
 
+# enable multiprocessing for python in macOS
+# See https://stackoverflow.com/questions/50168647/multiprocessing-causes-python-to-crash-and-gives-an-error-may-have-been-in-progr#answer-52230415
+[[ "$(uname -s)" = "Darwin" ]] && export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+
 exit_with_error () {
   echo "$1"
   exit 1
