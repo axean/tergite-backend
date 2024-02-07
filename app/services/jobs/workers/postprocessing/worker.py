@@ -21,12 +21,13 @@ import functools
 import logging
 import pickle
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Type
 
 import numpy as np
 import numpy.typing as npt
 import redis
 import requests
+import rq.job
 import tqcsf.file
 from requests import Response
 from sklearn.utils.extmath import safe_sparse_dot
@@ -34,6 +35,7 @@ from syncer import sync
 
 import Labber
 import settings
+from app.services.jobs.workers.postprocessing.exc import PostProcessingError
 from app.utils import date_time
 from app.utils.http import get_mss_client
 
@@ -182,49 +184,52 @@ def _fetch_discriminator(
 
 
 def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
-    with get_mss_client() as mss_client:
-        if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
-            discriminator_fn = _hardcoded_discriminator
+    try:
+        with get_mss_client() as mss_client:
+            if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
+                discriminator_fn = _hardcoded_discriminator
 
-            if settings.FETCH_DISCRIMINATOR:
-                backend = sf.header["qobj"]["backend"].attrs["backend_name"]
-                discriminator_url = f'{MSS_MACHINE_ROOT_URL}{REST_API_MAP["backends"]}/{backend}/properties/lda_parameters'
-                response = mss_client.get(discriminator_url)
+                if settings.FETCH_DISCRIMINATOR:
+                    backend = sf.header["qobj"]["backend"].attrs["backend_name"]
+                    discriminator_url = f'{MSS_MACHINE_ROOT_URL}{REST_API_MAP["backends"]}/{backend}/properties/lda_parameters'
+                    response = mss_client.get(discriminator_url)
 
-                if response.status_code == 200:
-                    discriminator_fn = functools.partial(
-                        _fetch_discriminator, response.json()
+                    if response.status_code == 200:
+                        discriminator_fn = functools.partial(
+                            _fetch_discriminator, response.json()
+                        )
+                    else:
+                        print(f"Response error {response}")
+
+                try:
+                    memory = sf.as_readout(
+                        discriminator=discriminator_fn,
+                        disc_two_state=settings.DISCRIMINATE_TWO_STATE,
                     )
-                else:
-                    print(f"Response error {response}")
+                    save_result_in_mss_and_bcc(
+                        mss_client=mss_client, memory=memory, job_id=sf.job_id
+                    )
+                except Exception as exp:
+                    logging.error(exp)
 
-            try:
-                memory = sf.as_readout(
-                    discriminator=discriminator_fn,
-                    disc_two_state=settings.DISCRIMINATE_TWO_STATE,
-                )
+            elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
                 save_result_in_mss_and_bcc(
-                    mss_client=mss_client, memory=memory, job_id=sf.job_id
+                    mss_client=mss_client, memory=[], job_id=sf.job_id
                 )
-            except Exception as exp:
-                logging.error(exp)
 
-        elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
-            save_result_in_mss_and_bcc(
-                mss_client=mss_client, memory=[], job_id=sf.job_id
-            )
+            elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
+                save_result_in_mss_and_bcc(
+                    mss_client=mss_client, memory=[], job_id=sf.job_id
+                )
 
-        elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
-            save_result_in_mss_and_bcc(
-                mss_client=mss_client, memory=[], job_id=sf.job_id
-            )
+            else:
+                print("Warning: cannot postprocess invalid StorageFile.")
 
-        else:
-            print("Warning: cannot postprocess invalid StorageFile.")
+            # job["name"] was set to "pulse_schedule" when registered
 
-        # job["name"] was set to "pulse_schedule" when registered
-
-    return sf.job_id
+        return sf.job_id
+    except Exception as exp:
+        raise PostProcessingError(exp=exp, job_id=sf.job_id)
 
 
 # =========================================================================
@@ -431,12 +436,20 @@ def postprocessing_success_callback(
         _update_location_timestamps_in_mss(mss_client=mss_client, job_id=job_id)
 
 
+# job, connection, type, value, traceback
 def postprocessing_failure_callback(
-    _rq_job, _rq_connection, result: JobID, *args, **kwargs
+    _rq_job: rq.job.Job,
+    _rq_connection: redis.Redis,
+    _type: Type,
+    value: Any,
+    traceback: Any,
 ):
     """Callback to be called when postprocessing fails"""
     with get_mss_client() as mss_client:
-        _update_location_timestamps_in_mss(mss_client=mss_client, job_id=result)
+        if isinstance(value, PostProcessingError):
+            _update_location_timestamps_in_mss(
+                mss_client=mss_client, job_id=value.job_id
+            )
 
 
 # =========================================================================

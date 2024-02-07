@@ -59,7 +59,7 @@ def authenticate(
             f"job {credentials.job_id} does not exist for current user"
         )
 
-    auth_log = AuthLog.model_validate_json(auth_log_str)
+    auth_log = AuthLog.parse_raw(auth_log_str)
 
     if expected_status and auth_log.status != expected_status:
         raise AuthorizationError(
