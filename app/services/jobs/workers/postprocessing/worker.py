@@ -431,9 +431,9 @@ def postprocessing_success_callback(
             print(f"Job was requested by calibration_supervisor: notifying caller.")
             sync(notify_job_done(job_id))
 
-        inform_location(job_id, Location.FINAL_W)
         update_final_location_timestamp(job_id, status="finished")
         _update_location_timestamps_in_mss(mss_client=mss_client, job_id=job_id)
+        inform_location(job_id, Location.FINAL_W)
 
 
 # job, connection, type, value, traceback
@@ -540,8 +540,9 @@ def _update_location_timestamps_in_mss(mss_client: requests.Session, job_id: Job
     """
     entry = fetch_redis_entry(job_id)
     try:
+        payload = {"timestamps": entry["timestamps"]}
         response = _update_job_in_mss(
-            mss_client=mss_client, job_id=job_id, payload=entry["timestamps"]
+            mss_client=mss_client, job_id=job_id, payload=payload
         )
         if not response.ok:
             raise ValueError(

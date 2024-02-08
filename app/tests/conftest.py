@@ -120,8 +120,15 @@ def mock_mss_get_requests(url: str, **kwargs):
 
 def mock_mss_put_requests(url: str, **kwargs):
     """Mock PUT requests sent to MSS for testing"""
-    if url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/jobs"):
+    payload = kwargs.get("json", {})
+    is_jobs_update_url = url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/jobs")
+
+    if is_jobs_update_url and "timestamps" in payload:
         return MockHttpResponse(status_code=200)
+    if is_jobs_update_url and "result" in payload:
+        return MockHttpResponse(status_code=200)
+
+    return MockHttpResponse(status_code=405)
 
 
 @pytest.fixture

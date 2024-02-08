@@ -24,6 +24,7 @@ def get_headers(app_token: Optional[str]) -> Dict[str, str]:
 class MockHttpResponse(httpx.Response):
     """An extension of the httpx.Response"""
 
+    @property
     def ok(self):
         return self.is_success
 
