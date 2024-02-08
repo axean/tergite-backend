@@ -8,6 +8,7 @@ import requests
 class MockHttpResponse(httpx.Response):
     """An extension of the httpx.Response"""
 
+    @property
     def ok(self):
         return self.is_success
 
