@@ -514,7 +514,8 @@ def _update_location_timestamps_in_mss(job_id: JobID):
     """
     entry = fetch_redis_entry(job_id)
     try:
-        response = _update_job_in_mss(job_id=job_id, payload=entry["timestamps"])
+        payload = {"timestamps": entry["timestamps"]}
+        response = _update_job_in_mss(job_id=job_id, payload=payload)
         if not response.ok:
             raise ValueError(
                 f"failed to push timestamps for job {job_id}", response.text

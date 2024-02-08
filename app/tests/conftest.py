@@ -82,7 +82,8 @@ def mock_get_requests(url: str, **kwargs):
 
 def mock_put_requests(url: str, **kwargs):
     """Mock PUT requests for testing"""
-    if url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/jobs"):
+    payload = kwargs.get("json", {})
+    if url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/jobs") and "timestamps" in payload:
         return MockHttpResponse(status_code=200)
 
 
