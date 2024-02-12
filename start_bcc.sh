@@ -33,6 +33,21 @@ PORT_NUMBER=$(extract_env_var "BCC_PORT")
 
 DEFAULT_PREFIX=$(extract_env_var "DEFAULT_PREFIX")
 
+# activates the conda environment passed
+conda_activate(){
+  . $CONDA_BIN_PATH/activate $1
+}
+
+# If we are in systemd, activate conda environment or create it if not exists, activate it and install dependencies
+if [ $IS_SYSTEMD = "true" ]; then
+  if conda_activate ./env ; then
+    echo "env activated";
+  else
+    conda create -y --prefix=env python=3.8 && conda_activate ./env && pip install -r requirements.txt;
+    echo "env created, activated, and dependencies installed";
+  fi
+fi
+
 # NOTE: careful, this causes the script to fail silently.
 # Keep below the env variable extraction procedures
 set -e # exit if any step fails
