@@ -29,16 +29,16 @@ cd tergite-bcc
 cp dot-env-template.txt .env
 ```
 
-- Copy `bcc.service` to the systemd services folder
+- Copy `bcc.service` to the systemd services folder as superuser
 
 ```shell
-cp bcc.service /etc/systemd/system/bcc.service
+sudo cp bcc.service /etc/systemd/system/bcc.service
 ```
 
 - Get the path to your conda bin. Run the command below:
 
 ```shell
-where conda
+whereis conda
 ```
 
 - Extract the conda bin path. Look for a path that is similar to `/home/{user}/anaconda3/bin/conda`, and remove the last part i.e. '/conda'
