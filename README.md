@@ -29,7 +29,17 @@ cd tergite-bcc
 cp dot-env-template.txt .env
 ```
 
-- Copy `bcc.service` to the systemd services folder as superuser
+- In case you don't have labber installed, add dummy labber
+
+```shell
+mkdir Labber
+echo "import typing" >> Labber/__init__.py
+echo "LogFile = typing.Any" >> Labber/__init__.py
+echo "Scenario = typing.Any" >> Labber/__init__.py
+echo "ScriptTools = typing.Any" >> Labber/__init__.py
+```
+
+- Copy `bcc.service` to the systemd services folder
 
 ```shell
 sudo cp bcc.service /etc/systemd/system/bcc.service
@@ -62,10 +72,9 @@ YOUR_USER=$(whoami)
 - Replace the variables `YOUR_CONDA_BIN_PATH` and `YOUR_PATH_TO_BCC` with the right values in `/etc/systemd/system/bcc.service`
 
 ```shell
-sudo sed -i .bak "s:YOUR_USER:${YOUR_USER}:" /etc/systemd/system/bcc.service
-sudo sed -i .bak "s:YOUR_CONDA_BIN_PATH:${YOUR_CONDA_BIN_PATH}:" /etc/systemd/system/bcc.service
-sudo sed -i .bak "s:YOUR_PATH_TO_BCC:${YOUR_PATH_TO_BCC}:" /etc/systemd/system/bcc.service
-sudo rm /etc/systemd/system/bcc.service.bak || echo "/etc/systemd/system/bcc.service.bak not found"
+sudo sed -i "s:YOUR_USER:${YOUR_USER}:" /etc/systemd/system/bcc.service
+sudo sed -i "s:YOUR_CONDA_BIN_PATH:${YOUR_CONDA_BIN_PATH}:" /etc/systemd/system/bcc.service
+sudo sed -i "s:YOUR_PATH_TO_BCC:${YOUR_PATH_TO_BCC}:" /etc/systemd/system/bcc.service
 ```
 
 - Start BCC service
