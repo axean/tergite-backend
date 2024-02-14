@@ -92,4 +92,5 @@ rq worker "${DEFAULT_PREFIX}_job_execution" &
 rq worker "${DEFAULT_PREFIX}_logfile_postprocessing" &
 
 # REST-API
-uvicorn --host 0.0.0.0 --port "$PORT_NUMBER" app.api:app --reload
+extra_params=$([[ $IS_SYSTEMD = "true" ]] && echo "--proxy-headers" || echo "--reload")
+uvicorn --host 0.0.0.0 --port "$PORT_NUMBER" app.api:app "$extra_params"
