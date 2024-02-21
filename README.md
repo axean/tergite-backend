@@ -51,7 +51,7 @@ sudo cp bcc.service /etc/systemd/system/bcc.service
 whereis conda
 ```
 
-- Extract the conda bin path. Look for a path that is similar to `/home/{user}/anaconda3/bin/conda`, and remove the last part i.e. '/conda'
+- Extract the conda bin path. Look for a path that is similar to `/home/{user}/anaconda3/bin/conda`, and remove the last part i.e. '/conda'. Sometimes, the path might lead to '/home/{user}/anaconda3/condabin/conda'. In that case check, whether the path to '/home/{user}/anaconda3/bin' exists and use this one.
 
 ```shell
 YOUR_CONDA_BIN_PATH=/home/johndoe/anaconda3/bin
