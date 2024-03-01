@@ -39,7 +39,7 @@ conda_activate(){
 }
 
 # If we are in systemd, activate conda environment or create it if not exists, activate it and install dependencies
-if [ $IS_SYSTEMD = "true" ]; then
+if [ "$IS_SYSTEMD" = "true" ]; then
   if conda_activate ./env ; then
     echo "env activated";
   else
@@ -92,5 +92,5 @@ rq worker "${DEFAULT_PREFIX}_job_execution" &
 rq worker "${DEFAULT_PREFIX}_logfile_postprocessing" &
 
 # REST-API
-extra_params=$([[ $IS_SYSTEMD = "true" ]] && echo "--proxy-headers" || echo "--reload")
+extra_params=$([[ "$IS_SYSTEMD" = "true" ]] && echo "--proxy-headers" || echo "--reload")
 uvicorn --host 0.0.0.0 --port "$PORT_NUMBER" app.api:app "$extra_params"
