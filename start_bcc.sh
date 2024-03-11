@@ -53,10 +53,10 @@ fi
 set -e # exit if any step fails
 
 # Clean start
-python -m rq empty "${DEFAULT_PREFIX}_job_registration"
-python -m rq empty "${DEFAULT_PREFIX}_job_preprocessing"
-python -m rq empty "${DEFAULT_PREFIX}_job_execution"
-python -m rq empty "${DEFAULT_PREFIX}_logfile_postprocessing"
+rq empty "${DEFAULT_PREFIX}_job_registration"
+rq empty "${DEFAULT_PREFIX}_job_preprocessing"
+rq empty "${DEFAULT_PREFIX}_job_execution"
+rq empty "${DEFAULT_PREFIX}_logfile_postprocessing"
 rm -fr "/tmp/${DEFAULT_PREFIX}"
 
 
@@ -86,10 +86,10 @@ if test -n "$unrecognized_args"; then
 fi
 
 # Worker processes
-python -m rq worker "${DEFAULT_PREFIX}_job_registration" &
-python -m rq worker "${DEFAULT_PREFIX}_job_preprocessing" &
-python -m rq worker "${DEFAULT_PREFIX}_job_execution" &
-python -m rq worker "${DEFAULT_PREFIX}_logfile_postprocessing" &
+rq worker "${DEFAULT_PREFIX}_job_registration" &
+rq worker "${DEFAULT_PREFIX}_job_preprocessing" &
+rq worker "${DEFAULT_PREFIX}_job_execution" &
+rq worker "${DEFAULT_PREFIX}_logfile_postprocessing" &
 
 # REST-API
 extra_params=$([[ "$IS_SYSTEMD" = "true" ]] && echo "--proxy-headers" || echo "--reload")
