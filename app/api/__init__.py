@@ -177,7 +177,9 @@ async def upload_job(
 
     if job_id_already_exists:
         logger.warning("job_id '{credentials.job_id}' already exists")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="job_id already exists")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="job_id already exists"
+        )
         return {"message": "Job id already exists"}
 
     # save it
