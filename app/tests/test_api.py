@@ -420,6 +420,35 @@ def test_unauthenticated_upload_job(
         assert raw_job_in_redis is None
 
 
+@pytest.mark.parametrize(
+    "client, redis_client, rq_worker, job", _UPLOAD_JOB_PARAMS
+)
+def test_duplicate_job_upload(
+    client, redis_client, client_jobs_folder, rq_worker, job, app_token_header
+):
+    job_id = job[_JOB_ID_FIELD]
+    job_file_path = _save_job_file(folder=client_jobs_folder, job=job)
+    timestamp = MOCK_NOW.replace("+00:00", "Z")
+    register_app_token_job_id(
+        client=redis_client,
+        hash_name=_AUTH_HASH_NAME,
+        job_id=job_id,
+        app_token=TEST_APP_TOKEN_STRING
+    )
+
+    with client as client:
+        with open(job_file_path, "rb") as file:
+            first_response = client.post(
+                "/jobs", files={"upload_file": file}, headers=app_token_header
+            )
+            second_response = client.post(
+                "/jobs", files={"upload_file": file}, headers=app_token_header
+            )
+            
+    assert first_response.status_code == 200
+    assert second_response.status_code == 409
+
+
 @pytest.mark.parametrize("client, redis_client, rq_worker, job", _UPLOAD_JOB_PARAMS)
 def test_remove_job(
     client, redis_client, client_jobs_folder, rq_worker, job, app_token_header
