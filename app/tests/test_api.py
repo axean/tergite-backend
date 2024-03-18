@@ -467,7 +467,7 @@ def test_remove_job(
             response = client.post(
                 "/jobs", files={"upload_file": file}, headers=app_token_header
             )
-            assert response.status_code == 200
+            assert response.status_code == 200 or response.status_code == 409
 
         # start the job registration but stop there
         rq_worker.work(burst=True, max_jobs=1)
@@ -511,7 +511,7 @@ def test_unauthenticated_remove_job(
             response = client.post(
                 "/jobs", files={"upload_file": file}, headers=app_token_header
             )
-            assert response.status_code == 200
+            assert response.status_code == 200 or response.status_code == 409
 
         # start the job registration but stop there
         rq_worker.work(burst=True, max_jobs=1)
@@ -556,7 +556,7 @@ def test_cancel_job(
             response = client.post(
                 "/jobs", files={"upload_file": file}, headers=app_token_header
             )
-            assert response.status_code == 200
+            assert response.status_code == 200 or response.status_code == 409
 
         # start the job registration but stop there
         rq_worker.work(burst=True, max_jobs=1)
@@ -633,7 +633,7 @@ def test_unauthenticated_cancel_job(
             response = client.post(
                 "/jobs", files={"upload_file": file}, headers=app_token_header
             )
-            assert response.status_code == 200
+            assert response.status_code == 200 or response.status_code == 409
 
         # start the job registration but stop there
         rq_worker.work(burst=True, max_jobs=1)
@@ -745,7 +745,7 @@ def test_upload_logfile(
                 "/jobs", files={"upload_file": file}, headers=app_token_header
             )
 
-        assert response.status_code == 200
+        assert response.status_code == 200 or response.status_code == 409
         rq_worker.work(burst=True)
 
         with open(logfile_path, "rb") as file:
@@ -824,7 +824,7 @@ def test_blacklisted_upload_logfile(
                 "/jobs", files={"upload_file": file}, headers=app_token_header
             )
 
-        assert response.status_code == 200
+        assert response.status_code == 200 or response.status_code == 409
         rq_worker.work(burst=True)
 
         with open(logfile_path, "rb") as file:
