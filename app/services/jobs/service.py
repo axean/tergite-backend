@@ -126,6 +126,19 @@ def fetch_redis_entry(job_id: str) -> Entry:
     return _load_json(entry)
 
 
+def does_job_exist(job_id: str) -> bool:
+    """Checks whether a given job already exists
+
+    Args:
+        job_id: the id of the job
+
+    Returns:
+        True if the job exists else False
+    """
+    entry = red.hget(_SUPERVISOR_HASH_KEY, job_id)
+    return entry is not None
+
+
 def register_job(job_id: str) -> None:
     # job entry skeleton
     entry = {

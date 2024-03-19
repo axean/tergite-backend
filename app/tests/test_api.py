@@ -426,7 +426,6 @@ def test_duplicate_job_upload(
 ):
     job_id = job[_JOB_ID_FIELD]
     job_file_path = _save_job_file(folder=client_jobs_folder, job=job)
-    timestamp = MOCK_NOW.replace("+00:00", "Z")
     register_app_token_job_id(
         client=redis_client,
         hash_name=_AUTH_HASH_NAME,
@@ -439,9 +438,14 @@ def test_duplicate_job_upload(
             first_response = client.post(
                 "/jobs", files={"upload_file": file}, headers=app_token_header
             )
+            # run the registration tasks
+            rq_worker.work(burst=True)
+
             second_response = client.post(
                 "/jobs", files={"upload_file": file}, headers=app_token_header
             )
+            # run the registration tasks
+            rq_worker.work(burst=True)
 
     assert first_response.status_code == 200
     assert second_response.status_code == 409
@@ -556,7 +560,7 @@ def test_cancel_job(
             response = client.post(
                 "/jobs", files={"upload_file": file}, headers=app_token_header
             )
-            assert response.status_code == 200 or response.status_code == 409
+            assert response.status_code == 200
 
         # start the job registration but stop there
         rq_worker.work(burst=True, max_jobs=1)
@@ -745,7 +749,7 @@ def test_upload_logfile(
                 "/jobs", files={"upload_file": file}, headers=app_token_header
             )
 
-        assert response.status_code == 200 or response.status_code == 409
+        assert response.status_code == 200
         rq_worker.work(burst=True)
 
         with open(logfile_path, "rb") as file:
@@ -824,7 +828,7 @@ def test_blacklisted_upload_logfile(
                 "/jobs", files={"upload_file": file}, headers=app_token_header
             )
 
-        assert response.status_code == 200 or response.status_code == 409
+        assert response.status_code == 200
         rq_worker.work(burst=True)
 
         with open(logfile_path, "rb") as file:

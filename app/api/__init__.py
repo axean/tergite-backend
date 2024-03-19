@@ -52,8 +52,8 @@ from ..services.jobs.workers.postprocessing.dtos import LogfileType
 from ..services.jobs.workers.registration import job_register
 from ..services.properties import service as props_service
 from ..services.random import service as rng_service
-from ..utils.queues import QueuePool
 from ..utils.logging import get_logger
+from ..utils.queues import QueuePool
 from .dependencies import (
     get_bearer_token,
     get_redis_connection,
@@ -155,32 +155,16 @@ async def upload_job(
     ),
 ):
     # store the received file in the job upload pool
-    logger = get_logger()
-    file_name = credentials.job_id
+    file_name = job_id = credentials.job_id
     file_path = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / JOB_UPLOAD_POOL_DIRNAME
     file_path.mkdir(parents=True, exist_ok=True)
     store_file = file_path / file_name
 
-    job_id_already_exists = False
-    # See if job with same ID exists in Redis database
-    try:
-        existing_job = jobs_service.fetch_job(credentials.job_id)
-    except JobNotFound as exc:
-        # Job does not already exist, which is good
-        pass
-    else:
-        job_id_already_exists = True
-
-    # Check if job file with same job ID exists
-    if store_file.exists():
-        job_id_already_exists = True
-
-    if job_id_already_exists:
-        logger.warning("job_id '{credentials.job_id}' already exists")
+    if jobs_service.does_job_exist(job_id):
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="job_id already exists"
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"job_id {job_id} already exists",
         )
-        return {"message": "Job id already exists"}
 
     # save it
     upload_file.file.seek(0)
