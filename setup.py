@@ -11,36 +11,45 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
+from pathlib import Path
 
-from setuptools import find_packages, setup
+import setuptools
 
-REQUIREMENTS = [
-    "aiofiles>=0.7.0",
-    "fastapi>=0.65.1",
-    "motor>=2.4.0",
-    "python-multipart>=0.0.5",
-    "redis>=3.5.3",
-    "requests>=2.25.1",
-    "rq>=1.10.0",
-    "resonator-tools-vdrhtc>=0.12",
-    "uvicorn>=0.13.4",
-    "numpy==1.23.5",
-    "PyQt5>=5.15.4",
-    "h5py>=3.7.0",
-    "scipy>=1.8.0",
-    "networkx>=2.5.1",
-    "syncer>=1.3.0",
-    "tqcsf @ git+ssh://git@bitbucket.org/qtlteam/tergite-quantify-connector-storagefile.git@v1.1.1",
-    "matplotlib>=3.5.1",
-    "toml>=0.10.2",
-    "scikit-learn==1.1.3",
-]
+_ROOT_DIRECTORY = Path(__file__).parent
 
-setup(
+with open(_ROOT_DIRECTORY / "requirements.txt", mode="r") as _f:
+    _ALL_REQUIREMENTS = _f.readlines()
+
+    # extract non-dev dependencies
+    _DEV_DEPS_START = len(_ALL_REQUIREMENTS)
+    try:
+        _DEV_DEPS_START = _ALL_REQUIREMENTS.index("# dev-dependencies")
+    except ValueError:
+        pass
+
+    REQUIREMENTS = _ALL_REQUIREMENTS[:_DEV_DEPS_START]
+
+_README = (_ROOT_DIRECTORY / "README.md").read_text()
+
+
+setuptools.setup(
     name="tergite-bcc",
-    author_emails="dobsicek@chalmers.se",
-    license="Apache 2.0",
-    packages=find_packages(),
-    install_requires=REQUIREMENTS,
+    version="2024.02.0",
+    author="Miroslav Dobsicek",
+    maintainer="Martin Ahindura",
+    maintainer_email="martin.ahindura@chalmers.se",
+    author_email="dobsicek@chalmers.se",
+    description="The Backend Control Computer software that opens QAL 9000 - like quantum computers to the internet",
+    long_description=_README,
+    long_description_content_type="text/markdown",
+    url="https://github.com/tergite/tergite-bcc",
+    packages=setuptools.find_packages(),
     python_requires=">=3.8",
+    include_package_data=True,
+    license="Apache 2.0",
+    install_requires=REQUIREMENTS,
+    classifiers=[
+        "Programming Language :: Python :: 3.8",
+        "Operating System :: OS Independent",
+    ],
 )
