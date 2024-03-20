@@ -15,7 +15,7 @@ definitions:
           - echo "LogFile = typing.Any" >> Labber/__init__.py
           - echo "Scenario = typing.Any" >> Labber/__init__.py
           - echo "ScriptTools = typing.Any" >> Labber/__init__.py
-          - if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          - if [ -f requirements.txt ]; then pip install -i https://pypi.org/simple --extra-index-url https://test.pypi.org/simple/ -r requirements.txt; fi
           - black --check app
           - pytest app
         services:
