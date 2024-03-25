@@ -42,7 +42,6 @@ import settings
 
 from ..services.auth import service as auth_service
 from ..services.jobs import service as jobs_service
-from ..services.jobs.service import JobNotFound
 from ..services.jobs.workers.postprocessing import (
     logfile_postprocess,
     postprocessing_failure_callback,
@@ -52,7 +51,6 @@ from ..services.jobs.workers.postprocessing.dtos import LogfileType
 from ..services.jobs.workers.registration import job_register
 from ..services.properties import service as props_service
 from ..services.random import service as rng_service
-from ..utils.logging import get_logger
 from ..utils.queues import QueuePool
 from .dependencies import (
     get_bearer_token,
