@@ -54,7 +54,7 @@ conda activate bcc
 
 ```shell
 cd tergite-bcc
-pip install -r requirements.txt
+pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -r requirements.txt
 ```
 
 - Copy the `dot-env-template.txt` file to `.env` and 
