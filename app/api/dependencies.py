@@ -124,7 +124,7 @@ def get_valid_credentials_dep(
     def dependency_injector(
         redis_connection: Redis = Depends(get_redis_connection),
         job_id: str = Depends(get_job_id_dependency(job_id_field=job_id_field)),
-        app_token: str = Depends(get_bearer_token),
+        app_token: Optional[str] = Depends(get_bearer_token),
     ) -> auth_service.Credentials:
         """Gets a valid app_token-job_id pair with the expected job status.
 
@@ -138,7 +138,7 @@ def get_valid_credentials_dep(
             HTTPException: status_code=403, detail=job {credentials.job_id} is already {auth_log.status}
             InvalidJobIdInUploadedFileError: f"The job does not have a valid UUID4 {job_id_field}"
         """
-        credentials = auth_service.Credentials(job_id=job_id, app_token=app_token)
+        credentials = auth_service.Credentials(job_id=job_id, app_token=f"{app_token}")
         try:
             auth_service.authenticate(
                 redis_connection,

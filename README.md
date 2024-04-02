@@ -1,35 +1,33 @@
-# Installation
+# Tergite BCC
 
-## Prerequisites
-* Redis
-* Labber, + export PYTHONPATH to Labber's Script module
-* (optional) Use Anaconda environment. With Python 3.8.
+![CI](https://github.com/tergite/tergite-bcc/actions/workflows/ci.yml/badge.svg)
 
-## Package installation
-* cd tergite-bcc
-* pip install -e .
-* create .env file with BCC configuration. See dot-env-template.txt.
+The Backend Control Computer software that makes QAL 9000 - like quantum computers accessible via the internet.
 
-## Start
-* ./start_bcc.sh --device backend_properties_config/device_default.toml
+## Dependencies
 
-## How to Run With Systemd
+- [Python 3.8](https://www.python.org/)
+- [Labber](https://www.keysight.com/us/en/products/software/application-sw/labber-software.html)
+- [Redis](https://redis.io/)
+- [Tergite Quantify Connector](https://github.com/tergite/tergite-quantify-connector)
+- [Tergite Labber Connector](https://github.com/tergite/tergite-labber-connector)
 
-- Clone the repo
+## Quick Start
+
+- Ensure you have [conda](https://docs.anaconda.com/free/miniconda/index.html) installed. 
+ (_You could simply have python +3.8 installed instead._)
+- Ensure you have the [Redis](https://redis.io/) server running
+- Ensure you have [tergite Quantify Connector](https://github.com/tergite/tergite-quantify-connector) running.
+- If you intend to use [Labber](https://www.keysight.com/us/en/products/software/application-sw/labber-software.html), 
+  ensure you have [tergite Labber Connector](https://github.com/tergite/tergite-labber-connector) running.
+- If you intend to use [Labber ~1.7.7](https://www.keysight.com/us/en/products/software/application-sw/labber-software.html), install it first.
+- For Debian/Ubuntu, download and install `Labber 1.7.7.deb`
 
 ```shell
-git clone git@bitbucket.org:qtlteam/tergite-bcc.git 
+sudo apt install ./Labber-1.7.7.deb
 ```
 
-- Copy the `dot-env-template.txt` into the `.env` file and update the variables there in. Contact your teammates for
- the variables you are not sure of.
-
-```shell
-cd tergite-bcc
-cp dot-env-template.txt .env
-```
-
-- In case you don't have labber installed, add dummy labber
+- Otherwise, add a dummy labber folder
 
 ```shell
 mkdir Labber
@@ -39,59 +37,71 @@ echo "Scenario = typing.Any" >> Labber/__init__.py
 echo "ScriptTools = typing.Any" >> Labber/__init__.py
 ```
 
-- Copy `bcc.service` to the systemd services folder
+- Clone the repo
 
 ```shell
-sudo cp bcc.service /etc/systemd/system/bcc.service
+git clone git@github.com:tergite/tergite-bcc.git
 ```
 
-- Get the path to your conda bin. Run the command below:
+- Create conda environment
 
 ```shell
-whereis conda
+conda create -n bcc -y python=3.8
+conda activate bcc
 ```
 
-- Extract the conda bin path. Look for a path that is similar to `/home/{user}/anaconda3/bin/conda`, and remove the last part i.e. '/conda'. Sometimes, the path might lead to '/home/{user}/anaconda3/condabin/conda'. In that case check, whether the path to '/home/{user}/anaconda3/bin' exists and use this one.
+- Install dependencies
 
 ```shell
-YOUR_CONDA_BIN_PATH=/home/johndoe/anaconda3/bin
+cd tergite-bcc
+pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -r requirements.txt
 ```
 
-- Extract also the path to this folder where `tergite-bcc` is.
+- Copy the `dot-env-template.txt` file to `.env` and 
+  update the environment variables there appropriately.
 
 ```shell
-YOUR_PATH_TO_BCC=$(pwd)
+cp dot-env-template.txt .env
 ```
 
-- Get also the current user
+- Run start script
 
 ```shell
-YOUR_USER=$(whoami)
+./start_bcc.sh --device backend_properties_config/device_default.toml
 ```
 
-- Replace the variables `YOUR_CONDA_BIN_PATH` and `YOUR_PATH_TO_BCC` with the right values in `/etc/systemd/system/bcc.service`
+- Open your browser at [http://localhost:8000/docs](http://localhost:8000/docs) to see the interactive API docs
 
-```shell
-sudo sed -i "s:YOUR_USER:${YOUR_USER}:" /etc/systemd/system/bcc.service
-sudo sed -i "s:YOUR_CONDA_BIN_PATH:${YOUR_CONDA_BIN_PATH}:" /etc/systemd/system/bcc.service
-sudo sed -i "s:YOUR_PATH_TO_BCC:${YOUR_PATH_TO_BCC}:" /etc/systemd/system/bcc.service
-```
+## Documentation
 
-- Start BCC service
+Find more documentation in the [docs folder](./docs)
 
-```shell
-sudo systemctl start bcc.service
-```
+## Contribution Guidelines
 
-- Check the BCC service status
+If you would like to contribute, please have a look at our
+[contribution guidelines](./CONTRIBUTING.md)
 
-```shell
-sudo systemctl status bcc.service
-```
+## Authors
 
-- Enable BCC to start on startup incase the server is ever restarted.
+This project is a work of
+[many contributors](https://github.com/tergite/tergite-bcc/graphs/contributors).
 
+Special credit goes to the authors of this project as seen in the [CREDITS](./CREDITS.md) file.
 
-```shell
-sudo systemctl enable bcc.service
-```
+## ChangeLog
+
+To view the changelog for each version, have a look at
+the [CHANGELOG.md](./CHANGELOG.md) file.
+
+## License
+
+[Apache 2.0 License](./LICENSE.txt)
+
+## Acknowledgements
+
+This project was sponsored by:
+
+-   [Knut and Alice Wallenburg Foundation](https://kaw.wallenberg.org/en) under the [Wallenberg Center for Quantum Technology (WAQCT)](https://www.chalmers.se/en/centres/wacqt/) project at [Chalmers University of Technology](https://www.chalmers.se)
+-   [Nordic e-Infrastructure Collaboration (NeIC)](https://neic.no) and [NordForsk](https://www.nordforsk.org/sv) under the [NordIQuEst](https://neic.no/nordiquest/) project
+-   [European Union's Horizon Europe](https://research-and-innovation.ec.europa.eu/funding/funding-opportunities/funding-programmes-and-open-calls/horizon-europe_en) under the [OpenSuperQ](https://cordis.europa.eu/project/id/820363) project
+-   [European Union's Horizon Europe](https://research-and-innovation.ec.europa.eu/funding/funding-opportunities/funding-programmes-and-open-calls/horizon-europe_en) under the [OpenSuperQPlus](https://opensuperqplus.eu/) project

@@ -1,40 +1,48 @@
 image: python:3.8
 
-pipelines:
-  pull-requests:
-    '**':
-      - step:
-          name: Lint and test
-          caches:
-            - pip
-          script:
-            - mkdir Labber
-            - echo "import typing" >> Labber/__init__.py
-            - echo "LogFile = typing.Any" >> Labber/__init__.py
-            - echo "Scenario = typing.Any" >> Labber/__init__.py
-            - echo "ScriptTools = typing.Any" >> Labber/__init__.py
-            - if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-            - black --check app
-            - pytest app
-          services:
-            - redis
-
-  tags:
-    "*":
-      - step:
-          name: Build docker image
-          services:
-            - docker
-          script:
-            - if [ -f Dockerfile ]; then printf "building docker image"; else printf "no Dockerfile found"; exit; fi
-            # using the self-hosted container registry provided by https://bitbucket.org/qtlteam/tergite-registry
-            # its domain is saved in CONTAINER_REGISTRY workspace secret variable in format domain.com:port
-            # $DOCKER_USERNAME and $DOCKER_PASSWORD are also workspace secret variables
-            - docker login ${CONTAINER_REGISTRY} -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-            - docker build -t ${CONTAINER_REGISTRY}/tergite-bcc:$BITBUCKET_TAG .
-            - docker push ${CONTAINER_REGISTRY}/tergite-bcc:$BITBUCKET_TAG
-
 definitions:
   services:
     redis:
       image: redis
+  steps:
+    - step: &Lint-and-test
+        name: Lint and test
+        caches:
+          - pip
+        script:
+          - mkdir Labber
+          - echo "import typing" >> Labber/__init__.py
+          - echo "LogFile = typing.Any" >> Labber/__init__.py
+          - echo "Scenario = typing.Any" >> Labber/__init__.py
+          - echo "ScriptTools = typing.Any" >> Labber/__init__.py
+          - if [ -f requirements.txt ]; then pip install -i https://pypi.org/simple --extra-index-url https://test.pypi.org/simple/ -r requirements.txt; fi
+          - black --check app
+          - pytest app
+        services:
+          - redis
+
+
+pipelines:
+  branches:
+    main:
+      - step: *Lint-and-test
+      - step:
+          name: Push downstream
+          script:
+            - if [ "${SHOULD_PUSH_DOWNSTREAM}" != "true" ]; then printf "downstream push not enabled"; exit; fi
+            - git pull -r $DOWNSTREAM_REPO main || echo "main branch does not exist"
+            - git push $DOWNSTREAM_REPO main
+
+  pull-requests:
+    '**':
+      - step: *Lint-and-test
+
+  tags:
+    "v*":
+      - step: *Lint-and-test
+      - step:
+          name: Push downstream
+          script:
+            - if [ "${SHOULD_PUSH_DOWNSTREAM}" != "true" ]; then printf "downstream push not enabled"; exit; fi
+            - git pull -r $DOWNSTREAM_REPO $BITBUCKET_TAG || echo "tag $BITBUCKET_TAG does not exist"
+            - git push $DOWNSTREAM_REPO $BITBUCKET_TAG || echo "tag $BITBUCKET_TAG already exists"
