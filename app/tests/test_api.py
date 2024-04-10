@@ -784,7 +784,7 @@ def test_upload_logfile(
                 _POST_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
                 _FINAL_STAGE: {"started": timestamp, "finished": timestamp},
             },
-            "result": {"memory": [_UPLOAD_JOB_RESULTS['discrimination_results']]},
+            "result": {"memory": [_UPLOAD_JOB_RESULTS["discrimination_results"]]},
             "name": job["name"],
             "post_processing": job["post_processing"],
             "is_calibration_supervisor_job": job["is_calibration_supervisor_job"],

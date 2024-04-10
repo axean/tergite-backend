@@ -200,7 +200,9 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
                 # The main reason to have it, is to be compatible with the simulator
                 # The SimulatorC backend in mongoDB is supported and tested
                 backend: str = sf.header["qobj"]["backend"].attrs["backend_name"]
-                backend_definition: str = f'{str(MSS_MACHINE_ROOT_URL)}{REST_API_MAP["backends"]}/{backend}'
+                backend_definition: str = (
+                    f'{str(MSS_MACHINE_ROOT_URL)}{REST_API_MAP["backends"]}/{backend}'
+                )
                 response = mss_client.get(backend_definition)
 
                 if response.status_code == 200:
