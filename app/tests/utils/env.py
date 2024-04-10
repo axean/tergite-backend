@@ -49,6 +49,4 @@ def setup_test_env():
     environ["DB_MACHINE_ROOT_URL"] = TEST_DB_MACHINE_ROOT_URL
     environ["CALIBRATION_SUPERVISOR_PORT"] = f"{TEST_CALIBRATION_SUPERVISOR_PORT}"
 
-    environ["FETCH_DISCRIMINATOR"] = f"True"
-    environ["DISCRIMINATOR_SOURCE"] = f"database"
     environ["MSS_APP_TOKEN"] = TEST_MSS_APP_TOKEN

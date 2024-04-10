@@ -34,10 +34,8 @@ if not IS_AUTH_ENABLED and _is_production:
         "'IS_AUTH_ENABLED' environment variable has been set to false in production."
     )
 
-# Discrimination settings
-# If FETCH_DISCRIMINATOR is set to True it will try to fetch all values from mongoDB
+# Discrimination settings for the simulator
 DISCRIMINATE_TWO_STATE = config("DISCRIMINATE_TWO_STATE", cast=bool, default=False)
-DISCRIMINATOR_SOURCE = config("DISCRIMINATOR_SOURCE", cast=str, default="database")
 
 # Plotting during post-processing, only for interactive use, *not*
 # when running as a server

@@ -1,4 +1,5 @@
-discrimination_result = [
+{
+  "discrimination_results": [
     "0x11",
     "0x5",
     "0x9",
@@ -1998,5 +1999,6 @@ discrimination_result = [
     "0x1",
     "0xb",
     "0x8",
-    "0x12",
-]
+    "0x12"
+  ]
+}

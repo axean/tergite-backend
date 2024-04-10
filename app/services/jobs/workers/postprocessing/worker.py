@@ -199,22 +199,16 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
                 # This would fetch the discriminator from the database
                 # The main reason to have it, is to be compatible with the simulator
                 # The SimulatorC backend in mongoDB is supported and tested
-                if settings.DISCRIMINATOR_SOURCE == "database":
-                    backend: str = sf.header["qobj"]["backend"].attrs["backend_name"]
-                    backend_definition: str = f'{str(MSS_MACHINE_ROOT_URL)}{REST_API_MAP["backends"]}/{backend}'
-                    response = mss_client.get(backend_definition)
-                    print(response)
+                backend: str = sf.header["qobj"]["backend"].attrs["backend_name"]
+                backend_definition: str = f'{str(MSS_MACHINE_ROOT_URL)}{REST_API_MAP["backends"]}/{backend}'
+                response = mss_client.get(backend_definition)
 
-                    if response.status_code == 200:
-                        discriminator_fn = functools.partial(
-                            _apply_linear_discriminator, response.json()
-                        )
-                    else:
-                        print(f"Response error {response}")
-                else:
-                    raise EnvironmentError(
-                        "Please check whether DISCRIMINATOR_SOURCE is set in the environmental variables"
+                if response.status_code == 200:
+                    discriminator_fn = functools.partial(
+                        _apply_linear_discriminator, response.json()
                     )
+                else:
+                    print(f"Response error {response}")
 
                 try:
                     memory = sf.as_readout(

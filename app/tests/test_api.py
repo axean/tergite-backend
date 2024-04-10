@@ -20,7 +20,6 @@ from app.tests.conftest import (
     MOCK_NOW,
     TEST_APP_TOKEN_STRING,
 )
-from app.tests.fixtures.discrimination_result import discrimination_result
 from app.tests.utils.env import (
     TEST_MSS_MACHINE_ROOT_URL,
     TEST_QUANTIFY_MACHINE_ROOT_URL,
@@ -49,6 +48,9 @@ _EXECUTION_STAGE = "execution"
 _POST_PROCESSING_STAGE = "post_processing"
 _FINAL_STAGE = "final"
 _WRONG_APP_TOKENS = ["foohsjaghds", "barrr", "yeahhhjhdjf"]
+
+# job results
+_UPLOAD_JOB_RESULTS = load_json_fixture("discrimination_results.json")
 
 # params
 _UPLOAD_JOB_PARAMS = [
@@ -782,7 +784,7 @@ def test_upload_logfile(
                 _POST_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
                 _FINAL_STAGE: {"started": timestamp, "finished": timestamp},
             },
-            "result": {"memory": [discrimination_result]},
+            "result": {"memory": [_UPLOAD_JOB_RESULTS['discrimination_results']]},
             "name": job["name"],
             "post_processing": job["post_processing"],
             "is_calibration_supervisor_job": job["is_calibration_supervisor_job"],
