@@ -2,15 +2,6 @@
 # The .env file is a simple list of keys and values. It is also known as the INI file on MS Windows.
 # Fill in the necessary values.
 
-# this can be left as it is
-DEFAULT_PREFIX=pingu
-STORAGE_ROOT=/tmp
-LOGFILE_DOWNLOAD_POOL_DIRNAME=logfile_download_pool
-LOGFILE_UPLOAD_POOL_DIRNAME=logfile_upload_pool
-JOB_UPLOAD_POOL_DIRNAME=job_upload_pool
-JOB_EXECUTION_POOL_DIRNAME=job_execution_pool
-JOB_PRE_PROC_POOL_DIRNAME=job_pre_proc_pool
-
 # This first block can be left as is
 # It contains definitions for the temporary directories and file names
 DEFAULT_PREFIX=loke
@@ -57,14 +48,16 @@ CALIBRATION_SUPERVISOR_PORT=8003
 # The following JSON file will define the partial order that
 # regulates the dependencies between calibration steps:
 CALIBRATION_GRAPH="calibration_graphs/quantify_calibration.json"
-
 POSTPROC_PLOTTING=False
-QUANTIFY_REST_ID="dummy_cluster"
 
 # determine the handling of state discrimination, default to False
 # This is added with the simulator to fetch data from the mongoDB
 DISCRIMINATE_TWO_STATE=False
-FETCH_DISCRIMINATOR=False
+# This is to find out whether to load the discriminator from redis or from mongoDB
+# Can take a value:
+# - database (-> to be loaded from mongoDB - default)
+DISCRIMINATOR_SOURCE=database
+# Allows to easily extend the source e.g. when we later want to implement memory loaded from redis
 
 # Authentication
 # the app token used to authenticate this BCC with MSS.

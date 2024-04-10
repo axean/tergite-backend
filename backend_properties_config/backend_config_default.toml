@@ -15,11 +15,11 @@ dtm = 1e-9
 
 
 [device_config]
-discriminators = [ "hw_qmfk", "quadratic_discriminator", "linear_discriminator" ]
+discriminators = [ "lda", "thresholded_acquisition" ]
 
-qubit_ids = [ "q16", "q17", "q18" ]
+qubit_ids = [ "q12", "q13", "q14" ]
 
-coupling_map = [ [ 0, 1 ], [ 1, 0 ] ]
+coupling_map = [ [ 0, 1 ], [ 1, 0 ], [ 0, 2 ], [ 2, 0 ]  ]
 
 meas_map = [ [ 0, 1, 2 ] ]
 
@@ -64,6 +64,19 @@ coupler_parameters = [
   "pulse_sigma",
   "t1_decoherence",
   "t2_decoherence"
+]
+
+[device_config.discriminator_parameters]
+
+lda_parameters = [
+  "coef_0",
+  "coef_1",
+  "intercept"
+]
+
+thresholded_acquisition_parameters = [
+  "rotation",
+  "threshold"
 ]
 
 [gates.u]

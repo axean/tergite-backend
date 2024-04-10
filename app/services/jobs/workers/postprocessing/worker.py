@@ -137,35 +137,11 @@ def logfile_postprocess(
 # =========================================================================
 
 
-# FIXME: This is a hardcoded solution for the eX3 demo on November 7, 2022
-def _load_lda_discriminator(index: int) -> object:
-    fn = f"state-disc-q{index}.disc"
-    print("Loaded", fn, "for Loki discimination (2022-10-28)")
-    with open(fn, mode="rb") as _file:
-        lda_model = pickle.load(_file)
-    return lda_model
-
-
-# FIXME: This is a hardcoded solution for the eX3 demo on November 7, 2022
-# TODO: Fetch discriminator from external source ?
-def _hardcoded_discriminator(
-    *, qubit_idx: int, iq_points: complex
-) -> list:  # List[0/1]
-    # _DISCRIMINATORS = {index: _load_lda_discriminator(index) for index in range(5)}
-    _DISCRIMINATORS = {0: _load_lda_discriminator(0)}
-    lda_model = _DISCRIMINATORS[qubit_idx]
-
-    X = np.zeros((iq_points.shape[0], 2))
-    X[:, 0] = iq_points.real
-    X[:, 1] = iq_points.imag
-
-    return lda_model.predict(X)
-
-
 def _fetch_discriminator(
     lda_parameters: dict, qubit_idx: int, iq_points: npt.NDArray[np.complex128]
 ) -> npt.NDArray[np.int_]:
-    # FIXME: This is currently only used in the simulator, but we have to find a way to use it everywhere
+    # The reason why we are keeping this function even though it is not used is because it can discriminate three-states
+    # Discrimination of three-states is probably only of interest in research and not in production
 
     level = "threeState" if settings.DISCRIMINATE_TWO_STATE else "twoState"
     coef = np.array(lda_parameters[f"q{qubit_idx}"][level]["coef"])
@@ -183,23 +159,62 @@ def _fetch_discriminator(
         return (scores.ravel() > 0).astype(np.int_)
 
 
+def _apply_linear_discriminator(
+    backend: dict, qubit_idx: int, iq_points: npt.NDArray[np.complex128]
+) -> npt.NDArray[np.int_]:
+    """
+    Fetches the linear discriminator from the backend definition
+
+    Args:
+        backend: Backend definition as dictionary
+        qubit_idx: ID of the qubit to discriminate
+        iq_points: IQ points from the measurement
+
+    Returns:
+        Discriminated 0 and 1 states as numpy array
+
+    """
+    discriminator_ = backend["discriminators"]["lda"]
+    # TODO: We are having two "qubit_id" (e.g. q12 = 0, q13 = 1) and we should have some more meaningful representation
+    qubit_id_ = backend["qubit_ids"][qubit_idx]
+    print(discriminator_, qubit_idx, qubit_id_)
+    coef = np.array(
+        [discriminator_[qubit_id_]["coef_0"], discriminator_[qubit_id_]["coef_1"]]
+    )
+    intercept = np.array(discriminator_[qubit_id_]["intercept"])
+
+    X = np.zeros((iq_points.shape[0], 2))
+    X[:, 0] = iq_points.real
+    X[:, 1] = iq_points.imag
+
+    scores = safe_sparse_dot(X, coef.T, dense_output=True) + intercept
+
+    return (scores.ravel() > 0).astype(np.int_)
+
+
 def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
     try:
         with get_mss_client() as mss_client:
             if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
-                discriminator_fn = _hardcoded_discriminator
-
-                if settings.FETCH_DISCRIMINATOR:
-                    backend = sf.header["qobj"]["backend"].attrs["backend_name"]
-                    discriminator_url = f'{MSS_MACHINE_ROOT_URL}{REST_API_MAP["backends"]}/{backend}/properties/lda_parameters'
-                    response = mss_client.get(discriminator_url)
+                # This would fetch the discriminator from the database
+                # The main reason to have it, is to be compatible with the simulator
+                # The SimulatorC backend in mongoDB is supported and tested
+                if settings.DISCRIMINATOR_SOURCE == "database":
+                    backend: str = sf.header["qobj"]["backend"].attrs["backend_name"]
+                    backend_definition: str = f'{str(MSS_MACHINE_ROOT_URL)}{REST_API_MAP["backends"]}/{backend}'
+                    response = mss_client.get(backend_definition)
+                    print(response)
 
                     if response.status_code == 200:
                         discriminator_fn = functools.partial(
-                            _fetch_discriminator, response.json()
+                            _apply_linear_discriminator, response.json()
                         )
                     else:
                         print(f"Response error {response}")
+                else:
+                    raise EnvironmentError(
+                        "Please check whether DISCRIMINATOR_SOURCE is set in the environmental variables"
+                    )
 
                 try:
                     memory = sf.as_readout(

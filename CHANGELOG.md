@@ -7,6 +7,18 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ## [Unreleased]
 
+This is part of the tergite release v2024.03 that updates the full pipeline for state discrimination hardware calibration
+
+### Added
+
+### Changed
+
+- The way discrimination is loaded for jobs on the real hardware
+
+### Fixed
+
+### Contributors
+
 ## [2024.02.0] - 2024-03-19
 
 This is part of the tergite release v2024.02 that introduces authentication, authorization and accounting

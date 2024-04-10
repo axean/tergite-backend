@@ -20,6 +20,7 @@ from app.tests.conftest import (
     MOCK_NOW,
     TEST_APP_TOKEN_STRING,
 )
+from app.tests.fixtures.discrimination_result import discrimination_result
 from app.tests.utils.env import (
     TEST_MSS_MACHINE_ROOT_URL,
     TEST_QUANTIFY_MACHINE_ROOT_URL,
@@ -781,7 +782,7 @@ def test_upload_logfile(
                 _POST_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
                 _FINAL_STAGE: {"started": timestamp, "finished": timestamp},
             },
-            "result": {"memory": [["0x0"] * 2000]},
+            "result": {"memory": [discrimination_result]},
             "name": job["name"],
             "post_processing": job["post_processing"],
             "is_calibration_supervisor_job": job["is_calibration_supervisor_job"],

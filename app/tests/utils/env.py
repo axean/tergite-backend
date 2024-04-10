@@ -50,4 +50,5 @@ def setup_test_env():
     environ["CALIBRATION_SUPERVISOR_PORT"] = f"{TEST_CALIBRATION_SUPERVISOR_PORT}"
 
     environ["FETCH_DISCRIMINATOR"] = f"True"
+    environ["DISCRIMINATOR_SOURCE"] = f"database"
     environ["MSS_APP_TOKEN"] = TEST_MSS_APP_TOKEN
