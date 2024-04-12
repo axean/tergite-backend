@@ -15,6 +15,10 @@ This is part of the tergite release v2024.03 that updates the full pipeline for 
 
 - The way discrimination is loaded for jobs on the real hardware
 
+### Removed
+
+- Hardcoded discriminators
+
 ### Fixed
 
 ### Contributors
