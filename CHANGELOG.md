@@ -13,7 +13,7 @@ This is part of the tergite release v2024.03 that updates the full pipeline for 
 
 ### Changed
 
-- The way discrimination is loaded for jobs on the real hardware
+- Changed the way discriminators are loaded to load from the database
 - Removed hard-coded discriminators
 
 ### Fixed
