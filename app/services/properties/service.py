@@ -13,6 +13,10 @@
 # Modified:
 #
 # - Martin Ahindura, 2023
+# - Stefan Hill, 2024
+#
+# CAUTION: This updater is currently also used in the tergite-autocalibration-lite repository!
+# Any change on this file should be done in both repositories until they are eventually merged!
 
 import json
 from os import path
@@ -43,6 +47,9 @@ def create_backend_snapshot() -> dict:
         qubit_ids = config["device_config"]["qubit_ids"]
         qubit_parameters = config["device_config"]["qubit_parameters"]
         resonator_parameters = config["device_config"]["resonator_parameters"]
+        discriminator_parameters = config["device_config"]["discriminator_parameters"][
+            "lda_parameters"
+        ]
         coupling_map = config["device_config"]["coupling_map"]
         meas_map = config["device_config"]["meas_map"]
         gate_configs = config["gates"]
@@ -50,6 +57,7 @@ def create_backend_snapshot() -> dict:
     # updating and constructing components
     qubits = []
     resonators = []
+    lda_discriminators = {}
 
     for qubit_id in qubit_ids:
         id = str(qubit_id).strip("q")
@@ -73,7 +81,13 @@ def create_backend_snapshot() -> dict:
             resonator.update({parameter: value})
         resonators.append(resonator)
 
-    # more componets, like couplers etc. can be added in similar manner and added
+        # Here, we are doing it only for lda
+        lda_discriminators[qubit_id] = {
+            parameter: get_component_value("discriminator", parameter, id)
+            for parameter in discriminator_parameters
+        }
+
+    # more components, like couplers etc. can be added in similar manner and added
     # to the device_properties dict ....
 
     device_properties = {
@@ -83,6 +97,7 @@ def create_backend_snapshot() -> dict:
         **general_config,
         **{"qubit_ids": qubit_ids},
         **device_properties,
+        **{"discriminators": {"lda": lda_discriminators}},
         **{"coupling_map": coupling_map},
         **{"meas_map": meas_map},
         **{"gates": gate_configs},

@@ -49,6 +49,9 @@ _POST_PROCESSING_STAGE = "post_processing"
 _FINAL_STAGE = "final"
 _WRONG_APP_TOKENS = ["foohsjaghds", "barrr", "yeahhhjhdjf"]
 
+# job results
+_UPLOAD_JOB_RESULTS = load_json_fixture("discrimination_results.json")
+
 # params
 _UPLOAD_JOB_PARAMS = [
     (client, redis_client, rq_worker, job)
@@ -781,7 +784,7 @@ def test_upload_logfile(
                 _POST_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
                 _FINAL_STAGE: {"started": timestamp, "finished": timestamp},
             },
-            "result": {"memory": [["0x0"] * 2000]},
+            "result": {"memory": [_UPLOAD_JOB_RESULTS]},
             "name": job["name"],
             "post_processing": job["post_processing"],
             "is_calibration_supervisor_job": job["is_calibration_supervisor_job"],

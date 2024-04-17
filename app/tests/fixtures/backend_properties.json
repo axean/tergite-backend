@@ -12,11 +12,11 @@
   "description": "15 qubit device in Loke",
   "dt": 1e-9,
   "dtm": 1e-9,
-  "qubit_ids": ["q16", "q17", "q18"],
+  "qubit_ids": ["q12", "q13", "q14"],
   "device_properties": {
     "qubit": [
       {
-        "id": "q16",
+        "id": "q12",
         "x_position": null,
         "y_position": null,
         "xy_drive_line": null,
@@ -30,7 +30,7 @@
         "t2_decoherence": null
       },
       {
-        "id": "q17",
+        "id": "q13",
         "x_position": null,
         "y_position": null,
         "xy_drive_line": null,
@@ -44,7 +44,7 @@
         "t2_decoherence": null
       },
       {
-        "id": "q18",
+        "id": "q14",
         "x_position": null,
         "y_position": null,
         "xy_drive_line": null,
@@ -60,7 +60,7 @@
     ],
     "readout_resonator": [
       {
-        "id": "q16",
+        "id": "q12",
         "x_position": null,
         "y_position": null,
         "readout_line": null,
@@ -73,7 +73,7 @@
         "pulse_amplitude": null
       },
       {
-        "id": "q17",
+        "id": "q13",
         "x_position": null,
         "y_position": null,
         "readout_line": null,
@@ -86,7 +86,7 @@
         "pulse_amplitude": null
       },
       {
-        "id": "q18",
+        "id": "q14",
         "x_position": null,
         "y_position": null,
         "readout_line": null,
@@ -100,9 +100,30 @@
       }
     ]
   },
+  "discriminators": {
+    "lda": {
+      "q12": {
+        "coef_0": null,
+        "coef_1": null,
+        "intercept": null
+      },
+      "q13": {
+        "coef_0": null,
+        "coef_1": null,
+        "intercept": null
+      },
+      "q14": {
+        "coef_0": null,
+        "coef_1": null,
+        "intercept": null
+      }
+    }
+  },
   "coupling_map": [
     [0, 1],
-    [1, 0]
+    [1, 0],
+    [0, 2],
+    [2, 0]
   ],
   "meas_map": [[0, 1, 2]],
   "gates": {
