@@ -44,12 +44,12 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/tergite/tergite-bcc",
     packages=setuptools.find_packages(),
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     include_package_data=True,
     license="Apache 2.0",
     install_requires=REQUIREMENTS,
     classifiers=[
-        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Operating System :: OS Independent",
     ],
 )
