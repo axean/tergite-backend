@@ -19,7 +19,7 @@ import socket
 from pathlib import Path
 
 from starlette.config import Config
-from starlette.datastructures import URL, CommaSeparatedStrings
+from starlette.datastructures import URL
 
 # NOTE: shell env variables take precedence over the configuration file
 config = Config(Path(__file__).parent / ".env")
@@ -33,9 +33,6 @@ if not IS_AUTH_ENABLED and _is_production:
     raise ValueError(
         "'IS_AUTH_ENABLED' environment variable has been set to false in production."
     )
-
-# Discrimination settings for the simulator
-DISCRIMINATE_TWO_STATE = config("DISCRIMINATE_TWO_STATE", cast=bool, default=False)
 
 # Storage settings
 

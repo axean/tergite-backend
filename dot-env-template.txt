@@ -37,10 +37,6 @@ DB_MACHINE_ROOT_URL=mongodb://user:password@host:port
 # You will then need to install the mongodb software package on your local host.
 # DB_MACHINE_ROOT_URL=mongodb://localhost
 
-# determine the handling of state discrimination, default to False
-# This is added with the simulator to fetch data from the mongoDB
-DISCRIMINATE_TWO_STATE=False
-
 # Authentication
 # the app token used to authenticate this BCC with MSS.
 # A system user (user with the system role) should log in to QAL 9000, generate an app token

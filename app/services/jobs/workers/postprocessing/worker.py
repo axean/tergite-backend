@@ -54,7 +54,6 @@ LOGFILE_DOWNLOAD_POOL_DIRNAME = settings.LOGFILE_DOWNLOAD_POOL_DIRNAME
 
 MSS_MACHINE_ROOT_URL = settings.MSS_MACHINE_ROOT_URL
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
-CALIBRATION_SUPERVISOR_PORT = settings.CALIBRATION_SUPERVISOR_PORT
 
 LOCALHOST = "localhost"
 
@@ -169,7 +168,6 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
                 try:
                     memory = sf.as_readout(
                         discriminator=discriminator_fn,
-                        disc_two_state=settings.DISCRIMINATE_TWO_STATE,
                     )
                     save_result_in_mss_and_bcc(
                         mss_client=mss_client, memory=memory, job_id=sf.job_id
@@ -202,16 +200,6 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
 # =========================================================================
 
 
-async def notify_job_done(job_id: str):
-    reader, writer = await asyncio.open_connection(
-        LOCALHOST, CALIBRATION_SUPERVISOR_PORT
-    )
-    message = ("job_done:" + job_id).encode()
-    print(f"notify_job_done: {message=}")
-    writer.write(message)
-    writer.close()
-
-
 def postprocessing_success_callback(
         _rq_job, _rq_connection, result: JobID, *args, **kwargs
 ):
@@ -220,7 +208,7 @@ def postprocessing_success_callback(
     inform_location(job_id, Location.FINAL_Q)
     update_final_location_timestamp(job_id, status="started")
 
-    (script_name, is_calibration_supervisor_job, post_processing) = get_metainfo(job_id)
+    script_name, post_processing = get_metainfo(job_id)
 
     status = fetch_job(job_id, "status")
 
@@ -237,9 +225,6 @@ def postprocessing_success_callback(
             print(
                 f"Results post-processed by '{post_processing}' available by job_id in Redis."
             )
-        if is_calibration_supervisor_job:
-            print(f"Job was requested by calibration_supervisor: notifying caller.")
-            sync(notify_job_done(job_id))
 
         update_final_location_timestamp(job_id, status="finished")
         _update_location_timestamps_in_mss(mss_client=mss_client, job_id=job_id)
@@ -262,12 +247,11 @@ def postprocessing_failure_callback(
             )
 
 
-def get_metainfo(job_id: str) -> Tuple[str, str, str]:
+def get_metainfo(job_id: str) -> Tuple[str, str]:
     entry = fetch_redis_entry(job_id)
     script_name = entry["name"]
-    is_calibration_supervisor_job = entry.get("is_calibration_supervisor_job", False)
     post_processing = entry.get("post_processing")
-    return (script_name, is_calibration_supervisor_job, post_processing)
+    return script_name, post_processing
 
 
 # =========================================================================
