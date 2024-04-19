@@ -15,13 +15,11 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-import argparse
 import asyncio
 import functools
 import logging
-import pickle
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any, Tuple, Type
 
 import numpy as np
 import numpy.typing as npt
@@ -33,33 +31,19 @@ from requests import Response
 from sklearn.utils.extmath import safe_sparse_dot
 from syncer import sync
 
-import Labber
 import settings
 from app.services.jobs.workers.postprocessing.exc import PostProcessingError
 from app.utils import date_time
 from app.utils.http import get_mss_client
-
-from .....utils.representation import to_string
+from .dtos import LogfileType
 from ...service import (
-    JobNotFound,
     Location,
-    cancel_job,
     fetch_job,
     fetch_redis_entry,
-    inform_failure,
     inform_location,
-    register_job,
     save_result,
     update_final_location_timestamp,
-    update_job_entry,
 )
-from .analysis import (
-    find_resonators,
-    fit_oscillation_itraces,
-    fit_resonator_itraces,
-    gaussian_fit_itraces,
-)
-from .dtos import LogfileType
 
 # Storage settings
 
@@ -92,19 +76,20 @@ JobID = str
 
 red = redis.Redis(decode_responses=True)
 
+
 # =========================================================================
 # Post-processing entry function
 # =========================================================================
 
 
 def logfile_postprocess(
-    logfile: Path, *, logfile_type: LogfileType = LogfileType.LABBER_LOGFILE
+        logfile: Path
 ) -> JobID:
     print(f"Postprocessing logfile {str(logfile)}")
 
     # Move the logfile to logfile download pool area
     # TODO: This file change should preferably happen _after_ the
-    # post-processing.
+    # TODO: The LogfileType parameter is probably becoming redundant after refactoring
     new_file_name = Path(logfile).stem  # This is the job_id
     new_file_name_with_suffix = new_file_name + ".hdf5"
     storage_location = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME
@@ -121,46 +106,17 @@ def logfile_postprocess(
     inform_location(new_file_name, Location.PST_PROC_W)
 
     # The return value will be passed to postprocessing_success_callback
-    if logfile_type == LogfileType.TQC_STORAGE:
-        print("Identified TQC storage file, reading file using tqcsf")
-        sf = tqcsf.file.StorageFile(new_file, mode="r")
-        return postprocess_tqcsf(sf)
-    else:
-        # Labber logfile
-        # All further post-processing, from this point on, is Labber specific.
-        labber_logfile = Labber.LogFile(new_file)
-        return postprocess_labber_logfile(labber_logfile)
+    print("Identified TQC storage file, reading file using tqcsf")
+    sf = tqcsf.file.StorageFile(new_file, mode="r")
+    return postprocess_tqcsf(sf)
 
 
 # =========================================================================
 # Post-processing Quantify / Qblox files
 # =========================================================================
 
-
-def _fetch_discriminator(
-    lda_parameters: dict, qubit_idx: int, iq_points: npt.NDArray[np.complex128]
-) -> npt.NDArray[np.int_]:
-    # The reason why we are keeping this function even though it is not used is because it can discriminate three-states
-    # Discrimination of three-states is probably only of interest in research and not in production
-
-    level = "threeState" if settings.DISCRIMINATE_TWO_STATE else "twoState"
-    coef = np.array(lda_parameters[f"q{qubit_idx}"][level]["coef"])
-    intercept = np.array(lda_parameters[f"q{qubit_idx}"][level]["intercept"])
-
-    X = np.zeros((iq_points.shape[0], 2))
-    X[:, 0] = iq_points.real
-    X[:, 1] = iq_points.imag
-
-    scores = safe_sparse_dot(X, coef.T, dense_output=True) + intercept
-
-    if settings.DISCRIMINATE_TWO_STATE:
-        return scores.argmax(axis=1)
-    else:
-        return (scores.ravel() > 0).astype(np.int_)
-
-
 def _apply_linear_discriminator(
-    backend: dict, qubit_idx: int, iq_points: npt.NDArray[np.complex128]
+        backend: dict, qubit_idx: int, iq_points: npt.NDArray[np.complex128]
 ) -> npt.NDArray[np.int_]:
     """
     Fetches the linear discriminator from the backend definition
@@ -244,161 +200,6 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
 
 
 # =========================================================================
-# Post-processing Labber logfiles
-# =========================================================================
-
-
-# =========================================================================
-# Post-processing helpers in PROCESSING_METHODS
-# labber_logfile: Labber.LogFile
-# Dummy post-processing of signal demodulation
-def process_demodulation(labber_logfile: Labber.LogFile) -> JobID:
-    job_id = get_job_id_labber(labber_logfile)
-    return job_id
-
-
-# Qasm job example
-def process_qiskit_qasm(labber_logfile: Labber.LogFile) -> str:
-    job_id = get_job_id_labber(labber_logfile)
-
-    # Extract System state
-    memory = extract_system_state_as_hex(labber_logfile)
-
-    with get_mss_client() as mss_client:
-        save_result_in_mss_and_bcc(mss_client=mss_client, memory=memory, job_id=job_id)
-
-    # DW: I guess something else should be returned? memory or parts of it?
-    return job_id
-
-
-# VNA resonator spectroscopy
-def process_resonator_spectroscopy_vna_phase_1(
-    labber_logfile: Labber.LogFile,
-) -> List[List[float]]:
-    return find_resonators(labber_logfile)
-
-
-def process_resonator_spectroscopy_vna_phase_2(
-    labber_logfile: Labber.LogFile,
-) -> List[Dict[str, float]]:
-    # The indices below represent the low power sweep, median power
-    # sweep, and high power sweep, respectively. We pick the first,
-    # middle(left middle if even length), and last trace of the logfile.
-    n_traces = labber_logfile.getNumberOfEntries()
-    return fit_resonator_itraces(labber_logfile, [0, n_traces // 2, n_traces - 1])
-
-
-# (*) Note on pulsed resonator spectroscopy, two_tone, Rabi, and
-#     Ramsey post-processing:
-#
-# Currently, this only supports one trace per measurement, and the
-# index list of traces is [0] below. To adapt this to multiple
-# resonators/qubits per measurement, we need to figure out whether we
-# can have Labber to put all the relevant traces in one logfile, or if
-# they would come in one logfile for each resonator/qubit. Based on
-# this we will be able to select which trace incides will be passed to
-# the analysis functions.
-
-
-# Pulsed resonator spectroscopy
-def process_pulsed_resonator_spectroscopy(
-    labber_logfile: Labber.LogFile,
-) -> List[Dict[str, float]]:
-    return fit_resonator_itraces(labber_logfile, [0])
-
-
-# Two-tone
-def process_two_tone(labber_logfile: Labber.LogFile) -> List[float]:
-    # fit qubit spectra
-    return gaussian_fit_itraces(labber_logfile, [0])
-
-
-# Rabi
-def process_rabi(labber_logfile: Labber.LogFile) -> List[float]:
-    # fit Rabi oscillation
-    fits = fit_oscillation_itraces(labber_logfile, [0])
-    return [entry["period"] for entry in fits]
-
-
-# Ramsey
-def process_ramsey(labber_logfile: Labber.LogFile) -> List[float]:
-    # fit Ramsey oscillation
-    fits = fit_oscillation_itraces(labber_logfile, [0])
-    return [entry["freq"] for entry in fits]
-
-
-# =========================================================================
-# Post-processing function mappings
-
-# Based on job["name"], these are the default post-processing methods
-PROCESSING_METHODS = {
-    # VNA resonator spectroscopy
-    "resonator_spectroscopy": process_resonator_spectroscopy_vna_phase_1,
-    # Four basic calibration steps
-    "pulsed_resonator_spectroscopy": process_pulsed_resonator_spectroscopy,
-    "pulsed_two_tone_qubit_spectroscopy": process_two_tone,
-    "rabi_qubit_pi_pulse_estimation": process_rabi,
-    "ramsey_qubit_freq_correction": process_ramsey,
-    # Other
-    "demodulation_scenario": process_demodulation,
-    "qiskit_qasm_runner": process_qiskit_qasm,
-    "qasm_dummy_job": process_qiskit_qasm,
-}
-
-# A map from strings to the corresponding function names
-#
-# If job["post_processing"] field has any of these values, it will
-# override the PROCESSING_METHODS mapping
-PROCESSING_STR_TO_FUNCTION = {
-    # VNA resonator spectroscopy
-    "process_resonator_spectroscopy_vna_phase_1": process_resonator_spectroscopy_vna_phase_1,
-    "process_resonator_spectroscopy_vna_phase_2": process_resonator_spectroscopy_vna_phase_2,
-    # Four basic calibration steps
-    "process_pulsed_resonator_spectroscopy": process_pulsed_resonator_spectroscopy,
-    "process_two_tone": process_two_tone,
-    "process_rabi": process_rabi,
-    "process_ramsey": process_ramsey,
-    # Other
-    "process_demodulation": process_demodulation,
-    "process_qiskit_qasm": process_qiskit_qasm,
-}
-
-# =========================================================================
-# Post-processing Labber logfiles
-
-
-def postprocess_labber_logfile(labber_logfile: Labber.LogFile) -> JobID:
-    job_id = get_job_id_labber(labber_logfile)
-    (job_name, is_calibration_supervisor_job, post_processing) = get_metainfo(job_id)
-
-    print(
-        f"Entering postprocess_labber_logfile for script: {job_name}, {job_id=}, {is_calibration_supervisor_job=}"
-    )
-
-    postprocessing_fn = PROCESSING_METHODS.get(job_name)
-    custom_postprocessing_fn = PROCESSING_STR_TO_FUNCTION.get(post_processing)
-
-    if custom_postprocessing_fn:
-        if not postprocessing_fn:
-            print(
-                f'Warning: no default post-processing matched job_name, but "post_processing" was specified as {post_processing}, and that one will be used.'
-            )
-        results = custom_postprocessing_fn(labber_logfile)
-    elif postprocessing_fn:
-        results = postprocessing_fn(labber_logfile)
-    else:
-        message = f"No post-processing method assigned, nor by {job_name=}, neither by {post_processing=}."
-        print(message)
-        inform_failure(job_id, message)
-        return job_id
-
-    # Post-processing was specified, either by job["name"], or by
-    # job["post_processing"]
-    red.set(f"postprocessing:results:{job_id}", to_string(results))
-    return job_id
-
-
-# =========================================================================
 # Post-processing success callback with helper
 # =========================================================================
 
@@ -414,7 +215,7 @@ async def notify_job_done(job_id: str):
 
 
 def postprocessing_success_callback(
-    _rq_job, _rq_connection, result: JobID, *args, **kwargs
+        _rq_job, _rq_connection, result: JobID, *args, **kwargs
 ):
     # From logfile_postprocess:
     job_id = result
@@ -449,11 +250,11 @@ def postprocessing_success_callback(
 
 # job, connection, type, value, traceback
 def postprocessing_failure_callback(
-    _rq_job: rq.job.Job,
-    _rq_connection: redis.Redis,
-    _type: Type,
-    value: Any,
-    traceback: Any,
+        _rq_job: rq.job.Job,
+        _rq_connection: redis.Redis,
+        _type: Type,
+        value: Any,
+        traceback: Any,
 ):
     """Callback to be called when postprocessing fails"""
     with get_mss_client() as mss_client:
@@ -461,46 +262,6 @@ def postprocessing_failure_callback(
             _update_location_timestamps_in_mss(
                 mss_client=mss_client, job_id=value.job_id
             )
-
-
-# =========================================================================
-# Labber logfile extraction helpers
-# =========================================================================
-
-Memory = Any  # TODO: change to correct type!
-
-
-def extract_system_state_as_hex(logfile: Labber.LogFile) -> Memory:
-    raw_data = logfile.getData("State Discriminator 2 States - System state")
-    memory = []
-    for entry in raw_data:
-        memory.append([hex(int(x)) for x in entry])
-    return memory
-
-
-def extract_shots(logfile: Labber.LogFile) -> int:
-    return int(logfile.getData("State Discriminator 2 States - Shots", 0)[0])
-
-
-def extract_max_qubits(logfile: Labber.LogFile) -> int:
-    return int(
-        logfile.getData("State Discriminator 2 States - Max no. of qubits used", 0)[0]
-    )
-
-
-QobjID = str  # TODO: check that this type is correct!
-
-
-def extract_qobj_id(logfile: Labber.LogFile) -> QobjID:
-    return logfile.getChannelValue("State Discriminator 2 States - QObj ID")
-
-
-def get_job_id_labber(labber_logfile: Labber.LogFile) -> JobID:
-    tags = labber_logfile.getTags()
-    if len(tags) == 0:
-        # Print this message, then let it crash:
-        print(f"Fatal: no tags in logfile. Can't extract job_id")
-    return tags[0]
 
 
 def get_metainfo(job_id: str) -> Tuple[str, str, str]:
@@ -565,7 +326,7 @@ def _update_location_timestamps_in_mss(mss_client: requests.Session, job_id: Job
 
 
 def _update_job_in_mss(
-    mss_client: requests.Session, job_id: JobID, payload: dict
+        mss_client: requests.Session, job_id: JobID, payload: dict
 ) -> Response:
     """Updates the job in MSS with the given payload
 
@@ -591,54 +352,3 @@ def _debug_job_memory_list(memory: list):
         if experiment_memory[5:6]:
             s = s.replace("]", ", ...]")
         print(s)
-
-
-# =========================================================================
-# Running postprocessing_worker from command-line for testing purposes
-# =========================================================================
-
-# Note: files with missing tags may not work
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Postprocessing stand-alone program")
-    parser.add_argument("--logfile", "-f", default="", type=str)
-    parser.add_argument("--name", "-n", default="test_name", type=str)
-    parser.add_argument("--post_processing", "-p", default="", type=str)
-    args = parser.parse_args()
-
-    logfile = args.logfile
-    post_processing = args.post_processing
-
-    labber_logfile = Labber.LogFile(logfile)
-
-    job_id = get_job_id_labber(labber_logfile)
-    # check if job id already present
-    try:
-        _ = fetch_redis_entry(job_id)
-        # job_id already in use, we can't proceed
-        print(
-            f"the logfile's job_id is already in use. please wait until it is finished or try a file with another job_id"
-        )
-        exit()
-    except JobNotFound:
-        pass  # this is the expected behaviour
-
-    register_job(job_id)
-    try:
-        name = labber_logfile.getTags()[1]
-    except IndexError:
-        print(
-            f"Name missing in logfile, using default '{args.name}' instead (or specify with -n)."
-        )
-        name = args.name
-
-    update_job_entry(job_id, name, "name")
-    update_job_entry(job_id, post_processing, "post_processing")
-
-    return_value = postprocess_labber_logfile(labber_logfile)
-
-    # This cleanup is omitted if the previous call raises an
-    # exception, maybe we should fix that.
-    cancel_job(job_id, "testing done")
-    # Maybe we need a new job_supervisor method for this:
-    red.hdel("job_supervisor", job_id)
-    print(f"{return_value=}")
