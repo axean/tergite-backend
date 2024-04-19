@@ -14,7 +14,6 @@
 from pathlib import Path
 
 from redis import Redis
-from rq import Queue
 
 import settings
 

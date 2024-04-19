@@ -35,7 +35,6 @@ import settings
 from app.services.jobs.workers.postprocessing.exc import PostProcessingError
 from app.utils import date_time
 from app.utils.http import get_mss_client
-from .dtos import LogfileType
 from ...service import (
     Location,
     fetch_job,
@@ -89,7 +88,6 @@ def logfile_postprocess(
 
     # Move the logfile to logfile download pool area
     # TODO: This file change should preferably happen _after_ the
-    # TODO: The LogfileType parameter is probably becoming redundant after refactoring
     new_file_name = Path(logfile).stem  # This is the job_id
     new_file_name_with_suffix = new_file_name + ".hdf5"
     storage_location = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME
@@ -134,7 +132,7 @@ def _apply_linear_discriminator(
     # TODO: We are having two "qubit_id" (e.g. q12 = 0, q13 = 1) and we should have some more meaningful representation
     qubit_id_ = backend["qubit_ids"][qubit_idx]
     print(discriminator_, qubit_idx, qubit_id_)
-    coef = np.array(
+    coefficients = np.array(
         [discriminator_[qubit_id_]["coef_0"], discriminator_[qubit_id_]["coef_1"]]
     )
     intercept = np.array(discriminator_[qubit_id_]["intercept"])
@@ -143,7 +141,7 @@ def _apply_linear_discriminator(
     X[:, 0] = iq_points.real
     X[:, 1] = iq_points.imag
 
-    scores = safe_sparse_dot(X, coef.T, dense_output=True) + intercept
+    scores = safe_sparse_dot(X, coefficients.T, dense_output=True) + intercept
 
     return (scores.ravel() > 0).astype(np.int_)
 

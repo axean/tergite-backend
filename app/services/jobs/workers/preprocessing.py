@@ -14,7 +14,6 @@
 from pathlib import Path
 
 from redis import Redis
-from rq import Queue
 
 import settings
 from app.utils.queues import QueuePool
@@ -39,9 +38,6 @@ def job_preprocess(job_file: Path):
 
     # Inform supervisor about job being in pre-processing worker
     inform_location(job_id, Location.PRE_PROC_W)
-
-    # mimick job pre-processing
-    # time.sleep(2)
 
     new_file_name = job_file.stem
     storage_location = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME

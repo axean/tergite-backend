@@ -47,7 +47,6 @@ from ..services.jobs.workers.postprocessing import (
     postprocessing_failure_callback,
     postprocessing_success_callback,
 )
-from ..services.jobs.workers.postprocessing.dtos import LogfileType
 from ..services.jobs.workers.registration import job_register
 from ..services.properties import service as props_service
 from ..services.random import service as rng_service
@@ -78,7 +77,7 @@ rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=get_redis_connection())
 # application
 app = FastAPI(
     title="Backend Control Computer",
-    description="Interfaces Qauntum processor via REST API",
+    description="Interfaces Quantum processor via REST API",
     version="2024.02.0",
 )
 

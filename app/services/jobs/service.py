@@ -17,7 +17,7 @@
 import json
 from enum import Enum, unique
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, Literal, Optional, Tuple, Union
 
 import redis
 from rq.command import send_stop_job_command
@@ -28,7 +28,6 @@ import settings
 from ...utils import date_time
 
 STORAGE_ROOT = settings.STORAGE_ROOT
-LABBER_MACHINE_ROOT_URL = settings.LABBER_MACHINE_ROOT_URL
 JOB_SUPERVISOR_LOG = settings.JOB_SUPERVISOR_LOG
 STORAGE_PREFIX_DIRNAME = settings.STORAGE_PREFIX_DIRNAME
 _SUPERVISOR_HASH_KEY = "job_supervisor"
@@ -44,7 +43,7 @@ _FINAL_STAGE = "final"
 # Redis connection
 red = redis.Redis()
 
-# Type hint contants
+# Type hint constants
 Entry = Dict[str, Any]
 Result = Tuple[str, str]
 
@@ -327,7 +326,7 @@ def fetch_all_jobs() -> Dict[str, Any]:
     """Fetches all jobs from redis
 
     Returns:
-        The dict of job entires.
+        The dict of job entries.
     """
     entries = red.hgetall(_SUPERVISOR_HASH_KEY)
     return {k: _load_json(v) for k, v in entries.items()}
