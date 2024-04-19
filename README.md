@@ -7,7 +7,6 @@ The Backend Control Computer software that makes QAL 9000 - like quantum compute
 ## Dependencies
 
 - [Python 3.8](https://www.python.org/)
-- [Labber](https://www.keysight.com/us/en/products/software/application-sw/labber-software.html)
 - [Redis](https://redis.io/)
 - [Tergite Quantify Connector](https://github.com/tergite/tergite-quantify-connector)
 - [Tergite Labber Connector](https://github.com/tergite/tergite-labber-connector)
@@ -18,25 +17,6 @@ The Backend Control Computer software that makes QAL 9000 - like quantum compute
  (_You could simply have python +3.8 installed instead._)
 - Ensure you have the [Redis](https://redis.io/) server running
 - Ensure you have [tergite Quantify Connector](https://github.com/tergite/tergite-quantify-connector) running.
-- If you intend to use [Labber](https://www.keysight.com/us/en/products/software/application-sw/labber-software.html), 
-  ensure you have [tergite Labber Connector](https://github.com/tergite/tergite-labber-connector) running.
-- If you intend to use [Labber ~1.7.7](https://www.keysight.com/us/en/products/software/application-sw/labber-software.html), install it first.
-- For Debian/Ubuntu, download and install `Labber 1.7.7.deb`
-
-```shell
-sudo apt install ./Labber-1.7.7.deb
-```
-
-- Otherwise, add a dummy labber folder
-
-```shell
-mkdir Labber
-echo "import typing" >> Labber/__init__.py
-echo "LogFile = typing.Any" >> Labber/__init__.py
-echo "Scenario = typing.Any" >> Labber/__init__.py
-echo "ScriptTools = typing.Any" >> Labber/__init__.py
-```
-
 - Clone the repo
 
 ```shell

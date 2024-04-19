@@ -27,8 +27,6 @@ BCC_MACHINE_ROOT_URL=http://host:port
 BCC_PORT=8000
 
 # 3 Instrument server
-# Labber
-LABBER_MACHINE_ROOT_URL=http://host:port
 # Quantify
 QUANTIFY_MACHINE_ROOT_URL=http://host:port
 

@@ -80,7 +80,6 @@ BACKEND_SETTINGS = config(
 
 # Connectivity settings
 
-LABBER_MACHINE_ROOT_URL = config("LABBER_MACHINE_ROOT_URL", cast=URL)
 QUANTIFY_MACHINE_ROOT_URL = config("QUANTIFY_MACHINE_ROOT_URL", cast=URL)
 MSS_MACHINE_ROOT_URL = config("MSS_MACHINE_ROOT_URL", cast=URL)
 BCC_MACHINE_ROOT_URL = config("BCC_MACHINE_ROOT_URL", cast=URL)
@@ -109,7 +108,6 @@ CLIENT_IP_WHITELIST = {
     for v in [
         MSS_MACHINE_ROOT_URL,
         QUANTIFY_MACHINE_ROOT_URL,
-        LABBER_MACHINE_ROOT_URL,
     ]
 }
 # allow test client to access api when BLACKLISTED is not set
