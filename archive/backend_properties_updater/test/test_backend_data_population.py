@@ -17,7 +17,7 @@ import json
 
 from redis import Redis
 
-from backend_properties_updater.backend_config_updater import config_updater
+from archive.backend_properties_updater.backend_config_updater import config_updater
 
 redis_connection = Redis()
 

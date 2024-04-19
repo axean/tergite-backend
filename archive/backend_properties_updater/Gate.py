@@ -14,7 +14,7 @@
 # that they have been altered from the originals.
 
 
-from backend_properties_updater.backend_properties_updater_utils import (
+from archive.backend_properties_updater.backend_properties_updater_utils import (
     TYPE1,
     TYPE3,
     TYPE4_CODOMAIN,
@@ -22,7 +22,7 @@ from backend_properties_updater.backend_properties_updater_utils import (
     init_NDUV,
     update_NDUV,
 )
-from backend_properties_updater.NDUV import NDUV
+from archive.backend_properties_updater.NDUV import NDUV
 
 UPPER_PULSE_AMP_LIMIT = 5
 LOWER_PULSE_AMP_LIMIT = 0

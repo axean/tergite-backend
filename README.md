@@ -47,7 +47,7 @@ cp dot-env-template.txt .env
 - Run start script
 
 ```shell
-./start_bcc.sh --device backend_properties_config/device_default.toml
+./start_bcc.sh --device configs/device_default.toml
 ```
 
 - Open your browser at [http://localhost:8000/docs](http://localhost:8000/docs) to see the interactive API docs

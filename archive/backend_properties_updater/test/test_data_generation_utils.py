@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from NDUV import NDUV
 
-from backend_properties_updater.backend_properties_updater_utils import (
+from archive.backend_properties_updater.backend_properties_updater_utils import (
     TYPE1,
     update_NDUV,
 )

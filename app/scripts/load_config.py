@@ -178,7 +178,7 @@ if __name__ == "__main__":
         not os.path.isabs(device_configuration_file)
         and "/" not in device_configuration_file
     ):
-        # Passing just a file that exists in backend_properties_config should load the file.
+        # Passing just a file that exists in configs should load the file.
         device_configuration_file = os.path.abspath(
             f"backend_properties_config/{args.device}"
         )

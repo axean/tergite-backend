@@ -37,17 +37,6 @@ DB_MACHINE_ROOT_URL=mongodb://user:password@host:port
 # You will then need to install the mongodb software package on your local host.
 # DB_MACHINE_ROOT_URL=mongodb://localhost
 
-# Settings for automatic calibration:
-
-# A job requested by the calibration supervisor will cause a "job done"
-# message to be sent to this port on the BCC host when it has been
-# post-processed successfully.
-CALIBRATION_SUPERVISOR_PORT=8003
-# The following JSON file will define the partial order that
-# regulates the dependencies between calibration steps:
-CALIBRATION_GRAPH="calibration_graphs/quantify_calibration.json"
-POSTPROC_PLOTTING=False
-
 # determine the handling of state discrimination, default to False
 # This is added with the simulator to fetch data from the mongoDB
 DISCRIMINATE_TWO_STATE=False

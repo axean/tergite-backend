@@ -17,7 +17,7 @@
 import random
 from datetime import datetime, timezone
 
-from backend_properties_updater.NDUV import NDUV
+from archive.backend_properties_updater.NDUV import NDUV
 
 TYPE1 = "type1"
 TYPE2 = "type2"

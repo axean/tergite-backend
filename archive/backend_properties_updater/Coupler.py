@@ -16,14 +16,14 @@
 
 from datetime import datetime, timezone
 
-from backend_properties_updater.backend_properties_updater_utils import (
+from archive.backend_properties_updater.backend_properties_updater_utils import (
     TYPE1,
     TYPE4_CODOMAIN,
     TYPE5,
     init_NDUV,
     update_NDUV,
 )
-from backend_properties_updater.NDUV import NDUV
+from archive.backend_properties_updater.NDUV import NDUV
 
 UPPER_FREQ_MAX_LIMIT = 9e9
 LOWER_FREQ_MAX_LIMIT = 7e9
