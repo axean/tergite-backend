@@ -270,7 +270,7 @@ def upload_logfile(
         on_success=postprocessing_success_callback,
         on_failure=postprocessing_failure_callback,
         job_id=file_name + f"_{jobs_service.Location.PST_PROC_Q.name}",
-        args=(store_file,)
+        args=(store_file,),
     )
 
     # inform supervisor

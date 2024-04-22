@@ -80,9 +80,7 @@ red = redis.Redis(decode_responses=True)
 # =========================================================================
 
 
-def logfile_postprocess(
-        logfile: Path
-) -> JobID:
+def logfile_postprocess(logfile: Path) -> JobID:
     print(f"Postprocessing logfile {str(logfile)}")
 
     # Move the logfile to logfile download pool area
@@ -112,8 +110,9 @@ def logfile_postprocess(
 # Post-processing Quantify / Qblox files
 # =========================================================================
 
+
 def _apply_linear_discriminator(
-        backend: dict, qubit_idx: int, iq_points: npt.NDArray[np.complex128]
+    backend: dict, qubit_idx: int, iq_points: npt.NDArray[np.complex128]
 ) -> npt.NDArray[np.int_]:
     """
     Fetches the linear discriminator from the backend definition
@@ -201,7 +200,7 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
 
 
 def postprocessing_success_callback(
-        _rq_job, _rq_connection, result: JobID, *args, **kwargs
+    _rq_job, _rq_connection, result: JobID, *args, **kwargs
 ):
     # From logfile_postprocess:
     job_id = result
@@ -233,11 +232,11 @@ def postprocessing_success_callback(
 
 # job, connection, type, value, traceback
 def postprocessing_failure_callback(
-        _rq_job: rq.job.Job,
-        _rq_connection: redis.Redis,
-        _type: Type,
-        value: Any,
-        traceback: Any,
+    _rq_job: rq.job.Job,
+    _rq_connection: redis.Redis,
+    _type: Type,
+    value: Any,
+    traceback: Any,
 ):
     """Callback to be called when postprocessing fails"""
     with get_mss_client() as mss_client:
@@ -308,7 +307,7 @@ def _update_location_timestamps_in_mss(mss_client: requests.Session, job_id: Job
 
 
 def _update_job_in_mss(
-        mss_client: requests.Session, job_id: JobID, payload: dict
+    mss_client: requests.Session, job_id: JobID, payload: dict
 ) -> Response:
     """Updates the job in MSS with the given payload
 

@@ -53,7 +53,6 @@ class config_updater:
             gate.update()
 
     def to_dict(self) -> dict:
-
         return {
             "last_update_date": self.last_update_date.isoformat(),
             "qubits": [qubit.to_dict() for qubit in self.qubits],
