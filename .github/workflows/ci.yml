@@ -34,11 +34,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run tests
         run: |
-          mkdir Labber
-          echo "import typing" >> Labber/__init__.py
-          echo "LogFile = typing.Any" >> Labber/__init__.py
-          echo "Scenario = typing.Any" >> Labber/__init__.py
-          echo "ScriptTools = typing.Any" >> Labber/__init__.py
           pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -i https://pypi.org/simple --extra-index-url https://test.pypi.org/simple/ -r requirements.txt; fi
           black --check app

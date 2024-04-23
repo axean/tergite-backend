@@ -6,7 +6,7 @@
 # - run ./start_bcc.sh --device [FILEPATH]
 #
 # where FILEPATH is a TOML file with device configuration. See
-# backend_properties_config/device_test.toml for an example.
+# configs/device_test.toml for an example.
 #
 # For convenience, for instance do:
 # ln -s FILEPATH ./device.toml

@@ -128,16 +128,6 @@ cd tergite-bcc
 cp dot-env-template.txt .env
 ```
 
-- In case you don't have labber installed, add dummy labber
-
-```shell
-mkdir Labber
-echo "import typing" >> Labber/__init__.py
-echo "LogFile = typing.Any" >> Labber/__init__.py
-echo "Scenario = typing.Any" >> Labber/__init__.py
-echo "ScriptTools = typing.Any" >> Labber/__init__.py
-```
-
 - Copy `bcc.service` to the systemd services folder
 
 ```shell

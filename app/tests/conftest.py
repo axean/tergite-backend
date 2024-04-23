@@ -3,7 +3,6 @@ from typing import Dict
 
 from .utils.env import (
     TEST_DEFAULT_PREFIX,
-    TEST_LABBER_MACHINE_ROOT_URL,
     TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME,
     TEST_MSS_MACHINE_ROOT_URL,
     TEST_QUANTIFY_MACHINE_ROOT_URL,
@@ -104,8 +103,6 @@ BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES = [
 def mock_post_requests(url: str, **kwargs):
     """Mock POST requests for testing"""
     if url == f"{TEST_QUANTIFY_MACHINE_ROOT_URL}/qobj":
-        return MockHttpResponse(status_code=200)
-    if url == f"{TEST_LABBER_MACHINE_ROOT_URL}/scenarios":
         return MockHttpResponse(status_code=200)
     if url == f"{TEST_QUANTIFY_MACHINE_ROOT_URL}/rng_LokiB":
         return MockHttpResponse(status_code=200)

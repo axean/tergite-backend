@@ -13,7 +13,7 @@
 
 
 class PostProcessingError(Exception):
-    """Exception raised when something unexpected happens during post processing"""
+    """Exception raised when something unexpected happens during postprocessing"""
 
     def __init__(self, exp: Exception, job_id: str):
         self.exp = exp

@@ -19,7 +19,7 @@ import socket
 from pathlib import Path
 
 from starlette.config import Config
-from starlette.datastructures import URL, CommaSeparatedStrings
+from starlette.datastructures import URL
 
 # NOTE: shell env variables take precedence over the configuration file
 config = Config(Path(__file__).parent / ".env")
@@ -33,13 +33,6 @@ if not IS_AUTH_ENABLED and _is_production:
     raise ValueError(
         "'IS_AUTH_ENABLED' environment variable has been set to false in production."
     )
-
-# Discrimination settings for the simulator
-DISCRIMINATE_TWO_STATE = config("DISCRIMINATE_TWO_STATE", cast=bool, default=False)
-
-# Plotting during post-processing, only for interactive use, *not*
-# when running as a server
-POSTPROC_PLOTTING = config("POSTPROC_PLOTTING", cast=bool, default=False)
 
 # Storage settings
 
@@ -65,38 +58,26 @@ MEASUREMENT_DEFAULT_FILES = config(
 )
 
 # Definition of backend property names
-# See also backend_properties_config/device_*.toml
+# See also configs/device_*.toml
 BACKEND_PROPERTIES_TEMPLATE = config(
     "BACKEND_PROPERTIES_TEMPLATE",
     cast=str,
-    default="backend_properties_config/property_templates_default.toml",
+    default="configs/property_templates_default.toml",
 )
 
 BACKEND_SETTINGS = config(
     "BACKEND_SETTINGS",
     cast=str,
-    default="backend_properties_config/backend_config_default.toml",
+    default="configs/backend_config_default.toml",
 )
 
 # Connectivity settings
 
-LABBER_MACHINE_ROOT_URL = config("LABBER_MACHINE_ROOT_URL", cast=URL)
 QUANTIFY_MACHINE_ROOT_URL = config("QUANTIFY_MACHINE_ROOT_URL", cast=URL)
 MSS_MACHINE_ROOT_URL = config("MSS_MACHINE_ROOT_URL", cast=URL)
 BCC_MACHINE_ROOT_URL = config("BCC_MACHINE_ROOT_URL", cast=URL)
 BCC_PORT = config("BCC_PORT", cast=int)
 DB_MACHINE_ROOT_URL = config("DB_MACHINE_ROOT_URL", cast=URL)
-
-CALIBRATION_SUPERVISOR_PORT = config("CALIBRATION_SUPERVISOR_PORT", cast=int)
-
-# Calibration supervisor settings
-
-CALIBRATION_GRAPH = config(
-    "CALIBRATION_GRAPH", cast=str, default="calibration_graphs/default.json"
-)
-CALIBRATION_GOALS = list(
-    config("CALIBRATION_GOALS", cast=CommaSeparatedStrings, default=[])
-)
 
 # Authentication
 
@@ -109,7 +90,6 @@ CLIENT_IP_WHITELIST = {
     for v in [
         MSS_MACHINE_ROOT_URL,
         QUANTIFY_MACHINE_ROOT_URL,
-        LABBER_MACHINE_ROOT_URL,
     ]
 }
 # allow test client to access api when BLACKLISTED is not set
