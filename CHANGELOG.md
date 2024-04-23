@@ -15,6 +15,7 @@ This is part of the tergite release v2024.03 that updates the full pipeline for 
 
 - Changed the way discriminators are loaded to load from the database
 - Removed hard-coded discriminators
+- Upgrade to Python 3.9
 
 ### Fixed
 
