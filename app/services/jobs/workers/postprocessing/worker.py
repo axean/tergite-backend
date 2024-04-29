@@ -26,15 +26,16 @@ import numpy.typing as npt
 import redis
 import requests
 import rq.job
-import tqcsf.file
 from requests import Response
 from sklearn.utils.extmath import safe_sparse_dot
 from syncer import sync
 
 import settings
+from app.libs.storage_file import MeasLvl, StorageFile
 from app.services.jobs.workers.postprocessing.exc import PostProcessingError
 from app.utils import date_time
 from app.utils.http import get_mss_client
+
 from ...service import (
     Location,
     fetch_job,
@@ -101,9 +102,9 @@ def logfile_postprocess(logfile: Path) -> JobID:
     inform_location(new_file_name, Location.PST_PROC_W)
 
     # The return value will be passed to postprocessing_success_callback
-    print("Identified TQC storage file, reading file using tqcsf")
-    sf = tqcsf.file.StorageFile(new_file, mode="r")
-    return postprocess_tqcsf(sf)
+    print("Identified TQC storage file, reading file using storage file")
+    sf = StorageFile(new_file, mode="r")
+    return postprocess_storage_file(sf)
 
 
 # =========================================================================
@@ -144,10 +145,10 @@ def _apply_linear_discriminator(
     return (scores.ravel() > 0).astype(np.int_)
 
 
-def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
+def postprocess_storage_file(sf: StorageFile) -> JobID:
     try:
         with get_mss_client() as mss_client:
-            if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
+            if sf.meas_level == MeasLvl.DISCRIMINATED:
                 # This would fetch the discriminator from the database
                 # The main reason to have it, is to be compatible with the simulator
                 # The SimulatorC backend in mongoDB is supported and tested
@@ -174,12 +175,12 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
                 except Exception as exp:
                     logging.error(exp)
 
-            elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
+            elif sf.meas_level == MeasLvl.INTEGRATED:
                 save_result_in_mss_and_bcc(
                     mss_client=mss_client, memory=[], job_id=sf.job_id
                 )
 
-            elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
+            elif sf.meas_level == MeasLvl.RAW:
                 save_result_in_mss_and_bcc(
                     mss_client=mss_client, memory=[], job_id=sf.job_id
                 )

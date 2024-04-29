@@ -17,8 +17,17 @@ This is part of the tergite release v2024.03 that updates the full pipeline for 
 - Removed hard-coded discriminators
 - Upgrade to Python 3.9
 - Removed Labber in job processing and calibration
+- Replaced tergite-quantify-connector-storagefile package with an internal storage_file lib
 
 ### Fixed
+
+### TODO
+
+- [ ] Add quantify connector's main branch and push it both to upstream and downstream
+- [ ] Merge quantify connector's simulator branch and push it to upstream
+- [ ] Run simulator version on CTH side
+- [ ] Run dummy cluster on local or any other place
+- [ ] Test multiple BCC with MSS
 
 ### Contributors
 
