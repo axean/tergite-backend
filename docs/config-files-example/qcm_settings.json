@@ -1,0 +1,29 @@
+{
+    "QCM": {
+        "instrument_type": "Pulsar_QCM",
+        "instrument_driver": "qblox_instruments.Pulsar",
+        "instrument_address": "192.168.0.2",
+        "instrument_component": "quantify_scheduler.instrument_coordinator.components.qblox.PulsarQCMComponent",
+        "ref": "external",
+        "complex_output_0": {
+            "portclock_configs": [
+                {
+                    "mixer_amp_ratio": 0.9915,
+                    "mixer_phase_error_deg": 5.4292,
+                    "port": "drive0",
+                    "clock": "d0"
+                },
+                {
+                    "mixer_amp_ratio": 0.9915,
+                    "mixer_phase_error_deg": 5.4292,
+                    "port": "drive0",
+                    "clock": "d1"
+                }
+            ],
+            "dc_mixer_offset_I": -0.0077,
+            "dc_mixer_offset_Q": -0.0215,
+            "line_gain_db": 0,
+            "lo_name": "SGS13"
+        }
+    }
+}

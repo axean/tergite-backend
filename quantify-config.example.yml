@@ -1,0 +1,360 @@
+# See https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#sec-qblox-cluster
+# Only two instrument types can be configured:
+# - "Cluster",
+# - "LocalOscillator"
+
+general:
+  # General configuration
+
+  data_directory: data
+  # the directory where to put generated data; default is data on root folder
+
+# See https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#sec-qblox-cluster
+# Only two instrument types can be configured:
+# - "Cluster",
+# - "LocalOscillator"
+
+clusters:
+  # Configuration for the instruments clusters
+  # You can add multiple clusters
+  # See: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#cluster-configuration
+
+  # name of the cluster. This can be anything you wish.
+  - name: "cluster0"
+    is_dummy: true
+    # whether this cluster is of dummy type or not. Defaults to false.
+    ref: "internal"
+    # the ref sets the reference source, which is a 10 MHz clock source.
+    # It can be one of two values:
+    # - "internal"
+    # - "external"
+    # Default is "external"
+
+  - name: "cluster1"
+    ref: "internal"
+
+    modules:
+      # You can add multiple modules of up to four instrument types:
+      # - QCM
+      # - QRM
+      # - QCM_RF
+      # - QRM_RF
+      #
+      # Configuration for channels for this module.
+      # you can add multiple input/output channels of up to six types:
+      # - complex_output
+      # - complex_input
+      # - real_output
+      # - real_input
+      # - digital_input
+      #
+      # However, depending on the type of module, only some channels are valid
+      #
+      # For QCMs:
+      # - complex_output
+      # - real_output
+      # - digital_output
+      #
+      # For QRMs:
+      # - complex_input
+      # - complex_output
+      # - real_input
+      # - real_output
+      # - digital_output
+      #
+      # For QCM_RFs:
+      # - complex_output
+      # - digital_output
+      #
+      # For QRM_RF:
+      # - complex_input
+      # - complex_output
+      # - digital_output
+      #
+      #
+      # Take note that the name is of format "<cluster_name>_module<n>", where <n> is the module number in the cluster
+      # See: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#module-configuration
+      - name: "cluster1_module_0"
+        instrument_type: "QCM"
+        # Valid channel lists
+        # - complex_outputs
+        # - real_outputs
+        # - digital_outputs
+
+        complex_outputs:
+          # configuration for channels of the type 'complex_output'
+          # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#complex-channel
+
+          # name is of format <channel_type>_<n> where n is the number of the channel in this list
+          - name: "complex_output_0"
+            marker_debug_mode_enable: true
+            dc_mixer_offset_I: -0.054
+            dc_mixer_offset_Q: -0.034
+            portclock_configs:
+              # portclock configurations for this channel
+              # See: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#portclock-configuration
+              - port: q0:res
+                clock: q0:ro
+              - port: q1:res
+                clock: q1:ro
+                mixer_amp_ratio: 0.9997
+                mixer_phase_error_deg: -4
+              - port: q2:res
+                clock: q2:ro
+
+          - name: "complex_output_1"
+            portclock_configs:
+              - port: q0:res
+                clock: q0:ro
+              - port: q1:res
+                clock: q1:ro
+              - port: q2:res
+                clock: q2:ro
+
+        real_outputs:
+          # configuration for channels of the type 'real_output'
+          # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#real-channel
+          #
+          # name is of format <channel_type>_<n> where n is the number of the channel in this list
+          - name: "real_output_0"
+            portclock_configs:
+              - port: q0:res
+                clock: q0:ro
+              - port: q1:res
+                clock: q1:ro
+              - port: q2:res
+                clock: q2:ro
+
+        digital_outputs:
+          # configuration for channels of the type 'digital_output'
+          # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#digital-channel
+          #
+          # name is of format <channel_type>_<n> where n is the number of the channel in this list
+          - name: "digital_output_0"
+            portclock_configs:
+              - port: q0:res
+                clock: q0:ro
+              - port: q1:res
+                clock: q1:ro
+              - port: q2:res
+                clock: q2:ro
+
+      - name: "cluster1_module_1"
+        instrument_type: "QRM"
+        # Valid channel lists
+        # - complex_inputs
+        # - complex_outputs
+        # - real_inputs
+        # - real_outputs
+        # - digital_outputs
+
+        complex_inputs:
+          # configuration for channels of the type 'complex_input'
+          # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#complex-channel
+          #
+          # name is of format <channel_type>_<n> where n is the number of the channel in this list
+          - name: "complex_input_0"
+            input_gain_I: 2
+            input_gain_Q: 2
+            portclock_configs:
+              - port: q0:res
+                clock: q0:ro
+
+        real_inputs:
+          # configuration for channels of the type 'real_input'
+          # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#real-channel
+          #
+          # name is of format <channel_type>_<n> where n is the number of the channel in this list
+          - name: "real_input_0"
+            input_gain_0: 2
+            input_gain_1: 2
+            portclock_configs:
+              - port: q0:res
+                clock: q0:ro
+
+          - name: "real_input_1"
+            portclock_configs:
+              - port: q0:res
+                clock: q0:ro
+
+        complex_outputs:
+          # configuration for channels of the type 'complex_output'
+          # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#complex-channel
+          #
+          # name is of format <channel_type>_<n> where n is the number of the channel in this list
+          - name: "complex_output_0"
+            marker_debug_mode_enable: true
+            dc_mixer_offset_I: -0.054
+            dc_mixer_offset_Q: -0.034
+            portclock_configs:
+              # portclock configurations for this channel
+              # See: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#portclock-configuration
+              - port: q0:res
+                clock: q0:ro
+              - port: q1:res
+                clock: q1:ro
+                mixer_amp_ratio: 0.9997
+                mixer_phase_error_deg: -4
+              - port: q2:res
+                clock: q2:ro
+
+          - name: "complex_output_1"
+            portclock_configs:
+              - port: q0:res
+                clock: q0:ro
+              - port: q1:res
+                clock: q1:ro
+              - port: q2:res
+                clock: q2:ro
+
+        real_outputs:
+          # configuration for channels of the type 'real_output'
+          # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#real-channel
+          #
+          # name is of format <channel_type>_<n> where n is the number of the channel in this list
+          - name: "real_output_0"
+            portclock_configs:
+              - port: q0:res
+                clock: q0:ro
+              - port: q1:res
+                clock: q1:ro
+              - port: q2:res
+                clock: q2:ro
+
+        digital_outputs:
+          # configuration for channels of the type 'digital_output'
+          # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#digital-channel
+          #
+          # name is of format <channel_type>_<n> where n is the number of the channel in this list
+          - name: "digital_output_0"
+            portclock_configs:
+              - port: q0:res
+                clock: q0:ro
+              - port: q1:res
+                clock: q1:ro
+              - port: q2:res
+                clock: q2:ro
+
+      - name: "cluster1_module_2"
+        instrument_type: "QCM_RF"
+        # Valid channel lists
+        # - complex_outputs
+        # - digital_outputs
+
+        complex_outputs:
+          # configuration for channels of the type 'complex_output'
+          # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#complex-channel
+          #
+          # name is of format <channel_type>_<n> where n is the number of the channel in this list
+          - name: "complex_output_0"
+            marker_debug_mode_enable: true
+            dc_mixer_offset_I: -0.054
+            dc_mixer_offset_Q: -0.034
+            portclock_configs:
+              # portclock configurations for this channel
+              # See: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#portclock-configuration
+              - port: q0:res
+                clock: q0:ro
+              - port: q1:res
+                clock: q1:ro
+                mixer_amp_ratio: 0.9997
+                mixer_phase_error_deg: -4
+              - port: q2:res
+                clock: q2:ro
+
+          - name: "complex_output_1"
+            portclock_configs:
+              - port: q0:res
+                clock: q0:ro
+              - port: q1:res
+                clock: q1:ro
+              - port: q2:res
+                clock: q2:ro
+
+        digital_outputs:
+          # configuration for channels of the type 'digital_output'
+          # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#digital-channel
+          #
+          # name is of format <channel_type>_<n> where n is the number of the channel in this list
+          - name: "digital_output_0"
+            portclock_configs:
+              - port: q0:res
+                clock: q0:ro
+              - port: q1:res
+                clock: q1:ro
+              - port: q2:res
+                clock: q2:ro
+
+      - name: "cluster1_module_3"
+        instrument_type: "QRM_RF"
+        # Valid channel lists
+        # - complex_inputs
+        # - complex_outputs
+        # - digital_outputs
+
+        complex_inputs:
+          # configuration for channels of the type 'complex_input'
+          # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#complex-channel
+          #
+          # name is of format <channel_type>_<n> where n is the number of the channel in this list
+          - name: "complex_input_0"
+            input_gain_I: 2
+            input_gain_Q: 2
+            portclock_configs:
+              - port: q0:res
+                clock: q0:ro
+
+        complex_outputs:
+          # configuration for channels of the type 'complex_output'
+          # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#complex-channel
+          #
+          # name is of format <channel_type>_<n> where n is the number of the channel in this list
+          - name: "complex_output_0"
+            marker_debug_mode_enable: true
+            dc_mixer_offset_I: -0.054
+            dc_mixer_offset_Q: -0.034
+            portclock_configs:
+              # portclock configurations for this channel
+              # See: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#portclock-configuration
+              - port: q0:res
+                clock: q0:ro
+              - port: q1:res
+                clock: q1:ro
+                mixer_amp_ratio: 0.9997
+                mixer_phase_error_deg: -4
+              - port: q2:res
+                clock: q2:ro
+
+          - name: "complex_output_1"
+            portclock_configs:
+              - port: q0:res
+                clock: q0:ro
+              - port: q1:res
+                clock: q1:ro
+              - port: q2:res
+                clock: q2:ro
+
+        digital_outputs:
+          # configuration for channels of the type 'digital_output'
+          # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#digital-channel
+          #
+          # name is of format <channel_type>_<n> where n is the number of the channel in this list
+          - name: "digital_output_0"
+            portclock_configs:
+              - port: q0:res
+                clock: q0:ro
+              - port: q1:res
+                clock: q1:ro
+              - port: q2:res
+                clock: q2:ro
+
+local-oscillators:
+  # configuration for Local oscillators
+
+  # name can be any name you wish
+  - name: "lo1"
+    frequency: 5e9
+    power: 20
+  - name: "lo2"
+    frequency: 6e9
+    power: 25

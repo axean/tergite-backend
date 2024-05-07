@@ -44,3 +44,7 @@ DB_MACHINE_ROOT_URL=mongodb://user:password@host:port
 MSS_APP_TOKEN=
 # Default is true. Setting this to False in production will raise a ValueError at startup.
 IS_AUTH_ENABLED=True
+
+# Quantify
+# The path to the configuration file for quantify. Default is "quantify-config.toml" in project directory
+QUANTIFY_CONFIG_FILE=quantify-config.toml

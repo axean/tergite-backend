@@ -1,0 +1,17 @@
+{
+	"SGS17" : {
+		"instrument_type": "LocalOscillator",
+		"instrument_driver" : "qcodes.instrument_drivers.rohde_schwarz.SGS100A.RohdeSchwarz_SGS100A",
+		"instrument_address" : "TCPIP::192.0.2.20::INSTR",
+		"phase": 0.0,
+		"frequency": 6299170000,
+		"power":16,
+		"IQ_state": "0",
+		"pulsemod_state": "0",
+		"LO_source": "INT",
+		"ref_osc_source": "EXT",
+		"ref_osc_output_freq": "10MHz",
+		"ref_osc_external_freq": "10MHz",
+		"ref_LO_out": "REF"
+	}
+}

@@ -1,0 +1,20 @@
+# This file should be located in the working directory
+# All paths specified should be absolute paths
+# Names are case-sensitive
+
+DATA_DIR=/home/alamina/test_repo/tergite-quantify-connector/tests/pytest-datadir
+#DEVICES=clusterB
+#clusterB_SETTINGS=/home/alamina/test_repo/tergite-quantify-connector/loke_cluster_settings.json 
+#QRM_SETTINGS=/Users/alamina/repos/tergite-quantify-connector/readme/config-files-example/qrm_settings.json
+#QCM_SETTINGS=/Users/alamina/repos/tergite-quantify-connector/readme/config-files-example/qcm_settings.json
+#CLUSTER_SETTINGS=/Users/alamina/repos/tergite-quantify-connector/readme/config-files-example/pingu_cluster_settings.json
+
+#DEVICES=DUMMY_QRM,DUMMY_QCM, DUMMY_SGS13, DUMMY_SGS17
+#DUMMY_QRM_SETTINGS=/home/alamina/test_repo/tergite-quantify-connector/tests/pytest-configs/qrm_settings.json
+#DUMMY_QCM_SETTINGS=/home/alamina/test_repo/tergite-quantify-connector/tests/pytest-configs/qcm_settings.json
+#DUMMY_SGS13_SETTINGS = /home/alamina/test_repo/tergite-quantify-connector/tests/pytest-configs/sgs13_settings.json
+#DUMMY_SGS17_SETTINGS = /home/alamina/test_repo/tergite-quantify-connector/tests/pytest-configs/sgs17_settings.json
+
+DEVICES=DUMMY_CLUSTER
+DUMMY_CLUSTER_SETTINGS=/home/alamina/test_repo/tergite-quantify-connector/loke_cluster_settings.json 
+DUMMY_CFG=CLUSTER_QCM_RF, CLUSTER_QCM_RF, CLUSTER_QRM_RF
