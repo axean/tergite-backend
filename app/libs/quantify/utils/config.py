@@ -317,10 +317,17 @@ class LocalOscillator(QuantifyConfigItem):
         return self.dict(exclude=excluded_fields, exclude_none=exclude_none)
 
 
+class SimulatorType(str, enum.Enum):
+    SCQT = "scqt"
+    CHALEMRS = "chalmers"
+
+
 class GeneralConfig(QuantifyConfigItem):
     """The general config for the hardware"""
 
     data_directory: str = "data"
+    is_simulator: bool = False
+    simulator_type: SimulatorType = SimulatorType.SCQT
 
 
 class QuantifyConfig(QuantifyConfigItem):

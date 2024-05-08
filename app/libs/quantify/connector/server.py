@@ -65,7 +65,7 @@ class QuantifyConnector:
     shared_mem = list()
 
     def __init__(self: "QuantifyConnector", env_file: str = ".env"):
-        settings = ConnectorSettings(env_file=Path(env_file).resolve())
+        settings = ConnectorSettings.from_env(env_file=Path(env_file).resolve())
         self.HARDWARE_CONFIG = settings.HARDWARE_CONFIG
         self.hardware_map = {
             clock: port
@@ -92,6 +92,7 @@ class QuantifyConnector:
                 "instrument_address", None
             )
 
+            # FIXME: Get rid of this
             print(settings.DEVICES[idx])
             # for devices in settings.DEVICES:
             if settings.DEVICES[idx].split("_")[0] != "DUMMY":

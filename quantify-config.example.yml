@@ -9,6 +9,12 @@ general:
   data_directory: data
   # the directory where to put generated data; default is data on root folder
 
+  is_simulator: true
+  # whether we are using a simulator or not; Default is None
+
+  simulator_type: scqt
+  # type of simulator being used if any; Default is scqt
+
 # See https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#sec-qblox-cluster
 # Only two instrument types can be configured:
 # - "Cluster",
@@ -375,8 +381,13 @@ local_oscillators:
     frequency: 6e9
     power: 25
 
-# You can add other arbitrary kye-values that can be passed to quantify
+# You can add other arbitrary key-values that can be passed to quantify
+# like: Generic QCoDeS instruments, such as local oscillators
+# should be a flat JSON blob where every key is a QCoDeS command for the device and the value corresponds to the set value.
+# QCoDeS drivers can be found at https://microsoft.github.io/Qcodes/
+#
 # e.g.
 # latency_corrections:
 #    q4:mw-q4.01: 8e-9
 #    q5:mw-q5.01: 4e-9
+#
