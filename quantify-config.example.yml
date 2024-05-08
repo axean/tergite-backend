@@ -72,7 +72,8 @@ clusters:
       # - digital_output
       #
       #
-      # Take note that the name is of format "<cluster_name>_module<n>", where <n> is the module number in the cluster
+      # Take note that the name is of format "<cluster_name>_module<n>", where <n> is the module number in the cluster.
+      # 'n' seems to start at 1
       # See: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#module-configuration
       - name: "cluster1_module_0"
         instrument_type: "QCM"
@@ -348,7 +349,7 @@ clusters:
               - port: q2:res
                 clock: q2:ro
 
-local-oscillators:
+local_oscillators:
   # configuration for Local oscillators
 
   # name can be any name you wish
@@ -358,3 +359,9 @@ local-oscillators:
   - name: "lo2"
     frequency: 6e9
     power: 25
+
+# You can add other arbitrary kye-values that can be passed to quantify
+# e.g.
+# latency_corrections:
+#    q4:mw-q4.01: 8e-9
+#    q5:mw-q5.01: 4e-9

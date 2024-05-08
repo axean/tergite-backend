@@ -128,6 +128,13 @@ cd tergite-bcc
 cp dot-env-template.txt .env
 ```
 
+- Copy the hardware example config file `quantify-config.example.yml` into the `quantify-config.yml` file and update the variables there in. Contact your teammates for
+ the variables you are not sure of.
+
+```shell
+cp quantify-config.example.yml quantify-config.yml
+```
+
 - Copy `bcc.service` to the systemd services folder
 
 ```shell

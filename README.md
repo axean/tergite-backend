@@ -44,6 +44,13 @@ pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/
 cp dot-env-template.txt .env
 ```
 
+- Copy the hardware example config file `quantify-config.example.yml` into the `quantify-config.yml` file and update the variables there in. Contact your teammates for
+ the variables you are not sure of.
+
+```shell
+cp quantify-config.example.yml quantify-config.yml
+```
+
 - Run start script
 
 ```shell

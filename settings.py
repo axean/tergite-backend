@@ -95,3 +95,6 @@ CLIENT_IP_WHITELIST = {
 # allow test client to access api when BLACKLISTED is not set
 if APP_SETTINGS == "test" and not os.environ["BLACKLISTED"]:
     CLIENT_IP_WHITELIST["testclient"] = True
+
+# Hardware configurations
+QUANTIFY_HARDWARE_CONFIG_FILE = config("QUANTIFY_HARDWARE_CONFIG_FILE", default="quantify-config.yml")

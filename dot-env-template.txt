@@ -46,5 +46,5 @@ MSS_APP_TOKEN=
 IS_AUTH_ENABLED=True
 
 # Quantify
-# The path to the configuration file for quantify. Default is "quantify-config.toml" in project directory
-QUANTIFY_CONFIG_FILE=quantify-config.toml
+# The path to the configuration file for quantify. Default is "quantify-config.yml" in project directory
+QUANTIFY_HARDWARE_CONFIG_FILE=quantify-config.yml
