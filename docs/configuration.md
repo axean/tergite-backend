@@ -17,7 +17,7 @@ See .json files for example.
 ## TODO
 
 - [x] Choose between yaml, simplified JSON and toml for configuration: Maintain the same JSON config; but change the env file to use a simpler check for dummy cluster
-- [ ] Simplify hardware configuration using TOML. See [quantify docs](https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/How%20to%20use.html#sec-qblox-how-to-configure).
+- [x] Simplify hardware configuration using YAML. See [quantify docs](https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/How%20to%20use.html#sec-qblox-how-to-configure).
 - [ ] Rename some of the configurations to lower case values in quantify settings
 - [ ] Simplify some functions e.g. configuration loading
 - [ ] Write some tests for quantify

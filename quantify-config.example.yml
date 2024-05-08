@@ -21,8 +21,10 @@ clusters:
 
   # name of the cluster. This can be anything you wish.
   - name: "cluster0"
+
     is_dummy: true
     # whether this cluster is of dummy type or not. Defaults to false.
+
     ref: "internal"
     # the ref sets the reference source, which is a 10 MHz clock source.
     # It can be one of two values:
@@ -30,8 +32,21 @@ clusters:
     # - "external"
     # Default is "external"
 
+    instrument_address: "192.0.2.74"
+    # the IP address of the cluster, useful when doing instrument orchestration
+
+    instrument_driver: "qblox_instruments.Cluster"
+    # the driver of the cluster, useful when doing instrument orchestration
+
+    instrument_component: "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent"
+    # QBLOX devices additionally need a key called "instrument_component" pointing to the IC component of the device
+    # Every config file should additionally have keys "instrument_type" "instrument_address" and "instrument_driver". These are not QCoDeS commands, they are used by tqc to configure the instrument orchestration.
+
   - name: "cluster1"
     ref: "internal"
+    instrument_address: "192.0.1.74"
+    instrument_driver: "qblox_instruments.Cluster"
+    instrument_component: "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent"
 
     modules:
       # You can add multiple modules of up to four instrument types:

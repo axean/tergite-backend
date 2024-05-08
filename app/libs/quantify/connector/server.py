@@ -40,7 +40,7 @@ from app.libs.quantify.scheduler.experiment import Experiment
 from app.libs.quantify.scheduler.instruction import Instruction, meas_settings
 from app.libs.quantify.simulator import scqt
 from app.libs.quantify.simulator.base import BaseSimulator
-from app.libs.quantify.utils import general
+from app.libs.quantify.utils import general as general_utils
 from app.libs.quantify.utils.logger import ExperimentLogger
 from app.libs.storage_file import StorageFile
 
@@ -82,7 +82,7 @@ class QuantifyConnector:
         )
 
         for idx, items in enumerate(
-            general.find(self.HARDWARE_CONFIG, "instrument_driver")
+            general_utils.find(self.HARDWARE_CONFIG, "instrument_driver")
         ):
             device_name = items[0]
             # instantiate drivers

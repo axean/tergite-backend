@@ -244,6 +244,9 @@ class Cluster(QuantifyConfigItem):
     ref: _ClusterRef = _ClusterRef.EXTERNAL
     is_dummy: bool = False
 
+    instrument_address: str
+    instrument_driver: str
+    instrument_component: str
     instrument_type: str = "Cluster"
     sequence_to_file: Optional[bool] = None
     modules: List[ClusterModule] = []

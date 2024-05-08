@@ -3,6 +3,9 @@
   "cluster0": {
     "instrument_type": "Cluster",
     "ref": "internal",
+    "instrument_address": "192.0.2.74",
+    "instrument_driver": "qblox_instruments.Cluster",
+    "instrument_component": "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent",
     "cluster0_module0": {
       "instrument_type": "QCM",
       "complex_output_0": {
@@ -57,6 +60,9 @@
   "cluster1": {
     "instrument_type": "Cluster",
     "ref": "internal",
+    "instrument_address": "192.0.1.74",
+    "instrument_driver": "qblox_instruments.Cluster2",
+    "instrument_component": "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent2",
     "cluster1_module0": {
       "instrument_type": "QRM",
       "real_output_0": {

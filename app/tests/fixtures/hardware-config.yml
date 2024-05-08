@@ -5,6 +5,9 @@ clusters:
   - name: cluster0
     instrument_type: Cluster
     ref: internal
+    instrument_address: "192.0.2.74"
+    instrument_driver: "qblox_instruments.Cluster"
+    instrument_component: "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent"
 
     modules:
       - name: cluster0_module0
@@ -39,6 +42,9 @@ clusters:
   - name: cluster1
     instrument_type: Cluster
     ref: internal
+    instrument_address: "192.0.1.74"
+    instrument_driver: "qblox_instruments.Cluster2"
+    instrument_component: "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent2"
 
     modules:
       - name: cluster0_module0
