@@ -51,14 +51,6 @@ from app.libs.storage_file import StorageFile
 # in the SIMULATOR_TYPE variable
 _SIMULATOR_MAP: Dict[str, BaseSimulator] = {"scqt": scqt.Simulator()}
 
-
-def get_enum_type(type_str: str):
-    dummy_enum = ".".join(type_str.split(".")[:-1])
-    dummy_enum = import_python_object_from_string(dummy_enum)
-    dummy_type = type_str.split(".")[-1]
-    return getattr(dummy_enum, dummy_type)
-
-
 _QBLOX_CLUSTER_TYPE_MAP: Dict[ClusterModuleType, qblox_instruments.ClusterType] = {
     ClusterModuleType.QCM: qblox_instruments.ClusterType.CLUSTER_QCM,
     ClusterModuleType.QRM: qblox_instruments.ClusterType.CLUSTER_QRM,
@@ -86,18 +78,18 @@ class QuantifyConnector:
         # Tell Quantify where to store data
         dh.set_datadir(conf.general.data_directory)
 
-        self.HARDWARE_CONFIG = conf.to_quantify()
+        self.quantify_config = conf.to_quantify()
         self.hardware_map = {
             clock: port
             for (port, clock), instrument in generate_port_clock_to_device_map(
-                self.HARDWARE_CONFIG
+                self.quantify_config
             ).items()
         }
 
-        self.SIMULATE = conf.general.is_simulator
-        self.sim = (
+        self.is_simulator = conf.general.is_simulator
+        self.simulator = (
             None
-            if not self.SIMULATE
+            if not self.is_simulator
             else _SIMULATOR_MAP.get(conf.general.simulator_type, None)
         )
 
@@ -152,14 +144,14 @@ class QuantifyConnector:
             )
 
     def register_job(self, tag: str = ""):
-        # TODO: The fields TUID, FOLDER, and logger could be class properties
-        self.TUID = gen_tuid()
-        self.FOLDER = Path(create_exp_folder(tuid=self.TUID, name=tag))
-        self.logger = ExperimentLogger(self.TUID)
+        # TODO: The fields tuid, experiment_folder, and logger could be class properties
+        self.tuid = gen_tuid()
+        self.experiment_folder = Path(create_exp_folder(tuid=self.tuid, name=tag))
+        self.logger = ExperimentLogger(self.tuid)
 
-        self.logger.info(f"Registered job: {self.TUID}")
+        self.logger.info(f"Registered job: {self.tuid}")
         self.logger.info(
-            f"Loaded hardware configuration: {json.dumps(self.HARDWARE_CONFIG, indent=4)}"
+            f"Loaded hardware configuration: {json.dumps(self.quantify_config, indent=4)}"
         )
         self.logger.info(
             f"Generated hardware map: {json.dumps(self.hardware_map, indent=4)}"
@@ -171,16 +163,16 @@ class QuantifyConnector:
         # compile to hardware
         # TODO: Here, we can use the new @timer decorator in the benchmarking package
         t1 = datetime.now()
-        if self.SIMULATE:
+        if self.is_simulator:
             compiled_schedule = hardware_compile(
-                schedule=experiment.schedule, hardware_cfg=self.HARDWARE_CONFIG
+                schedule=experiment.schedule, hardware_cfg=self.quantify_config
             )
         else:
             absolute_timed_schedule = determine_absolute_timing(
                 copy.deepcopy(experiment.schedule)
             )
             compiled_schedule = hardware_compile(
-                schedule=absolute_timed_schedule, hardware_cfg=self.HARDWARE_CONFIG
+                schedule=absolute_timed_schedule, hardware_cfg=self.quantify_config
             )
 
         t2 = datetime.now()
@@ -208,11 +200,11 @@ class QuantifyConnector:
 
     def simulate(self, experiment: Experiment, /):
         schedule = experiment.schedule
-        compiled_sched = self.sim.compile(schedule)
+        compiled_sched = self.simulator.compile(schedule)
 
         self.logger.log_schedule(compiled_sched)
 
-        return self.sim.run(compiled_sched, output="voltage_single_shot")
+        return self.simulator.run(compiled_sched, output="voltage_single_shot")
 
     def construct_experiments(self, qobj: PulseQobj, /) -> list:
         # storage array
@@ -259,11 +251,11 @@ class QuantifyConnector:
         This is a re-encoding when using the rest_api, but it is needed for local debugging.
         TODO: Avoid re-encoding for external jobs.
         """
-        f = self.FOLDER / "qobj.json"
-        with open(f, mode="w") as qj:
+        file = self.experiment_folder / "qobj.json"
+        with open(file, mode="w") as qj:
             json.dump(qobj.to_dict(), qj, cls=PulseQobj_encoder, indent="\t")
-        rich.print(f"Saved PulseQobj at {f}")
-        self.logger.info(f"Saved PulseQobj at {f}")
+        rich.print(f"Saved PulseQobj at {file}")
+        self.logger.info(f"Saved PulseQobj at {file}")
 
     def run_experiments(
         self,
@@ -302,12 +294,12 @@ class QuantifyConnector:
 
             # create a storage hdf file
             filename = "measurement.hdf5" if job_id is None else f"{job_id}.hdf5"
-            results_file_path = self.FOLDER / filename
+            results_file_path = self.experiment_folder / filename
             storage = StorageFile(
                 results_file_path,
                 mode="w",
                 job_id=job_id,
-                tuid=self.TUID,
+                tuid=self.tuid,
                 meas_return=program_settings["meas_return"],
                 meas_return_cols=program_settings["meas_return_cols"],
                 meas_level=program_settings["meas_level"],
@@ -322,12 +314,12 @@ class QuantifyConnector:
                 tqdm(
                     tx,
                     ascii=" #",
-                    desc=self.TUID,
+                    desc=self.tuid,
                 )
             ):
                 print(datetime.now(), "IN RUN_EXPERIMENTS, START RUN")
 
-                if self.SIMULATE:
+                if self.is_simulator:
                     experiment_data = self.simulate(experiment)
                 else:
                     experiment_data = self.run(experiment)
@@ -343,7 +335,7 @@ class QuantifyConnector:
             self.logger.info(f"Stored measurement data at {storage.file.filename}")
 
             rich.print(
-                ok_str := f"Completed {job_id if job_id else 'local job'} with tuid {self.TUID}."
+                ok_str := f"Completed {job_id if job_id else 'local job'} with tuid {self.tuid}."
             )
             self.logger.info(ok_str)
 
@@ -355,7 +347,7 @@ class QuantifyConnector:
             self.logger.error(exc_str)
 
             rich.print(
-                fail_str := f"Failed {job_id if job_id else 'local job'} with tuid {self.TUID}. Error: {repr(e)}"
+                fail_str := f"Failed {job_id if job_id else 'local job'} with tuid {self.tuid}. Error: {repr(e)}"
             )
             self.logger.info(fail_str)
             raise e
