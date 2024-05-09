@@ -13,15 +13,13 @@ TEST_JOB_PRE_PROC_POOL_DIRNAME = "job_pre_proc_pool"
 TEST_STORAGE_PREFIX_DIRNAME = TEST_DEFAULT_PREFIX
 TEST_JOB_SUPERVISOR_LOG = "job_supervisor.log"
 
-TEST_QUANTIFY_MACHINE_ROOT_URL = "http://localhost:8004"
 TEST_MSS_MACHINE_ROOT_URL = "http://localhost:8002"
 TEST_BCC_MACHINE_ROOT_URL = "http://localhost:8000"
 TEST_BCC_PORT = 8000
-TEST_DB_MACHINE_ROOT_URL = "mongodb://localhost:27017"
 
 TEST_MSS_APP_TOKEN = "some-mss-app-token-for-testing"
 
-TEST_QUANTIFY_HARDWARE_CONFIG_FILE = get_fixture_path("quantify-config.yml")
+TEST_KERNEL_CONFIG_FILE = get_fixture_path("kernel-config.yml")
 
 
 def setup_test_env():
@@ -41,11 +39,9 @@ def setup_test_env():
     environ["STORAGE_PREFIX_DIRNAME"] = TEST_STORAGE_PREFIX_DIRNAME
     environ["JOB_SUPERVISOR_LOG"] = TEST_JOB_SUPERVISOR_LOG
 
-    environ["QUANTIFY_MACHINE_ROOT_URL"] = TEST_QUANTIFY_MACHINE_ROOT_URL
     environ["MSS_MACHINE_ROOT_URL"] = TEST_MSS_MACHINE_ROOT_URL
     environ["BCC_MACHINE_ROOT_URL"] = TEST_BCC_MACHINE_ROOT_URL
     environ["BCC_PORT"] = f"{TEST_BCC_PORT}"
-    environ["DB_MACHINE_ROOT_URL"] = TEST_DB_MACHINE_ROOT_URL
 
     environ["MSS_APP_TOKEN"] = TEST_MSS_APP_TOKEN
-    environ["QUANTIFY_HARDWARE_CONFIG_FILE"] = TEST_QUANTIFY_HARDWARE_CONFIG_FILE
+    environ["KERNEL_CONFIG_FILE"] = TEST_KERNEL_CONFIG_FILE

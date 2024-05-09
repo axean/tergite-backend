@@ -1,7 +1,7 @@
-# See https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#sec-qblox-cluster
-# Only two instrument types can be configured:
-# - "Cluster",
-# - "LocalOscillator"
+# This is an example configuration file for the kernel service that controls the hardware
+#
+# It is loosely based on the hardware configuration file for quantify-scheduler
+#
 
 general:
   # General configuration

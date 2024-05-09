@@ -32,7 +32,7 @@ redis_connection = Redis()
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 
 
-def job_preprocess(job_file: Path, quantify_conn: Connection):
+def job_preprocess(job_file: Path, kernel_conn: Connection):
     job_id = job_file.stem
 
     # Inform supervisor about job being in pre-processing worker
@@ -51,7 +51,7 @@ def job_preprocess(job_file: Path, quantify_conn: Connection):
         job_execute,
         new_file,
         job_id=job_id + f"_{Location.EXEC_Q.name}",
-        quantify_conn=quantify_conn,
+        kernel_conn=kernel_conn,
     )
 
     # Inform supervisor about job moved to execution queue

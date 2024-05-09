@@ -12,6 +12,5 @@
 ## Martin Ahindura
 
 - Authenticated and authorized requests to/from clients including 
-  [MSS](https://github.com/tergite/tergite-mss),
-  [Quantify Connector](https://github.com/tergite/tergite-quantify-connector) and the general internet.
+  [MSS](https://github.com/tergite/tergite-mss) and the general internet.
 - Tracking of execution time of jobs

@@ -34,7 +34,7 @@ redis_connection = Redis()
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 
 
-def job_register(job_file: Path, quantify_conn: Connection = None) -> None:
+def job_register(job_file: Path, kernel_conn: Connection = None) -> None:
     """Registers job in job supervisor"""
     job_id = job_file.stem
     # inform job supervisor about job registration
@@ -53,7 +53,7 @@ def job_register(job_file: Path, quantify_conn: Connection = None) -> None:
         job_preprocess,
         new_file,
         job_id=job_id + f"_{Location.PRE_PROC_Q.name}",
-        quantify_conn=quantify_conn,
+        kernel_conn=kernel_conn,
     )
     inform_location(job_id, Location.PRE_PROC_Q)
 

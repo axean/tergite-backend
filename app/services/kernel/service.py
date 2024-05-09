@@ -41,14 +41,16 @@ from quantify_scheduler.instrument_coordinator.components.qblox import ClusterCo
 from tqdm import tqdm
 from tqdm.auto import tqdm
 
-from app.libs.quantify.scheduler.channel import Channel
-from app.libs.quantify.scheduler.experiment import Experiment
-from app.libs.quantify.scheduler.instruction import Instruction, meas_settings
-from app.libs.quantify.simulator import scqt
-from app.libs.quantify.simulator.base import BaseSimulator
-from app.libs.quantify.utils.config import ClusterModuleType, QuantifyConfig
-from app.libs.quantify.utils.logger import ExperimentLogger
+import settings
 from app.libs.storage_file import StorageFile
+
+from .scheduler.channel import Channel
+from .scheduler.experiment import Experiment
+from .scheduler.instruction import Instruction, meas_settings
+from .simulator import scqt
+from .simulator.base import BaseSimulator
+from .utils.config import ClusterModuleType, KernelConfig
+from .utils.logger import ExperimentLogger
 
 # A map of simulators and their case-insensitive names as referred to in env file
 # in the SIMULATOR_TYPE variable
@@ -62,53 +64,53 @@ _QBLOX_CLUSTER_TYPE_MAP: Dict[ClusterModuleType, qblox_instruments.ClusterType] 
 }
 
 
-def open_connector(
-    config_file: Union[str, bytes, os.PathLike]
-) -> Tuple[mp.Process, Connection]:
-    """Opens the connector and returns a Connection to interface with it with pickleble data
+def serve(
+    channel: Connection,
+    config_file: Union[str, bytes, os.PathLike] = settings.KERNEL_CONFIG_FILE,
+):
+    """Serves the quantify
 
     Args:
+        channel: The channel on which to communicate with the external world
         config_file: the path to the quantify hardware configuration file
+    """
+    connector = Kernel(config_file=config_file)
+
+    while True:
+        message = channel.recv()
+
+        if isinstance(message, KernelMessage):
+            if message.type == KernelMessageType.CLOSE:
+                # connector.close()
+                break
+
+            if message.type == KernelMessageType.RUN:
+                qobj = message.payload.pop("qobj")
+                results_file = connector.run_experiments(qobj, **message.payload)
+                channel.send(results_file)
+
+            if message.type == KernelMessageType.REGISTER:
+                connector.register_job(message.payload)
+
+
+def connect() -> Tuple[mp.Process, Connection]:
+    """Opens the connector and returns a Connection to interface with it with pickleble data
 
     Returns:
-        the process-safe Connection to be used to communicate with the Connector
+        the process and Connection to be used to communicate with the Connector
     """
     outer_end, inner_end = mp.Pipe()
 
-    def runner(pipe: Connection):
-        connector = QuantifyConnector(config_file=config_file)
-
-        while True:
-            message = pipe.recv()
-
-            if isinstance(message, QuantifyMessage):
-                if message.type == QuantifyMessageType.CLOSE:
-                    # connector.close()
-                    break
-
-                if message.type == QuantifyMessageType.RUN:
-                    qobj = message.payload.pop("qobj")
-                    results_file = connector.run_experiments(qobj, **message.payload)
-                    pipe.send(results_file)
-
-                if message.type == QuantifyMessageType.REGISTER:
-                    connector.register_job(message.payload)
-
-    process = mp.Process(target=runner, args=(inner_end,))
+    process = mp.Process(target=serve, args=(inner_end,))
     process.start()
 
     return process, outer_end
 
 
-class QuantifyConnector:
-    """The connector to the backend using the quantify core library"""
+class Kernel:
+    """The controller of the hardware"""
 
-    # FIXME: We need to create only one instance of Quantify Connector to fix error
-    #   KeyError: 'Another instrument has the name: quantify_connector' as well as
-    #   realistically in practice, we need only one connector to the instruments.
-    #   Consider the meaning of this global dh.set_datadir call
-
-    setup = InstrumentCoordinator("quantify-connector", add_default_generic_icc=False)
+    setup = InstrumentCoordinator("tergite_kernel", add_default_generic_icc=False)
 
     # heap memory, so that instrument drivers do not get garbage collected
     shared_mem = list()
@@ -117,7 +119,7 @@ class QuantifyConnector:
         self,
         config_file: Union[str, bytes, os.PathLike],
     ):
-        conf = QuantifyConfig.from_yaml(config_file)
+        conf = KernelConfig.from_yaml(config_file)
 
         # Tell Quantify where to store data
         dh.set_datadir(conf.general.data_directory)
@@ -138,12 +140,12 @@ class QuantifyConnector:
         )
 
         # load clusters
-        for idx, cluster in conf.clusters:
+        for cluster in conf.clusters:
             dummy_cfg: Optional[Dict[int, qblox_instruments.ClusterType]] = None
             if cluster.is_dummy:
                 dummy_cfg = {
-                    slot + 1: _QBLOX_CLUSTER_TYPE_MAP[_type]
-                    for slot, _type in enumerate(cluster.modules)
+                    slot + 1: _QBLOX_CLUSTER_TYPE_MAP[module.instrument_type]
+                    for slot, module in enumerate(cluster.modules)
                 }
             # We only support qblox_instruments.Cluster for now. Pulsar and any other native interfaces were dropped
             # because they cause a chaotic configuration.
@@ -156,11 +158,11 @@ class QuantifyConnector:
             )
             component = ClusterComponent(device)
 
-            QuantifyConnector.shared_mem.append(device)
+            Kernel.shared_mem.append(device)
             rich.print(f"Instantiated Cluster driver for '{cluster.name}'")
-            QuantifyConnector.setup.add_component(component)
+            Kernel.setup.add_component(component)
             rich.print(
-                f"Added '{component.name}' to instrument coordinator '{QuantifyConnector.setup.name}'"
+                f"Added '{component.name}' to instrument coordinator '{Kernel.setup.name}'"
             )
 
         # load generic QCoDes instruments
@@ -182,7 +184,7 @@ class QuantifyConnector:
                     # ignore invalid parameters
                     pass
 
-            QuantifyConnector.shared_mem.append(device)
+            Kernel.shared_mem.append(device)
             rich.print(
                 f"Instantiated {instrument.instrument_driver.import_path.split('.')[-1]} driver for '{instrument.name}'"
             )
@@ -202,7 +204,7 @@ class QuantifyConnector:
         )
 
     def run(self, experiment: Experiment, /):
-        QuantifyConnector.setup.stop()
+        Kernel.setup.stop()
 
         # compile to hardware
         # TODO: Here, we can use the new @timer decorator in the benchmarking package
@@ -227,16 +229,16 @@ class QuantifyConnector:
         self.logger.log_schedule(compiled_schedule)
 
         # upload schedule to instruments & arm sequencers
-        QuantifyConnector.setup.prepare(compiled_schedule)
+        Kernel.setup.prepare(compiled_schedule)
 
         # start experiment
         # TODO: Here, we can use the new @timer decorator from the benchmarking package
         t3 = datetime.now()
-        QuantifyConnector.setup.start()
+        Kernel.setup.start()
 
         # wait for program to finish and return acquisition
         # TODO: What is the return type of retrieve_acquisition()?
-        results = QuantifyConnector.setup.retrieve_acquisition()
+        results = Kernel.setup.retrieve_acquisition()
         print(f"{results=}")
         t4 = datetime.now()
         print(t4 - t3, "DURATION OF MEASURING")
@@ -406,13 +408,17 @@ class QuantifyConnector:
         return results_file_path
 
 
-class QuantifyMessageType(int, enum.Enum):
+class KernelMessageType(int, enum.Enum):
+    """The message types sent to this quantum kernel service"""
+
     CLOSE = 1
     RUN = 2
     REGISTER = 3
 
 
 @dataclasses.dataclass
-class QuantifyMessage:
-    type: QuantifyMessageType
+class KernelMessage:
+    """Record schema of the messages sent to this quantum kernel service"""
+
+    type: KernelMessageType
     payload: Any

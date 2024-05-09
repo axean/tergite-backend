@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 #
 
-"""Utilities concerned with the configuration of the quantify hardware/software"""
+"""Utilities concerned with the configuration of the Quantum hardware/software"""
 import enum
 import os
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
@@ -23,13 +23,15 @@ from ruamel.yaml import YAML
 yaml = YAML(typ="safe")
 
 
-class QuantifyConfigItem(BaseModel, extra=Extra.allow):
-    """configuration item in quantify config"""
+class KernelConfigItem(BaseModel, extra=Extra.allow):
+    """configuration item in kernel config"""
 
     def to_quantify(
         self, exclude_none: bool = True, exclude: Optional[Set] = None
     ) -> Dict[str, Any]:
-        """Converts to quantify configuration dict
+        """Converts to quantify-scheduler-compatible configuration dict
+
+        https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html
 
         Args:
             whether None should be excluded from the configuration
@@ -39,12 +41,12 @@ class QuantifyConfigItem(BaseModel, extra=Extra.allow):
         """
         raw_dict = self.dict(exclude_none=exclude_none, exclude=exclude)
         return {
-            k: v.to_quantify() if isinstance(v, QuantifyConfigItem) else v
+            k: v.to_quantify() if isinstance(v, KernelConfigItem) else v
             for k, v in raw_dict.items()
         }
 
 
-class PortClockConfig(QuantifyConfigItem):
+class PortClockConfig(KernelConfigItem):
     """configurations for the port and clock for an input/output"""
 
     port: Optional[str] = None
@@ -60,7 +62,7 @@ class PortClockConfig(QuantifyConfigItem):
     qasm_hook_func: Optional[float] = None
 
 
-class Channel(QuantifyConfigItem):
+class Channel(KernelConfigItem):
     """Input/output channels for cluster modules"""
 
     name: str
@@ -82,7 +84,7 @@ class Channel(QuantifyConfigItem):
     def to_quantify(
         self, exclude_none: bool = True, exclude: Optional[Set] = None
     ) -> Dict[str, Any]:
-        """Converts to quantify configuration dict
+        """Converts to quantify-scheduler-compatible configuration dict
 
         Args:
             whether None should be excluded from the configuration
@@ -139,7 +141,7 @@ _MODULE_TYPE_VALID_CHANNELS_MAP: Dict[ClusterModuleType, Dict[str, bool]] = {
 }
 
 
-class ClusterModule(QuantifyConfigItem):
+class ClusterModule(KernelConfigItem):
     """General configration for a cluster module"""
 
     name: str
@@ -186,7 +188,7 @@ class ClusterModule(QuantifyConfigItem):
     def to_quantify(
         self, exclude_none: bool = True, exclude: Optional[Set] = None
     ) -> Dict[str, Any]:
-        """Converts this cluster module into a quantify config
+        """Converts this cluster module into a quantify-scheduler-compatible config
 
         It returns something like, where n is zero-based index i.e. starting from 0:
             {
@@ -236,7 +238,7 @@ class ClusterModule(QuantifyConfigItem):
         return raw_dict
 
 
-class Cluster(QuantifyConfigItem):
+class Cluster(KernelConfigItem):
     """Configuration for the cluster"""
 
     name: str
@@ -251,7 +253,7 @@ class Cluster(QuantifyConfigItem):
     def to_quantify(
         self, exclude_none: bool = True, exclude: Optional[Set] = None
     ) -> Dict[str, Any]:
-        """Converts this cluster into a quantify config
+        """Converts this cluster into a quantify-scheduler-compatible config
 
         It returns something like, where n is module number:
         {
@@ -287,7 +289,7 @@ class Cluster(QuantifyConfigItem):
         return raw_dict
 
 
-class LocalOscillator(QuantifyConfigItem):
+class LocalOscillator(KernelConfigItem):
     """Configuration for the local oscillator"""
 
     name: str
@@ -298,7 +300,7 @@ class LocalOscillator(QuantifyConfigItem):
     def to_quantify(
         self, exclude_none: bool = False, exclude: Optional[Set] = None
     ) -> Dict[str, Any]:
-        """Converts this cluster into a quantify config
+        """Converts this cluster into a quantify-scheduler-compatible config
 
         It returns something like:
         {
@@ -314,7 +316,7 @@ class LocalOscillator(QuantifyConfigItem):
         return self.dict(exclude=excluded_fields, exclude_none=exclude_none)
 
 
-class _QcodesInstrumentDriver(QuantifyConfigItem):
+class _QcodesInstrumentDriver(KernelConfigItem):
     """Metadata about the driver of the Qcodes instrument to aid in initializing it"""
 
     # the import path to the driver
@@ -323,7 +325,7 @@ class _QcodesInstrumentDriver(QuantifyConfigItem):
     kwargs: Dict[str, Any]
 
 
-class GenericQcodesInstrument(QuantifyConfigItem):
+class GenericQcodesInstrument(KernelConfigItem):
     """Configuration for a generic QCoDeS instrument
 
     Every property name is a QCoDeS command for the instrument and the
@@ -342,7 +344,9 @@ class GenericQcodesInstrument(QuantifyConfigItem):
     def to_quantify(
         self, exclude_none: bool = True, exclude: Optional[Set] = None
     ) -> Dict[str, Any]:
-        """Converts this into a quantify config, spreading the parameters into a flat object
+        """Converts this into a quantify-scheduler-compatible config
+
+        It spreads the parameters into a flat object
 
         It returns something like:
         {
@@ -373,7 +377,7 @@ class SimulatorType(str, enum.Enum):
     CHALMERS = "chalmers"
 
 
-class GeneralConfig(QuantifyConfigItem):
+class GeneralConfig(KernelConfigItem):
     """The general config for the hardware"""
 
     data_directory: str = "data"
@@ -381,7 +385,7 @@ class GeneralConfig(QuantifyConfigItem):
     simulator_type: SimulatorType = SimulatorType.SCQT
 
 
-class QuantifyConfig(QuantifyConfigItem):
+class KernelConfig(KernelConfigItem):
     """The configuration constructed from the quantify hardware config JSON file"""
 
     backend: str = "quantify_scheduler.backends.qblox_backend.hardware_compile"
@@ -391,7 +395,7 @@ class QuantifyConfig(QuantifyConfigItem):
     generic_qcodes_instruments: List[GenericQcodesInstrument] = []
 
     @classmethod
-    def from_yaml(cls, file_path: Union[str, bytes, os.PathLike]) -> "QuantifyConfig":
+    def from_yaml(cls, file_path: Union[str, bytes, os.PathLike]) -> "KernelConfig":
         """Creates a configuration from a YAML file
 
         Args:
@@ -411,7 +415,7 @@ class QuantifyConfig(QuantifyConfigItem):
     def to_quantify(
         self, exclude_none: bool = True, exclude: Optional[Set] = None
     ) -> Dict[str, Any]:
-        """Converts this cluster into a quantify config
+        """Converts this cluster into a quantify-scheduler-compatible config
 
         It returns something like:
         {

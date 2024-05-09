@@ -20,9 +20,8 @@ from pandas import DataFrame
 from qiskit.qobj import PulseQobjConfig, QobjExperimentHeader
 from quantify_scheduler import Schedule
 
-from app.libs.quantify.utils.logger import ExperimentLogger
-
 from ..utils.general import rot_left
+from ..utils.logger import ExperimentLogger
 from .channel import Channel
 from .instruction import Instruction, initial_object
 from .program import Program

@@ -8,15 +8,12 @@ The Backend Control Computer software that makes QAL 9000 - like quantum compute
 
 - [Python 3.8](https://www.python.org/)
 - [Redis](https://redis.io/)
-- [Tergite Quantify Connector](https://github.com/tergite/tergite-quantify-connector)
-- [Tergite Labber Connector](https://github.com/tergite/tergite-labber-connector)
 
 ## Quick Start
 
 - Ensure you have [conda](https://docs.anaconda.com/free/miniconda/index.html) installed. 
  (_You could simply have python +3.8 installed instead._)
 - Ensure you have the [Redis](https://redis.io/) server running
-- Ensure you have [tergite Quantify Connector](https://github.com/tergite/tergite-quantify-connector) running.
 - Clone the repo
 
 ```shell
@@ -44,11 +41,11 @@ pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/
 cp dot-env-template.txt .env
 ```
 
-- Copy the hardware example config file `quantify-config.example.yml` into the `quantify-config.yml` file and update the variables there in. Contact your teammates for
+- Copy the hardware example config file `kernel-config.example.yml` into the `kernel-config.yml` file and update the variables there in. Contact your teammates for
  the variables you are not sure of.
 
 ```shell
-cp quantify-config.example.yml quantify-config.yml
+cp kernel-config.example.yml kernel-config.yml
 ```
 
 - Run start script

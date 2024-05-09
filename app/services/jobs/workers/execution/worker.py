@@ -26,12 +26,8 @@ from qiskit_ibm_provider.utils import json_decoder
 from redis import Redis
 
 import settings
-from app.libs.quantify.connector.server import (
-    QuantifyConnector,
-    QuantifyMessage,
-    QuantifyMessageType,
-)
-from app.libs.quantify.utils.serialization import iqx_rld
+from app.services.kernel.service import KernelMessage, KernelMessageType
+from app.services.kernel.utils.serialization import iqx_rld
 from app.utils.queues import QueuePool
 
 from ...service import Location, fetch_job, inform_failure, inform_location
@@ -44,10 +40,7 @@ from ..postprocessing import (
 # Settings
 STORAGE_ROOT = settings.STORAGE_ROOT
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
-QUANTIFY_MACHINE_ROOT_URL = settings.QUANTIFY_MACHINE_ROOT_URL
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX
-
-REST_API_MAP = {"scenarios": "/scenarios", "qobj": "/qobj"}
 
 # redis connection
 redis_connection = Redis()
@@ -55,7 +48,7 @@ redis_connection = Redis()
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 
 
-def job_execute(job_file: Path, quantify_conn: Connection):
+def job_execute(job_file: Path, kernel_conn: Connection):
     print(f"Executing file {str(job_file)}")
 
     with job_file.open() as f:
@@ -67,12 +60,12 @@ def job_execute(job_file: Path, quantify_conn: Connection):
     inform_location(job_id, Location.EXEC_W)
 
     # Just a locking mechanism to ensure jobs don't interfere with each other
-    with FileLock(".quantify-connector.lock"):
+    with FileLock(".tergite-kernel.lock"):
         job_id = job_dict["job_id"]
         qobj = job_dict["params"]["qobj"]
-        quantify_conn.send(
-            QuantifyMessage(
-                type=QuantifyMessageType.REGISTER,
+        kernel_conn.send(
+            KernelMessage(
+                type=KernelMessageType.REGISTER,
                 payload=qobj["header"].get("tag", ""),
             )
         )
@@ -89,9 +82,9 @@ def job_execute(job_file: Path, quantify_conn: Connection):
         print(datetime.now(), "IN REST API CALLING RUN_EXPERIMENTS")
 
         try:
-            quantify_conn.send(
-                QuantifyMessage(
-                    type=QuantifyMessageType.RUN,
+            kernel_conn.send(
+                KernelMessage(
+                    type=KernelMessageType.RUN,
                     payload={
                         "": PulseQobj.from_dict(qobj),
                         "enable_traceback": True,
@@ -100,7 +93,7 @@ def job_execute(job_file: Path, quantify_conn: Connection):
                 )
             )
 
-            results_file = quantify_conn.recv()
+            results_file = kernel_conn.recv()
         except Exception as exp:
             print("Job failed")
             print(f"Job execution failed. exp: {exp}")

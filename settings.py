@@ -72,12 +72,9 @@ BACKEND_SETTINGS = config(
 )
 
 # Connectivity settings
-
-QUANTIFY_MACHINE_ROOT_URL = config("QUANTIFY_MACHINE_ROOT_URL", cast=URL)
 MSS_MACHINE_ROOT_URL = config("MSS_MACHINE_ROOT_URL", cast=URL)
 BCC_MACHINE_ROOT_URL = config("BCC_MACHINE_ROOT_URL", cast=URL)
 BCC_PORT = config("BCC_PORT", cast=int)
-DB_MACHINE_ROOT_URL = config("DB_MACHINE_ROOT_URL", cast=URL)
 
 # Authentication
 
@@ -89,7 +86,6 @@ CLIENT_IP_WHITELIST = {
     socket.gethostbyname(v.hostname): True
     for v in [
         MSS_MACHINE_ROOT_URL,
-        QUANTIFY_MACHINE_ROOT_URL,
     ]
 }
 # allow test client to access api when BLACKLISTED is not set
@@ -97,4 +93,4 @@ if APP_SETTINGS == "test" and not os.environ["BLACKLISTED"]:
     CLIENT_IP_WHITELIST["testclient"] = True
 
 # Hardware configurations
-QUANTIFY_HARDWARE_CONFIG_FILE = config("QUANTIFY_HARDWARE_CONFIG_FILE", default="quantify-config.yml")
+KERNEL_CONFIG_FILE = config("KERNEL_CONFIG_FILE", default="kernel-config.yml")

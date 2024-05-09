@@ -21,15 +21,13 @@ from redis import Redis
 
 import settings
 
-from ..libs.quantify.connector.server import open_connector
 from ..services import auth as auth_service
+from ..services.kernel import service as kernel_service
 from ..utils.uuid import validate_uuid4_str
 from .exc import InvalidJobIdInUploadedFileError, IpNotAllowedError
 
 _redis_connection = Redis()
-_quantify_process, _quantify_connection = open_connector(
-    config_file=settings.QUANTIFY_HARDWARE_CONFIG_FILE
-)
+_kernel_process, _kernel_connection = kernel_service.connect()
 
 
 def get_redis_connection():
@@ -189,11 +187,11 @@ def get_bearer_token(
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
 
-def get_quantify_connection() -> Connection:
-    """Dependency injector for quantify connector's connection"""
-    return _quantify_connection
+def get_kernel_connection() -> Connection:
+    """Dependency injector for the Connection object to the kernel service"""
+    return _kernel_connection
 
 
-def get_quantify_connector() -> Tuple[mp.Process, Connection]:
-    """Gets quantify connector's process and connection"""
-    return _quantify_process, _quantify_connection
+def get_kernel() -> Tuple[mp.Process, Connection]:
+    """Gets kernel service's process and connection"""
+    return _kernel_process, _kernel_connection

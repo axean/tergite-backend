@@ -24,8 +24,7 @@ from quantify_scheduler.compilation import determine_absolute_timing
 from quantify_scheduler.operations.operation import Operation
 from quantify_scheduler.resources import ClockResource
 
-from app.libs.quantify.utils.logger import ExperimentLogger
-
+from ..utils.logger import ExperimentLogger
 from .channel import Channel
 from .instruction import Instruction
 

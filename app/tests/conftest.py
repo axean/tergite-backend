@@ -5,7 +5,6 @@ from .utils.env import (
     TEST_DEFAULT_PREFIX,
     TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME,
     TEST_MSS_MACHINE_ROOT_URL,
-    TEST_QUANTIFY_MACHINE_ROOT_URL,
     TEST_STORAGE_PREFIX_DIRNAME,
     TEST_STORAGE_ROOT,
     setup_test_env,
@@ -102,10 +101,6 @@ BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES = [
 
 def mock_post_requests(url: str, **kwargs):
     """Mock POST requests for testing"""
-    if url == f"{TEST_QUANTIFY_MACHINE_ROOT_URL}/qobj":
-        return MockHttpResponse(status_code=200)
-    if url == f"{TEST_QUANTIFY_MACHINE_ROOT_URL}/rng_LokiB":
-        return MockHttpResponse(status_code=200)
     if url == f"{TEST_MSS_MACHINE_ROOT_URL}/timelog":
         return MockHttpResponse(status_code=200)
 

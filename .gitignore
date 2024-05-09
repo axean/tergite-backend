@@ -145,5 +145,5 @@ Labber/
 .idea
 tmp/
 
-# quantify connector
-.quantify-connector.lock
+# kernel
+.tergite-kernel.lock

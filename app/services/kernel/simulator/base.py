@@ -44,7 +44,7 @@ class BaseSimulator:
 
     @abstractmethod
     def compile(self: object, schedule: Schedule, /) -> CompiledSchedule:
-        """Compiles a schedule which has been translated by quantify connector to be run on the simulator.
+        """Compiles a schedule which has been translated by quantify to be run on the simulator.
 
         Args:
             schedule: The schedule to compile.

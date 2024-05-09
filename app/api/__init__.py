@@ -32,8 +32,8 @@ from rq import Worker
 from typing_extensions import Annotated
 
 import settings
+from app.services.kernel.service import KernelMessage, KernelMessageType
 
-from ..libs.quantify.connector.server import QuantifyMessage, QuantifyMessageType
 from ..services.auth import service as auth_service
 from ..services.jobs import service as jobs_service
 from ..services.jobs.workers.registration import job_register
@@ -41,8 +41,8 @@ from ..services.properties import service as props_service
 from ..utils.queues import QueuePool
 from .dependencies import (
     get_bearer_token,
-    get_quantify_connection,
-    get_quantify_connector,
+    get_kernel,
+    get_kernel_connection,
     get_redis_connection,
     get_valid_credentials_dep,
     get_whitelisted_ip,
@@ -59,7 +59,7 @@ JOB_UPLOAD_POOL_DIRNAME = settings.JOB_UPLOAD_POOL_DIRNAME
 
 # dependencies
 RedisDep = Annotated[Redis, Depends(get_redis_connection)]
-QuantifyConnectorDep = Annotated[Connection, Depends(get_quantify_connection)]
+KernelConnectionDep = Annotated[Connection, Depends(get_kernel_connection)]
 
 
 # redis queues
@@ -69,12 +69,12 @@ rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=get_redis_connection())
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     # on startup
-    quantify_process, quantify_conn = get_quantify_connector()
+    kernel_process, kernel_conn = get_kernel()
 
     yield
     # on shutdown
-    quantify_conn.send(QuantifyMessage(type=QuantifyMessageType.CLOSE, payload=None))
-    quantify_process.join()
+    kernel_conn.send(KernelMessage(type=KernelMessageType.CLOSE, payload=None))
+    kernel_process.join()
 
 
 # application
@@ -150,7 +150,7 @@ async def register_credentials(
 
 @app.post("/jobs")
 async def upload_job(
-    quantify_conn: QuantifyConnectorDep,
+    kernel_conn: KernelConnectionDep,
     upload_file: UploadFile = File(...),
     credentials: auth_service.Credentials = Depends(
         get_valid_credentials_dep(expected_status=auth_service.JobStatus.REGISTERED)
@@ -179,7 +179,7 @@ async def upload_job(
         job_register,
         store_file,
         job_id=credentials.job_id + f"_{jobs_service.Location.REG_Q.name}",
-        quantify_conn=quantify_conn,
+        kernel_conn=kernel_conn,
     )
     return {"message": file_name}
 

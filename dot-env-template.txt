@@ -27,24 +27,13 @@ BCC_MACHINE_ROOT_URL=http://host:port
 BCC_PORT=8000
 
 # 3 Instrument server
-# Quantify
-QUANTIFY_MACHINE_ROOT_URL=http://host:port
+# The path to the configuration file for quantify. Default is "kernel-config.yml" in project directory
+KERNEL_CONFIG_FILE=kernel-config.yml
 
-# 4 MongoDB
-DB_MACHINE_ROOT_URL=mongodb://user:password@host:port
-# Ask someone for the password!
-# You can also run MongoDB locally, and then you don't need authentication:
-# You will then need to install the mongodb software package on your local host.
-# DB_MACHINE_ROOT_URL=mongodb://localhost
-
-# Authentication
+# 4 Authentication
 # the app token used to authenticate this BCC with MSS.
 # A system user (user with the system role) should log in to QAL 9000, generate an app token
 # and set it here
 MSS_APP_TOKEN=
 # Default is true. Setting this to False in production will raise a ValueError at startup.
 IS_AUTH_ENABLED=True
-
-# Quantify
-# The path to the configuration file for quantify. Default is "quantify-config.yml" in project directory
-QUANTIFY_HARDWARE_CONFIG_FILE=quantify-config.yml
