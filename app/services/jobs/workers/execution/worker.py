@@ -17,6 +17,7 @@
 
 import json
 from datetime import datetime
+from multiprocessing.connection import Connection
 from pathlib import Path
 
 from filelock import FileLock
@@ -25,8 +26,12 @@ from qiskit_ibm_provider.utils import json_decoder
 from redis import Redis
 
 import settings
-from app.libs.quantify.connector.server import QuantifyConnector
-from app.libs.quantify.utils import iqx_rld
+from app.libs.quantify.connector.server import (
+    QuantifyConnector,
+    QuantifyMessage,
+    QuantifyMessageType,
+)
+from app.libs.quantify.utils.serialization import iqx_rld
 from app.utils.queues import QueuePool
 
 from ...service import Location, fetch_job, inform_failure, inform_location
@@ -50,7 +55,7 @@ redis_connection = Redis()
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 
 
-def job_execute(job_file: Path):
+def job_execute(job_file: Path, quantify_conn: Connection):
     print(f"Executing file {str(job_file)}")
 
     with job_file.open() as f:
@@ -63,15 +68,14 @@ def job_execute(job_file: Path):
 
     # Just a locking mechanism to ensure jobs don't interfere with each other
     with FileLock(".quantify-connector.lock"):
-        quantify_connector = QuantifyConnector()
-
         job_id = job_dict["job_id"]
         qobj = job_dict["params"]["qobj"]
-
-        if "tag" in qobj["header"].keys():
-            quantify_connector.register_job(qobj["header"]["tag"])
-        else:
-            quantify_connector.register_job("")
+        quantify_conn.send(
+            QuantifyMessage(
+                type=QuantifyMessageType.REGISTER,
+                payload=qobj["header"].get("tag", ""),
+            )
+        )
 
         # --- RLD pulse library
         # [([a,b], 2),...] -> [[a,b],[a,b],...]
@@ -85,11 +89,18 @@ def job_execute(job_file: Path):
         print(datetime.now(), "IN REST API CALLING RUN_EXPERIMENTS")
 
         try:
-            results_file = quantify_connector.run_experiments(
-                PulseQobj.from_dict(qobj),
-                enable_traceback=True,
-                job_id=job_id,
+            quantify_conn.send(
+                QuantifyMessage(
+                    type=QuantifyMessageType.RUN,
+                    payload={
+                        "": PulseQobj.from_dict(qobj),
+                        "enable_traceback": True,
+                        "job_id": job_id,
+                    },
+                )
             )
+
+            results_file = quantify_conn.recv()
         except Exception as exp:
             print("Job failed")
             print(f"Job execution failed. exp: {exp}")

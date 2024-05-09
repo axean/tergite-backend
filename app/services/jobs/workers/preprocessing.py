@@ -9,8 +9,7 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-
-
+from multiprocessing.connection import Connection
 from pathlib import Path
 
 from redis import Redis
@@ -33,7 +32,7 @@ redis_connection = Redis()
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 
 
-def job_preprocess(job_file: Path):
+def job_preprocess(job_file: Path, quantify_conn: Connection):
     job_id = job_file.stem
 
     # Inform supervisor about job being in pre-processing worker
@@ -49,7 +48,10 @@ def job_preprocess(job_file: Path):
     job_file.replace(new_file)
 
     rq_queues.job_execution_queue.enqueue(
-        job_execute, new_file, job_id=job_id + f"_{Location.EXEC_Q.name}"
+        job_execute,
+        new_file,
+        job_id=job_id + f"_{Location.EXEC_Q.name}",
+        quantify_conn=quantify_conn,
     )
 
     # Inform supervisor about job moved to execution queue

@@ -164,6 +164,7 @@ class ClusterModule(QuantifyConfigItem):
         "real_outputs",
         "real_inputs",
         "digital_outputs",
+        allow_reuse=True,
     )
     def valid_channels_for_instrument_type(
         cls, v, values, config, field: ModelField, **kwargs

@@ -10,7 +10,7 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-
+from multiprocessing.connection import Connection
 from pathlib import Path
 
 from redis import Redis
@@ -34,7 +34,7 @@ redis_connection = Redis()
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 
 
-def job_register(job_file: Path) -> None:
+def job_register(job_file: Path, quantify_conn: Connection = None) -> None:
     """Registers job in job supervisor"""
     job_id = job_file.stem
     # inform job supervisor about job registration
@@ -50,7 +50,10 @@ def job_register(job_file: Path) -> None:
     job_file.replace(new_file)
     # add job to pre-processing queue and notify job supervisor
     rq_queues.job_preprocessing_queue.enqueue(
-        job_preprocess, new_file, job_id=job_id + f"_{Location.PRE_PROC_Q.name}"
+        job_preprocess,
+        new_file,
+        job_id=job_id + f"_{Location.PRE_PROC_Q.name}",
+        quantify_conn=quantify_conn,
     )
     inform_location(job_id, Location.PRE_PROC_Q)
 

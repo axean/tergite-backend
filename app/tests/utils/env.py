@@ -1,5 +1,7 @@
 from os import environ
 
+from app.tests.utils.fixtures import get_fixture_path
+
 TEST_DEFAULT_PREFIX = "test"
 TEST_STORAGE_ROOT = "/tmp/jobs"
 
@@ -18,6 +20,8 @@ TEST_BCC_PORT = 8000
 TEST_DB_MACHINE_ROOT_URL = "mongodb://localhost:27017"
 
 TEST_MSS_APP_TOKEN = "some-mss-app-token-for-testing"
+
+TEST_QUANTIFY_HARDWARE_CONFIG_FILE = get_fixture_path("quantify-config.yml")
 
 
 def setup_test_env():
@@ -44,3 +48,4 @@ def setup_test_env():
     environ["DB_MACHINE_ROOT_URL"] = TEST_DB_MACHINE_ROOT_URL
 
     environ["MSS_APP_TOKEN"] = TEST_MSS_APP_TOKEN
+    environ["QUANTIFY_HARDWARE_CONFIG_FILE"] = TEST_QUANTIFY_HARDWARE_CONFIG_FILE

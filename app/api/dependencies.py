@@ -11,7 +11,9 @@
 # that they have been altered from the originals.
 """Dependencies useful for the FastAPI API"""
 import json
-from typing import Optional
+import multiprocessing as mp
+from multiprocessing.connection import Connection
+from typing import Optional, Tuple
 
 from fastapi import Depends, HTTPException, UploadFile, status
 from fastapi.requests import Request
@@ -19,11 +21,15 @@ from redis import Redis
 
 import settings
 
+from ..libs.quantify.connector.server import open_connector
 from ..services import auth as auth_service
 from ..utils.uuid import validate_uuid4_str
 from .exc import InvalidJobIdInUploadedFileError, IpNotAllowedError
 
 _redis_connection = Redis()
+_quantify_process, _quantify_connection = open_connector(
+    config_file=settings.QUANTIFY_HARDWARE_CONFIG_FILE
+)
 
 
 def get_redis_connection():
@@ -181,3 +187,13 @@ def get_bearer_token(
     except (KeyError, IndexError):
         if raise_if_error:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
+
+def get_quantify_connection() -> Connection:
+    """Dependency injector for quantify connector's connection"""
+    return _quantify_connection
+
+
+def get_quantify_connector() -> Tuple[mp.Process, Connection]:
+    """Gets quantify connector's process and connection"""
+    return _quantify_process, _quantify_connection

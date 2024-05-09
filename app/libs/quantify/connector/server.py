@@ -13,13 +13,17 @@
 # Refactored by Martin Ahindura (2024)
 
 import copy
+import dataclasses
+import enum
 import json
+import multiprocessing as mp
 import os
 from datetime import datetime
 from functools import partial
+from multiprocessing.connection import Connection
 from pathlib import Path
 from traceback import format_exc
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 import qblox_instruments
@@ -37,7 +41,6 @@ from quantify_scheduler.instrument_coordinator.components.qblox import ClusterCo
 from tqdm import tqdm
 from tqdm.auto import tqdm
 
-import settings
 from app.libs.quantify.scheduler.channel import Channel
 from app.libs.quantify.scheduler.experiment import Experiment
 from app.libs.quantify.scheduler.instruction import Instruction, meas_settings
@@ -59,8 +62,51 @@ _QBLOX_CLUSTER_TYPE_MAP: Dict[ClusterModuleType, qblox_instruments.ClusterType] 
 }
 
 
+def open_connector(
+    config_file: Union[str, bytes, os.PathLike]
+) -> Tuple[mp.Process, Connection]:
+    """Opens the connector and returns a Connection to interface with it with pickleble data
+
+    Args:
+        config_file: the path to the quantify hardware configuration file
+
+    Returns:
+        the process-safe Connection to be used to communicate with the Connector
+    """
+    outer_end, inner_end = mp.Pipe()
+
+    def runner(pipe: Connection):
+        connector = QuantifyConnector(config_file=config_file)
+
+        while True:
+            message = pipe.recv()
+
+            if isinstance(message, QuantifyMessage):
+                if message.type == QuantifyMessageType.CLOSE:
+                    # connector.close()
+                    break
+
+                if message.type == QuantifyMessageType.RUN:
+                    qobj = message.payload.pop("qobj")
+                    results_file = connector.run_experiments(qobj, **message.payload)
+                    pipe.send(results_file)
+
+                if message.type == QuantifyMessageType.REGISTER:
+                    connector.register_job(message.payload)
+
+    process = mp.Process(target=runner, args=(inner_end,))
+    process.start()
+
+    return process, outer_end
+
+
 class QuantifyConnector:
     """The connector to the backend using the quantify core library"""
+
+    # FIXME: We need to create only one instance of Quantify Connector to fix error
+    #   KeyError: 'Another instrument has the name: quantify_connector' as well as
+    #   realistically in practice, we need only one connector to the instruments.
+    #   Consider the meaning of this global dh.set_datadir call
 
     setup = InstrumentCoordinator("quantify-connector", add_default_generic_icc=False)
 
@@ -69,9 +115,7 @@ class QuantifyConnector:
 
     def __init__(
         self,
-        config_file: Union[
-            str, bytes, os.PathLike
-        ] = settings.QUANTIFY_HARDWARE_CONFIG_FILE,
+        config_file: Union[str, bytes, os.PathLike],
     ):
         conf = QuantifyConfig.from_yaml(config_file)
 
@@ -360,3 +404,15 @@ class QuantifyConnector:
                 pass  # no storage to close
 
         return results_file_path
+
+
+class QuantifyMessageType(int, enum.Enum):
+    CLOSE = 1
+    RUN = 2
+    REGISTER = 3
+
+
+@dataclasses.dataclass
+class QuantifyMessage:
+    type: QuantifyMessageType
+    payload: Any
