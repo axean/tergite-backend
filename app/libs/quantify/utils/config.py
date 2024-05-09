@@ -14,7 +14,7 @@
 """Utilities concerned with the configuration of the quantify hardware/software"""
 import enum
 import os
-from typing import Optional, Set, Dict, Any, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from pydantic import BaseModel, Extra, validator
 from pydantic.fields import ModelField
@@ -95,9 +95,7 @@ class Channel(QuantifyConfigItem):
         # to make it easier to configure the hardware
         excluded_fields.update({"name"})
 
-        return super().to_quantify(
-            exclude_none=exclude_none, exclude=excluded_fields
-        )
+        return super().to_quantify(exclude_none=exclude_none, exclude=excluded_fields)
 
 
 class _ClusterRef(str, enum.Enum):
@@ -107,7 +105,7 @@ class _ClusterRef(str, enum.Enum):
     EXTERNAL = "external"
 
 
-class _ClusterModuleType(str, enum.Enum):
+class ClusterModuleType(str, enum.Enum):
     """Types of cluster modules"""
 
     QCM = "QCM"
@@ -116,24 +114,24 @@ class _ClusterModuleType(str, enum.Enum):
     QRM_RF = "QRM_RF"
 
 
-_MODULE_TYPE_VALID_CHANNELS_MAP: Dict[_ClusterModuleType, Dict[str, bool]] = {
-    _ClusterModuleType.QCM: {
+_MODULE_TYPE_VALID_CHANNELS_MAP: Dict[ClusterModuleType, Dict[str, bool]] = {
+    ClusterModuleType.QCM: {
         "complex_outputs": True,
         "real_outputs": True,
         "digital_outputs": True,
     },
-    _ClusterModuleType.QRM: {
+    ClusterModuleType.QRM: {
         "complex_outputs": True,
         "complex_inputs": True,
         "real_outputs": True,
         "real_inputs": True,
         "digital_outputs": True,
     },
-    _ClusterModuleType.QCM_RF: {
+    ClusterModuleType.QCM_RF: {
         "complex_outputs": True,
         "digital_outputs": True,
     },
-    _ClusterModuleType.QRM_RF: {
+    ClusterModuleType.QRM_RF: {
         "complex_outputs": True,
         "complex_inputs": True,
         "digital_outputs": True,
@@ -145,7 +143,7 @@ class ClusterModule(QuantifyConfigItem):
     """General configration for a cluster module"""
 
     name: str
-    instrument_type: _ClusterModuleType
+    instrument_type: ClusterModuleType
     complex_outputs: List[Channel] = []
     complex_inputs: List[Channel] = []
     real_outputs: List[Channel] = []
@@ -242,11 +240,9 @@ class Cluster(QuantifyConfigItem):
 
     name: str
     ref: _ClusterRef = _ClusterRef.EXTERNAL
-    is_dummy: bool = False
+    is_dummy: Optional[bool] = None
 
-    instrument_address: str
-    instrument_driver: str
-    instrument_component: str
+    instrument_address: Optional[str] = None
     instrument_type: str = "Cluster"
     sequence_to_file: Optional[bool] = None
     modules: List[ClusterModule] = []
@@ -317,9 +313,63 @@ class LocalOscillator(QuantifyConfigItem):
         return self.dict(exclude=excluded_fields, exclude_none=exclude_none)
 
 
+class _QcodesInstrumentDriver(QuantifyConfigItem):
+    """Metadata about the driver of the Qcodes instrument to aid in initializing it"""
+
+    # the import path to the driver
+    import_path: str
+    # the key-word arguments to be passed when initializing the driver
+    kwargs: Dict[str, Any]
+
+
+class GenericQcodesInstrument(QuantifyConfigItem):
+    """Configuration for a generic QCoDeS instrument
+
+    Every property name is a QCoDeS command for the instrument and the
+    property value corresponds to the set value
+    """
+
+    name: str
+    instrument_type: str
+    instrument_driver: _QcodesInstrumentDriver
+
+    # QCoDeS parameters are special in such a way that settable parameters accept their value as a simple function
+    # call e.g. instance.frequency(3600000000)
+    # https://microsoft.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html#Example-of-setting-and-getting-parameters
+    parameters: Dict[str, Any] = {}
+
+    def to_quantify(
+        self, exclude_none: bool = True, exclude: Optional[Set] = None
+    ) -> Dict[str, Any]:
+        """Converts this into a quantify config, spreading the parameters into a flat object
+
+        It returns something like:
+        {
+            instrument_type: "LocalOscillator",
+            frequency: 5e9,
+            power: 20,
+            IQ_state: "1",
+        }
+        """
+        excluded_fields = exclude if isinstance(exclude, set) else set()
+
+        # exclude some fields that are only in place
+        # to make it easier to configure the hardware
+        excluded_fields.update({"name", "parameters", "instrument_driver"})
+
+        raw_dict = super().to_quantify(
+            exclude_none=exclude_none, exclude=excluded_fields
+        )
+
+        # spread parameters onto the instrument's config
+        raw_dict.update(self.parameters)
+
+        return raw_dict
+
+
 class SimulatorType(str, enum.Enum):
     SCQT = "scqt"
-    CHALEMRS = "chalmers"
+    CHALMERS = "chalmers"
 
 
 class GeneralConfig(QuantifyConfigItem):
@@ -337,6 +387,7 @@ class QuantifyConfig(QuantifyConfigItem):
     general: GeneralConfig
     clusters: List[Cluster] = []
     local_oscillators: List[LocalOscillator] = []
+    generic_qcodes_instruments: List[GenericQcodesInstrument] = []
 
     @classmethod
     def from_yaml(cls, file_path: Union[str, bytes, os.PathLike]) -> "QuantifyConfig":
@@ -379,9 +430,18 @@ class QuantifyConfig(QuantifyConfigItem):
         excluded_fields = exclude if isinstance(exclude, set) else set()
 
         # exclude name as it is not part of the quantify configuration schema
-        excluded_fields.update({"general", "clusters", "local_oscillators"})
+        excluded_fields.update(
+            {"general", "clusters", "local_oscillators", "generic_qcodes_instruments"}
+        )
         return {
             **self.dict(exclude=excluded_fields, exclude_none=exclude_none),
             **{cluster.name: cluster.to_quantify() for cluster in self.clusters},
-            **{oscillator.name: oscillator.to_quantify() for oscillator in self.local_oscillators},
+            **{
+                oscillator.name: oscillator.to_quantify()
+                for oscillator in self.local_oscillators
+            },
+            **{
+                instrument.name: instrument.to_quantify()
+                for instrument in self.generic_qcodes_instruments
+            },
         }

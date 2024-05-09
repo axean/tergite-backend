@@ -41,18 +41,9 @@ clusters:
     instrument_address: "192.0.2.74"
     # the IP address of the cluster, useful when doing instrument orchestration
 
-    instrument_driver: "qblox_instruments.Cluster"
-    # the driver of the cluster, useful when doing instrument orchestration
-
-    instrument_component: "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent"
-    # QBLOX devices additionally need a key called "instrument_component" pointing to the IC component of the device
-    # Every config file should additionally have keys "instrument_type" "instrument_address" and "instrument_driver". These are not QCoDeS commands, they are used by tqc to configure the instrument orchestration.
-
   - name: "cluster1"
     ref: "internal"
     instrument_address: "192.0.1.74"
-    instrument_driver: "qblox_instruments.Cluster"
-    instrument_component: "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent"
 
     modules:
       # You can add multiple modules of up to four instrument types:
@@ -371,7 +362,7 @@ clusters:
                 clock: q2:ro
 
 local_oscillators:
-  # configuration for Local oscillators
+  # configuration for Local oscillators that are internal
 
   # name can be any name you wish
   - name: "lo1"
@@ -381,11 +372,41 @@ local_oscillators:
     frequency: 6e9
     power: 25
 
+generic_qcodes_instruments:
+  # Generic QCoDeS instruments, such as local oscillators.
+  #
+  # These should be a flat JSON blob where every key is a QCoDeS command for the device and the value corresponds
+  # to the set value. QCoDeS drivers can be found at https://microsoft.github.io/Qcodes/drivers_api/index.html.
+  # For example, here is the driver for SGS100A: https://microsoft.github.io/Qcodes/drivers_api/RohdeSchwarz.html#qcodes.instrument_drivers.rohde_schwarz.RohdeSchwarzSGS100A.
+  - name: "SGS13"
+    instrument_type: "LocalOscillator"
+    instrument_driver:
+      # details for instantiating the QCoDeS driver
+
+      import_path: "qcodes.instrument_drivers.rohde_schwarz.RohdeSchwarzSGS100A"
+      # the import path to the driver
+
+      kwargs:
+        # the key-word arguments to be passed when initializing the driver
+        name: "SGS13"
+        address: "TCPIP::192.0.2.11::INSTR"
+
+    parameters:
+      # QCoDeS parameters are special in such a way that settable parameters accept their value as a simple function
+      # call e.g. instance.frequency(3600000000)
+      # See: https://microsoft.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html#Example-of-setting-and-getting-parameters
+      phase: 0.0
+      frequency: 3600000000
+      power: -1
+      IQ_state: "1"
+      pulsemod_state: "0"
+      LO_source: "INT"
+      ref_osc_source: "EXT"
+      ref_osc_output_freq: "10MHz"
+      ref_osc_external_freq: "10MHz"
+      ref_LO_out: "REF"
+
 # You can add other arbitrary key-values that can be passed to quantify
-# like: Generic QCoDeS instruments, such as local oscillators
-# should be a flat JSON blob where every key is a QCoDeS command for the device and the value corresponds to the set value.
-# QCoDeS drivers can be found at https://microsoft.github.io/Qcodes/
-#
 # e.g.
 # latency_corrections:
 #    q4:mw-q4.01: 8e-9

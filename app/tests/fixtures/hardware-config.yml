@@ -6,7 +6,6 @@ clusters:
     instrument_type: Cluster
     ref: internal
     instrument_address: "192.0.2.74"
-    instrument_driver: "qblox_instruments.Cluster"
     instrument_component: "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent"
 
     modules:
@@ -43,7 +42,6 @@ clusters:
     instrument_type: Cluster
     ref: internal
     instrument_address: "192.0.1.74"
-    instrument_driver: "qblox_instruments.Cluster2"
     instrument_component: "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent2"
 
     modules:
@@ -119,3 +117,24 @@ local_oscillators:
 latency_corrections:
   q4:mw-q4.01: 8e-9
   q5:mw-q5.01: 4e-9
+
+generic_qcodes_instruments:
+  - name: "SGS13"
+    instrument_type: "LocalOscillator"
+    instrument_driver:
+      import_path: "qcodes.instrument_drivers.rohde_schwarz.RohdeSchwarzSGS100A"
+      kwargs:
+        name: "SGS13"
+        address: "TCPIP::192.0.2.11::INSTR"
+
+    parameters:
+      phase: 0.0
+      frequency: 3600000000
+      power: -1
+      IQ_state: "1"
+      pulsemod_state: "0"
+      LO_source: "INT"
+      ref_osc_source: "EXT"
+      ref_osc_output_freq: "10MHz"
+      ref_osc_external_freq: "10MHz"
+      ref_LO_out: "REF"

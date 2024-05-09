@@ -4,7 +4,6 @@
     "instrument_type": "Cluster",
     "ref": "internal",
     "instrument_address": "192.0.2.74",
-    "instrument_driver": "qblox_instruments.Cluster",
     "instrument_component": "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent",
     "cluster0_module0": {
       "instrument_type": "QCM",
@@ -61,7 +60,6 @@
     "instrument_type": "Cluster",
     "ref": "internal",
     "instrument_address": "192.0.1.74",
-    "instrument_driver": "qblox_instruments.Cluster2",
     "instrument_component": "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent2",
     "cluster1_module0": {
       "instrument_type": "QRM",
@@ -152,5 +150,18 @@
         ]
       }
     }
+  },
+  "SGS13": {
+    "instrument_type": "LocalOscillator",
+    "phase": 0.0,
+    "frequency": 3600000000,
+    "power": -1,
+    "IQ_state": "1",
+    "pulsemod_state": "0",
+    "LO_source": "INT",
+    "ref_osc_source": "EXT",
+    "ref_osc_output_freq": "10MHz",
+    "ref_osc_external_freq": "10MHz",
+    "ref_LO_out": "REF"
   }
 }
