@@ -17,17 +17,15 @@
 
 import json
 from datetime import datetime
-from multiprocessing.connection import Connection
 from pathlib import Path
 
-from filelock import FileLock
 from qiskit.qobj import PulseQobj
 from qiskit_ibm_provider.utils import json_decoder
 from redis import Redis
 
 import settings
-from app.services.kernel.service import KernelMessage, KernelMessageType
-from app.services.kernel.utils.connections import receive_msg
+from app.services.kernel import service as kernel_service
+from app.services.kernel.utils.connections import get_kernel_lock
 from app.services.kernel.utils.serialization import iqx_rld
 from app.utils.queues import QueuePool
 
@@ -45,11 +43,12 @@ DEFAULT_PREFIX = settings.DEFAULT_PREFIX
 
 # redis connection
 redis_connection = Redis()
+kernel = kernel_service.Kernel(config_file=settings.KERNEL_CONFIG_FILE)
 
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 
 
-def job_execute(job_file: Path, kernel_conn: Connection):
+def job_execute(job_file: Path):
     print(f"Executing file {str(job_file)}")
 
     with job_file.open() as f:
@@ -76,39 +75,19 @@ def job_execute(job_file: Path, kernel_conn: Connection):
         return {"message": "malformed job"}
 
     # Just a locking mechanism to ensure jobs don't interfere with each other
-    with FileLock(".tergite-kernel.lock"):
-        kernel_conn.send(
-            KernelMessage(
-                type=KernelMessageType.REGISTER,
-                payload=qobj["header"].get("tag", ""),
-            )
-        )
-
+    with get_kernel_lock():
         try:
+            kernel.register_job(qobj["header"].get("tag", ""))
+
             # --- In-place decode complex values
             # [[a,b],[c,d],...] -> [a + ib,c + id,...]
             json_decoder.decode_pulse_qobj(qobj)
 
             print(datetime.now(), "IN REST API CALLING RUN_EXPERIMENTS")
 
-            kernel_conn.send(
-                KernelMessage(
-                    type=KernelMessageType.RUN,
-                    payload={
-                        "": PulseQobj.from_dict(qobj),
-                        "enable_traceback": True,
-                        "job_id": job_id,
-                    },
-                )
+            results_file = kernel.run_experiments(
+                PulseQobj.from_dict(qobj), enable_traceback=True, job_id=job_id
             )
-
-            results_file = receive_msg(kernel_conn)
-        except EOFError as exp:
-            print("Job failed")
-            print(f"Job execution failed. kernel unavailable. exp: {exp}")
-            # inform supervisor about failure
-            inform_failure(job_id, reason="kernel unavailable")
-            return {"message": "failed"}
         except Exception as exp:
             print("Job failed")
             print(f"Job execution failed. exp: {exp}")

@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from pydantic import BaseModel, Extra, validator
 from pydantic.fields import ModelField
+from quantify_scheduler.backends.qblox import instrument_compilers as qblox_compiler
 from ruamel.yaml import YAML
 
 yaml = YAML(typ="safe")
@@ -140,6 +141,19 @@ _MODULE_TYPE_VALID_CHANNELS_MAP: Dict[ClusterModuleType, Dict[str, bool]] = {
     },
 }
 
+_MODULE_TYPE_VALID_CHANNEL_NAMES_MAP: Dict[ClusterModuleType, Set[str]] = {
+    ClusterModuleType.QCM: set(qblox_compiler.QcmModule.static_hw_properties.valid_ios),
+    ClusterModuleType.QRM: set(qblox_compiler.QrmModule.static_hw_properties.valid_ios),
+    ClusterModuleType.QCM_RF: set(
+        qblox_compiler.QcmRfModule.static_hw_properties.valid_ios
+    ),
+    ClusterModuleType.QRM_RF: set(
+        qblox_compiler.QrmRfModule.static_hw_properties.valid_ios
+    ),
+}
+
+# QcmModule, QrmModule, QcmRfModule, QrmRfModule
+
 
 class ClusterModule(KernelConfigItem):
     """General configration for a cluster module"""
@@ -171,6 +185,7 @@ class ClusterModule(KernelConfigItem):
     def valid_channels_for_instrument_type(
         cls, v, values, config, field: ModelField, **kwargs
     ):
+        """Each Module type can only have a given list of channel lists and names"""
         try:
             module_type = values["instrument_type"]
         except KeyError:
@@ -181,6 +196,16 @@ class ClusterModule(KernelConfigItem):
         if not valid_channels.get(field.name):
             raise ValueError(
                 f"'{field.name}' are not permitted in cluster modules of type '{module_type}'"
+            )
+
+        permitted_channel_names = _MODULE_TYPE_VALID_CHANNEL_NAMES_MAP[module_type]
+        actual_channel_names = {item.name for item in v}
+        invalid_names = actual_channel_names.difference(permitted_channel_names)
+
+        if len(invalid_names) > 0:
+            raise ValueError(
+                f"invalid channel names {invalid_names} for '{field.name}' for '{module_type}'. "
+                f"Permitted channel names are {permitted_channel_names}"
             )
 
         return v
@@ -223,12 +248,11 @@ class ClusterModule(KernelConfigItem):
         # add the fields that are required for the hardware config
         for channel_list_field in self._channel_list_fields:
             # change the plural form from the singular form
-            channel_field = channel_list_field.rstrip("s")
-            channel_confs = getattr(self, channel_list_field, [])
+            channel_confs: List[Channel] = getattr(self, channel_list_field, [])
             raw_dict.update(
                 {
-                    f"{channel_field}_{index}": value.to_quantify()
-                    for index, value in enumerate(channel_confs)
+                    channel.name: channel.to_quantify()
+                    for index, channel in enumerate(channel_confs)
                 }
             )
 

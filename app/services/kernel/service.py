@@ -13,18 +13,14 @@
 # Refactored by Martin Ahindura (2024)
 
 import copy
-import dataclasses
-import enum
 import json
-import multiprocessing as mp
 import os
 import weakref
 from datetime import datetime
 from functools import partial
-from multiprocessing.connection import Connection
 from pathlib import Path
 from traceback import format_exc
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Union
 
 import numpy as np
 import qblox_instruments
@@ -42,7 +38,6 @@ from quantify_scheduler.instrument_coordinator.components.qblox import ClusterCo
 from tqdm import tqdm
 from tqdm.auto import tqdm
 
-import settings
 from app.libs.storage_file import StorageFile
 
 from .scheduler.channel import Channel
@@ -51,7 +46,6 @@ from .scheduler.instruction import Instruction, meas_settings
 from .simulator import scqt
 from .simulator.base import BaseSimulator
 from .utils.config import ClusterModuleType, KernelConfig
-from .utils.connections import receive_msg
 from .utils.logger import ExperimentLogger
 
 # A map of simulators and their case-insensitive names as referred to in env file
@@ -64,50 +58,6 @@ _QBLOX_CLUSTER_TYPE_MAP: Dict[ClusterModuleType, qblox_instruments.ClusterType] 
     ClusterModuleType.QCM_RF: qblox_instruments.ClusterType.CLUSTER_QCM_RF,
     ClusterModuleType.QRM_RF: qblox_instruments.ClusterType.CLUSTER_QRM_RF,
 }
-
-
-def serve(
-    channel: Connection,
-    config_file: Union[str, bytes, os.PathLike] = settings.KERNEL_CONFIG_FILE,
-):
-    """Serves the kernel service
-
-    Args:
-        channel: The channel on which to communicate with the external world
-        config_file: the path to the quantify hardware configuration file
-    """
-    with Kernel(config_file=config_file) as connector:
-        while True:
-            try:
-                message = receive_msg(channel)
-            except EOFError:
-                raise ConnectionError("channel to quantum kernel closed")
-
-            if isinstance(message, KernelMessage):
-                if message.type == KernelMessageType.CLOSE:
-                    break
-
-                if message.type == KernelMessageType.RUN:
-                    qobj = message.payload.pop("qobj")
-                    results_file = connector.run_experiments(qobj, **message.payload)
-                    channel.send(results_file)
-
-                if message.type == KernelMessageType.REGISTER:
-                    connector.register_job(message.payload)
-
-
-def connect() -> Tuple[mp.Process, Connection]:
-    """Opens the connector and returns a Connection to interface with it with pickleble data
-
-    Returns:
-        the process and Connection to be used to communicate with the Connector
-    """
-    outer_end, inner_end = mp.Pipe()
-
-    process = mp.Process(target=serve, args=(inner_end,))
-    process.start()
-
-    return process, outer_end
 
 
 class Kernel:
@@ -429,19 +379,3 @@ class Kernel:
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         self.close()
-
-
-class KernelMessageType(int, enum.Enum):
-    """The message types sent to this quantum kernel service"""
-
-    CLOSE = 1
-    RUN = 2
-    REGISTER = 3
-
-
-@dataclasses.dataclass
-class KernelMessage:
-    """Record schema of the messages sent to this quantum kernel service"""
-
-    type: KernelMessageType
-    payload: Any

@@ -95,14 +95,6 @@
           }
         ]
       },
-      "complex_output_1": {
-        "portclock_configs": [
-          {
-            "port": "q0:res",
-            "clock": "q0.ro"
-          }
-        ]
-      },
       "complex_input_0": {
         "portclock_configs": [
           {

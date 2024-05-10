@@ -147,3 +147,6 @@ tmp/
 
 # kernel
 .tergite-kernel.lock
+
+# test data
+app/tests/data/

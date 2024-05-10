@@ -11,23 +11,9 @@
 # that they have been altered from the originals.
 
 """Utilities for connections to kernel service"""
-from multiprocessing.connection import Connection
-from typing import Any
+from filelock import FileLock
 
 
-def receive_msg(channel: Connection, timeout: float = 2) -> Any:
-    """Waits for a message from the connection or times out if none is received in `timeout` seconds
-
-    Args:
-        channel: the connection to send the message on
-        timeout: the timeout in seconds. default = 2
-
-    Returns:
-        the message from connection
-
-    Raises:
-        TimeoutError: no message received in {timeout} seconds
-    """
-    if channel.poll(timeout=timeout):
-        return channel.recv()
-    raise TimeoutError(f"no message received in {timeout} seconds")
+def get_kernel_lock():
+    """Get a lock on the quantum kernel to avoid interference when controlling it"""
+    return FileLock(".tergite-kernel.lock")

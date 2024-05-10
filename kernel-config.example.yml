@@ -93,6 +93,18 @@ clusters:
         # - complex_outputs
         # - real_outputs
         # - digital_outputs
+        #
+        # Valid channel names
+        # - 'complex_output_0'
+        # - 'complex_output_1'
+        # - 'real_output_0'
+        # - 'real_output_1'
+        # - 'real_output_2'
+        # - 'real_output_3'
+        # - 'digital_output_0'
+        # - 'digital_output_1'
+        # - 'digital_output_2'
+        # - 'digital_output_3'
 
         complex_outputs:
           # configuration for channels of the type 'complex_output'
@@ -160,6 +172,18 @@ clusters:
         # - real_inputs
         # - real_outputs
         # - digital_outputs
+        #
+        # Valid channel names
+        # - 'complex_output_0'
+        # - 'real_output_0'
+        # - 'real_output_1'
+        # - 'complex_input_0'
+        # - 'real_input_0'
+        # - 'real_input_1'
+        # - 'digital_output_0'
+        # - 'digital_output_1'
+        # - 'digital_output_2'
+        # - 'digital_output_3'
 
         complex_inputs:
           # configuration for channels of the type 'complex_input'
@@ -211,15 +235,6 @@ clusters:
               - port: q2:res
                 clock: q2:ro
 
-          - name: "complex_output_1"
-            portclock_configs:
-              - port: q0:res
-                clock: q0:ro
-              - port: q1:res
-                clock: q1:ro
-              - port: q2:res
-                clock: q2:ro
-
         real_outputs:
           # configuration for channels of the type 'real_output'
           # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#real-channel
@@ -253,6 +268,13 @@ clusters:
         # Valid channel lists
         # - complex_outputs
         # - digital_outputs
+        #
+        # Valid channel names
+        # - 'complex_output_0'
+        # - 'complex_output_1'
+        # - 'digital_output_0'
+        # - 'digital_output_1'
+
 
         complex_outputs:
           # configuration for channels of the type 'complex_output'
@@ -304,6 +326,12 @@ clusters:
         # - complex_inputs
         # - complex_outputs
         # - digital_outputs
+        #
+        # Valid channel names
+        # - 'complex_output_0'
+        # - 'digital_output_0'
+        # - 'digital_output_1'
+        # - 'complex_input_0'
 
         complex_inputs:
           # configuration for channels of the type 'complex_input'
@@ -338,7 +366,12 @@ clusters:
               - port: q2:res
                 clock: q2:ro
 
-          - name: "complex_output_1"
+        digital_outputs:
+          # configuration for channels of the type 'digital_output'
+          # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#digital-channel
+          #
+          # name is of format <channel_type>_<n> where n is the number of the channel in this list
+          - name: "digital_output_0"
             portclock_configs:
               - port: q0:res
                 clock: q0:ro
@@ -347,12 +380,7 @@ clusters:
               - port: q2:res
                 clock: q2:ro
 
-        digital_outputs:
-          # configuration for channels of the type 'digital_output'
-          # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#digital-channel
-          #
-          # name is of format <channel_type>_<n> where n is the number of the channel in this list
-          - name: "digital_output_0"
+          - name: "digital_output_1"
             portclock_configs:
               - port: q0:res
                 clock: q0:ro

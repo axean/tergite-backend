@@ -18,8 +18,6 @@
 
 import json
 import shutil
-from contextlib import asynccontextmanager
-from multiprocessing.connection import Connection
 from pathlib import Path
 from typing import Optional
 from uuid import UUID
@@ -32,7 +30,6 @@ from rq import Worker
 from typing_extensions import Annotated
 
 import settings
-from app.services.kernel.service import KernelMessage, KernelMessageType
 
 from ..services.auth import service as auth_service
 from ..services.jobs import service as jobs_service
@@ -41,8 +38,6 @@ from ..services.properties import service as props_service
 from ..utils.queues import QueuePool
 from .dependencies import (
     get_bearer_token,
-    get_kernel,
-    get_kernel_connection,
     get_redis_connection,
     get_valid_credentials_dep,
     get_whitelisted_ip,
@@ -59,23 +54,10 @@ JOB_UPLOAD_POOL_DIRNAME = settings.JOB_UPLOAD_POOL_DIRNAME
 
 # dependencies
 RedisDep = Annotated[Redis, Depends(get_redis_connection)]
-KernelConnectionDep = Annotated[Connection, Depends(get_kernel_connection)]
 
 
 # redis queues
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=get_redis_connection())
-
-
-@asynccontextmanager
-async def lifespan(_app: FastAPI):
-    # on startup
-    kernel_process, kernel_conn = get_kernel()
-    # with kernel_conn:
-    yield
-    # on shutdown
-    kernel_conn.send(KernelMessage(type=KernelMessageType.CLOSE, payload=None))
-    kernel_process.join()
-    kernel_conn.close()
 
 
 # application
@@ -83,7 +65,6 @@ app = FastAPI(
     title="Backend Control Computer",
     description="Interfaces Quantum processor via REST API",
     version="2024.02.0",
-    lifespan=lifespan,
 )
 
 
@@ -151,7 +132,6 @@ async def register_credentials(
 
 @app.post("/jobs")
 async def upload_job(
-    kernel_conn: KernelConnectionDep,
     upload_file: UploadFile = File(...),
     credentials: auth_service.Credentials = Depends(
         get_valid_credentials_dep(expected_status=auth_service.JobStatus.REGISTERED)
@@ -180,7 +160,6 @@ async def upload_job(
         job_register,
         store_file,
         job_id=credentials.job_id + f"_{jobs_service.Location.REG_Q.name}",
-        kernel_conn=kernel_conn,
     )
     return {"message": file_name}
 

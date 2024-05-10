@@ -11,9 +11,7 @@
 # that they have been altered from the originals.
 """Dependencies useful for the FastAPI API"""
 import json
-import multiprocessing as mp
-from multiprocessing.connection import Connection
-from typing import Optional, Tuple
+from typing import Optional
 
 from fastapi import Depends, HTTPException, UploadFile, status
 from fastapi.requests import Request
@@ -22,12 +20,10 @@ from redis import Redis
 import settings
 
 from ..services import auth as auth_service
-from ..services.kernel import service as kernel_service
 from ..utils.uuid import validate_uuid4_str
 from .exc import InvalidJobIdInUploadedFileError, IpNotAllowedError
 
 _redis_connection = Redis()
-_kernel_process, _kernel_connection = kernel_service.connect()
 
 
 def get_redis_connection():
@@ -185,20 +181,3 @@ def get_bearer_token(
     except (KeyError, IndexError):
         if raise_if_error:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-
-
-def get_kernel_connection() -> Connection:
-    """Dependency injector for the Connection object to the kernel service"""
-    _, conn = get_kernel()
-    return conn
-
-
-def get_kernel() -> Tuple[mp.Process, Connection]:
-    """Gets kernel service's process and connection"""
-    global _kernel_process, _kernel_connection
-
-    if _kernel_connection.closed:
-        # if the connection is closed, reopen
-        _kernel_process, _kernel_connection = kernel_service.connect()
-
-    return _kernel_process, _kernel_connection

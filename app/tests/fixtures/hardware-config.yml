@@ -69,10 +69,6 @@ clusters:
             portclock_configs:
               - port: "q0:mw"
                 clock: q0.01
-          - name: complex_output_1
-            portclock_configs:
-              - port: "q0:res"
-                clock: q0.ro
 
         complex_inputs:
           - name: complex_input_0
