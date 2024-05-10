@@ -189,9 +189,16 @@ def get_bearer_token(
 
 def get_kernel_connection() -> Connection:
     """Dependency injector for the Connection object to the kernel service"""
-    return _kernel_connection
+    _, conn = get_kernel()
+    return conn
 
 
 def get_kernel() -> Tuple[mp.Process, Connection]:
     """Gets kernel service's process and connection"""
+    global _kernel_process, _kernel_connection
+
+    if _kernel_connection.closed:
+        # if the connection is closed, reopen
+        _kernel_process, _kernel_connection = kernel_service.connect()
+
     return _kernel_process, _kernel_connection

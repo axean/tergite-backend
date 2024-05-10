@@ -70,11 +70,12 @@ rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=get_redis_connection())
 async def lifespan(_app: FastAPI):
     # on startup
     kernel_process, kernel_conn = get_kernel()
-
+    # with kernel_conn:
     yield
     # on shutdown
     kernel_conn.send(KernelMessage(type=KernelMessageType.CLOSE, payload=None))
     kernel_process.join()
+    kernel_conn.close()
 
 
 # application

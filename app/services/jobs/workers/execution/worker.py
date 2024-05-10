@@ -27,6 +27,7 @@ from redis import Redis
 
 import settings
 from app.services.kernel.service import KernelMessage, KernelMessageType
+from app.services.kernel.utils.connections import receive_msg
 from app.services.kernel.utils.serialization import iqx_rld
 from app.utils.queues import QueuePool
 
@@ -54,15 +55,28 @@ def job_execute(job_file: Path, kernel_conn: Connection):
     with job_file.open() as f:
         job_dict = json.load(f)
 
-    job_id = job_dict["job_id"]
+    job_id = ""
+    try:
+        job_id = job_dict["job_id"]
 
-    # Inform supervisor
-    inform_location(job_id, Location.EXEC_W)
+        # Inform supervisor
+        inform_location(job_id, Location.EXEC_W)
+
+        qobj = job_dict["params"]["qobj"]
+
+        # --- RLD pulse library
+        # [([a,b], 2),...] -> [[a,b],[a,b],...]
+        for pulse in qobj["config"]["pulse_library"]:
+            pulse["samples"] = iqx_rld(pulse["samples"])
+
+    except KeyError as exp:
+        print("Invalid job")
+        print(f"Job execution failed. Key error: {exp}")
+        inform_failure(job_id, reason="malformed job")
+        return {"message": "malformed job"}
 
     # Just a locking mechanism to ensure jobs don't interfere with each other
     with FileLock(".tergite-kernel.lock"):
-        job_id = job_dict["job_id"]
-        qobj = job_dict["params"]["qobj"]
         kernel_conn.send(
             KernelMessage(
                 type=KernelMessageType.REGISTER,
@@ -70,18 +84,13 @@ def job_execute(job_file: Path, kernel_conn: Connection):
             )
         )
 
-        # --- RLD pulse library
-        # [([a,b], 2),...] -> [[a,b],[a,b],...]
-        for pulse in qobj["config"]["pulse_library"]:
-            pulse["samples"] = iqx_rld(pulse["samples"])
-
-        # --- In-place decode complex values
-        # [[a,b],[c,d],...] -> [a + ib,c + id,...]
-        json_decoder.decode_pulse_qobj(qobj)
-
-        print(datetime.now(), "IN REST API CALLING RUN_EXPERIMENTS")
-
         try:
+            # --- In-place decode complex values
+            # [[a,b],[c,d],...] -> [a + ib,c + id,...]
+            json_decoder.decode_pulse_qobj(qobj)
+
+            print(datetime.now(), "IN REST API CALLING RUN_EXPERIMENTS")
+
             kernel_conn.send(
                 KernelMessage(
                     type=KernelMessageType.RUN,
@@ -93,7 +102,13 @@ def job_execute(job_file: Path, kernel_conn: Connection):
                 )
             )
 
-            results_file = kernel_conn.recv()
+            results_file = receive_msg(kernel_conn)
+        except EOFError as exp:
+            print("Job failed")
+            print(f"Job execution failed. kernel unavailable. exp: {exp}")
+            # inform supervisor about failure
+            inform_failure(job_id, reason="kernel unavailable")
+            return {"message": "failed"}
         except Exception as exp:
             print("Job failed")
             print(f"Job execution failed. exp: {exp}")

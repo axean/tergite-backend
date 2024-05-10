@@ -18,6 +18,7 @@ import enum
 import json
 import multiprocessing as mp
 import os
+import weakref
 from datetime import datetime
 from functools import partial
 from multiprocessing.connection import Connection
@@ -50,6 +51,7 @@ from .scheduler.instruction import Instruction, meas_settings
 from .simulator import scqt
 from .simulator.base import BaseSimulator
 from .utils.config import ClusterModuleType, KernelConfig
+from .utils.connections import receive_msg
 from .utils.logger import ExperimentLogger
 
 # A map of simulators and their case-insensitive names as referred to in env file
@@ -68,29 +70,30 @@ def serve(
     channel: Connection,
     config_file: Union[str, bytes, os.PathLike] = settings.KERNEL_CONFIG_FILE,
 ):
-    """Serves the quantify
+    """Serves the kernel service
 
     Args:
         channel: The channel on which to communicate with the external world
         config_file: the path to the quantify hardware configuration file
     """
-    connector = Kernel(config_file=config_file)
+    with Kernel(config_file=config_file) as connector:
+        while True:
+            try:
+                message = receive_msg(channel)
+            except EOFError:
+                raise ConnectionError("channel to quantum kernel closed")
 
-    while True:
-        message = channel.recv()
+            if isinstance(message, KernelMessage):
+                if message.type == KernelMessageType.CLOSE:
+                    break
 
-        if isinstance(message, KernelMessage):
-            if message.type == KernelMessageType.CLOSE:
-                # connector.close()
-                break
+                if message.type == KernelMessageType.RUN:
+                    qobj = message.payload.pop("qobj")
+                    results_file = connector.run_experiments(qobj, **message.payload)
+                    channel.send(results_file)
 
-            if message.type == KernelMessageType.RUN:
-                qobj = message.payload.pop("qobj")
-                results_file = connector.run_experiments(qobj, **message.payload)
-                channel.send(results_file)
-
-            if message.type == KernelMessageType.REGISTER:
-                connector.register_job(message.payload)
+                if message.type == KernelMessageType.REGISTER:
+                    connector.register_job(message.payload)
 
 
 def connect() -> Tuple[mp.Process, Connection]:
@@ -110,7 +113,9 @@ def connect() -> Tuple[mp.Process, Connection]:
 class Kernel:
     """The controller of the hardware"""
 
-    setup = InstrumentCoordinator("tergite_kernel", add_default_generic_icc=False)
+    _coordinators: weakref.WeakValueDictionary[
+        str, InstrumentCoordinator
+    ] = weakref.WeakValueDictionary()
 
     # heap memory, so that instrument drivers do not get garbage collected
     shared_mem = list()
@@ -118,7 +123,15 @@ class Kernel:
     def __init__(
         self,
         config_file: Union[str, bytes, os.PathLike],
+        name: str = "tergite_kernel",
     ):
+        try:
+            self._setup = Kernel._coordinators[name]
+        except KeyError:
+            self._setup = Kernel._coordinators[name] = InstrumentCoordinator(
+                name, add_default_generic_icc=False
+            )
+
         conf = KernelConfig.from_yaml(config_file)
 
         # Tell Quantify where to store data
@@ -160,9 +173,9 @@ class Kernel:
 
             Kernel.shared_mem.append(device)
             rich.print(f"Instantiated Cluster driver for '{cluster.name}'")
-            Kernel.setup.add_component(component)
+            self._setup.add_component(component)
             rich.print(
-                f"Added '{component.name}' to instrument coordinator '{Kernel.setup.name}'"
+                f"Added '{component.name}' to instrument coordinator '{self._setup.name}'"
             )
 
         # load generic QCoDes instruments
@@ -204,7 +217,7 @@ class Kernel:
         )
 
     def run(self, experiment: Experiment, /):
-        Kernel.setup.stop()
+        self._setup.stop()
 
         # compile to hardware
         # TODO: Here, we can use the new @timer decorator in the benchmarking package
@@ -229,16 +242,16 @@ class Kernel:
         self.logger.log_schedule(compiled_schedule)
 
         # upload schedule to instruments & arm sequencers
-        Kernel.setup.prepare(compiled_schedule)
+        self._setup.prepare(compiled_schedule)
 
         # start experiment
         # TODO: Here, we can use the new @timer decorator from the benchmarking package
         t3 = datetime.now()
-        Kernel.setup.start()
+        self._setup.start()
 
         # wait for program to finish and return acquisition
         # TODO: What is the return type of retrieve_acquisition()?
-        results = Kernel.setup.retrieve_acquisition()
+        results = self._setup.retrieve_acquisition()
         print(f"{results=}")
         t4 = datetime.now()
         print(t4 - t3, "DURATION OF MEASURING")
@@ -406,6 +419,16 @@ class Kernel:
                 pass  # no storage to close
 
         return results_file_path
+
+    def close(self):
+        """Closes the Kernel associated with this name"""
+        self._setup.close_all()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.close()
 
 
 class KernelMessageType(int, enum.Enum):
