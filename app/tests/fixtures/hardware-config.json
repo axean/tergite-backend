@@ -5,7 +5,7 @@
     "ref": "internal",
     "instrument_address": "192.0.2.74",
     "instrument_component": "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent",
-    "cluster0_module0": {
+    "cluster0_module1": {
       "instrument_type": "QCM",
       "complex_output_0": {
         "portclock_configs": [
@@ -25,7 +25,7 @@
         ]
       }
     },
-    "cluster0_module1": {
+    "cluster0_module2": {
       "instrument_type": "QCM_RF",
       "complex_output_0": {
         "lo_freq": 7e9,
@@ -61,7 +61,7 @@
     "ref": "internal",
     "instrument_address": "192.0.1.74",
     "instrument_component": "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent2",
-    "cluster1_module0": {
+    "cluster1_module1": {
       "instrument_type": "QRM",
       "real_output_0": {
         "portclock_configs": [
@@ -104,7 +104,7 @@
         ]
       }
     },
-    "cluster1_module1": {
+    "cluster1_module2": {
       "instrument_type": "QCM_RF",
       "complex_output_0": {
         "portclock_configs": [
@@ -123,7 +123,7 @@
         ]
       }
     },
-    "cluster1_module2": {
+    "cluster1_module3": {
       "instrument_type": "QRM_RF",
       "complex_output_0": {
         "portclock_configs": [

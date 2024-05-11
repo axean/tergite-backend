@@ -87,7 +87,7 @@ clusters:
       # Take note that the name is of format "<cluster_name>_module<n>", where <n> is the module number in the cluster.
       # 'n' seems to start at 1
       # See: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#module-configuration
-      - name: "cluster1_module_0"
+      - name: "cluster1_module_1"
         instrument_type: "QCM"
         # Valid channel lists
         # - complex_outputs
@@ -164,7 +164,7 @@ clusters:
               - port: q2:res
                 clock: q2:ro
 
-      - name: "cluster1_module_1"
+      - name: "cluster1_module_2"
         instrument_type: "QRM"
         # Valid channel lists
         # - complex_inputs
@@ -263,7 +263,7 @@ clusters:
               - port: q2:res
                 clock: q2:ro
 
-      - name: "cluster1_module_2"
+      - name: "cluster1_module_3"
         instrument_type: "QCM_RF"
         # Valid channel lists
         # - complex_outputs
@@ -320,7 +320,7 @@ clusters:
               - port: q2:res
                 clock: q2:ro
 
-      - name: "cluster1_module_3"
+      - name: "cluster1_module_4"
         instrument_type: "QRM_RF"
         # Valid channel lists
         # - complex_inputs

@@ -14,12 +14,15 @@
 """Utilities concerned with the configuration of the Quantum hardware/software"""
 import enum
 import os
+import re
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from pydantic import BaseModel, Extra, validator
 from pydantic.fields import ModelField
 from quantify_scheduler.backends.qblox import instrument_compilers as qblox_compiler
 from ruamel.yaml import YAML
+
+from app.services.kernel.utils.general import get_duplicates
 
 yaml = YAML(typ="safe")
 
@@ -152,8 +155,6 @@ _MODULE_TYPE_VALID_CHANNEL_NAMES_MAP: Dict[ClusterModuleType, Set[str]] = {
     ),
 }
 
-# QcmModule, QrmModule, QcmRfModule, QrmRfModule
-
 
 class ClusterModule(KernelConfigItem):
     """General configration for a cluster module"""
@@ -191,13 +192,14 @@ class ClusterModule(KernelConfigItem):
         except KeyError:
             return v
 
+        # only particular channel lists for given instrument type
         valid_channels = _MODULE_TYPE_VALID_CHANNELS_MAP[module_type]
-
         if not valid_channels.get(field.name):
             raise ValueError(
                 f"'{field.name}' are not permitted in cluster modules of type '{module_type}'"
             )
 
+        # only particular channel names for given instrument type
         permitted_channel_names = _MODULE_TYPE_VALID_CHANNEL_NAMES_MAP[module_type]
         actual_channel_names = {item.name for item in v}
         invalid_names = actual_channel_names.difference(permitted_channel_names)
@@ -274,12 +276,39 @@ class Cluster(KernelConfigItem):
     sequence_to_file: Optional[bool] = None
     modules: List[ClusterModule] = []
 
+    @validator("modules", allow_reuse=True)
+    def valid_module_names(cls, v, values, **kwargs):
+        """Module names can only be of the format <cluster name>_module<n>
+
+        Where n starts at 1 and each name is unique
+        """
+        cluster_name = values["name"]
+        module_names = [item.name for item in v]
+
+        # no duplicate names
+        duplicates = get_duplicates(module_names)
+        if len(duplicates) > 0:
+            raise ValueError(
+                f"cluster {cluster_name} has duplicate modules {duplicates}"
+            )
+
+        # should be of right format
+        pattern = re.compile(f"^{cluster_name}_module([1-9]|\\d{2,})+$")
+        invalid_names = [name for name in module_names if not pattern.match(name)]
+        if len(invalid_names) > 0:
+            raise ValueError(
+                f"Cluster {cluster_name} has invalid module names {invalid_names}. "
+                "Expected module name format of <cluster name>_module<n>; n >= 1"
+            )
+
+        return v
+
     def to_quantify(
         self, exclude_none: bool = True, exclude: Optional[Set] = None
     ) -> Dict[str, Any]:
         """Converts this cluster into a quantify-scheduler-compatible config
 
-        It returns something like, where n is module number:
+        It returns something like, where n is module number, starting from 1:
         {
             instrument_type: "Cluster",
             ref: "external",
@@ -299,13 +328,7 @@ class Cluster(KernelConfigItem):
         )
 
         # add the fields that are required for the hardware config
-        cluster_name = self.name
-        raw_dict.update(
-            {
-                f"{cluster_name}_module{index}": value.to_quantify()
-                for index, value in enumerate(self.modules)
-            }
-        )
+        raw_dict.update({module.name: module.to_quantify() for module in self.modules})
 
         # get rid of Enum in ref
         raw_dict["ref"] = f"{self.ref}"

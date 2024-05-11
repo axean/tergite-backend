@@ -14,6 +14,7 @@
 
 import json
 import sys
+from typing import List
 
 
 def find(haystack, needle):
@@ -162,3 +163,22 @@ def load_config(filepath: str):
                 file=sys.stderr,
             )
             raise jsde
+
+
+def get_duplicates(texts: List[str]) -> List[str]:
+    """Gets the duplicates in a given list of strings
+
+    Args:
+        texts: the list of strings
+
+    Returns:
+        the list of duplicate strings
+    """
+    duplicates = []
+    seen = set()
+    for name in texts:
+        if name in seen:
+            duplicates.append(name)
+        else:
+            seen.add(name)
+    return duplicates
