@@ -1,24 +1,61 @@
 # Configuration
 
-This is documentation on how to configure BCC
+Documentation about configuring BCC
 
+## General Configuration
 
-## QBLOX Instrument's Settings
-Specification:
+To configure the entire application, we use `.env` files.   
 
-- The QBLOX instruments configurations should look like single units in the Quantify hardware configuration file.
-- Generic QCoDeS instruments, such as local oscillators, should be a flat JSON blob where every key is a QCoDeS command for the device and the value corresponds to the set value. QCoDeS drivers can be found at qcodes.github.io. For example, here is the driver for SGS100A: https://qcodes.github.io/Qcodes/_modules/qcodes/instrument_drivers/rohde_schwarz/SGS100A.html.
-- Every config file should additionally have keys "instrument_type" "instrument_address" and "instrument_driver". These are not QCoDeS commands, they are used by tqc to configure the instrument orchestration. QBLOX devices additionally need a key called "instrument_component" pointing to the IC component of the device.
-- Important: Cluster module naming in hardware config: changing module names to <cluster_name>_module<slot_id> required! See: https://gitlab.com/quantify-os/quantify-scheduler/-/wikis/Qblox-ICCs:-Interface-changes-in-using-qblox-instruments-v0.6.0
-- Important: When a new Cluster is instantiated, its component modules are automatically added using the naming convention `"<cluster_name>_module<slot>"`. See https://gitlab.com/quantify-os/quantify-scheduler/-/blob/main/quantify_scheduler/instrument_coordinator/components/qblox.py#L1027
+Just copy the [`dot-env-template.txt`](../dot-env-template.txt) to `env` and update the variables there in.
 
-See .json files for example.
+```shell
+cp dot-env-template.txt .env
+```
 
-## TODO
+## QBLOX Instruments Configuration
 
-- [x] Choose between yaml, simplified JSON and toml for configuration: Maintain the same JSON config; but change the env file to use a simpler check for dummy cluster
-- [x] Simplify hardware configuration using YAML. See [quantify docs](https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/How%20to%20use.html#sec-qblox-how-to-configure).
-- [ ] Rename some of the configurations to lower case values in quantify settings
-- [ ] Simplify some functions e.g. configuration loading
-- [ ] Write some tests for quantify
-- [ ] Get rid of some global variables
+We use the [`kernel-config.example.yml`](../kernel-config.example.yml) as a template for how to configure this application
+to control the [QBLOX instruments](https://qblox-qblox-instruments.readthedocs-hosted.com/en/main/index.html) that control the quantum computer. 
+
+It is well documented. Just copy it to `kernel-config.yml` and update its variables and you are good to go.
+
+```shell
+# on the root of the project
+cp kernel-config.example.yml kernel-config.yml
+```
+
+### Dummy QBLOX Instrumments
+
+You may wish to run some dummy QBLOX instruments if you don't have access to the physical QBLOX instruments
+
+We already have a preconfigured [`kernel-config.yml`](../app/tests/fixtures/kernel-config.yml) for this in the 
+`app/tests/fixtures` folder.   
+
+Copy it to your root folder.
+
+```shell
+# on the root of the project
+cp app/tests/fixtures/kernel-config.yml kernel-config.yml
+```
+
+_NOTE: You can find out more about the configuration properties in the kernel-config file by 
+visiting the [quantify_scheduler docs](https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html)
+and the [QCoDeS drivers docs](https://microsoft.github.io/Qcodes/)._  
+
+_NOTE: You could choose to use a different name for your kernel config file e.g. `foobar.yml`.
+You however need to explicitly set this name in the `.env` file `KERNEL_CONFIG_FILE=foobar.yml`_  
+
+### Calibrated Data Configuration
+
+We also recalibrate the quantum computer from time to time and store that data in TOML files in the [`configs`](../configs) folder.  
+
+When starting the application, one needs to supply one calibration set from any of those configuration files.
+
+```shell
+# on the root of the project
+./start_bcc.sh --device configs/device_default.toml
+```
+
+_NOTE: You don't need to pass the `.env` file or the `kernel-config.yml` file to the start script as these are 
+automatically loaded for you._  
+

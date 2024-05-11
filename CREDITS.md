@@ -7,7 +7,7 @@
 
 ## Axel Andersson
 
-- Support for [quantify-core](https://quantify-os.org/docs/quantify-core)
+- Support for [quantify-scheduler](https://quantify-os.org/docs/quantify-scheduler)
 
 ## Martin Ahindura
 

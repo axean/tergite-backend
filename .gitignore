@@ -150,3 +150,5 @@ tmp/
 
 # test data
 app/tests/data/
+data/
+pytest-data/
