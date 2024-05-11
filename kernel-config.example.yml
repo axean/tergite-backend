@@ -389,17 +389,6 @@ clusters:
               - port: q2:res
                 clock: q2:ro
 
-local_oscillators:
-  # configuration for Local oscillators that are internal
-
-  # name can be any name you wish
-  - name: "lo1"
-    frequency: 5e9
-    power: 20
-  - name: "lo2"
-    frequency: 6e9
-    power: 25
-
 generic_qcodes_instruments:
   # Generic QCoDeS instruments, such as local oscillators.
   #

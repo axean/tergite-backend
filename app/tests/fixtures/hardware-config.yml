@@ -104,12 +104,6 @@ clusters:
               - port: "q1:res"
                 clock: q1.ro
 
-local_oscillators:
-  - name: lo1
-    instrument_type: LocalOscillator
-    frequency: 5000000000
-    power: 20
-
 latency_corrections:
   q4:mw-q4.01: 8e-9
   q5:mw-q5.01: 4e-9

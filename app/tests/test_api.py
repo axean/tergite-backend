@@ -353,7 +353,7 @@ def test_upload_job(
                 "local": {"pre_processing": 0, "execution": 0, "post_processing": 0},
             },
             "status": {
-                "location": 5,
+                "location": 7,
                 "started": timestamp,
                 "finished": None,
                 "cancelled": {"time": None, "reason": None},
@@ -362,8 +362,8 @@ def test_upload_job(
             "timestamps": {
                 _REGISTRATION_STAGE: {"started": timestamp, "finished": timestamp},
                 _PRE_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
-                _EXECUTION_STAGE: {"started": timestamp, "finished": None},
-                _POST_PROCESSING_STAGE: {"started": None, "finished": None},
+                _EXECUTION_STAGE: {"started": timestamp, "finished": timestamp},
+                _POST_PROCESSING_STAGE: {"started": timestamp, "finished": None},
                 _FINAL_STAGE: {"started": None, "finished": None},
             },
             "result": None,

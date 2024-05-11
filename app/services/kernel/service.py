@@ -34,6 +34,9 @@ from quantify_scheduler.backends.qblox_backend import hardware_compile
 from quantify_scheduler.compilation import determine_absolute_timing
 from quantify_scheduler.helpers.importers import import_python_object_from_string
 from quantify_scheduler.instrument_coordinator import InstrumentCoordinator
+from quantify_scheduler.instrument_coordinator.components.generic import (
+    GenericInstrumentCoordinatorComponent,
+)
 from quantify_scheduler.instrument_coordinator.components.qblox import ClusterComponent
 from tqdm import tqdm
 from tqdm.auto import tqdm
@@ -79,7 +82,10 @@ class Kernel:
             self._setup = Kernel._coordinators[name]
         except KeyError:
             self._setup = Kernel._coordinators[name] = InstrumentCoordinator(
-                name, add_default_generic_icc=False
+                name,
+                # the default generic icc is important for QCoDeS commands that are run generically
+                # when creating a generic QCoDeS instrument
+                add_default_generic_icc=True,
             )
 
         conf = KernelConfig.from_yaml(config_file)
@@ -147,9 +153,15 @@ class Kernel:
                     # ignore invalid parameters
                     pass
 
+            component = GenericInstrumentCoordinatorComponent(device)
+
             Kernel.shared_mem.append(device)
             rich.print(
                 f"Instantiated {instrument.instrument_driver.import_path.split('.')[-1]} driver for '{instrument.name}'"
+            )
+            self._setup.add_component(component)
+            rich.print(
+                f"Added '{component.name}' to instrument coordinator '{self._setup.name}'"
             )
 
     def register_job(self, tag: str = ""):

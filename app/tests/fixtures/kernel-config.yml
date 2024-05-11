@@ -106,8 +106,15 @@ clusters:
               - port: "q1:res"
                 clock: q1.ro
 
-local_oscillators:
-  - name: lo1
-    instrument_type: LocalOscillator
-    frequency: 5000000000
-    power: 20
+generic_qcodes_instruments:
+  - name: "lo1"
+    instrument_type: "LocalOscillator"
+
+    instrument_driver:
+      import_path: "quantify_scheduler.helpers.mock_instruments.MockLocalOscillator"
+      kwargs:
+        name: "lo1"
+
+    parameters:
+      frequency: 5e9
+      power: 20

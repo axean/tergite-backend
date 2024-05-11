@@ -336,33 +336,6 @@ class Cluster(KernelConfigItem):
         return raw_dict
 
 
-class LocalOscillator(KernelConfigItem):
-    """Configuration for the local oscillator"""
-
-    name: str
-    instrument_type: str = "LocalOscillator"
-    frequency: Optional[float] = None
-    power: float
-
-    def to_quantify(
-        self, exclude_none: bool = False, exclude: Optional[Set] = None
-    ) -> Dict[str, Any]:
-        """Converts this cluster into a quantify-scheduler-compatible config
-
-        It returns something like:
-        {
-            instrument_type: "LocalOscillator",
-            frequency: 5e9,
-            power: 20,
-        }
-        """
-        excluded_fields = exclude if isinstance(exclude, set) else set()
-
-        # exclude name as it is not part of the quantify configuration schema
-        excluded_fields.update({"name"})
-        return self.dict(exclude=excluded_fields, exclude_none=exclude_none)
-
-
 class _QcodesInstrumentDriver(KernelConfigItem):
     """Metadata about the driver of the Qcodes instrument to aid in initializing it"""
 
@@ -438,7 +411,6 @@ class KernelConfig(KernelConfigItem):
     backend: str = "quantify_scheduler.backends.qblox_backend.hardware_compile"
     general: GeneralConfig
     clusters: List[Cluster] = []
-    local_oscillators: List[LocalOscillator] = []
     generic_qcodes_instruments: List[GenericQcodesInstrument] = []
 
     @classmethod
@@ -488,10 +460,6 @@ class KernelConfig(KernelConfigItem):
         return {
             **self.dict(exclude=excluded_fields, exclude_none=exclude_none),
             **{cluster.name: cluster.to_quantify() for cluster in self.clusters},
-            **{
-                oscillator.name: oscillator.to_quantify()
-                for oscillator in self.local_oscillators
-            },
             **{
                 instrument.name: instrument.to_quantify()
                 for instrument in self.generic_qcodes_instruments
