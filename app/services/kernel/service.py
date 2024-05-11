@@ -15,18 +15,17 @@
 import copy
 import json
 import os
-import weakref
 from datetime import datetime
 from functools import partial
 from pathlib import Path
 from traceback import format_exc
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import numpy as np
 import qblox_instruments
 import quantify_core.data.handling as dh
 import rich
-from qcodes import find_or_create_instrument
+from qcodes import Instrument, find_or_create_instrument
 from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder as PulseQobj_encoder
 from qiskit.qobj import PulseQobj
 from quantify_core.data.handling import create_exp_folder, gen_tuid
@@ -35,7 +34,10 @@ from quantify_scheduler.backends.qblox_backend import hardware_compile
 from quantify_scheduler.compilation import determine_absolute_timing
 from quantify_scheduler.helpers.importers import import_python_object_from_string
 from quantify_scheduler.instrument_coordinator import InstrumentCoordinator
-from quantify_scheduler.instrument_coordinator.components import generic
+from quantify_scheduler.instrument_coordinator.components import (
+    InstrumentCoordinatorComponentBase,
+    generic,
+)
 from quantify_scheduler.instrument_coordinator.components.generic import (
     GenericInstrumentCoordinatorComponent,
 )
@@ -68,29 +70,18 @@ _QBLOX_CLUSTER_TYPE_MAP: Dict[ClusterModuleType, qblox_instruments.ClusterType] 
 class Kernel:
     """The controller of the hardware"""
 
-    _coordinators: weakref.WeakValueDictionary[
-        str, InstrumentCoordinator
-    ] = weakref.WeakValueDictionary()
+    _coordinator = find_or_create_instrument(
+        InstrumentCoordinator,
+        "tergite_kernel",
+        # the default generic icc is important for QCoDeS commands that are run generically
+        # when creating a generic QCoDeS instrument
+        add_default_generic_icc=True,
+    )
 
     # heap memory, so that instrument drivers do not get garbage collected
-    shared_mem = list()
+    shared_mem = dict()
 
-    def __init__(
-        self,
-        config_file: Union[str, bytes, os.PathLike],
-        name: str = "tergite_kernel",
-    ):
-        try:
-            self._setup = Kernel._coordinators[name]
-        except KeyError:
-            self._setup = Kernel._coordinators[name] = find_or_create_instrument(
-                InstrumentCoordinator,
-                name,
-                # the default generic icc is important for QCoDeS commands that are run generically
-                # when creating a generic QCoDeS instrument
-                add_default_generic_icc=True,
-            )
-
+    def __init__(self, config_file: Union[str, bytes, os.PathLike]):
         conf = KernelConfig.from_yaml(config_file)
 
         # Tell Quantify where to store data
@@ -129,22 +120,13 @@ class Kernel:
                 identifier=None,
                 dummy_cfg=dummy_cfg,
             )
-            Kernel.shared_mem.append(device)
+            Kernel.shared_mem[device.name] = device
             rich.print(f"Instantiated Cluster driver for '{cluster.name}'")
-
-            try:
-                component = self._setup.get_component(f"ic_{device.name}")
-            except KeyError:
-                component = ClusterComponent(device)
-
-            try:
-                self._setup.add_component(component)
-                rich.print(
-                    f"Added '{component.name}' to instrument coordinator '{self._setup.name}'"
-                )
-            except ValueError:
-                # ignore if component is already added
-                pass
+            _add_component_if_not_exists(
+                coordinator=Kernel._coordinator,
+                component_type=ClusterComponent,
+                device=device,
+            )
 
         # load generic QCoDes instruments
         for instrument in conf.generic_qcodes_instruments:
@@ -158,36 +140,17 @@ class Kernel:
             device = find_or_create_instrument(
                 driver, device_name, **instrument.instrument_driver.kwargs
             )
-
-            # set its parameters by calling them as commands
-            # https://microsoft.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html#Example-of-setting-and-getting-parameters
-            for command, value in instrument.parameters.items():
-                try:
-                    qcodes_command = getattr(device, command)
-                    qcodes_command(value)
-                    rich.print(f"Set '{command}' to {value}")
-                except (AttributeError, TypeError):
-                    # ignore invalid parameters
-                    pass
-
-            Kernel.shared_mem.append(device)
+            _set_parameters(device, instrument.parameters)
+            Kernel.shared_mem[device.name] = device
             rich.print(
                 f"Instantiated {instrument.instrument_driver.import_path.split('.')[-1]} driver for '{instrument.name}'"
             )
 
-            try:
-                component = self._setup.get_component(f"ic_{device.name}")
-            except KeyError:
-                component = GenericInstrumentCoordinatorComponent(device)
-
-            try:
-                self._setup.add_component(component)
-                rich.print(
-                    f"Added '{component.name}' to instrument coordinator '{self._setup.name}'"
-                )
-            except ValueError:
-                # ignore if component is already added
-                pass
+            _add_component_if_not_exists(
+                coordinator=Kernel._coordinator,
+                component_type=GenericInstrumentCoordinatorComponent,
+                device=device,
+            )
 
     def register_job(self, tag: str = ""):
         # TODO: The fields tuid, experiment_folder, and logger could be class properties
@@ -204,7 +167,7 @@ class Kernel:
         )
 
     def run(self, experiment: Experiment, /):
-        self._setup.stop()
+        Kernel._coordinator.stop()
 
         # compile to hardware
         # TODO: Here, we can use the new @timer decorator in the benchmarking package
@@ -229,16 +192,16 @@ class Kernel:
         self.logger.log_schedule(compiled_schedule)
 
         # upload schedule to instruments & arm sequencers
-        self._setup.prepare(compiled_schedule)
+        self._coordinator.prepare(compiled_schedule)
 
         # start experiment
         # TODO: Here, we can use the new @timer decorator from the benchmarking package
         t3 = datetime.now()
-        self._setup.start()
+        Kernel._coordinator.start()
 
         # wait for program to finish and return acquisition
         # TODO: What is the return type of retrieve_acquisition()?
-        results = self._setup.retrieve_acquisition()
+        results = self._coordinator.retrieve_acquisition()
         print(f"{results=}")
         t4 = datetime.now()
         print(t4 - t3, "DURATION OF MEASURING")
@@ -409,10 +372,57 @@ class Kernel:
 
     def close(self):
         """Closes the Kernel associated with this name"""
-        self._setup.close_all()
+        Kernel._coordinator.close_all()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         self.close()
+
+
+def _add_component_if_not_exists(
+    coordinator: InstrumentCoordinator,
+    component_type: type[InstrumentCoordinatorComponentBase],
+    device: Instrument,
+):
+    """Adds a component for the given device to the coordinator
+
+    Args:
+        coordinator: the instrument coordinator to add component to
+        component_type: the type of component
+        device: the instrument for the given component
+    """
+    try:
+        component = coordinator.get_component(f"ic_{device.name}")
+    except KeyError:
+        component = component_type(device)
+
+    try:
+        coordinator.add_component(component)
+        rich.print(
+            f"Added '{component.name}' to instrument coordinator '{coordinator.name}'"
+        )
+    except ValueError:
+        # ignore if component is already added
+        pass
+
+
+def _set_parameters(device: Instrument, parameters: Dict[str, Any]):
+    """Set the parameters of a QCoDeS device
+
+    Args:
+        device: the QCoDeS device whose parameters are to be set
+        parameters: the dictionary of parameter names and values
+    """
+
+    for command, value in parameters.items():
+        try:
+            # Setting parameters is done by calling them as commands
+            # https://microsoft.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html#Example-of-setting-and-getting-parameters
+            qcodes_command = getattr(device, command)
+            qcodes_command(value)
+            rich.print(f"Set '{command}' to {value}")
+        except (AttributeError, TypeError):
+            # ignore invalid parameters
+            pass
