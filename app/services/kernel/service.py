@@ -26,6 +26,7 @@ import numpy as np
 import qblox_instruments
 import quantify_core.data.handling as dh
 import rich
+from qcodes import find_or_create_instrument
 from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder as PulseQobj_encoder
 from qiskit.qobj import PulseQobj
 from quantify_core.data.handling import create_exp_folder, gen_tuid
@@ -34,6 +35,7 @@ from quantify_scheduler.backends.qblox_backend import hardware_compile
 from quantify_scheduler.compilation import determine_absolute_timing
 from quantify_scheduler.helpers.importers import import_python_object_from_string
 from quantify_scheduler.instrument_coordinator import InstrumentCoordinator
+from quantify_scheduler.instrument_coordinator.components import generic
 from quantify_scheduler.instrument_coordinator.components.generic import (
     GenericInstrumentCoordinatorComponent,
 )
@@ -81,7 +83,8 @@ class Kernel:
         try:
             self._setup = Kernel._coordinators[name]
         except KeyError:
-            self._setup = Kernel._coordinators[name] = InstrumentCoordinator(
+            self._setup = Kernel._coordinators[name] = find_or_create_instrument(
+                InstrumentCoordinator,
                 name,
                 # the default generic icc is important for QCoDeS commands that are run generically
                 # when creating a generic QCoDeS instrument
@@ -120,19 +123,28 @@ class Kernel:
             # because they cause a chaotic configuration.
             # The Cluster was also the only one documented on quantify-scheduler docs at the time of the refactor
             # https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html
-            device = qblox_instruments.Cluster(
+            device = find_or_create_instrument(
+                qblox_instruments.Cluster,
                 name=cluster.name,
                 identifier=None,
                 dummy_cfg=dummy_cfg,
             )
-            component = ClusterComponent(device)
-
             Kernel.shared_mem.append(device)
             rich.print(f"Instantiated Cluster driver for '{cluster.name}'")
-            self._setup.add_component(component)
-            rich.print(
-                f"Added '{component.name}' to instrument coordinator '{self._setup.name}'"
-            )
+
+            try:
+                component = self._setup.get_component(f"ic_{device.name}")
+            except KeyError:
+                component = ClusterComponent(device)
+
+            try:
+                self._setup.add_component(component)
+                rich.print(
+                    f"Added '{component.name}' to instrument coordinator '{self._setup.name}'"
+                )
+            except ValueError:
+                # ignore if component is already added
+                pass
 
         # load generic QCoDes instruments
         for instrument in conf.generic_qcodes_instruments:
@@ -140,7 +152,12 @@ class Kernel:
             driver = import_python_object_from_string(
                 instrument.instrument_driver.import_path
             )
-            device = driver(**instrument.instrument_driver.kwargs)
+            device_name = instrument.instrument_driver.kwargs.pop(
+                "name", generic.DEFAULT_NAME
+            )
+            device = find_or_create_instrument(
+                driver, device_name, **instrument.instrument_driver.kwargs
+            )
 
             # set its parameters by calling them as commands
             # https://microsoft.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html#Example-of-setting-and-getting-parameters
@@ -153,16 +170,24 @@ class Kernel:
                     # ignore invalid parameters
                     pass
 
-            component = GenericInstrumentCoordinatorComponent(device)
-
             Kernel.shared_mem.append(device)
             rich.print(
                 f"Instantiated {instrument.instrument_driver.import_path.split('.')[-1]} driver for '{instrument.name}'"
             )
-            self._setup.add_component(component)
-            rich.print(
-                f"Added '{component.name}' to instrument coordinator '{self._setup.name}'"
-            )
+
+            try:
+                component = self._setup.get_component(f"ic_{device.name}")
+            except KeyError:
+                component = GenericInstrumentCoordinatorComponent(device)
+
+            try:
+                self._setup.add_component(component)
+                rich.print(
+                    f"Added '{component.name}' to instrument coordinator '{self._setup.name}'"
+                )
+            except ValueError:
+                # ignore if component is already added
+                pass
 
     def register_job(self, tag: str = ""):
         # TODO: The fields tuid, experiment_folder, and logger could be class properties
