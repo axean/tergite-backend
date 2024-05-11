@@ -353,9 +353,9 @@ def test_upload_job(
                 "local": {"pre_processing": 0, "execution": 0, "post_processing": 0},
             },
             "status": {
-                "location": 7,
+                "location": 9,
                 "started": timestamp,
-                "finished": None,
+                "finished": timestamp,
                 "cancelled": {"time": None, "reason": None},
                 "failed": {"time": None, "reason": None},
             },
@@ -363,10 +363,12 @@ def test_upload_job(
                 _REGISTRATION_STAGE: {"started": timestamp, "finished": timestamp},
                 _PRE_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
                 _EXECUTION_STAGE: {"started": timestamp, "finished": timestamp},
-                _POST_PROCESSING_STAGE: {"started": timestamp, "finished": None},
-                _FINAL_STAGE: {"started": None, "finished": None},
+                _POST_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
+                _FINAL_STAGE: {"started": timestamp, "finished": timestamp},
             },
-            "result": None,
+            # FIXME: The Job data was changed; probably the discriminator results ought to change also
+            #   in order to return meaningful results
+            "result": {"memory": [[]]},
             "name": job["name"],
             "post_processing": job["post_processing"],
             "is_calibration_supervisor_job": job["is_calibration_supervisor_job"],

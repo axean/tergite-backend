@@ -145,17 +145,14 @@ def _apply_linear_discriminator(
     return (scores.ravel() > 0).astype(np.int_)
 
 
-def postprocess_storage_file(sf: StorageFile) -> JobID:
+def postprocess_storage_file(
+    sf: StorageFile, backend_name: str = settings.DEFAULT_PREFIX
+) -> JobID:
     try:
         with get_mss_client() as mss_client:
             if sf.meas_level == MeasLvl.DISCRIMINATED:
-                # This would fetch the discriminator from the database
-                # The main reason to have it, is to be compatible with the simulator
-                # The SimulatorC backend in mongoDB is supported and tested
-                backend: str = sf.header["qobj"]["backend"].attrs["backend_name"]
-                backend_definition: str = (
-                    f'{str(MSS_MACHINE_ROOT_URL)}{REST_API_MAP["backends"]}/{backend}'
-                )
+                # This would fetch the discriminator from the MSS
+                backend_definition: str = f'{str(MSS_MACHINE_ROOT_URL)}{REST_API_MAP["backends"]}/{backend_name}'
                 response = mss_client.get(backend_definition)
 
                 if response.status_code == 200:

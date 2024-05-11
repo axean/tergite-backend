@@ -31,7 +31,7 @@ from .utils.modules import remove_modules
 from .utils.rq import get_rq_worker
 
 _lda_parameters_fixture = load_json_fixture("lda_parameters.json")
-_system_test_backend = load_json_fixture("simulator_backend.json")
+_test_backend_props_fixture = load_json_fixture("test_backend_props.json")
 _real_redis = Redis(db=2)
 _fake_redis = FakeStrictRedis()
 _async_queue_pool = QueuePool(
@@ -109,8 +109,8 @@ def mock_mss_get_requests(url: str, **kwargs):
     """Mock GET requests sent to MSS for testing"""
     if url.endswith("properties/lda_parameters"):
         return MockHttpResponse(status_code=200, json=_lda_parameters_fixture)
-    if url.endswith("backends/SimulatorB"):
-        return MockHttpResponse(status_code=200, json=_system_test_backend)
+    if url.endswith(f"backends/{TEST_DEFAULT_PREFIX}"):
+        return MockHttpResponse(status_code=200, json=_test_backend_props_fixture)
 
 
 def mock_mss_put_requests(url: str, **kwargs):
