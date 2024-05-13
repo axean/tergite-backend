@@ -26,6 +26,7 @@ qiskit==0.45.0
 qiskit-ibm-provider==0.7.2
 quantify_core==0.7.3
 quantify_scheduler==0.16.0
+qblox_instruments~=0.11.2
 Requests==2.31.0
 retworkx==0.13.2
 rich==13.7.0
@@ -35,6 +36,7 @@ tqdm==4.64.0
 xarray==2023.11.0
 filelock>=3.12.2
 ruamel.yaml
+jinja2
 # dev-dependencies
 pytest>=7.4.0,<8.0.0
 httpx>=0.25.1
