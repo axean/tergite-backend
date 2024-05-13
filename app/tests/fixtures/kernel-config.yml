@@ -2,119 +2,75 @@ general:
   data_directory: data
 
 clusters:
-  - name: cluster0
+  - name: clusterA
     instrument_type: Cluster
     is_dummy: true
     ref: internal
-    instrument_address: "192.0.2.74"
+    instrument_address: "192.0.2.141"
     instrument_component: "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent"
 
     modules:
-      - name: cluster0_module1
-        instrument_type: QCM
+      - name: "clusterA_module7"
+        instrument_type: "QCM_RF"
 
         complex_outputs:
-          - name: complex_output_0
+          - name: "complex_output_0"
+            lo_freq: 4458000000
+            dc_mixer_offset_I: 0
+            dc_mixer_offset_Q: 0
             portclock_configs:
-              - clock: q0.01
-                port: "q0:mw"
-          - name: complex_output_1
-            lo_name: lo1
-            portclock_configs:
-              - clock: q1.01
-                port: "q1:mw"
+            - port: "drive0"
+              clock: "d0"
+              mixer_amp_ratio: 1
+              mixer_phase_error_deg: 0
 
-      - name: cluster0_module2
-        instrument_type: QCM_RF
+      - name: "clusterA_module8"
+        instrument_type: "QCM_RF"
 
         complex_outputs:
-          - name: complex_output_0
-            lo_freq: 7000000000
+          - name: "complex_output_0"
+            lo_freq: 5110000000
+            dc_mixer_offset_I: 0
+            dc_mixer_offset_Q: 0
             portclock_configs:
-              - clock: q2.01
-                port: "q2:mw"
-          - name: complex_output_1
-            portclock_configs:
-              - clock: q3.01
-                interm_freq: 50000000
-                port: "q3:mw"
+            - port: "drive1"
+              clock: "d1"
+              mixer_amp_ratio: 1
+              mixer_phase_error_deg: 0
 
-  - name: cluster1
-    instrument_type: Cluster
-    is_dummy: true
-    ref: internal
-    instrument_address: "192.0.1.74"
-    instrument_component: "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent2"
-
-    modules:
-      - name: cluster1_module1
-        instrument_type: QRM
-
-        real_outputs:
-          - name: real_output_0
-            portclock_configs:
-              - port: "q0:mw"
-                clock: q0.01
-          - name: real_output_1
-            portclock_configs:
-              - port: "q0:res"
-                clock: q0.ro
-
-        real_inputs:
-          - name: real_input_0
-            portclock_configs:
-              - port: "q1:res"
-                clock: q1.ro
+      - name: "clusterA_module9"
+        instrument_type: "QCM_RF"
 
         complex_outputs:
-          - name: complex_output_0
+          - name: "complex_output_0"
+            lo_freq: 4445000000
+            dc_mixer_offset_I: 0
+            dc_mixer_offset_Q: 0
             portclock_configs:
-              - port: "q0:mw"
-                clock: q0.01
+            - port: "drive2"
+              clock: "d2"
+              mixer_amp_ratio: 1
+              mixer_phase_error_deg: 0
 
-        complex_inputs:
-          - name: complex_input_0
-            portclock_configs:
-              - port: "q1:res"
-                clock: q1.ro
 
-      - name: cluster1_module2
-        instrument_type: QCM_RF
+      - name: "clusterA_module17"
+        instrument_type: "QRM_RF"
 
         complex_outputs:
-          - name: complex_output_0
+          - name: "complex_output_0"
+            lo_freq: 6838000000
+            dc_mixer_offset_I: 0
+            dc_mixer_offset_Q: 0
             portclock_configs:
-              - port: "q0:mw"
-                clock: q0.01
-          - name: complex_output_1
-            portclock_configs:
-              - port: "q0:res"
-                clock: q0.ro
-
-      - name: cluster1_module3
-        instrument_type: QRM_RF
-
-        complex_outputs:
-          - name: complex_output_0
-            portclock_configs:
-              - port: "q0:mw"
-                clock: q0.01
-
-        complex_inputs:
-          - name: complex_input_0
-            portclock_configs:
-              - port: "q1:res"
-                clock: q1.ro
-
-generic_qcodes_instruments:
-  - name: "lo1"
-    instrument_type: "LocalOscillator"
-
-    instrument_driver:
-      import_path: "quantify_scheduler.helpers.mock_instruments.MockLocalOscillator"
-      kwargs:
-        name: "lo1"
-
-    parameters:
-      frequency: 5e9
-      power: 20
+            - port: "readout0"
+              clock: "m0"
+              mixer_amp_ratio: 1
+              mixer_phase_error_deg: 0
+            - port: "readout1"
+              clock: "m1"
+              mixer_amp_ratio: 1
+              mixer_phase_error_deg: 0
+            - port: "readout2"
+              clock: "m2"
+              mixer_amp_ratio: 1
+              mixer_phase_error_deg: 0

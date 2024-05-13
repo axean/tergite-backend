@@ -15,6 +15,7 @@
 import copy
 import json
 import os
+import re
 from datetime import datetime
 from functools import partial
 from pathlib import Path
@@ -66,6 +67,8 @@ _QBLOX_CLUSTER_TYPE_MAP: Dict[ClusterModuleType, qblox_instruments.ClusterType] 
     ClusterModuleType.QRM_RF: qblox_instruments.ClusterType.CLUSTER_QRM_RF,
 }
 
+_MODULE_NAME_REGEX = re.compile(r".*_module(\d+)$")
+
 
 class Kernel:
     """The controller of the hardware"""
@@ -107,8 +110,11 @@ class Kernel:
             dummy_cfg: Optional[Dict[int, qblox_instruments.ClusterType]] = None
             if cluster.is_dummy:
                 dummy_cfg = {
-                    slot + 1: _QBLOX_CLUSTER_TYPE_MAP[module.instrument_type]
-                    for slot, module in enumerate(cluster.modules)
+                    # No checks or try catches because the config is expected to be in the right format
+                    int(
+                        _MODULE_NAME_REGEX.match(module.name).group(1)
+                    ): _QBLOX_CLUSTER_TYPE_MAP[module.instrument_type]
+                    for module in cluster.modules
                 }
             # We only support qblox_instruments.Cluster for now. Pulsar and any other native interfaces were dropped
             # because they cause a chaotic configuration.

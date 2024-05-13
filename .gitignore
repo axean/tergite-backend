@@ -152,3 +152,7 @@ tmp/
 app/tests/data/
 data/
 pytest-data/
+
+# quantify scheduler
+*.hex
+*.q1asm
