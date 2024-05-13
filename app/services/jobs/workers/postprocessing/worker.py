@@ -15,9 +15,9 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-import asyncio
 import functools
 import logging
+import shutil
 from pathlib import Path
 from typing import Any, Tuple, Type
 
@@ -28,7 +28,6 @@ import requests
 import rq.job
 from requests import Response
 from sklearn.utils.extmath import safe_sparse_dot
-from syncer import sync
 
 import settings
 from app.libs.storage_file import MeasLvl, StorageFile
@@ -94,7 +93,7 @@ def logfile_postprocess(logfile: Path) -> JobID:
     new_file_path.mkdir(exist_ok=True)
     new_file = new_file_path / new_file_name_with_suffix
 
-    logfile.replace(new_file)
+    shutil.move(logfile, new_file)
 
     print(f"Moved the logfile to {str(new_file)}")
 
