@@ -156,3 +156,11 @@ pytest-data/
 # quantify scheduler
 *.hex
 *.q1asm
+
+# env
+*.env
+kernel-config.yml
+!**/fixtures/kernel-config.yml
+kernel-config.**.yml
+!kernel-config.example.yml
+

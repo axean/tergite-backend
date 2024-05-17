@@ -275,7 +275,6 @@ clusters:
         # - 'digital_output_0'
         # - 'digital_output_1'
 
-
         complex_outputs:
           # configuration for channels of the type 'complex_output'
           # see: https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#complex-channel
@@ -422,7 +421,6 @@ generic_qcodes_instruments:
       ref_osc_output_freq: "10MHz"
       ref_osc_external_freq: "10MHz"
       ref_LO_out: "REF"
-
 # You can add other arbitrary key-values that can be passed to quantify
 # e.g.
 # latency_corrections:
