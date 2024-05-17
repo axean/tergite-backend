@@ -22,7 +22,8 @@ from starlette.config import Config
 from starlette.datastructures import URL
 
 # NOTE: shell env variables take precedence over the configuration file
-config = Config(Path(__file__).parent / ".env")
+env_file = os.environ.get("ENV_FILE", default=".env")
+config = Config(Path(__file__).parent / env_file)
 
 # Misc settings
 APP_SETTINGS = config("APP_SETTINGS", cast=str, default="production")
