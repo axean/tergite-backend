@@ -41,12 +41,19 @@ pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/
 cp dot-env-template.txt .env
 ```
 
-- Copy the hardware example config file `kernel-config.example.yml` into the `kernel-config.yml` file and update the variables there in. Contact your teammates for
+- Copy the hardware example config file `executor-config.example.yml` into the `executor-config.yml` file and update the variables there in. Contact your teammates for
  the variables you are not sure of.
 
 ```shell
-cp kernel-config.example.yml kernel-config.yml
+cp executor-config.example.yml executor-config.yml
 ```
+
+_Note: If you want to just run a dummy cluster, you can copy the one in the test fixtures_
+
+```shell
+cp app/tests/fixtures/executor-config.yml executor-config.yml
+```
+
 
 - Run start script
 

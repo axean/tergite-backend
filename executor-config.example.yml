@@ -1,4 +1,4 @@
-# This is an example configuration file for the kernel service that controls the hardware
+# This is an example configuration file for the quantum_executor service that controls the hardware
 #
 # It is loosely based on the hardware configuration file for quantify-scheduler
 #

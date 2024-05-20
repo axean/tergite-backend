@@ -12,8 +12,8 @@ This is part of the tergite release v2024.03 that updates the full pipeline for 
 ### Added
 
 - Added storage_file lib (formerly tergite-quantify-connector-storagefile)
-- Added `kernel` service (formerly tergite-quantify-connector)
-- Added the `kernel-config.yml` and its python-based validators
+- Added `quantum_executor` service (formerly tergite-quantify-connector)
+- Added the `executor-config.yml` and its python-based validators
 
 ### Changed
 
@@ -25,8 +25,8 @@ This is part of the tergite release v2024.03 that updates the full pipeline for 
 - Moved unused files to `archive` folder
 - BREAKING_CHANGE: Removed calibration and two state discrimination source code
 - BREAKING_CHANGE: Replaced tergite-quantify-connector-storagefile package with an internal storage_file lib
-- BREAKING_CHANGE: Merged tergite-quantify-connector into tergite-bcc and renamed its service to `kernel`
-- BREAKING_CHANGE: Changed configuration of hardware to use `kernel-config.yml` file with proper validations on loading
+- BREAKING_CHANGE: Merged tergite-quantify-connector into tergite-bcc and renamed its service to `quantum_executor`
+- BREAKING_CHANGE: Changed configuration of hardware to use `executor-config.yml` file with proper validations on loading
 - BREAKING_CHANGE: Removed support for `Pulsar`, or any other instrument drivers other than `Cluster`   
   The old implementation wrongfully assumed that all these drivers have the same signature i.e. `driver(name: str, identifier: str | None)`  
   yet `SpiRack(name: str, address: str, baud_rate: int = 9600, timeout: float = 1, is_dummy: bool = False,)`,   

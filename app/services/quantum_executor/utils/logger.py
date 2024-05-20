@@ -72,7 +72,7 @@ class ExperimentLogger:
 
     @staticmethod
     def make_logger(module_name, output_folder, formatter, /):
-        """Create a logging instance for the Python interpreter which is using Kernel.
+        """Create a logging instance for the Python interpreter which is using QuantumExecutor.
         Module name is the name of the logging module, usually __file__.
         The output folder is the storage location for the data of the experiment.
         The logging formatter specifies how messages appear in the log, the default formatter is:

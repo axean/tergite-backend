@@ -14,36 +14,36 @@ cp dot-env-template.txt .env
 
 ## QBLOX Instruments Configuration
 
-We use the [`kernel-config.example.yml`](../kernel-config.example.yml) as a template for how to configure this application
+We use the [`executor-config.example.yml`](../executor-config.example.yml) as a template for how to configure this application
 to control the [QBLOX instruments](https://qblox-qblox-instruments.readthedocs-hosted.com/en/main/index.html) that control the quantum computer. 
 
-It is well documented. Just copy it to `kernel-config.yml` and update its variables and you are good to go.
+It is well documented. Just copy it to `executor-config.yml` and update its variables and you are good to go.
 
 ```shell
 # on the root of the project
-cp kernel-config.example.yml kernel-config.yml
+cp quantum_executor-config.example.yml executor-config.yml
 ```
 
 ### Dummy QBLOX Instrumments
 
 You may wish to run some dummy QBLOX instruments if you don't have access to the physical QBLOX instruments
 
-We already have a preconfigured [`kernel-config.yml`](../app/tests/fixtures/kernel-config.yml) for this in the 
+We already have a preconfigured [`executor-config.yml`](../app/tests/fixtures/executor-config.yml) for this in the 
 `app/tests/fixtures` folder.   
 
 Copy it to your root folder.
 
 ```shell
 # on the root of the project
-cp app/tests/fixtures/kernel-config.yml kernel-config.yml
+cp app/tests/fixtures/executor-config.yml executor-config.yml
 ```
 
-_NOTE: You can find out more about the configuration properties in the kernel-config file by 
+_NOTE: You can find out more about the configuration properties in the executor-config file by 
 visiting the [quantify_scheduler docs](https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html)
 and the [QCoDeS drivers docs](https://microsoft.github.io/Qcodes/)._  
 
-_NOTE: You could choose to use a different name for your kernel config file e.g. `foobar.yml`.
-You however need to explicitly set this name in the `.env` file `KERNEL_CONFIG_FILE=foobar.yml`_  
+_NOTE: You could choose to use a different name for your quantum executor config file e.g. `foobar.yml`.
+You however need to explicitly set this name in the `.env` file `EXECUTOR_CONFIG_FILE=foobar.yml`_  
 
 ### Calibrated Data Configuration
 
@@ -56,6 +56,6 @@ When starting the application, one needs to supply one calibration set from any 
 ./start_bcc.sh --device configs/device_default.toml
 ```
 
-_NOTE: You don't need to pass the `.env` file or the `kernel-config.yml` file to the start script as these are 
+_NOTE: You don't need to pass the `.env` file or the `executor-config.yml` file to the start script as these are 
 automatically loaded for you._  
 

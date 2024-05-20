@@ -24,9 +24,9 @@ from qiskit_ibm_provider.utils import json_decoder
 from redis import Redis
 
 import settings
-from app.services.kernel import service as kernel_service
-from app.services.kernel.utils.connections import get_kernel_lock
-from app.services.kernel.utils.serialization import iqx_rld
+from app.services.quantum_executor import service as executor_service
+from app.services.quantum_executor.utils.connections import get_executor_lock
+from app.services.quantum_executor.utils.serialization import iqx_rld
 from app.utils.queues import QueuePool
 
 from ...service import Location, fetch_job, inform_failure, inform_location
@@ -43,7 +43,7 @@ DEFAULT_PREFIX = settings.DEFAULT_PREFIX
 
 # redis connection
 redis_connection = Redis()
-kernel = kernel_service.Kernel(config_file=settings.KERNEL_CONFIG_FILE)
+executor = executor_service.QuantumExecutor(config_file=settings.EXECUTOR_CONFIG_FILE)
 
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 
@@ -75,9 +75,9 @@ def job_execute(job_file: Path):
         return {"message": "malformed job"}
 
     # Just a locking mechanism to ensure jobs don't interfere with each other
-    with get_kernel_lock():
+    with get_executor_lock():
         try:
-            kernel.register_job(qobj["header"].get("tag", ""))
+            executor.register_job(qobj["header"].get("tag", ""))
 
             # --- In-place decode complex values
             # [[a,b],[c,d],...] -> [a + ib,c + id,...]
@@ -85,7 +85,7 @@ def job_execute(job_file: Path):
 
             print(datetime.now(), "IN REST API CALLING RUN_EXPERIMENTS")
 
-            results_file = kernel.run_experiments(
+            results_file = executor.run_experiments(
                 PulseQobj.from_dict(qobj), enable_traceback=True, job_id=job_id
             )
         except Exception as exp:

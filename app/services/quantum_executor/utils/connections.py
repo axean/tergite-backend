@@ -10,10 +10,10 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Utilities for connections to kernel service"""
+"""Utilities for connections to quantum_executor service"""
 from filelock import FileLock
 
 
-def get_kernel_lock():
-    """Get a lock on the quantum kernel to avoid interference when controlling it"""
-    return FileLock(".tergite-kernel.lock")
+def get_executor_lock():
+    """Get a lock on the quantum executor to avoid interference when controlling it"""
+    return FileLock(".quantum-executor.lock")

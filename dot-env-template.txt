@@ -27,8 +27,8 @@ BCC_MACHINE_ROOT_URL=http://host:port
 BCC_PORT=8000
 
 # 3 Instrument server
-# The path to the configuration file for quantify. Default is "kernel-config.yml" in project directory
-KERNEL_CONFIG_FILE=kernel-config.yml
+# The path to the configuration file for quantify. Default is "executor-config.yml" in project directory
+EXECUTOR_CONFIG_FILE=executor-config.yml
 
 # 4 Authentication
 # the app token used to authenticate this BCC with MSS.

@@ -19,7 +19,7 @@ TEST_BCC_PORT = 8000
 
 TEST_MSS_APP_TOKEN = "some-mss-app-token-for-testing"
 
-TEST_KERNEL_CONFIG_FILE = get_fixture_path("kernel-config.yml")
+TEST_EXECUTOR_CONFIG_FILE = get_fixture_path("executor-config.yml")
 
 
 def setup_test_env():
@@ -44,4 +44,5 @@ def setup_test_env():
     environ["BCC_PORT"] = f"{TEST_BCC_PORT}"
 
     environ["MSS_APP_TOKEN"] = TEST_MSS_APP_TOKEN
-    environ["KERNEL_CONFIG_FILE"] = TEST_KERNEL_CONFIG_FILE
+    environ["EXECUTOR_CONFIG_FILE"] = TEST_EXECUTOR_CONFIG_FILE
+    environ["IS_AUTH_ENABLED"] = "True"

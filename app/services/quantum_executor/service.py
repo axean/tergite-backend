@@ -53,7 +53,7 @@ from .scheduler.experiment import Experiment
 from .scheduler.instruction import Instruction, meas_settings
 from .simulator import scqt
 from .simulator.base import BaseSimulator
-from .utils.config import ClusterModuleType, KernelConfig
+from .utils.config import ClusterModuleType, ExecutorConfig
 from .utils.logger import ExperimentLogger
 
 # A map of simulators and their case-insensitive names as referred to in env file
@@ -70,12 +70,12 @@ _QBLOX_CLUSTER_TYPE_MAP: Dict[ClusterModuleType, qblox_instruments.ClusterType] 
 _MODULE_NAME_REGEX = re.compile(r".*_module(\d+)$")
 
 
-class Kernel:
-    """The controller of the hardware"""
+class QuantumExecutor:
+    """The controller of the hardware that executes the quantum jobs"""
 
     _coordinator = find_or_create_instrument(
         InstrumentCoordinator,
-        "tergite_kernel",
+        "tergite_quantum_executor",
         # the default generic icc is important for QCoDeS commands that are run generically
         # when creating a generic QCoDeS instrument
         add_default_generic_icc=True,
@@ -85,7 +85,7 @@ class Kernel:
     shared_mem = dict()
 
     def __init__(self, config_file: Union[str, bytes, os.PathLike]):
-        conf = KernelConfig.from_yaml(config_file)
+        conf = ExecutorConfig.from_yaml(config_file)
 
         # Tell Quantify where to store data
         dh.set_datadir(conf.general.data_directory)
@@ -126,10 +126,10 @@ class Kernel:
                 identifier=None,
                 dummy_cfg=dummy_cfg,
             )
-            Kernel.shared_mem[device.name] = device
+            QuantumExecutor.shared_mem[device.name] = device
             rich.print(f"Instantiated Cluster driver for '{cluster.name}'")
             _add_component_if_not_exists(
-                coordinator=Kernel._coordinator,
+                coordinator=QuantumExecutor._coordinator,
                 component_type=ClusterComponent,
                 device=device,
             )
@@ -147,13 +147,13 @@ class Kernel:
                 driver, device_name, **instrument.instrument_driver.kwargs
             )
             _set_parameters(device, instrument.parameters)
-            Kernel.shared_mem[device.name] = device
+            QuantumExecutor.shared_mem[device.name] = device
             rich.print(
                 f"Instantiated {instrument.instrument_driver.import_path.split('.')[-1]} driver for '{instrument.name}'"
             )
 
             _add_component_if_not_exists(
-                coordinator=Kernel._coordinator,
+                coordinator=QuantumExecutor._coordinator,
                 component_type=GenericInstrumentCoordinatorComponent,
                 device=device,
             )
@@ -173,7 +173,7 @@ class Kernel:
         )
 
     def run(self, experiment: Experiment, /):
-        Kernel._coordinator.stop()
+        QuantumExecutor._coordinator.stop()
 
         # compile to hardware
         # TODO: Here, we can use the new @timer decorator in the benchmarking package
@@ -203,7 +203,7 @@ class Kernel:
         # start experiment
         # TODO: Here, we can use the new @timer decorator from the benchmarking package
         t3 = datetime.now()
-        Kernel._coordinator.start()
+        QuantumExecutor._coordinator.start()
 
         # wait for program to finish and return acquisition
         # TODO: What is the return type of retrieve_acquisition()?
@@ -377,8 +377,8 @@ class Kernel:
         return results_file_path
 
     def close(self):
-        """Closes the Kernel associated with this name"""
-        Kernel._coordinator.close_all()
+        """Closes the QuantumExecutor associated with this name"""
+        QuantumExecutor._coordinator.close_all()
 
     def __enter__(self):
         return self

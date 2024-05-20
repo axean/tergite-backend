@@ -94,4 +94,4 @@ if APP_SETTINGS == "test" and not os.environ.get("BLACKLISTED"):
     CLIENT_IP_WHITELIST["testclient"] = True
 
 # Hardware configurations
-KERNEL_CONFIG_FILE = config("KERNEL_CONFIG_FILE", default="kernel-config.yml")
+EXECUTOR_CONFIG_FILE = config("EXECUTOR_CONFIG_FILE", default="executor-config.yml")

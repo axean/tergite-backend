@@ -145,8 +145,8 @@ Labber/
 .idea
 tmp/
 
-# kernel
-.tergite-kernel.lock
+# quantum_executor
+.quantum-executor.lock
 
 # test data
 app/tests/data/
@@ -159,8 +159,8 @@ pytest-data/
 
 # env
 *.env
-kernel-config.yml
-!**/fixtures/kernel-config.yml
-kernel-config.**.yml
-!kernel-config.example.yml
+executor-config.yml
+!**/fixtures/executor-config.yml
+executor-config.**.yml
+!executor-config.example.yml
 

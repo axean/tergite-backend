@@ -22,13 +22,13 @@ from pydantic.fields import ModelField
 from quantify_scheduler.backends.qblox import instrument_compilers as qblox_compiler
 from ruamel.yaml import YAML
 
-from app.services.kernel.utils.general import get_duplicates
+from app.services.quantum_executor.utils.general import get_duplicates
 
 yaml = YAML(typ="safe")
 
 
-class KernelConfigItem(BaseModel, extra=Extra.allow):
-    """configuration item in kernel config"""
+class ExecutorConfigItem(BaseModel, extra=Extra.allow):
+    """configuration item in executor config"""
 
     def to_quantify(
         self, exclude_none: bool = True, exclude: Optional[Set] = None
@@ -45,12 +45,12 @@ class KernelConfigItem(BaseModel, extra=Extra.allow):
         """
         raw_dict = self.dict(exclude_none=exclude_none, exclude=exclude)
         return {
-            k: v.to_quantify() if isinstance(v, KernelConfigItem) else v
+            k: v.to_quantify() if isinstance(v, ExecutorConfigItem) else v
             for k, v in raw_dict.items()
         }
 
 
-class PortClockConfig(KernelConfigItem):
+class PortClockConfig(ExecutorConfigItem):
     """configurations for the port and clock for an input/output"""
 
     port: Optional[str] = None
@@ -66,7 +66,7 @@ class PortClockConfig(KernelConfigItem):
     qasm_hook_func: Optional[float] = None
 
 
-class Channel(KernelConfigItem):
+class Channel(ExecutorConfigItem):
     """Input/output channels for cluster modules"""
 
     name: str
@@ -156,7 +156,7 @@ _MODULE_TYPE_VALID_CHANNEL_NAMES_MAP: Dict[ClusterModuleType, Set[str]] = {
 }
 
 
-class ClusterModule(KernelConfigItem):
+class ClusterModule(ExecutorConfigItem):
     """General configration for a cluster module"""
 
     name: str
@@ -264,7 +264,7 @@ class ClusterModule(KernelConfigItem):
         return raw_dict
 
 
-class Cluster(KernelConfigItem):
+class Cluster(ExecutorConfigItem):
     """Configuration for the cluster"""
 
     name: str
@@ -336,7 +336,7 @@ class Cluster(KernelConfigItem):
         return raw_dict
 
 
-class _QcodesInstrumentDriver(KernelConfigItem):
+class _QcodesInstrumentDriver(ExecutorConfigItem):
     """Metadata about the driver of the Qcodes instrument to aid in initializing it"""
 
     # the import path to the driver
@@ -345,7 +345,7 @@ class _QcodesInstrumentDriver(KernelConfigItem):
     kwargs: Dict[str, Any]
 
 
-class GenericQcodesInstrument(KernelConfigItem):
+class GenericQcodesInstrument(ExecutorConfigItem):
     """Configuration for a generic QCoDeS instrument
 
     Every property name is a QCoDeS command for the instrument and the
@@ -397,7 +397,7 @@ class SimulatorType(str, enum.Enum):
     CHALMERS = "chalmers"
 
 
-class GeneralConfig(KernelConfigItem):
+class GeneralConfig(ExecutorConfigItem):
     """The general config for the hardware"""
 
     data_directory: str = "data"
@@ -405,7 +405,7 @@ class GeneralConfig(KernelConfigItem):
     simulator_type: SimulatorType = SimulatorType.SCQT
 
 
-class KernelConfig(KernelConfigItem):
+class ExecutorConfig(ExecutorConfigItem):
     """The configuration constructed from the quantify hardware config JSON file"""
 
     backend: str = "quantify_scheduler.backends.qblox_backend.hardware_compile"
@@ -414,7 +414,7 @@ class KernelConfig(KernelConfigItem):
     generic_qcodes_instruments: List[GenericQcodesInstrument] = []
 
     @classmethod
-    def from_yaml(cls, file_path: Union[str, bytes, os.PathLike]) -> "KernelConfig":
+    def from_yaml(cls, file_path: Union[str, bytes, os.PathLike]) -> "ExecutorConfig":
         """Creates a configuration from a YAML file
 
         Args:
