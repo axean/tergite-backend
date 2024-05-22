@@ -51,7 +51,7 @@ cp executor-config.example.yml executor-config.yml
 _Note: If you want to just run a dummy cluster, you can copy the one in the test fixtures_
 
 ```shell
-cp app/tests/fixtures/executor-config.yml executor-config.yml
+cp app/tests/fixtures/dummy-executor-config.yml executor-config.yml
 ```
 
 

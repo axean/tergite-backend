@@ -19,7 +19,7 @@ TEST_BCC_PORT = 8000
 
 TEST_MSS_APP_TOKEN = "some-mss-app-token-for-testing"
 
-TEST_EXECUTOR_CONFIG_FILE = get_fixture_path("executor-config.yml")
+TEST_EXECUTOR_CONFIG_FILE = get_fixture_path("dummy-executor-config.yml")
 
 
 def setup_test_env():

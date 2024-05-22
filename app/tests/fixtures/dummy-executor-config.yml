@@ -7,7 +7,6 @@ clusters:
     is_dummy: true
     ref: internal
     instrument_address: "192.0.2.141"
-    instrument_component: "quantify_scheduler.instrument_coordinator.components.qblox.ClusterComponent"
 
     modules:
       - name: "clusterA_module7"

@@ -132,7 +132,7 @@ cp dot-env-template.txt .env
  the variables you are not sure of.
 
 ```shell
-cp quantum_executor-config.example.yml executor-config.yml
+cp executor-config.example.yml executor-config.yml
 ```
 
 - Copy `bcc.service` to the systemd services folder

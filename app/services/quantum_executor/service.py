@@ -123,7 +123,7 @@ class QuantumExecutor:
             device = find_or_create_instrument(
                 qblox_instruments.Cluster,
                 name=cluster.name,
-                identifier=None,
+                identifier=cluster.instrument_address,
                 dummy_cfg=dummy_cfg,
             )
             QuantumExecutor.shared_mem[device.name] = device

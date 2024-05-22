@@ -1,6 +1,3 @@
-import os
-from typing import Dict
-
 from .utils.env import (
     TEST_DEFAULT_PREFIX,
     TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME,
@@ -13,8 +10,10 @@ from .utils.env import (
 # set up the environment before any other import
 setup_test_env()
 
+import os
 import shutil
 from pathlib import Path
+from typing import Dict
 
 import pytest
 from fakeredis import FakeStrictRedis

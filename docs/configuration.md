@@ -21,21 +21,21 @@ It is well documented. Just copy it to `executor-config.yml` and update its vari
 
 ```shell
 # on the root of the project
-cp quantum_executor-config.example.yml executor-config.yml
+cp executor-config.example.yml executor-config.yml
 ```
 
 ### Dummy QBLOX Instrumments
 
 You may wish to run some dummy QBLOX instruments if you don't have access to the physical QBLOX instruments
 
-We already have a preconfigured [`executor-config.yml`](../app/tests/fixtures/executor-config.yml) for this in the 
+We already have a preconfigured [`dummy-executor-config.yml`](../app/tests/fixtures/dummy-executor-config.yml) for this in the 
 `app/tests/fixtures` folder.   
 
 Copy it to your root folder.
 
 ```shell
 # on the root of the project
-cp app/tests/fixtures/executor-config.yml executor-config.yml
+cp app/tests/fixtures/dummy-executor-config.yml executor-config.yml
 ```
 
 _NOTE: You can find out more about the configuration properties in the executor-config file by 
