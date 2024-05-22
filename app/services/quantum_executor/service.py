@@ -376,9 +376,10 @@ class QuantumExecutor:
 
         return results_file_path
 
-    def close(self):
+    @classmethod
+    def close(cls):
         """Closes the QuantumExecutor associated with this name"""
-        QuantumExecutor._coordinator.close_all()
+        cls._coordinator.close_all()
 
     def __enter__(self):
         return self
