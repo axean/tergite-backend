@@ -9,8 +9,6 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-
-
 from pathlib import Path
 
 from redis import Redis
@@ -49,7 +47,9 @@ def job_preprocess(job_file: Path):
     job_file.replace(new_file)
 
     rq_queues.job_execution_queue.enqueue(
-        job_execute, new_file, job_id=job_id + f"_{Location.EXEC_Q.name}"
+        job_execute,
+        new_file,
+        job_id=job_id + f"_{Location.EXEC_Q.name}",
     )
 
     # Inform supervisor about job moved to execution queue

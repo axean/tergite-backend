@@ -22,7 +22,8 @@ from starlette.config import Config
 from starlette.datastructures import URL
 
 # NOTE: shell env variables take precedence over the configuration file
-config = Config(Path(__file__).parent / ".env")
+env_file = os.environ.get("ENV_FILE", default=".env")
+config = Config(Path(__file__).parent / env_file)
 
 # Misc settings
 APP_SETTINGS = config("APP_SETTINGS", cast=str, default="production")
@@ -72,12 +73,9 @@ BACKEND_SETTINGS = config(
 )
 
 # Connectivity settings
-
-QUANTIFY_MACHINE_ROOT_URL = config("QUANTIFY_MACHINE_ROOT_URL", cast=URL)
 MSS_MACHINE_ROOT_URL = config("MSS_MACHINE_ROOT_URL", cast=URL)
 BCC_MACHINE_ROOT_URL = config("BCC_MACHINE_ROOT_URL", cast=URL)
 BCC_PORT = config("BCC_PORT", cast=int)
-DB_MACHINE_ROOT_URL = config("DB_MACHINE_ROOT_URL", cast=URL)
 
 # Authentication
 
@@ -89,9 +87,11 @@ CLIENT_IP_WHITELIST = {
     socket.gethostbyname(v.hostname): True
     for v in [
         MSS_MACHINE_ROOT_URL,
-        QUANTIFY_MACHINE_ROOT_URL,
     ]
 }
 # allow test client to access api when BLACKLISTED is not set
-if APP_SETTINGS == "test" and not os.environ["BLACKLISTED"]:
+if APP_SETTINGS == "test" and not os.environ.get("BLACKLISTED"):
     CLIENT_IP_WHITELIST["testclient"] = True
+
+# Hardware configurations
+EXECUTOR_CONFIG_FILE = config("EXECUTOR_CONFIG_FILE", default="executor-config.yml")

@@ -11,14 +11,33 @@ This is part of the tergite release v2024.03 that updates the full pipeline for 
 
 ### Added
 
+- Added storage_file lib (formerly tergite-quantify-connector-storagefile)
+- Added `quantum_executor` service (formerly tergite-quantify-connector)
+- Added the `executor-config.yml` and its python-based validators
+
 ### Changed
 
 - Changed the way discriminators are loaded to load from the database
-- Removed hard-coded discriminators
-- Upgrade to Python 3.9
-- Removed Labber in job processing and calibration
+- BREAKING_CHANGE: Removed hard-coded discriminators
+- BREAKING_CHANGE: Removed official support for Python 3.8; Official support is now >=3.9
+- BREAKING_CHANGE: Removed Labber support
+- Replaced tergite-quantify-connector-storagefile package with an internal storage_file lib
+- Moved unused files to `archive` folder
+- BREAKING_CHANGE: Removed calibration and two state discrimination source code
+- BREAKING_CHANGE: Replaced tergite-quantify-connector-storagefile package with an internal storage_file lib
+- BREAKING_CHANGE: Merged tergite-quantify-connector into tergite-bcc and renamed its service to `quantum_executor`
+- BREAKING_CHANGE: Changed configuration of hardware to use `executor-config.yml` file with proper validations on loading
+- BREAKING_CHANGE: Removed support for `Pulsar`, or any other instrument drivers other than `Cluster`   
+  The old implementation wrongfully assumed that all these drivers have the same signature i.e. `driver(name: str, identifier: str | None)`  
+  yet `SpiRack(name: str, address: str, baud_rate: int = 9600, timeout: float = 1, is_dummy: bool = False,)`,   
+  `Pulsar(name: str, identifier: Optional[str] = None, port: Optional[int] = None, debug: Optional[int] = None, dummy_type: Optional[PulsarType] = None,)`   
+  `Cluster(name: str, identifier: Optional[str] = None, port: Optional[int] = None, debug: Optional[int] = None, dummy_type: Optional[PulsarType] = None)` are all different.  
+- BREAKING_CHANGE: We got rid of quantify connector’s redundant reset() method.
+- BREAKING_CHANGE: Changed backend name used when querying MSS for backend properties to be equal to `settings.DEFAULT_PREFIX`
 
 ### Fixed
+
+- Fixed duplicate job uploads to respond with HTTP 409
 
 ### Contributors
 
@@ -29,8 +48,7 @@ This is part of the tergite release v2024.02 that introduces authentication, aut
 ### Added
 
 - Authenticated and authorized requests to/from clients including 
-  [MSS](https://github.com/tergite/tergite-mss),
-  [Quantify Connector](https://github.com/tergite/tergite-quantify-connector) and the general internet.
+  [MSS](https://github.com/tergite/tergite-mss) and the general internet.
 - Tracking of execution time of jobs
 
 ### Changed

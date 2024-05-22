@@ -15,9 +15,9 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-import asyncio
 import functools
 import logging
+import shutil
 from pathlib import Path
 from typing import Any, Tuple, Type
 
@@ -26,15 +26,15 @@ import numpy.typing as npt
 import redis
 import requests
 import rq.job
-import tqcsf.file
 from requests import Response
 from sklearn.utils.extmath import safe_sparse_dot
-from syncer import sync
 
 import settings
+from app.libs.storage_file import MeasLvl, StorageFile
 from app.services.jobs.workers.postprocessing.exc import PostProcessingError
 from app.utils import date_time
 from app.utils.http import get_mss_client
+
 from ...service import (
     Location,
     fetch_job,
@@ -93,7 +93,7 @@ def logfile_postprocess(logfile: Path) -> JobID:
     new_file_path.mkdir(exist_ok=True)
     new_file = new_file_path / new_file_name_with_suffix
 
-    logfile.replace(new_file)
+    shutil.move(logfile, new_file)
 
     print(f"Moved the logfile to {str(new_file)}")
 
@@ -101,9 +101,9 @@ def logfile_postprocess(logfile: Path) -> JobID:
     inform_location(new_file_name, Location.PST_PROC_W)
 
     # The return value will be passed to postprocessing_success_callback
-    print("Identified TQC storage file, reading file using tqcsf")
-    sf = tqcsf.file.StorageFile(new_file, mode="r")
-    return postprocess_tqcsf(sf)
+    print("Identified TQC storage file, reading file using storage file")
+    sf = StorageFile(new_file, mode="r")
+    return postprocess_storage_file(sf)
 
 
 # =========================================================================
@@ -144,17 +144,14 @@ def _apply_linear_discriminator(
     return (scores.ravel() > 0).astype(np.int_)
 
 
-def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
+def postprocess_storage_file(
+    sf: StorageFile, backend_name: str = settings.DEFAULT_PREFIX
+) -> JobID:
     try:
         with get_mss_client() as mss_client:
-            if sf.meas_level == tqcsf.file.MeasLvl.DISCRIMINATED:
-                # This would fetch the discriminator from the database
-                # The main reason to have it, is to be compatible with the simulator
-                # The SimulatorC backend in mongoDB is supported and tested
-                backend: str = sf.header["qobj"]["backend"].attrs["backend_name"]
-                backend_definition: str = (
-                    f'{str(MSS_MACHINE_ROOT_URL)}{REST_API_MAP["backends"]}/{backend}'
-                )
+            if sf.meas_level == MeasLvl.DISCRIMINATED:
+                # This would fetch the discriminator from the MSS
+                backend_definition: str = f'{str(MSS_MACHINE_ROOT_URL)}{REST_API_MAP["backends"]}/{backend_name}'
                 response = mss_client.get(backend_definition)
 
                 if response.status_code == 200:
@@ -174,12 +171,12 @@ def postprocess_tqcsf(sf: tqcsf.file.StorageFile) -> JobID:
                 except Exception as exp:
                     logging.error(exp)
 
-            elif sf.meas_level == tqcsf.file.MeasLvl.INTEGRATED:
+            elif sf.meas_level == MeasLvl.INTEGRATED:
                 save_result_in_mss_and_bcc(
                     mss_client=mss_client, memory=[], job_id=sf.job_id
                 )
 
-            elif sf.meas_level == tqcsf.file.MeasLvl.RAW:
+            elif sf.meas_level == MeasLvl.RAW:
                 save_result_in_mss_and_bcc(
                     mss_client=mss_client, memory=[], job_id=sf.job_id
                 )

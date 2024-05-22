@@ -10,7 +10,6 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-
 from pathlib import Path
 
 from redis import Redis
@@ -50,7 +49,9 @@ def job_register(job_file: Path) -> None:
     job_file.replace(new_file)
     # add job to pre-processing queue and notify job supervisor
     rq_queues.job_preprocessing_queue.enqueue(
-        job_preprocess, new_file, job_id=job_id + f"_{Location.PRE_PROC_Q.name}"
+        job_preprocess,
+        new_file,
+        job_id=job_id + f"_{Location.PRE_PROC_Q.name}",
     )
     inform_location(job_id, Location.PRE_PROC_Q)
 

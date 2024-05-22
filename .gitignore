@@ -144,3 +144,23 @@ Labber/
 
 .idea
 tmp/
+
+# quantum_executor
+.quantum-executor.lock
+
+# test data
+app/tests/data/
+data/
+pytest-data/
+
+# quantify scheduler
+*.hex
+*.q1asm
+
+# env
+*.env
+executor-config.yml
+!**/fixtures/executor-config.yml
+executor-config.**.yml
+!executor-config.example.yml
+

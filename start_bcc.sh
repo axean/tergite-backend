@@ -16,6 +16,8 @@
 # See https://stackoverflow.com/questions/50168647/multiprocessing-causes-python-to-crash-and-gives-an-error-may-have-been-in-progr#answer-52230415
 [[ "$(uname -s)" = "Darwin" ]] && export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
+env_file=$([[ -z "$ENV_FILE" ]] && echo ".env" || echo "$ENV_FILE")
+
 exit_with_error () {
   echo "$1"
   exit 1
@@ -23,7 +25,7 @@ exit_with_error () {
 
 extract_env_var () {
   local env_name="$1"
-  local res=$(grep "^[[:space:]]*${env_name}=" .env | grep -v '^[[:space:]]*#' | sed "s/^[[:space:]]*${env_name}=//" | head -n 1)
+  local res=$(grep "^[[:space:]]*${env_name}=" "$env_file" | grep -v '^[[:space:]]*#' | sed "s/^[[:space:]]*${env_name}=//" | head -n 1)
   [[ -z "$res" ]]  &&  exit_with_error "Config Error: Use ${env_name}=<value> in the .env file."
   echo $res
 }

@@ -4,6 +4,7 @@
 # (C) Copyright Abdullah-Al Amin 2021
 # (C) Copyright Axel Andersson 2022
 # (C) Copyright David Wahlstedt 2022
+# (C) Copyright Martin Ahindura 2024
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -15,49 +16,36 @@
 
 
 import json
-import logging
+from datetime import datetime
 from pathlib import Path
-from uuid import uuid4
 
-import requests
+from qiskit.qobj import PulseQobj
+from qiskit_ibm_provider.utils import json_decoder
+from redis import Redis
 
 import settings
+from app.services.quantum_executor import service as executor_service
+from app.services.quantum_executor.utils.connections import get_executor_lock
+from app.services.quantum_executor.utils.serialization import iqx_rld
+from app.utils.queues import QueuePool
 
-from ...service import Location, inform_failure, inform_location
+from ...service import Location, fetch_job, inform_failure, inform_location
+from ..postprocessing import (
+    logfile_postprocess,
+    postprocessing_failure_callback,
+    postprocessing_success_callback,
+)
 
 # Settings
 STORAGE_ROOT = settings.STORAGE_ROOT
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
-QUANTIFY_MACHINE_ROOT_URL = settings.QUANTIFY_MACHINE_ROOT_URL
+DEFAULT_PREFIX = settings.DEFAULT_PREFIX
 
-REST_API_MAP = {"scenarios": "/scenarios", "qobj": "/qobj"}
+# redis connection
+redis_connection = Redis()
+executor = executor_service.QuantumExecutor(config_file=settings.EXECUTOR_CONFIG_FILE)
 
-
-def post_schedule_file(job_dict: dict, /):
-    print(f"Received OpenPulse schedule")
-
-    tmp_file = Path(STORAGE_ROOT) / (str(uuid4()) + ".to_quantify")
-
-    with tmp_file.open("w") as store:
-        json.dump(job_dict, store)  # copy incoming data to temporary file
-
-    with tmp_file.open("r") as source:
-        files = {
-            "upload_file": (tmp_file.name, source),
-            "send_logfile_to": (None, str(BCC_MACHINE_ROOT_URL)),
-        }
-
-        url = str(QUANTIFY_MACHINE_ROOT_URL) + REST_API_MAP["qobj"]
-        print("Sending the pulse schedule to Quantify")
-        try:
-            response = requests.post(url, files=files)
-        except Exception as exp:
-            logging.error(exp)
-            response = requests.Response()
-            response.status_code = 500
-
-    tmp_file.unlink()
-    return response
+rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 
 
 def job_execute(job_file: Path):
@@ -66,37 +54,66 @@ def job_execute(job_file: Path):
     with job_file.open() as f:
         job_dict = json.load(f)
 
-    job_id = job_dict["job_id"]
+    job_id = ""
+    try:
+        job_id = job_dict["job_id"]
 
-    # Inform supervisor
-    inform_location(job_id, Location.EXEC_W)
+        # Inform supervisor
+        inform_location(job_id, Location.EXEC_W)
 
-    response = post_schedule_file(job_dict)
+        qobj = job_dict["params"]["qobj"]
 
-    if response.ok:
-        # clean up
-        job_file.unlink(missing_ok=True)
+        # --- RLD pulse library
+        # [([a,b], 2),...] -> [[a,b],[a,b],...]
+        for pulse in qobj["config"]["pulse_library"]:
+            pulse["samples"] = iqx_rld(pulse["samples"])
 
-        print("Job executed successfully")
-        return {"message": "ok"}
+    except KeyError as exp:
+        print("Invalid job")
+        print(f"Job execution failed. Key error: {exp}")
+        inform_failure(job_id, reason="malformed job")
+        return {"message": "malformed job"}
 
-    # failure case: response received but it carries error code (4xx or 5xx)
-    elif not response.ok:
-        print("Job failed")
-        print(f"Server rejected job. Response: {response}")
-        inform_failure(job_id, reason=f"HTTP error code: {response.status_code}")
-        return {"message": "failed"}
+    # Just a locking mechanism to ensure jobs don't interfere with each other
+    with get_executor_lock():
+        try:
+            executor.register_job(qobj["header"].get("tag", ""))
 
-    # failure case: Unknown script name
-    elif response is None:
-        print("Job failed")
-        print(f"Unknown script name {job_dict['name']}")
-        inform_failure(job_id, reason="unknown script name")
-        return {"message": "failed"}
+            # --- In-place decode complex values
+            # [[a,b],[c,d],...] -> [a + ib,c + id,...]
+            json_decoder.decode_pulse_qobj(qobj)
 
-    # failure case: Unspecified error
-    else:
-        print("Job failed")
-        # inform supervisor about failure
-        inform_failure(job_id, reason="no response")
-        return {"message": "failed"}
+            print(datetime.now(), "IN REST API CALLING RUN_EXPERIMENTS")
+
+            results_file = executor.run_experiments(
+                PulseQobj.from_dict(qobj), enable_traceback=True, job_id=job_id
+            )
+        except Exception as exp:
+            print("Job failed")
+            print(f"Job execution failed. exp: {exp}")
+            # inform supervisor about failure
+            inform_failure(job_id, reason="no response")
+            return {"message": "failed"}
+
+    if results_file:
+        job_status = fetch_job(job_id, "status")
+        if job_status["cancelled"]["time"]:
+            print("Job cancelled, postprocessing halted")
+            # FIXME: Probably provide an error message to the client also
+            return {"message": "cancelled"}
+
+        rq_queues.logfile_postprocessing_queue.enqueue(
+            logfile_postprocess,
+            on_success=postprocessing_success_callback,
+            on_failure=postprocessing_failure_callback,
+            job_id=f"{job_id}_{Location.PST_PROC_Q.name}",
+            args=(results_file,),
+        )
+
+        # inform supervisor
+        inform_location(job_id, Location.PST_PROC_Q)
+
+    # clean up
+    job_file.unlink(missing_ok=True)
+    print("Job executed successfully")
+    return {"message": "ok"}

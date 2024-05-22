@@ -8,15 +8,12 @@ The Backend Control Computer software that makes QAL 9000 - like quantum compute
 
 - [Python 3.8](https://www.python.org/)
 - [Redis](https://redis.io/)
-- [Tergite Quantify Connector](https://github.com/tergite/tergite-quantify-connector)
-- [Tergite Labber Connector](https://github.com/tergite/tergite-labber-connector)
 
 ## Quick Start
 
 - Ensure you have [conda](https://docs.anaconda.com/free/miniconda/index.html) installed. 
  (_You could simply have python +3.8 installed instead._)
 - Ensure you have the [Redis](https://redis.io/) server running
-- Ensure you have [tergite Quantify Connector](https://github.com/tergite/tergite-quantify-connector) running.
 - Clone the repo
 
 ```shell
@@ -43,6 +40,20 @@ pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/
 ```shell
 cp dot-env-template.txt .env
 ```
+
+- Copy the hardware example config file `executor-config.example.yml` into the `executor-config.yml` file and update the variables there in. Contact your teammates for
+ the variables you are not sure of.
+
+```shell
+cp executor-config.example.yml executor-config.yml
+```
+
+_Note: If you want to just run a dummy cluster, you can copy the one in the test fixtures_
+
+```shell
+cp app/tests/fixtures/dummy-executor-config.yml executor-config.yml
+```
+
 
 - Run start script
 

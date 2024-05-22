@@ -1,11 +1,9 @@
 import json
-import shutil
 from itertools import zip_longest
 from os import path
 from pathlib import Path
 from typing import Any, Dict
 
-import h5py
 import pytest
 import redis
 from rq import Worker
@@ -20,17 +18,13 @@ from app.tests.conftest import (
     MOCK_NOW,
     TEST_APP_TOKEN_STRING,
 )
-from app.tests.utils.env import (
-    TEST_MSS_MACHINE_ROOT_URL,
-    TEST_QUANTIFY_MACHINE_ROOT_URL,
-)
-from app.tests.utils.fixtures import get_fixture_path, load_json_fixture
+from app.tests.utils.fixtures import load_json_fixture
 from app.tests.utils.http import get_headers
 from app.tests.utils.redis import insert_in_hash, register_app_token_job_id
 
 _PARENT_FOLDER = path.dirname(path.abspath(__file__))
 _JOBS_LIST = load_json_fixture("job_list.json")
-_DEFAULT_LOGFILE_PATH = get_fixture_path("logfile.hdf5")
+# _DEFAULT_LOGFILE_PATH = get_fixture_path("logfile.hdf5")
 _BACKEND_PROPERTIES = load_json_fixture("backend_properties.json")
 _JOBS_FOR_UPLOAD = load_json_fixture("jobs_to_upload.json")
 _JOB_ID_FIELD = "job_id"
@@ -48,9 +42,6 @@ _EXECUTION_STAGE = "execution"
 _POST_PROCESSING_STAGE = "post_processing"
 _FINAL_STAGE = "final"
 _WRONG_APP_TOKENS = ["foohsjaghds", "barrr", "yeahhhjhdjf"]
-
-# job results
-_UPLOAD_JOB_RESULTS = load_json_fixture("discrimination_results.json")
 
 # params
 _UPLOAD_JOB_PARAMS = [
@@ -357,20 +348,20 @@ def test_upload_job(
                 "local": {"pre_processing": 0, "execution": 0, "post_processing": 0},
             },
             "status": {
-                "location": 5,
+                "location": 9,
                 "started": timestamp,
-                "finished": None,
+                "finished": timestamp,
                 "cancelled": {"time": None, "reason": None},
                 "failed": {"time": None, "reason": None},
             },
             "timestamps": {
                 _REGISTRATION_STAGE: {"started": timestamp, "finished": timestamp},
                 _PRE_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
-                _EXECUTION_STAGE: {"started": timestamp, "finished": None},
-                _POST_PROCESSING_STAGE: {"started": None, "finished": None},
-                _FINAL_STAGE: {"started": None, "finished": None},
+                _EXECUTION_STAGE: {"started": timestamp, "finished": timestamp},
+                _POST_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
+                _FINAL_STAGE: {"started": timestamp, "finished": timestamp},
             },
-            "result": None,
+            "result": {"memory": [["0x0"] * 1024]},
             "name": job["name"],
             "post_processing": job["post_processing"],
             "is_calibration_supervisor_job": job["is_calibration_supervisor_job"],
@@ -721,161 +712,6 @@ def test_unauthenticated_download_logfile(
         assert got == expected
 
 
-@pytest.mark.parametrize("client, redis_client, rq_worker, job", _UPLOAD_JOB_PARAMS)
-def test_upload_logfile(
-    logfile_download_folder,
-    client,
-    redis_client,
-    rq_worker,
-    client_jobs_folder,
-    job,
-    app_token_header,
-):
-    """POST to '/logfiles' uploads the given logfile"""
-
-    job_id = job[_JOB_ID_FIELD]
-    timestamp = MOCK_NOW.replace("+00:00", "Z")
-
-    job_file_path = _save_job_file(folder=client_jobs_folder, job=job)
-    logfile_path = _save_hdf5_logfile(folder=client_jobs_folder, job_id=job_id)
-    register_app_token_job_id(
-        client=redis_client,
-        hash_name=_AUTH_HASH_NAME,
-        job_id=job_id,
-        app_token=TEST_APP_TOKEN_STRING,
-    )
-
-    # using context manager to ensure on_startup runs
-    with client as client:
-        with open(job_file_path, "rb") as file:
-            response = client.post(
-                "/jobs", files={"upload_file": file}, headers=app_token_header
-            )
-
-        assert response.status_code == 200
-        rq_worker.work(burst=True)
-
-        with open(logfile_path, "rb") as file:
-            response = client.post(
-                "/logfiles",
-                files={"upload_file": file},
-                data={"logfile_type": "TQC_STORAGE"},
-            )
-
-        expected = {"message": "ok"}
-        got = response.json()
-        expected_job_in_redis = {
-            "id": job_id,
-            "priorities": {
-                "global": 0,
-                "local": {"pre_processing": 0, "execution": 0, "post_processing": 0},
-            },
-            "status": {
-                "location": 9,
-                "started": timestamp,
-                "finished": timestamp,
-                "cancelled": {"time": None, "reason": None},
-                "failed": {"time": None, "reason": None},
-            },
-            "timestamps": {
-                _REGISTRATION_STAGE: {"started": timestamp, "finished": timestamp},
-                _PRE_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
-                _EXECUTION_STAGE: {"started": timestamp, "finished": timestamp},
-                _POST_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
-                _FINAL_STAGE: {"started": timestamp, "finished": timestamp},
-            },
-            "result": {"memory": [_UPLOAD_JOB_RESULTS]},
-            "name": job["name"],
-            "post_processing": job["post_processing"],
-            "is_calibration_supervisor_job": job["is_calibration_supervisor_job"],
-        }
-
-        rq_worker.work(burst=True)
-        raw_job_in_redis = redis_client.hget(_JOBS_HASH_NAME, job_id)
-        job_in_redis = json.loads(raw_job_in_redis)
-        assert response.status_code == 200
-        assert got == expected
-        assert job_in_redis == expected_job_in_redis
-
-
-@pytest.mark.parametrize(
-    "client, redis_client, rq_worker, job", _BLACKLISTED_UPLOAD_JOB_PARAMS
-)
-def test_blacklisted_upload_logfile(
-    logfile_download_folder,
-    client,
-    redis_client,
-    rq_worker,
-    client_jobs_folder,
-    job,
-    app_token_header,
-):
-    """Blacklisted POST to '/logfiles' returns 404 and no content"""
-
-    job_id = job[_JOB_ID_FIELD]
-    timestamp = MOCK_NOW.replace("+00:00", "Z")
-
-    job_file_path = _save_job_file(folder=client_jobs_folder, job=job)
-    logfile_path = _save_hdf5_logfile(folder=client_jobs_folder, job_id=job_id)
-    register_app_token_job_id(
-        client=redis_client,
-        hash_name=_AUTH_HASH_NAME,
-        job_id=job_id,
-        app_token=TEST_APP_TOKEN_STRING,
-    )
-
-    # using context manager to ensure on_startup runs
-    with client as client:
-        with open(job_file_path, "rb") as file:
-            response = client.post(
-                "/jobs", files={"upload_file": file}, headers=app_token_header
-            )
-
-        assert response.status_code == 200
-        rq_worker.work(burst=True)
-
-        with open(logfile_path, "rb") as file:
-            response = client.post(
-                "/logfiles",
-                files={"upload_file": file},
-                data={"logfile_type": "TQC_STORAGE"},
-            )
-
-        # no post processing done
-        expected_job_in_redis = {
-            "id": job_id,
-            "priorities": {
-                "global": 0,
-                "local": {"pre_processing": 0, "execution": 0, "post_processing": 0},
-            },
-            "status": {
-                "location": 5,
-                "started": timestamp,
-                "finished": None,
-                "cancelled": {"time": None, "reason": None},
-                "failed": {"time": None, "reason": None},
-            },
-            "timestamps": {
-                _REGISTRATION_STAGE: {"started": timestamp, "finished": timestamp},
-                _PRE_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
-                _EXECUTION_STAGE: {"started": timestamp, "finished": None},
-                _POST_PROCESSING_STAGE: {"started": None, "finished": None},
-                _FINAL_STAGE: {"started": None, "finished": None},
-            },
-            "result": None,
-            "name": job["name"],
-            "post_processing": job["post_processing"],
-            "is_calibration_supervisor_job": job["is_calibration_supervisor_job"],
-        }
-
-        rq_worker.work(burst=True)
-        raw_job_in_redis = redis_client.hget(_JOBS_HASH_NAME, job_id)
-        job_in_redis = json.loads(raw_job_in_redis)
-        assert response.status_code == 404
-        assert response.content == b""
-        assert job_in_redis == expected_job_in_redis
-
-
 @pytest.mark.parametrize("client, redis_client, rq_worker", CLIENT_AND_RQ_WORKER_TUPLES)
 def test_get_rq_info(client, redis_client, rq_worker):
     """GET to '/rq-info' retrieves information about the running rq workers"""
@@ -904,48 +740,6 @@ def test_blacklisted_get_rq_info(client, redis_client, rq_worker):
         response = client.get("/rq-info")
         assert response.status_code == 404
         assert response.content == b""
-
-
-@pytest.mark.parametrize("client, redis_client, job_id", _FETCH_JOB_PARAMS)
-def test_call_rng(client, redis_client, job_id, storage_root):
-    """GET to '/rng/{job_id}' retrieves random numbers"""
-    # using context manager to ensure on_startup runs
-    with client as client:
-        import requests
-
-        response = client.get(f"/rng/{job_id}")
-        assert response.status_code == 200
-        assert response.text == '"Requesting RNG Numbers"'
-
-        tmp_file = storage_root / f"{job_id}.to_quantify"
-        mock_quantify_call_args = requests.post.call_args
-        files_sent = mock_quantify_call_args.kwargs["files"]
-        assert mock_quantify_call_args.args == (
-            f"{TEST_QUANTIFY_MACHINE_ROOT_URL}/rng_LokiB",
-        )
-        assert files_sent["mss_url"] == (None, TEST_MSS_MACHINE_ROOT_URL)
-        assert files_sent["upload_file"][0] == tmp_file.name
-
-        with open(tmp_file, "r") as expected_file, open(
-            files_sent["upload_file"][1].name
-        ) as sent_file:
-            assert sent_file.read() == expected_file.read()
-
-
-@pytest.mark.parametrize("client, redis_client, job_id", _BLACKLISTED_FETCH_JOB_PARAMS)
-def test_blacklisted_call_rng(client, redis_client, job_id, storage_root):
-    """Blacklisted GET to '/rng/{job_id}' returns 404 and no content"""
-    # using context manager to ensure on_startup runs
-    with client as client:
-        import requests
-
-        response = client.get(f"/rng/{job_id}")
-        assert response.status_code == 404
-        assert response.content == b""
-
-        tmp_file = storage_root / f"{job_id}.to_quantify"
-        assert requests.post.not_called()
-        assert not tmp_file.exists()
 
 
 @pytest.mark.parametrize("client", FASTAPI_CLIENTS)
@@ -1028,24 +822,5 @@ def _save_job_file(folder: Path, job: Dict[str, Any], ext: str = ".json") -> Pat
 
     with open(file_path, "w") as file:
         json.dump(job, file)
-
-    return file_path
-
-
-def _save_hdf5_logfile(folder: Path, job_id: str) -> Path:
-    """Saves the given job to a file and returns the Path
-
-    Args:
-        folder: the folder to save the job in
-        job_id: the job id whose logfile is to be saved
-
-    Returns:
-        the path where the job was saved
-    """
-    file_path = folder / f"{job_id}.hdf5"
-    shutil.copyfile(_DEFAULT_LOGFILE_PATH, file_path)
-
-    with h5py.File(file_path, mode="r+") as file:
-        file.attrs["job_id"] = job_id
 
     return file_path

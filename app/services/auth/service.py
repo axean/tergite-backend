@@ -32,7 +32,7 @@ def save_credentials(redis_db: Redis, payload: Credentials):
         updated_at=timestamp,
     )
 
-    redis_db.hset(_AUTH_HASH_KEY, redis_key, auth_log.model_dump_json())
+    redis_db.hset(_AUTH_HASH_KEY, redis_key, auth_log.json())
 
 
 def authenticate(

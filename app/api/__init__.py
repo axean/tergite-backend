@@ -22,16 +22,7 @@ from pathlib import Path
 from typing import Optional
 from uuid import UUID
 
-from fastapi import (
-    Body,
-    Depends,
-    FastAPI,
-    File,
-    Form,
-    HTTPException,
-    UploadFile,
-    status,
-)
+from fastapi import Body, Depends, FastAPI, File, HTTPException, UploadFile, status
 from fastapi.requests import Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 from redis.client import Redis
@@ -42,14 +33,8 @@ import settings
 
 from ..services.auth import service as auth_service
 from ..services.jobs import service as jobs_service
-from ..services.jobs.workers.postprocessing import (
-    logfile_postprocess,
-    postprocessing_failure_callback,
-    postprocessing_success_callback,
-)
 from ..services.jobs.workers.registration import job_register
 from ..services.properties import service as props_service
-from ..services.random import service as rng_service
 from ..utils.queues import QueuePool
 from .dependencies import (
     get_bearer_token,
@@ -73,6 +58,7 @@ RedisDep = Annotated[Redis, Depends(get_redis_connection)]
 
 # redis queues
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=get_redis_connection())
+
 
 # application
 app = FastAPI(
@@ -237,48 +223,6 @@ async def download_logfile(logfile_id: UUID):
         return {"message": "logfile not found"}
 
 
-@app.post("/logfiles", dependencies=[Depends(get_whitelisted_ip)])
-def upload_logfile(
-    upload_file: UploadFile = File(...),
-    logfile_type: str = Form(default="LABBER_LOGFILE"),
-):
-    print(f"Received logfile {upload_file.filename}")
-
-    # store the received file in the logfile upload pool
-    file_name = Path(upload_file.filename).stem
-
-    # Cancels postprocessing if job is labelled as cancelled
-    job_status = jobs_service.fetch_job(file_name, "status")
-    if job_status["cancelled"]["time"]:
-        print("Job cancelled, postprocessing halted")
-        # FIXME: Probably provide an error message to the client also
-        return
-    file_path = (
-        Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / LOGFILE_UPLOAD_POOL_DIRNAME
-    )
-    file_path.mkdir(parents=True, exist_ok=True)
-    store_file = file_path / file_name
-
-    with store_file.open("wb") as destination:
-        shutil.copyfileobj(upload_file.file, destination)
-
-    upload_file.file.close()
-
-    # enqueue for post-processing
-    rq_queues.logfile_postprocessing_queue.enqueue(
-        logfile_postprocess,
-        on_success=postprocessing_success_callback,
-        on_failure=postprocessing_failure_callback,
-        job_id=file_name + f"_{jobs_service.Location.PST_PROC_Q.name}",
-        args=(store_file,),
-    )
-
-    # inform supervisor
-    jobs_service.inform_location(file_name, jobs_service.Location.PST_PROC_Q)
-
-    return {"message": "ok"}
-
-
 # FIXME: this endpoint might be unnecessary going forward or might need to return proper JSON data
 @app.get("/rq-info", dependencies=[Depends(get_whitelisted_ip)])
 async def get_rq_info(redis_connection: RedisDep):
@@ -294,13 +238,6 @@ async def get_rq_info(redis_connection: RedisDep):
     msg += "}"
 
     return {"message": msg}
-
-
-# FIXME: this endpoint might be unnecessary
-@app.get("/rng/{job_id}", dependencies=[Depends(get_whitelisted_ip)])
-async def call_rng(job_id: UUID):
-    rng_service.quantify_rng(job_id=job_id)
-    return "Requesting RNG Numbers"
 
 
 @app.get("/backend_properties", dependencies=[Depends(get_whitelisted_ip)])

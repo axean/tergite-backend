@@ -1,11 +1,7 @@
-import os
-from typing import Dict
-
 from .utils.env import (
     TEST_DEFAULT_PREFIX,
     TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME,
     TEST_MSS_MACHINE_ROOT_URL,
-    TEST_QUANTIFY_MACHINE_ROOT_URL,
     TEST_STORAGE_PREFIX_DIRNAME,
     TEST_STORAGE_ROOT,
     setup_test_env,
@@ -14,8 +10,10 @@ from .utils.env import (
 # set up the environment before any other import
 setup_test_env()
 
+import os
 import shutil
 from pathlib import Path
+from typing import Dict
 
 import pytest
 from fakeredis import FakeStrictRedis
@@ -32,7 +30,7 @@ from .utils.modules import remove_modules
 from .utils.rq import get_rq_worker
 
 _lda_parameters_fixture = load_json_fixture("lda_parameters.json")
-_system_test_backend = load_json_fixture("simulator_backend.json")
+_test_backend_props_fixture = load_json_fixture("test_backend_props.json")
 _real_redis = Redis(db=2)
 _fake_redis = FakeStrictRedis()
 _async_queue_pool = QueuePool(
@@ -102,10 +100,6 @@ BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES = [
 
 def mock_post_requests(url: str, **kwargs):
     """Mock POST requests for testing"""
-    if url == f"{TEST_QUANTIFY_MACHINE_ROOT_URL}/qobj":
-        return MockHttpResponse(status_code=200)
-    if url == f"{TEST_QUANTIFY_MACHINE_ROOT_URL}/rng_LokiB":
-        return MockHttpResponse(status_code=200)
     if url == f"{TEST_MSS_MACHINE_ROOT_URL}/timelog":
         return MockHttpResponse(status_code=200)
 
@@ -114,8 +108,8 @@ def mock_mss_get_requests(url: str, **kwargs):
     """Mock GET requests sent to MSS for testing"""
     if url.endswith("properties/lda_parameters"):
         return MockHttpResponse(status_code=200, json=_lda_parameters_fixture)
-    if url.endswith("backends/SimulatorB"):
-        return MockHttpResponse(status_code=200, json=_system_test_backend)
+    if url.endswith(f"backends/{TEST_DEFAULT_PREFIX}"):
+        return MockHttpResponse(status_code=200, json=_test_backend_props_fixture)
 
 
 def mock_mss_put_requests(url: str, **kwargs):
