@@ -4,8 +4,8 @@
 
 The Backend of the [Tergite software stack](https://tergite.github.io/) of the Swedish Quantum Computer.
 
-**This project is developed by a core group of collaborators.  
-Chalmers Next Labs AB (CNL) takes on the role of managing and maintaining this project.**
+**This project is developed by a core group of collaborators.**    
+**Chalmers Next Labs AB (CNL) takes on the role of managing and maintaining this project.**
 
 ## Version Control
 
