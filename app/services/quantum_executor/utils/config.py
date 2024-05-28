@@ -401,7 +401,6 @@ class GeneralConfig(ExecutorConfigItem):
     """The general config for the hardware"""
 
     data_directory: str = "data"
-    is_simulator: bool = False
     simulator_type: SimulatorType = SimulatorType.SCQT
 
 

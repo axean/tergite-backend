@@ -14,7 +14,7 @@
 
 import logging
 import logging.handlers
-import typing
+from typing import Union
 from os.path import abspath, join
 
 import pandas as pd
@@ -42,7 +42,7 @@ class Line:
 class ExperimentLogger:
     def __init__(
         self,
-        tuid: typing.Union[str, "TUID"],
+        tuid: Union[str, "TUID"],
         /,
         *,
         formatter=logging.Formatter("%(asctime)s ▪ %(levelname)s ▪ %(message)s"),
@@ -116,8 +116,7 @@ class ExperimentLogger:
 
         return program_set
 
-    # TODO: This should also be able to handle compiled schedules
-    def log_schedule(self, schedule: "Schedule", /):
+    def log_schedule(self, schedule: Union["Schedule", "CompiledSchedule"], /):
         """Log the timing table for a Quantify schedule.
         A delta is computed with the last executed timing table and only the changed operations
         are saving in the log. When the current schedule has changed operations, the entire current schedule

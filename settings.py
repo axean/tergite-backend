@@ -93,5 +93,15 @@ CLIENT_IP_WHITELIST = {
 if APP_SETTINGS == "test" and not os.environ.get("BLACKLISTED"):
     CLIENT_IP_WHITELIST["testclient"] = True
 
+# -----------------------
 # Hardware configurations
+# -----------------------
+# The executor type specifies which implementations of the QuantumExecutor to use.
+# For more information on the values check:
+# - dot-env-template.txt
+EXECUTOR_TYPE = config("EXECUTOR_TYPE", default="hardware")
+
+# This will load the hardware configuration from a yaml file, which contains the properties for the
+# cluster or other instrument setup. For more information check:
+# - executor-config.example.yml
 EXECUTOR_CONFIG_FILE = config("EXECUTOR_CONFIG_FILE", default="executor-config.yml")

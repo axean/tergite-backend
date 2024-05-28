@@ -9,9 +9,6 @@ general:
   data_directory: data
   # the directory where to put generated data; default is data on root folder
 
-  is_simulator: true
-  # whether we are using a simulator or not; Default is None
-
   simulator_type: scqt
   # type of simulator being used if any; Default is scqt
 
