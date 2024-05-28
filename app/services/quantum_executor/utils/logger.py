@@ -116,6 +116,7 @@ class ExperimentLogger:
 
         return program_set
 
+    # TODO: This should also be able to handle compiled schedules
     def log_schedule(self, schedule: "Schedule", /):
         """Log the timing table for a Quantify schedule.
         A delta is computed with the last executed timing table and only the changed operations
