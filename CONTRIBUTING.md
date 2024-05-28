@@ -4,18 +4,9 @@
 
 **It is currently being developed by the core developers only.**
 
-We love your input! We want to make contributing to this project as easy and transparent as possible, whether it's:
-
--   Reporting a bug
--   Discussing the current state of the code
--   Submitting a fix
--   Proposing new features
--   Becoming a maintainer
-
 ## Government Model
 
-[Chalmers Next Labs AB (CNL)](https://chalmersnextlabs.se) has taken on the responsibility of managing the 
-collaborative development of this project on behalf of all contributors.
+[Chalmers Next Labs AB (CNL)](https://chalmersnextlabs.se) manages and maintains this project on behalf of all contributors.
 
 ## Version Control
 
@@ -29,7 +20,7 @@ When versioning we follow the format `{year}.{month}.{patch_number}` e.g. `2023.
 ## Contacting the Tergite Developers
 
 Since the Github repositories are only mirrors, no Github pull requests or Github issue/bug reports 
-are looked. Please get in touch via email <quantum.nextlabs@chalmers.se> instead. 
+are looked at. Please get in touch via email <quantum.nextlabs@chalmers.se> instead. 
 
 Take note that the maintainers may not answer every email.
 
