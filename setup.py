@@ -33,7 +33,7 @@ _README = (_ROOT_DIRECTORY / "README.md").read_text()
 
 
 setuptools.setup(
-    name="tergite-bcc",
+    name="tergite-backend",
     version="2024.04.0",
     author="Miroslav Dobsicek",
     maintainer="Martin Ahindura",
@@ -42,7 +42,7 @@ setuptools.setup(
     description="The Backend of the Tergite software stack of the Swedish Quantum Computer",
     long_description=_README,
     long_description_content_type="text/markdown",
-    url="https://github.com/tergite/tergite-bcc",
+    url="https://github.com/tergite/tergite-backend",
     packages=setuptools.find_packages(),
     python_requires=">=3.9",
     include_package_data=True,

@@ -1,11 +1,16 @@
-# Tergite BCC
+# Tergite Backend (formerly Tergite BCC)
 
-![CI](https://github.com/tergite/tergite-bcc/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/tergite/tergite-backend/actions/workflows/ci.yml/badge.svg)
 
 The Backend of the [Tergite software stack](https://tergite.github.io/) of the Swedish Quantum Computer.
 
 **This project is developed by a core group of collaborators.  
 Chalmers Next Labs AB (CNL) takes on the role of managing and maintaining this project.**
+
+## Version Control
+
+The tergite stack is developed on a separate version control system and mirrored on Github.
+If you are reading this on GitHub, then you are looking at a mirror. 
 
 ## Dependencies
 
@@ -20,7 +25,7 @@ Chalmers Next Labs AB (CNL) takes on the role of managing and maintaining this p
 - Clone the repo
 
 ```shell
-git clone git@github.com:tergite/tergite-bcc.git
+git clone git@github.com:tergite/tergite-backend.git
 ```
 
 - Create conda environment
@@ -33,8 +38,8 @@ conda activate bcc
 - Install dependencies
 
 ```shell
-cd tergite-bcc
-pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -r requirements.txt
+cd tergite-backend
+pip install -r requirements.txt
 ```
 
 - Copy the `dot-env-template.txt` file to `.env` and 
@@ -78,7 +83,7 @@ If you would like to contribute, please have a look at our
 ## Authors
 
 This project is a work of
-[many contributors](https://github.com/tergite/tergite-bcc/graphs/contributors).
+[many contributors](https://github.com/tergite/tergite-backend/graphs/contributors).
 
 Special credit goes to the authors of this project as seen in the [CREDITS](./CREDITS.md) file.
 

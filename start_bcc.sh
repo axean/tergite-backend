@@ -2,7 +2,7 @@
 
 # Run this script as follows:
 #
-# - go to the root of the tergite-bcc rpository (this directory)
+# - go to the root of the tergite-backend repository (this directory)
 # - run ./start_bcc.sh --device [FILEPATH]
 #
 # where FILEPATH is a TOML file with device configuration. See

@@ -1,4 +1,4 @@
-# Contributing to tergite-bcc
+# Contributing to tergite-backend
 
 **This project is currently not accepting pull requests from the general public yet.**
 
@@ -93,8 +93,8 @@ All signed CLAs are emails to us at <quantum.nextlabs@chalmers.se>."
 - Clone the repo
 
 ```shell
-git clone git@github.com:tergite/tergite-bcc.git
-cd tergite-bcc
+git clone git@github.com:tergite/tergite-backend.git
+cd tergite-backend
 ```
 
 - Create a conda environment with python 3.9
@@ -133,14 +133,14 @@ pytest app
 - Clone the repo
 
 ```shell
-git clone git@github.com:tergite/tergite-bcc.git
+git clone git@github.com:tergite/tergite-backend.git
 ```
 
 - Copy the `dot-env-template.txt` into the `.env` file and update the variables there in. Contact your teammates for
  the variables you are not sure of.
 
 ```shell
-cd tergite-bcc
+cd tergite-backend
 cp dot-env-template.txt .env
 ```
 
@@ -164,7 +164,7 @@ YOUR_CONDA_BIN_PATH="${$(conda info --base)}/bin/conda"
 ```
 
 
-- Extract also the path to this folder where `tergite-bcc` is.
+- Extract also the path to this folder where `tergite-backend` is.
 
 ```shell
 YOUR_PATH_TO_BCC=$(pwd)

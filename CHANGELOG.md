@@ -27,7 +27,7 @@ This is part of the tergite release v2024.04 which merges the tergite stack into
 - Moved unused files to `archive` folder
 - BREAKING_CHANGE: Removed calibration and two state discrimination source code
 - BREAKING_CHANGE: Replaced tergite-quantify-connector-storagefile package with an internal storage_file lib
-- BREAKING_CHANGE: Merged tergite-quantify-connector into tergite-bcc and renamed its service to `quantum_executor`
+- BREAKING_CHANGE: Merged tergite-quantify-connector into tergite-backend and renamed its service to `quantum_executor`
 - BREAKING_CHANGE: Changed configuration of hardware to use `executor-config.yml` file with proper validations on loading
 - BREAKING_CHANGE: Removed support for `Pulsar`, or any other instrument drivers other than `Cluster`   
   The old implementation wrongfully assumed that all these drivers have the same signature i.e. `driver(name: str, identifier: str | None)`  
@@ -67,7 +67,7 @@ Labber is being deprecated.
 
 ### Added
 
-- Initial release of the tergite-bcc server
+- Initial release of the tergite-backend server
 - Support for [Labber](https://www.keysight.com/us/en/products/software/application-sw/labber-software.html)
 - Support for [quantify-core](https://quantify-os.org/docs/quantify-core)
 
