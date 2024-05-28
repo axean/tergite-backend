@@ -13,8 +13,8 @@
 import xarray
 from qiskit.qobj import PulseQobj
 
-from app.services.quantum_executor.scheduler.experiment import Experiment
-from app.services.quantum_executor.base import QuantumExecutor
+from ..scheduler.experiment import Experiment
+from ..base import QuantumExecutor
 
 
 class QuTipExecutor(QuantumExecutor):

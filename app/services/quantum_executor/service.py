@@ -1,6 +1,6 @@
 # This code is part of Tergite
 #
-# (C) Axel Andersson (2022)
+# (C) Stefan Hill (2024)
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -9,9 +9,8 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-#
-# Refactored by Martin Ahindura (2024)
 
+from .base import QuantumExecutor
 from .executors.quantify import QuantifyExecutor
 from .executors.qutip import QuTipExecutor
 from .executors.scqt import SCQTQuantifyExecutor
@@ -39,7 +38,7 @@ class QuantumExecutorFactory:
 
         Returns
         -------
-        app.services.quantum_executor.base.QuantumExecutor
+        QuantumExecutor
             An implementation of a QuantumExecutor class
         """
         if executor_name not in self._executors.keys():
