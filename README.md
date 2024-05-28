@@ -2,17 +2,20 @@
 
 ![CI](https://github.com/tergite/tergite-bcc/actions/workflows/ci.yml/badge.svg)
 
-The Backend Control Computer software that makes QAL 9000 - like quantum computers accessible via the internet.
+The Backend of the [Tergite software stack](https://tergite.github.io/) of the Swedish Quantum Computer.
+
+**This project is developed by a core group of collaborators.  
+Chalmers Next Labs AB (CNL) takes on the role of managing and maintaining this project.**
 
 ## Dependencies
 
-- [Python 3.8](https://www.python.org/)
+- [Python 3.9](https://www.python.org/)
 - [Redis](https://redis.io/)
 
 ## Quick Start
 
 - Ensure you have [conda](https://docs.anaconda.com/free/miniconda/index.html) installed. 
- (_You could simply have python +3.8 installed instead._)
+ (_You could simply have python +3.9 installed instead._)
 - Ensure you have the [Redis](https://redis.io/) server running
 - Clone the repo
 
@@ -23,7 +26,7 @@ git clone git@github.com:tergite/tergite-bcc.git
 - Create conda environment
 
 ```shell
-conda create -n bcc -y python=3.8
+conda create -n bcc -y python=3.9
 conda activate bcc
 ```
 

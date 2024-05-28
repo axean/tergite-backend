@@ -7,7 +7,9 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ## [Unreleased]
 
-This is part of the tergite release v2024.03 that updates the full pipeline for state discrimination hardware calibration
+## [2024.04.0] - 2024-05-28
+
+This is part of the tergite release v2024.04 which merges the tergite stack into three clear parts: front, back, client/sdks
 
 ### Added
 
@@ -39,7 +41,6 @@ This is part of the tergite release v2024.03 that updates the full pipeline for 
 
 - Fixed duplicate job uploads to respond with HTTP 409
 
-### Contributors
 
 ## [2024.02.0] - 2024-03-19
 

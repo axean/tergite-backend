@@ -34,12 +34,12 @@ _README = (_ROOT_DIRECTORY / "README.md").read_text()
 
 setuptools.setup(
     name="tergite-bcc",
-    version="2024.02.0",
+    version="2024.04.0",
     author="Miroslav Dobsicek",
     maintainer="Martin Ahindura",
     maintainer_email="martin.ahindura@chalmers.se",
     author_email="dobsicek@chalmers.se",
-    description="The Backend Control Computer software that opens QAL 9000 - like quantum computers to the internet",
+    description="The Backend of the Tergite software stack of the Swedish Quantum Computer",
     long_description=_README,
     long_description_content_type="text/markdown",
     url="https://github.com/tergite/tergite-bcc",
