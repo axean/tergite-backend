@@ -53,7 +53,7 @@ from .scheduler.experiment import Experiment
 from .scheduler.instruction import Instruction, meas_settings
 from .simulator import scqt
 from .simulator.base import BaseSimulator
-from .utils.config import ClusterModuleType, ExecutorConfig
+from .utils.config import ClusterModuleType, QuantifyExecutorConfig
 from .utils.logger import ExperimentLogger
 
 # A map of simulators and their case-insensitive names as referred to in env file
@@ -70,7 +70,7 @@ _QBLOX_CLUSTER_TYPE_MAP: Dict[ClusterModuleType, qblox_instruments.ClusterType] 
 _MODULE_NAME_REGEX = re.compile(r".*_module(\d+)$")
 
 
-class QuantumExecutor:
+class QuantifyExecutor:
     """The controller of the hardware that executes the quantum jobs"""
 
     _coordinator = find_or_create_instrument(
@@ -85,7 +85,7 @@ class QuantumExecutor:
     shared_mem = dict()
 
     def __init__(self, config_file: Union[str, bytes, os.PathLike]):
-        conf = ExecutorConfig.from_yaml(config_file)
+        conf = QuantifyExecutorConfig.from_yaml(config_file)
 
         # Tell Quantify where to store data
         dh.set_datadir(conf.general.data_directory)
@@ -126,10 +126,10 @@ class QuantumExecutor:
                 identifier=cluster.instrument_address,
                 dummy_cfg=dummy_cfg,
             )
-            QuantumExecutor.shared_mem[device.name] = device
+            QuantifyExecutor.shared_mem[device.name] = device
             rich.print(f"Instantiated Cluster driver for '{cluster.name}'")
             _add_component_if_not_exists(
-                coordinator=QuantumExecutor._coordinator,
+                coordinator=QuantifyExecutor._coordinator,
                 component_type=ClusterComponent,
                 device=device,
             )
@@ -147,13 +147,13 @@ class QuantumExecutor:
                 driver, device_name, **instrument.instrument_driver.kwargs
             )
             _set_parameters(device, instrument.parameters)
-            QuantumExecutor.shared_mem[device.name] = device
+            QuantifyExecutor.shared_mem[device.name] = device
             rich.print(
                 f"Instantiated {instrument.instrument_driver.import_path.split('.')[-1]} driver for '{instrument.name}'"
             )
 
             _add_component_if_not_exists(
-                coordinator=QuantumExecutor._coordinator,
+                coordinator=QuantifyExecutor._coordinator,
                 component_type=GenericInstrumentCoordinatorComponent,
                 device=device,
             )
@@ -173,11 +173,12 @@ class QuantumExecutor:
         )
 
     def run(self, experiment: Experiment, /):
-        QuantumExecutor._coordinator.stop()
+        QuantifyExecutor._coordinator.stop()
 
         # compile to hardware
         # TODO: Here, we can use the new @timer decorator in the benchmarking package
         t1 = datetime.now()
+        # TODO SIM: We can have an abstract hardware compile function and inherit from there
         if self.is_simulator:
             compiled_schedule = hardware_compile(
                 schedule=experiment.schedule, hardware_cfg=self.quantify_config
@@ -203,7 +204,7 @@ class QuantumExecutor:
         # start experiment
         # TODO: Here, we can use the new @timer decorator from the benchmarking package
         t3 = datetime.now()
-        QuantumExecutor._coordinator.start()
+        QuantifyExecutor._coordinator.start()
 
         # wait for program to finish and return acquisition
         # TODO: What is the return type of retrieve_acquisition()?
@@ -334,6 +335,7 @@ class QuantumExecutor:
             ):
                 print(datetime.now(), "IN RUN_EXPERIMENTS, START RUN")
 
+                # TODO SIM: This will be replaced by the generic run statement
                 if self.is_simulator:
                     experiment_data = self.simulate(experiment)
                 else:

@@ -15,7 +15,7 @@ import socket
 
 import pytest
 
-from app.services.quantum_executor.service import QuantumExecutor
+from app.services.quantum_executor.service import QuantifyExecutor
 
 from ..utils.fixtures import get_fixture_path
 
@@ -24,7 +24,7 @@ _REAL_HARDWARE_EXECUTOR_CONFIG_FILE = get_fixture_path("real-executor-config.yml
 
 def test_attempts_to_connect_to_real_hardware():
     """Loads the config for the real hardware in the appropriate way"""
-    QuantumExecutor.close()
+    QuantifyExecutor.close()
 
     with pytest.raises(socket.timeout):
-        QuantumExecutor(config_file=_REAL_HARDWARE_EXECUTOR_CONFIG_FILE)
+        QuantifyExecutor(config_file=_REAL_HARDWARE_EXECUTOR_CONFIG_FILE)

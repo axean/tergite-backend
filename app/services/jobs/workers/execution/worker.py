@@ -43,7 +43,7 @@ DEFAULT_PREFIX = settings.DEFAULT_PREFIX
 
 # redis connection
 redis_connection = Redis()
-executor = executor_service.QuantumExecutor(config_file=settings.EXECUTOR_CONFIG_FILE)
+executor = executor_service.QuantifyExecutor(config_file=settings.EXECUTOR_CONFIG_FILE)
 
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 

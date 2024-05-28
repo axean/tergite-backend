@@ -1,7 +1,7 @@
 """Tests for the settings and configs"""
 import pytest
 
-from app.services.quantum_executor.utils.config import ExecutorConfig
+from app.services.quantum_executor.utils.config import QuantifyExecutorConfig
 from app.tests.conftest import FASTAPI_CLIENTS
 from app.tests.utils.env import TEST_MSS_APP_TOKEN
 from app.tests.utils.fixtures import get_fixture_path, load_json_fixture
@@ -12,7 +12,7 @@ _YAML_EXECUTOR_CONFIG_PATH = get_fixture_path("generic-executor-config.yml")
 
 def test_load_hardware_yaml_config():
     """ExecutorConfig can load YAML into hardware config JSON"""
-    conf = ExecutorConfig.from_yaml(_YAML_EXECUTOR_CONFIG_PATH)
+    conf = QuantifyExecutorConfig.from_yaml(_YAML_EXECUTOR_CONFIG_PATH)
     expected = _EXECUTOR_CONFIG_JSON
     got = conf.to_quantify()
     assert got == expected
