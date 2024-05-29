@@ -1,4 +1,4 @@
-# Copy this file to a .env file in the tergite-bcc folder.
+# Copy this file to a .env file in the tergite-backend folder.
 # The .env file is a simple list of keys and values. It is also known as the INI file on MS Windows.
 # Fill in the necessary values.
 

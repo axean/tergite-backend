@@ -2,7 +2,7 @@
 
 # Run this script as follows:
 #
-# - go to the root of the tergite-bcc rpository (this directory)
+# - go to the root of the tergite-backend repository (this directory)
 # - run ./start_bcc.sh --device [FILEPATH]
 #
 # where FILEPATH is a TOML file with device configuration. See
@@ -45,7 +45,7 @@ if [ "$IS_SYSTEMD" = "true" ]; then
   if conda_activate ./env ; then
     echo "env activated";
   else
-    conda create -y --prefix=env python=3.8 && conda_activate ./env && pip install -r requirements.txt;
+    conda create -y --prefix=env python=3.9 && conda_activate ./env && pip install -r requirements.txt;
     echo "env created, activated, and dependencies installed";
   fi
 fi

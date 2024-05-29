@@ -45,18 +45,18 @@ TEST_APP_TOKEN_STRING = "eecbf107ad103f70187923f49c1a1141219da95f1ab3906f"
 
 FASTAPI_CLIENTS = [
     lazy_fixture("async_fastapi_client"),
-    # FIXME: See issue https://bitbucket.org/qtlteam/tergite-bcc/issues/1/inform-job-location-stage-logic-is
+    # FIXME: inform-job-location-stage logic is non-deterministic
     # lazy_fixture("sync_fastapi_client"),
 ]
 BLACKLISTED_FASTAPI_CLIENTS = [
     lazy_fixture("blacklisted_async_fastapi_client"),
-    # FIXME: See issue https://bitbucket.org/qtlteam/tergite-bcc/issues/1/inform-job-location-stage-logic-is
+    # FIXME: inform-job-location-stage logic is non-deterministic
     # lazy_fixture("blacklisted_sync_fastapi_client"),
 ]
 
 CLIENTS = [
     (lazy_fixture("async_fastapi_client"), lazy_fixture("real_redis_client")),
-    # FIXME: See issue https://bitbucket.org/qtlteam/tergite-bcc/issues/1/inform-job-location-stage-logic-is
+    # FIXME: inform-job-location-stage logic is non-deterministic
     # (lazy_fixture("sync_fastapi_client"), lazy_fixture("fake_redis_client")),
 ]
 
@@ -65,7 +65,7 @@ BLACKLISTED_CLIENTS = [
         lazy_fixture("blacklisted_async_fastapi_client"),
         lazy_fixture("real_redis_client"),
     ),
-    # FIXME: See issue https://bitbucket.org/qtlteam/tergite-bcc/issues/1/inform-job-location-stage-logic-is
+    # FIXME: inform-job-location-stage logic is non-deterministic
     # (lazy_fixture("blacklisted_sync_fastapi_client"), lazy_fixture("fake_redis_client")),
 ]
 
@@ -75,7 +75,7 @@ CLIENT_AND_RQ_WORKER_TUPLES = [
         lazy_fixture("real_redis_client"),
         lazy_fixture("async_rq_worker"),
     ),
-    # FIXME: See issue https://bitbucket.org/qtlteam/tergite-bcc/issues/1/inform-job-location-stage-logic-is
+    # FIXME: inform-job-location-stage logic is non-deterministic
     # (
     #     lazy_fixture("sync_fastapi_client"),
     #     lazy_fixture("fake_redis_client"),
@@ -89,7 +89,7 @@ BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES = [
         lazy_fixture("real_redis_client"),
         lazy_fixture("async_rq_worker"),
     ),
-    # FIXME: See issue https://bitbucket.org/qtlteam/tergite-bcc/issues/1/inform-job-location-stage-logic-is
+    # FIXME: inform-job-location-stage logic is non-deterministic
     # (
     #     lazy_fixture("blacklisted_sync_fastapi_client"),
     #     lazy_fixture("fake_redis_client"),

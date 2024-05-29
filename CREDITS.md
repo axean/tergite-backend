@@ -2,7 +2,7 @@
 
 ## Miroslav Dobsicek
 
-- The first version of the tergite-bcc
+- The first version of the tergite-backend
 - Support for [Labber](https://www.keysight.com/us/en/products/software/application-sw/labber-software.html)
 
 ## Axel Andersson
