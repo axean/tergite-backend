@@ -11,10 +11,10 @@
 # that they have been altered from the originals.
 #
 # Refactored by Martin Ahindura (2024)
-
+import abc
 from dataclasses import dataclass
 from functools import cached_property
-from typing import FrozenSet
+from typing import FrozenSet, List
 
 import numpy as np
 import qiskit.pulse.library.discrete
@@ -24,24 +24,29 @@ from quantify_scheduler.compilation import determine_absolute_timing
 from quantify_scheduler.operations.operation import Operation
 from quantify_scheduler.resources import ClockResource
 
+from .schedule import SimulationSchedule, MeasurementOperation, UnitaryOperation
 from ..utils.logger import ExperimentLogger
 from .channel import Channel
 from .instruction import Instruction
 
 
 @dataclass(frozen=True)
-class Program:
+class Program(abc.ABC):
     name: str
     channels: FrozenSet[Channel]
     config: PulseQobjConfig
     logger: ExperimentLogger
 
+
+@dataclass(frozen=True)
+class QuantifyProgram(Program):
+
     @cached_property
-    def schedule(self: "Program") -> "Schedule":
+    def schedule(self: "QuantifyProgram") -> "Schedule":
         return Schedule(name=self.name, repetitions=self.config.shots)
 
     @cached_property
-    def compiled_schedule(self: "Program") -> "Schedule":
+    def compiled_schedule(self: "QuantifyProgram") -> "Schedule":
         for channel in self.channels:
             clock = ClockResource(name=channel.clock, freq=channel.frequency)
             self.schedule.add_resource(clock)
@@ -49,11 +54,11 @@ class Program:
 
         return determine_absolute_timing(self.schedule)
 
-    def get_channel(self: "Program", instruction: Instruction, /) -> "Channel":
+    def get_channel(self: "QuantifyProgram", instruction: Instruction, /) -> "Channel":
         return next(filter(lambda ch: instruction.channel == ch.clock, self.channels))
 
     def numerical_pulse(
-        self: "Program", instruction: Instruction, /, *, waveform: np.ndarray
+            self: "QuantifyProgram", instruction: Instruction, /, *, waveform: np.ndarray
     ) -> "Operation":
         waveform *= np.exp(1.0j * self.get_channel(instruction).phase)
         operation = Operation(name=instruction.unique_name)
@@ -78,7 +83,7 @@ class Program:
         operation._update()
         return operation
 
-    def update_frame(self: "Program", instruction: Instruction, /):
+    def update_frame(self: "QuantifyProgram", instruction: Instruction, /):
         # relative phase change
         if instruction.name == "fc":
             self.get_channel(instruction).phase += instruction.phase
@@ -99,7 +104,7 @@ class Program:
             raise RuntimeError(f"Unable to execute command {instruction}.")
 
     def schedule_operation(
-        self: "Program", instruction: Instruction, /, *, rel_time: float, ref_op: str
+            self: "QuantifyProgram", instruction: Instruction, /, *, rel_time: float, ref_op: str
     ):
         # -----------------------------------------------------------------
         if instruction.name in {"setp", "setf", "fc", "shiftf"}:
@@ -210,3 +215,135 @@ class Program:
             label=instruction.label,
             operation=operation,
         )
+
+
+@dataclass(frozen=True)
+class QuTipProgram(Program):
+
+    @cached_property
+    def schedule(self) -> 'SimulationSchedule':
+        return SimulationSchedule(name=self.name)
+
+    @cached_property
+    def compiled_schedule(self) -> 'SimulationSchedule':
+        return self.schedule
+
+    def get_channel(self, instruction: Instruction, /) -> 'Channel':
+        return next(filter(lambda ch: instruction.channel == ch.clock, self.channels))
+
+    def update_frame(self, instruction: Instruction, /):
+
+        # relative phase change
+        if instruction.name == "fc":
+            self.get_channel(instruction).phase += instruction.phase
+
+        # absolute phase change
+        elif instruction.name == "setp":
+            self.get_channel(instruction).phase = instruction.phase
+
+        # relative frequency change
+        elif instruction.name == "shiftf":
+            self.get_channel(instruction).frequency += instruction.frequency
+
+        # absolute frequency change
+        elif instruction.name == "setf":
+            self.get_channel(instruction).frequency = instruction.frequency
+
+        else:
+            raise RuntimeError(f"Unable to execute command {instruction}.")
+
+    def schedule_operation(
+            self, instructions: List['Instruction'], /,
+    ):
+        # Get the names of all instructions, so, we have a basis to do a decision which operation it is
+        instruction_map = {idx_: i_.name for idx_, i_ in enumerate(instructions)}
+
+        # FIXME: This sort of parsing is potentially unsafe
+        channel = int(instructions[0].channel[1:])
+
+        # This is to make sure that we always get all instructions inside the mapping
+        assert len(instruction_map) == len(instructions)
+
+        operation = None
+
+        # This is to check whether the operation should be a measurement
+        if "acquire" in instruction_map.values():
+            t0 = 0.0
+
+            # We determine the start time of the measurement to properly schedule it
+            for i_ in instructions:
+                if i_.name == "parametric_pulse":
+                    t0 = i_.t0
+
+            # We are adding a measurement to the qubit (channel) on time t0
+            operation = MeasurementOperation(channel,
+                                             t0=t0)
+
+        # TODO: We currently cannot handle delays
+        # In the simulator, we currently do not handle delays, because it is not necessary for the simple type
+        # of operations we are having right now. If one would want to have delays in the code, one would create
+        # a new type of 'Operation' for the 'SimulationSchedule'
+        elif "delay" in instruction_map.values():
+            pass
+
+        # This is handling all other sort of pulses
+        elif "parametric_pulse" in instruction_map.values():
+
+            # Initialise the parameters we need to define the array that describes the pulse
+            frequency = 0.0
+            phase = 0.0
+            amp = 0.0
+            sigma = 1
+            t0 = 0.0
+            duration = 0.0
+            pulse_shape = "gaussian"
+            parameters = None
+            discrete_steps = 0
+
+            # Instructions is a list that contains all information to build an instruction
+            # We have to iterate over the elements to fetch the parameters from different objects
+            for i_ in instructions:
+                # Some instructions contain a change in frequency
+                if i_.name in ["setf", "shiftf"]:
+                    frequency = i_.frequency
+                # Some instructions contain a phase shift
+                elif i_.name in ["setp", "fc"]:
+                    phase = i_.phase
+                # The parametric pulse stores all information about the shape and pulse parameters
+                elif i_.name == "parametric_pulse":
+                    amp = i_.parameters["amp"]
+                    sigma = i_.parameters["sigma"]
+                    t0 = i_.t0
+                    duration = i_.duration
+                    pulse_shape = i_.pulse_shape
+                    parameters = i_.parameters
+                    # We need the steps for the simulation model
+                    discrete_steps = int(duration * 10e8)
+            wf_fn = getattr(qiskit.pulse.library.discrete, str.lower(pulse_shape))
+            coeffs = wf_fn(**parameters).samples
+            coeffs *= np.exp(1.0j * phase).tolist()
+            tlist = np.linspace(0, duration, len(coeffs)).tolist()
+
+            operation = UnitaryOperation(channel,
+                                         t0=t0,
+                                         frequency=frequency,
+                                         phase=phase,
+                                         amp=amp,
+                                         sigma=sigma,
+                                         discrete_steps=discrete_steps)
+
+            operation.data.update({
+                "pulse_info": [
+                    {
+                        "wf_func": "quantify_scheduler.waveforms.interpolated_complex_waveform",
+                        "samples": coeffs,
+                        "t_samples": tlist,
+                        "duration": duration,
+                        "interpolation": "linear",
+                        "t0": 0.0,
+                    }
+                ],
+            })
+
+        if operation is not None:
+            self.schedule.add(operation)

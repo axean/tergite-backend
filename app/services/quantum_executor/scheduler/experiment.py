@@ -11,6 +11,7 @@
 # that they have been altered from the originals.
 #
 # Refactored by Martin Ahindura (2024)
+import abc
 from dataclasses import dataclass
 from functools import cached_property
 from typing import FrozenSet, List
@@ -20,15 +21,16 @@ from pandas import DataFrame
 from qiskit.qobj import PulseQobjConfig, QobjExperimentHeader
 from quantify_scheduler import Schedule
 
+from .schedule import SimulationSchedule
 from ..utils.general import rot_left
 from ..utils.logger import ExperimentLogger
 from .channel import Channel
 from .instruction import Instruction, initial_object
-from .program import Program
+from .program import QuantifyProgram, QuTipProgram
 
 
 @dataclass(frozen=True)
-class Experiment:
+class Experiment(abc.ABC):
     header: QobjExperimentHeader
     instructions: List[Instruction]
     config: PulseQobjConfig
@@ -37,7 +39,7 @@ class Experiment:
     buffer_time: float = 0.0
 
     @cached_property
-    def dag(self: "Experiment"):
+    def dag(self: "QuantifyExperiment"):
         dag = rx.PyDiGraph(check_cycle=True, multigraph=False)
 
         prev_index = dict()
@@ -57,9 +59,24 @@ class Experiment:
         return dag
 
     @property
-    def schedule(self: "Experiment") -> Schedule:
+    @abc.abstractmethod
+    def schedule(self):
+        pass
+
+    @property
+    def timing_table(self: "Experiment") -> DataFrame:
+        df = self.schedule.timing_table.data
+        df.sort_values("abs_time", inplace=True)
+        return df
+
+
+@dataclass(frozen=True)
+class QuantifyExperiment(Experiment):
+
+    @property
+    def schedule(self: "QuantifyExperiment") -> Schedule:
         self.logger.info(f"Compiling {self.header.name}")
-        prog = Program(
+        prog = QuantifyProgram(
             name=self.header.name,
             channels=self.channels,
             config=self.config,
@@ -99,8 +116,25 @@ class Experiment:
 
         return prog.compiled_schedule
 
+
+@dataclass(frozen=True)
+class QuTipExperiment(Experiment):
+
     @property
-    def timing_table(self: "Experiment") -> DataFrame:
-        df = self.schedule.timing_table.data
-        df.sort_values("abs_time", inplace=True)
-        return df
+    def schedule(self: 'QuTipExperiment') -> 'SimulationSchedule':
+        # TODO: Override this completely
+        self.logger.info(f"Compiling {self.header.name}")
+        # TODO: Check whether it is even necessary to have this Program helper class with the simulator
+        prog = QuTipProgram(
+            name=self.header.name,
+            channels=self.channels,
+            config=self.config,
+            logger=self.logger,
+        )
+        wccs = rx.weakly_connected_components(self.dag)
+
+        for wcc in wccs:
+            wcc_nodes = list(sorted(list(wcc)))
+
+            prog.schedule_operation([self.dag[i_] for i_ in wcc_nodes])
+        return prog.schedule

@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 
 from .quantify import QuantifyExecutor
-from ..scheduler.experiment import Experiment
+from ..scheduler.experiment import QuantifyExperiment
 from ..simulator import scqt
 
 
@@ -21,7 +21,7 @@ class SCQTQuantifyExecutor(QuantifyExecutor):
         super().__init__(*args, **kwargs)
         self.simulator = scqt.Simulator()
 
-    def run(self, experiment: Experiment, /):
+    def run(self, experiment: QuantifyExperiment, /):
         schedule = experiment.schedule
         compiled_sched = self.simulator.compile(schedule)
         self.logger.log_schedule(compiled_sched)

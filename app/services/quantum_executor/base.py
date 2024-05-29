@@ -14,7 +14,7 @@ from quantify_core.data.handling import gen_tuid, create_exp_folder
 from tqdm import tqdm
 
 from app.libs.storage_file import StorageFile
-from app.services.quantum_executor.scheduler.experiment import Experiment
+from app.services.quantum_executor.scheduler.experiment import QuantifyExperiment
 from app.services.quantum_executor.scheduler.instruction import meas_settings
 from app.services.quantum_executor.utils.logger import ExperimentLogger
 
@@ -47,7 +47,7 @@ class QuantumExecutor(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def run(self, experiment: Experiment, /) -> xarray.Dataset:
+    def run(self, experiment: QuantifyExperiment, /) -> xarray.Dataset:
         pass
 
     def run_experiments(

@@ -134,7 +134,7 @@ class Instruction:
         cls: type,
         i: PulseQobjInstruction,
         config: PulseQobjConfig,
-        hardware_map: Dict[str, str],
+        hardware_map: Dict[str, str] = None,
     ) -> List[object]:
         # -----------------------------------------------------------------
         if i.name == "acquire":
@@ -146,7 +146,7 @@ class Instruction:
                         name=i.name,
                         t0=ceil4(i.t0) * 1e-9,
                         channel=f"m{qubit_idx}",
-                        port=hardware_map[f"m{qubit_idx}"],
+                        port=i.ch if hardware_map is None else hardware_map[f"m{qubit_idx}"],
                         duration=ceil4(i.duration) * 1e-9,
                         memory_slot=i.memory_slot[n],
                         protocol=program_settings["protocol"],
@@ -160,7 +160,7 @@ class Instruction:
                 name=i.name,
                 t0=ceil4(i.t0) * 1e-9,
                 channel=i.ch,
-                port=hardware_map[i.ch],
+                port=i.ch if hardware_map is None else hardware_map[i.ch],
                 duration=ceil4(i.duration) * 1e-9,
             )
         # -----------------------------------------------------------------
@@ -176,7 +176,7 @@ class Instruction:
                 name=i.name,
                 t0=ceil4(i.t0) * 1e-9,
                 channel=i.ch,
-                port=hardware_map[i.ch],
+                port=i.ch if hardware_map is None else hardware_map[i.ch],
                 duration=ceil4(i.parameters["duration"]) * 1e-9,
                 pulse_shape=i.pulse_shape,
                 parameters=i.parameters,
@@ -187,7 +187,7 @@ class Instruction:
                 name=i.name,
                 t0=ceil4(i.t0) * 1e-9,
                 channel=i.ch,
-                port=hardware_map[i.ch],
+                port=i.ch if hardware_map is None else hardware_map[i.ch],
                 duration=ceil4(config.pulse_library[i.name].shape[0]) * 1e-9,
             )
         # -----------------------------------------------------------------

@@ -47,3 +47,4 @@ isort>=5.12.0
 freezegun>=1.2.2
 pytest-lazy-fixture>=0.6.3
 fakeredis>=2.20.0
+git+https://github.com/aqp-mc2-chalmers/chalmers-qubit.git

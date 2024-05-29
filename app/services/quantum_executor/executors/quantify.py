@@ -38,7 +38,7 @@ from quantify_scheduler.instrument_coordinator.components.qblox import ClusterCo
 
 from ..base import QuantumExecutor
 from ..scheduler.channel import Channel
-from ..scheduler.experiment import Experiment
+from ..scheduler.experiment import QuantifyExperiment
 from ..scheduler.instruction import Instruction
 from ..utils.config import QuantifyExecutorConfig, ClusterModuleType
 from ....libs.storage_file import StorageFile
@@ -144,7 +144,7 @@ class QuantifyExecutor(QuantumExecutor):
             f"Generated hardware map: {json.dumps(self.hardware_map, indent=4)}"
         )
 
-    def run(self, experiment: Experiment, /):
+    def run(self, experiment: QuantifyExperiment, /):
         QuantifyExecutor._coordinator.stop()
 
         # compile to hardware
@@ -202,7 +202,7 @@ class QuantifyExecutor(QuantumExecutor):
 
             # convert OpenPulse experiment to Quantify schedule
             tx.append(
-                Experiment(
+                QuantifyExperiment(
                     header=experiment.header,
                     instructions=instructions,
                     config=qobj.config,
