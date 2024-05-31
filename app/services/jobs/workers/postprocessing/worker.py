@@ -152,7 +152,9 @@ def postprocess_storage_file(
             if sf.meas_level == MeasLvl.DISCRIMINATED:
                 # This would fetch the discriminator from the MSS
                 backend_definition: str = f'{str(MSS_MACHINE_ROOT_URL)}{REST_API_MAP["backends"]}/{backend_name}'
+                print(f"Calling: {backend_definition}")
                 response = mss_client.get(backend_definition)
+                print(response)
 
                 if response.status_code == 200:
                     discriminator_fn = functools.partial(

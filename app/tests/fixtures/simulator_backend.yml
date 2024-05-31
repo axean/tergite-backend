@@ -1,0 +1,203 @@
+---
+name: QuTipSimulatorA
+characterized: true
+open_pulse: true
+timelog:
+  REGISTERED: '2023-11-15T16:36:17.474815'
+  LAST_UPDATED: '2023-11-15T15:41:51.528Z'
+version: 2023.11.15
+num_qubits: 5
+num_couplers: 8
+num_resonators: 5
+dt: 1.0e-09
+dtm: 1.0e-09
+meas_map:
+- - 0
+  - 1
+  - 2
+  - 3
+  - 4
+coupling_map:
+- - 0
+  - 2
+- - 2
+  - 0
+- - 1
+  - 2
+- - 2
+  - 1
+- - 2
+  - 3
+- - 3
+  - 2
+- - 2
+  - 4
+- - 4
+  - 2
+device_properties:
+  qubit:
+  - frequency: 4511480043.556283
+    pi_pulse_amplitude: 0.17555712637424228
+    pi_pulse_duration: 5.6e-08
+    pulse_sigma: 7.0e-09
+    pulse_type: Gaussian
+    t1_decoherence: 3.4e-05
+    t2_decoherence: 3.3e-05
+    anharmonicity: 0.01884955592153876 # 0.3 * 2 * math.pi * 10e-3
+    id: 0
+  - frequency: 4677112343.360253
+    pi_pulse_amplitude: 0.17535338530538067
+    pi_pulse_duration: 5.6e-08
+    pulse_sigma: 7.0e-09
+    pulse_type: Gaussian
+    t1_decoherence: 3.4e-05
+    t2_decoherence: 3.3e-05
+    anharmonicity: 0.01884955592153876 # 0.3 * 2 * math.pi * 10e-3
+    id: 1
+  - frequency: 5770226599.80365
+    pi_pulse_amplitude: 0.17873594718151276
+    pi_pulse_duration: 5.6e-08
+    pulse_sigma: 7.0e-09
+    pulse_type: Gaussian
+    t1_decoherence: 3.4e-05
+    t2_decoherence: 3.3e-05
+    anharmonicity: 0.01884955592153876 # 0.3 * 2 * math.pi * 10e-3
+    id: 2
+  - frequency: 6856217811.995201
+    pi_pulse_amplitude: 0.17326197853513559
+    pi_pulse_duration: 5.6e-08
+    pulse_sigma: 7.0e-09
+    pulse_type: Gaussian
+    t1_decoherence: 3.4e-05
+    t2_decoherence: 3.3e-05
+    anharmonicity: 0.01884955592153876 # 0.3 * 2 * math.pi * 10e-3
+    id: 3
+  - frequency: 6701096836.557067
+    pi_pulse_amplitude: 0.16948867103728774
+    pi_pulse_duration: 5.6e-08
+    pulse_sigma: 7.0e-09
+    pulse_type: Gaussian
+    t1_decoherence: 3.4e-05
+    t2_decoherence: 3.3e-05
+    anharmonicity: 0.01884955592153876 # 0.3 * 2 * math.pi * 10e-3
+    id: 4
+  readout_resonator:
+  - acq_delay: 5.0e-08
+    acq_integration_time: 1.0e-06
+    frequency:
+      "$numberLong": '7260080000'
+    pulse_delay: 0
+    pulse_duration: 9.0e-07
+    pulse_type: Square
+    pulse_amplitude: 0.1266499392606423
+    id: 0
+  - acq_delay: 5.0e-08
+    acq_integration_time: 1.0e-06
+    frequency:
+      "$numberLong": '7380000000'
+    pulse_delay: 0
+    pulse_duration: 9.0e-07
+    pulse_type: Square
+    pulse_amplitude: 0.12660078572926436
+    id: 1
+  - acq_delay: 5.0e-08
+    acq_integration_time: 1.0e-06
+    frequency:
+      "$numberLong": '7502000000'
+    pulse_delay: 0
+    pulse_duration: 9.0e-07
+    pulse_type: Square
+    pulse_amplitude: 0.08245560237524203
+    id: 2
+  - acq_delay: 5.0e-08
+    acq_integration_time: 1.0e-06
+    frequency:
+      "$numberLong": '7712000000'
+    pulse_delay: 0
+    pulse_duration: 9.0e-07
+    pulse_type: Square
+    pulse_amplitude: 0.04188729430238
+    id: 3
+  - acq_delay: 5.0e-08
+    acq_integration_time: 1.0e-06
+    frequency:
+      "$numberLong": '7871000000'
+    pulse_delay: 0
+    pulse_duration: 9.0e-07
+    pulse_type: Square
+    pulse_amplitude: 0.05844291534543274
+    id: 4
+  coupler:
+  - {}
+simulator:
+  i_q_mapping:
+    0:
+      0:
+      - 0.2
+      - 0.3
+      1:
+      - 0.8
+      - 0.6
+    1:
+      0:
+      - 0.25
+      - 0.33
+      1:
+      - 0.85
+      - 0.65
+    2:
+      0:
+      - 0.15
+      - 0.31
+      1:
+      - 0.5
+      - 0.7
+    3:
+      0:
+      - 0.2
+      - 0.4
+      1:
+      - 0.9
+      - 0.6
+    4:
+      0:
+      - 0.3
+      - 0.3
+      1:
+      - 0.6
+      - 0.9
+  cov_matrix:
+    - - 0.1
+      - 0.1
+    - - 0.1
+      - 0.1
+discriminators:
+  lda:
+    q0:
+      coef_0: 2.1564626083114518
+      coef_1: 2.156462608498951
+      intercept: -2.010547116845907
+    q1:
+      coef_0: 2.08093310237839
+      coef_1: 2.0809331022418114
+      intercept: -2.1215643328549314
+    q2:
+      coef_0: 1.8736342023366839
+      coef_1: 1.8736342030445745
+      intercept: -1.5460194944822525
+    q3:
+      coef_0: 1.9344709193921084
+      coef_1: 1.9344709189340288
+      intercept: -1.9502439736191517
+    q4:
+      coef_0: 2.0467719070289556
+      coef_1: 2.0467719067443673
+      intercept: -2.104961705617046
+qubit_ids:
+- q0
+- q1
+- q2
+- q3
+- q4
+description: Backend for the simulator supporting qiskit-connector parsing for the
+  release 2024.3

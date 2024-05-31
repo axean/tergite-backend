@@ -13,11 +13,12 @@
 import copy
 import json
 import math
+import os
 from datetime import datetime
 from functools import partial
 from pathlib import Path
 from traceback import format_exc
-from typing import List
+from typing import List, Union
 
 # import hardware_config
 import numpy as np
@@ -26,6 +27,9 @@ import rich
 from xarray import Dataset
 import qutip as qt
 import settings
+from ..scheduler.instruction import Instruction
+from quantify_core.data import handling as dh
+import yaml
 
 from ....libs.storage_file import file as storagefile
 from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder as PulseQobj_encoder
@@ -41,9 +45,8 @@ import xarray
 from qiskit.qobj import PulseQobj
 
 from ..scheduler.channel import Channel
-from ..scheduler.experiment import QuantifyExperiment
+from ..scheduler.experiment import QuTipExperiment
 from ..base import QuantumExecutor
-
 
 from chalmers_qubit.sarimner.model import SarimnerModel
 from chalmers_qubit.sarimner.processor import SarimnerProcessor
@@ -54,16 +57,18 @@ from ..scheduler.schedule import UnitaryOperation, MeasurementOperation, Simulat
 
 class QuTipExecutor(QuantumExecutor):
 
-    def __init__(self: "QuTipExecutor"):
+    def __init__(self: "QuTipExecutor", config_file: Union[str, bytes, os.PathLike]):
 
         super().__init__()
-        self.BACKEND_CONFIG = settings.EXECUTOR_CONFIG_FILE
+        # FIXME: remove this one and make the datahandling more generic
+        dh.set_datadir('/Users/stefanhi/repos/tergite-bcc/app/tests/pytest-data')
+        self.backend_config = yaml.load(open(config_file, 'r'), Loader=yaml.FullLoader)
         self.busy = False
 
         # TODO: initialise the sarimner processor
 
         qubit_frequencies: List[float] = [q['frequency'] * 1e-9 * 2 * math.pi for \
-                                          q in self.BACKEND_CONFIG['device_properties']['qubit']]
+                                          q in self.backend_config['device_properties']['qubit']]
         anharmonicities: List[float] = [0.3 * 2 * math.pi * 10e-3 for _ in range(len(qubit_frequencies))]
 
         self.model = SarimnerModel(qubit_frequencies,
@@ -91,7 +96,7 @@ class QuTipExecutor(QuantumExecutor):
 
             # convert OpenPulse experiment to Quantify schedule
             tx.append(
-                QuantifyExperiment(
+                QuTipExperiment(
                     header=experiment.header,
                     instructions=instructions,
                     config=qobj.config,
@@ -109,7 +114,7 @@ class QuTipExecutor(QuantumExecutor):
         self.logger.info(f"Translated {len(tx)} OpenPulse experiments.")
         return tx
 
-    def run(self, experiment: QuantifyExperiment, /) -> xarray.Dataset:
+    def run(self, experiment: QuTipExperiment, /) -> xarray.Dataset:
         initial_state = qt.tensor([qt.basis(3, 0)] * self.processor.num_qubits)
 
         # We need to initialise with time 0 for qutip to work
@@ -136,6 +141,7 @@ class QuTipExecutor(QuantumExecutor):
                 coeffs = np.append(coeffs, temp_coeffs[op_end: len(temp_coeffs)])
                 coeffs_dict[f'x{operation.channel}'] = coeffs
             elif isinstance(operation, MeasurementOperation):
+                # TODO: How do we store times in the database?
                 measurements.append((operation.channel, int(operation.t0 * 10e8)))
         t0 = datetime.now()
 
@@ -150,12 +156,8 @@ class QuTipExecutor(QuantumExecutor):
 
         results = {}
 
-        i_q_mapping = {
-            0: {
-                0: [0.2, 0.3],
-                1: [0.8, 0.6]
-            }
-        }
+        i_q_mapping = self.backend_config['simulator']['i_q_mapping']
+        cov_matrix = self.backend_config['simulator']['cov_matrix']
 
         # We iterate over the simulation data states
         for i_, (channel_, _), in enumerate(measurements):
@@ -170,12 +172,12 @@ class QuTipExecutor(QuantumExecutor):
                 sample = np.random.choice([0, 1], size=repetitions, p=normalized_sampling_probabilities)
                 # Translate the collapsed state vector to I and Q values
                 i_q_values = np.array([np.random.multivariate_normal(i_q_mapping[channel_][s_],
-                                                                     np.array([[0.01, 0.01], [0.01, 0.01]]),
+                                                                     np.array(cov_matrix),
                                                                      1)[0] for s_ in sample])
                 # Cast to complex values
                 complex_i_q_values = np.array([complex(*x_) for x_ in i_q_values])
                 results[channel_] = (
-                [f'acq_index_{channel_}', 'repetition'], np.array(complex_i_q_values).reshape(-1, 1))
+                    ['repetition', f'acq_index_{channel_}'], np.array(complex_i_q_values).reshape(-1, 1))
         # Now the dataset contains the discriminated values already, but we want the I Q values
 
         result_dataset = Dataset(results)

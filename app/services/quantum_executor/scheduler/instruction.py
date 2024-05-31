@@ -146,7 +146,7 @@ class Instruction:
                         name=i.name,
                         t0=ceil4(i.t0) * 1e-9,
                         channel=f"m{qubit_idx}",
-                        port=i.ch if hardware_map is None else hardware_map[f"m{qubit_idx}"],
+                        port=i.name if hardware_map is None else hardware_map[f"m{qubit_idx}"],
                         duration=ceil4(i.duration) * 1e-9,
                         memory_slot=i.memory_slot[n],
                         protocol=program_settings["protocol"],

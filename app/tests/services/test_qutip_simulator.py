@@ -5,9 +5,7 @@ from os import environ
 from app.services.quantum_executor.utils.serialization import iqx_rld
 
 environ['DATA_DIR'] = '/Users/stefanhi/repos/tergite-backend/app/tests/pytest-datadir'
-environ['DEVICES'] = 'clusterA'
-environ['clusterA_SETTINGS'] = '/Users/stefanhi/repos/tergite-backend/app/tests/fixtures/hardware_config.json'
-environ['BACKEND_CONFIG'] = '/Users/stefanhi/repos/tergite-backend/configs/simulator_backend.json'
+environ['EXECUTOR_CONFIG_FILE'] = '/Users/stefanhi/repos/tergite-bcc/app/tests/fixtures/simulator_backend.yml'
 
 from qiskit.providers.ibmq.utils import json_decoder
 from qiskit.qobj import PulseQobj
@@ -15,21 +13,17 @@ from qiskit.qobj import PulseQobj
 from ...services.quantum_executor.executors.qutip import QuTipExecutor
 from app.tests.utils.fixtures import load_json_fixture
 
-import pytest
-
-#connector = QuTipExecutor()
+connector = QuTipExecutor(config_file='/Users/stefanhi/repos/tergite-bcc/app/tests/fixtures/simulator_backend.yml')
 
 
-@pytest.mark.skip
 def test_transpile_x_gate_simulator():
     # Load job with x gate from the json
-    job_dict = load_json_fixture('x_delay_x_same_qubit.json')
+    job_dict = load_json_fixture('x_gate.json')
 
     # Convert it to an experiment
+    assert True
 
-    pass
 
-@pytest.mark.skip
 def test_job_transpile():
     job_dict = load_json_fixture('y_gate.json')
 
@@ -53,5 +47,4 @@ def test_job_transpile():
     print(datetime.now(), 'IN REST API CALLING RUN_EXPERIMENTS')
     connector.run_experiments(PulseQobj.from_dict(qobj),
                               enable_traceback=True,
-                              job_id=job_id,
-                              job_url="UNDEFINED", )
+                              job_id=job_id)

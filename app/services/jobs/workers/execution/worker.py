@@ -56,6 +56,9 @@ def job_execute(job_file: Path):
     with job_file.open() as f:
         job_dict = json.load(f)
 
+    with open(f"/tmp/QuTipSimulatorA/simulation_job.pickle", "w") as simulator_file:
+        json.dump(job_dict, simulator_file)
+
     job_id = ""
     try:
         job_id = job_dict["job_id"]
