@@ -37,7 +37,7 @@ coupling_map:
 device_properties:
   qubit:
   - frequency: 4511480043.556283
-    pi_pulse_amplitude: 0.17555712637424228
+    pi_pulse_amplitude: 0.08953062777292731
     pi_pulse_duration: 5.6e-08
     pulse_sigma: 7.0e-09
     pulse_type: Gaussian
@@ -46,7 +46,7 @@ device_properties:
     anharmonicity: 0.01884955592153876 # 0.3 * 2 * math.pi * 10e-3
     id: 0
   - frequency: 4677112343.360253
-    pi_pulse_amplitude: 0.17535338530538067
+    pi_pulse_amplitude: 0.08953062777292731
     pi_pulse_duration: 5.6e-08
     pulse_sigma: 7.0e-09
     pulse_type: Gaussian
@@ -55,7 +55,7 @@ device_properties:
     anharmonicity: 0.01884955592153876 # 0.3 * 2 * math.pi * 10e-3
     id: 1
   - frequency: 5770226599.80365
-    pi_pulse_amplitude: 0.17873594718151276
+    pi_pulse_amplitude: 0.08953062777292731
     pi_pulse_duration: 5.6e-08
     pulse_sigma: 7.0e-09
     pulse_type: Gaussian
@@ -64,7 +64,7 @@ device_properties:
     anharmonicity: 0.01884955592153876 # 0.3 * 2 * math.pi * 10e-3
     id: 2
   - frequency: 6856217811.995201
-    pi_pulse_amplitude: 0.17326197853513559
+    pi_pulse_amplitude: 0.08953062777292731
     pi_pulse_duration: 5.6e-08
     pulse_sigma: 7.0e-09
     pulse_type: Gaussian
@@ -73,7 +73,7 @@ device_properties:
     anharmonicity: 0.01884955592153876 # 0.3 * 2 * math.pi * 10e-3
     id: 3
   - frequency: 6701096836.557067
-    pi_pulse_amplitude: 0.16948867103728774
+    pi_pulse_amplitude: 0.08953062777292731
     pi_pulse_duration: 5.6e-08
     pulse_sigma: 7.0e-09
     pulse_type: Gaussian
@@ -199,5 +199,5 @@ qubit_ids:
 - q2
 - q3
 - q4
-description: Backend for the simulator supporting qiskit-connector parsing for the
+description: Backend for the qutip simulator supporting qiskit-connector parsing for the
   release 2024.3
