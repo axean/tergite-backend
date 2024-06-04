@@ -24,9 +24,7 @@ class QuTipExperiment(BaseExperiment):
 
     @property
     def schedule(self: 'QuTipExperiment') -> 'SimulationSchedule':
-        # TODO: Override this completely
         self.logger.info(f"Compiling {self.header.name}")
-        # TODO: Check whether it is even necessary to have this Program helper class with the simulator
         prog = QuTipProgram(
             name=self.header.name,
             channels=self.channels,

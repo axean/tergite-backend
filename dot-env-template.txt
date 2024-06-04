@@ -4,6 +4,7 @@
 
 # (1) General
 # Set the default file prefix and the backend name for the backend application.
+# If you are using any of the backends from the mongoDB, please enter this name for DEFAULT_PREFIX
 DEFAULT_PREFIX=loke
 
 # (2) Jobs and workers

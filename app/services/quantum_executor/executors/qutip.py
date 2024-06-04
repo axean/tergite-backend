@@ -46,8 +46,6 @@ class QuTipExecutor(QuantumExecutor):
         self.backend_config = yaml.load(open(config_file, 'r'), Loader=yaml.FullLoader)
         self.busy = False
 
-        # TODO: initialise the sarimner processor
-
         qubit_frequencies: List[float] = [q['frequency'] * 1e-9 * 2 * math.pi for \
                                           q in self.backend_config['device_properties']['qubit']]
         anharmonicities: List[float] = [0.3 * 2 * math.pi * 10e-3 for _ in range(len(qubit_frequencies))]

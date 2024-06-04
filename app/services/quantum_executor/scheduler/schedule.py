@@ -24,7 +24,6 @@ class SimulationSchedule:
 
     def add(self,
             operation: 'BaseOperation'):
-        # TODO: Here, we chain all operations
         self._operations.append(operation)
 
     @property
@@ -66,13 +65,11 @@ class UnitaryOperation(BaseOperation):
                  discrete_steps=0,
                  **kwargs):
         super().__init__(*args, **kwargs)
-        self.frequency = frequency,
-        self.phase = phase,
-        self.amp = amp,
+        self.frequency = frequency
+        self.phase = phase
+        self.amp = amp
         self.sigma = sigma
         self.discrete_steps = discrete_steps
-
-# TODO: Implement a unitary operation that rotates the qubit or changes the phase
 
 
 class MeasurementOperation(BaseOperation):
