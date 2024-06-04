@@ -1,7 +1,20 @@
+# This code is part of Tergite
+#
+# (C) Stefan Hill (2024)
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
 import numpy as np
 import yaml
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
+# Replace this with the path to your backend configuration
 BACKEND_CONFIG_FILE = "/Users/stefanhi/repos/tergite-bcc/app/tests/fixtures/simulator_backend.yml"
 
 

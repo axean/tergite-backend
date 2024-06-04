@@ -10,49 +10,30 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-import copy
-import json
 import math
 import os
 from datetime import datetime
 from functools import partial
-from pathlib import Path
-from traceback import format_exc
 from typing import List, Union
 
 # import hardware_config
 import numpy as np
-import requests
-import rich
-from xarray import Dataset
 import qutip as qt
-import settings
-from ..scheduler.instruction import Instruction
-from quantify_core.data import handling as dh
-import yaml
-
-from ....libs.storage_file import file as storagefile
-from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder as PulseQobj_encoder
-from qiskit.qobj import PulseQobj
-from quantify_core.data.handling import create_exp_folder, gen_tuid
-from quantify_scheduler.backends.qblox_backend import hardware_compile
-from quantify_scheduler.compilation import determine_absolute_timing
-from quantify_scheduler.helpers.importers import import_python_object_from_string
-from quantify_scheduler.instrument_coordinator import InstrumentCoordinator
-from tqdm import tqdm
-from tqdm.auto import tqdm
 import xarray
-from qiskit.qobj import PulseQobj
-
-from ..scheduler.channel import Channel
-from ..scheduler.experiment import QuTipExperiment
-from ..base import QuantumExecutor
-
+import yaml
+from chalmers_qubit.base.operations import project_on_qubit
 from chalmers_qubit.sarimner.model import SarimnerModel
 from chalmers_qubit.sarimner.processor import SarimnerProcessor
-from chalmers_qubit.base.operations import project_on_qubit
+from qiskit.qobj import PulseQobj
+from quantify_core.data import handling as dh
+from xarray import Dataset
 
+from ..base import QuantumExecutor
+from ..scheduler.channel import Channel
+from ..scheduler.experiment.qutip import QuTipExperiment
+from ..scheduler.instruction import Instruction
 from ..scheduler.schedule import UnitaryOperation, MeasurementOperation, SimulationSchedule
+from ....libs.storage_file import file as storagefile
 
 
 class QuTipExecutor(QuantumExecutor):

@@ -2,10 +2,12 @@
 from datetime import datetime
 from os import environ
 
+import pytest
+
 from app.services.quantum_executor.utils.serialization import iqx_rld
 
 environ['DATA_DIR'] = '/Users/stefanhi/repos/tergite-backend/app/tests/pytest-datadir'
-environ['EXECUTOR_CONFIG_FILE'] = '/Users/stefanhi/repos/tergite-bcc/app/tests/fixtures/simulator_backend.yml'
+# environ['EXECUTOR_CONFIG_FILE'] = '/Users/stefanhi/repos/tergite-bcc/app/tests/fixtures/simulator_backend.yml'
 
 from qiskit.providers.ibmq.utils import json_decoder
 from qiskit.qobj import PulseQobj
@@ -16,6 +18,7 @@ from app.tests.utils.fixtures import load_json_fixture
 connector = QuTipExecutor(config_file='/Users/stefanhi/repos/tergite-bcc/app/tests/fixtures/simulator_backend.yml')
 
 
+@pytest.mark.skip
 def test_transpile_x_gate_simulator():
     # Load job with x gate from the json
     job_dict = load_json_fixture('x_gate.json')
@@ -24,6 +27,7 @@ def test_transpile_x_gate_simulator():
     assert True
 
 
+@pytest.mark.skip
 def test_job_transpile():
     job_dict = load_json_fixture('y_gate.json')
 

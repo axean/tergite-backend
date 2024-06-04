@@ -1,3 +1,15 @@
+# This code is part of Tergite
+#
+# (C) Stefan Hill (2024)
+#
+# This code is licensed under the Apache License, Version 2.0. You may
+# obtain a copy of this license in the LICENSE.txt file in the root directory
+# of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
 import abc
 import json
 from datetime import datetime
@@ -13,10 +25,10 @@ from qiskit.qobj import PulseQobj
 from quantify_core.data.handling import gen_tuid, create_exp_folder
 from tqdm import tqdm
 
-from app.libs.storage_file import StorageFile
-from app.services.quantum_executor.scheduler.experiment import QuantifyExperiment, Experiment
-from app.services.quantum_executor.scheduler.instruction import meas_settings
-from app.services.quantum_executor.utils.logger import ExperimentLogger
+from ...libs.storage_file import StorageFile
+from .scheduler.experiment_base import BaseExperiment
+from .scheduler.instruction import meas_settings
+from .utils.logger import ExperimentLogger
 
 
 class QuantumExecutor(abc.ABC):
@@ -47,7 +59,7 @@ class QuantumExecutor(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def run(self, experiment: Experiment, /) -> xarray.Dataset:
+    def run(self, experiment: BaseExperiment, /) -> xarray.Dataset:
         pass
 
     def run_experiments(

@@ -38,7 +38,7 @@ from quantify_scheduler.instrument_coordinator.components.qblox import ClusterCo
 
 from ..base import QuantumExecutor
 from ..scheduler.channel import Channel
-from ..scheduler.experiment import QuantifyExperiment
+from ..scheduler.experiment.quantify import QuantifyExperiment
 from ..scheduler.instruction import Instruction
 from ..utils.config import QuantifyExecutorConfig, ClusterModuleType
 from ....libs.storage_file import StorageFile

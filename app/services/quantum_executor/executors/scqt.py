@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 
 from .quantify import QuantifyExecutor
-from ..scheduler.experiment import QuantifyExperiment
+from ..scheduler.experiment.quantify import QuantifyExperiment
 from ..simulator import scqt
 
 
