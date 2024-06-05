@@ -7,6 +7,15 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ## [Unreleased]
 
+### Added
+- The `QuantumExecutor` as abstract class to implement a backend
+- `EXECUTOR_TYPE` keyword in the .env variables to select the backend
+- QuTip simulator backend
+
+### Changed
+
+### Fixed
+
 ## [2024.04.0] - 2024-05-28
 
 This is part of the tergite release v2024.04 which merges the tergite stack into three clear parts: front, back, client/sdks
