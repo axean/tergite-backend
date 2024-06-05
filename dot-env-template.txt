@@ -16,6 +16,8 @@ LOGFILE_UPLOAD_POOL_DIRNAME=logfile_upload_pool
 JOB_UPLOAD_POOL_DIRNAME=job_upload_pool
 JOB_PRE_PROC_POOL_DIRNAME=job_preproc_pool
 JOB_EXECUTION_POOL_DIRNAME=job_execution_pool
+# Store the temporary data from the backend-specific executor class
+EXECUTOR_DATA_DIRNAME=executor_data
 
 # (3) BCC
 # This is to configure port and URLs for the backend machine.
@@ -33,7 +35,7 @@ MSS_MACHINE_ROOT_URL=http://host:port
 # MSS_MACHINE_ROOT_URL=http://host:port
 MSS_PORT=8002
 
-# (5) Instrument server
+# (5) Instrument interfacing and simulators
 # This is to configure the hardware or simulated measurement instruments.
 # The type of instrument setup to run. Default is "hardware". Can take:
 # - hardware

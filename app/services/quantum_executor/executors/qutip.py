@@ -28,6 +28,7 @@ from qiskit.qobj import PulseQobj
 from quantify_core.data import handling as dh
 from xarray import Dataset
 
+import settings
 from ..base import QuantumExecutor
 from ..scheduler.channel import Channel
 from ..scheduler.experiment.qutip import QuTipExperiment
@@ -41,8 +42,7 @@ class QuTipExecutor(QuantumExecutor):
     def __init__(self: "QuTipExecutor", config_file: Union[str, bytes, os.PathLike]):
 
         super().__init__()
-        # FIXME: remove this one and make the datahandling more generic
-        dh.set_datadir('/Users/stefanhi/repos/tergite-bcc/app/tests/pytest-data')
+        dh.set_datadir(settings.EXECUTOR_DATA_DIR)
         self.backend_config = yaml.load(open(config_file, 'r'), Loader=yaml.FullLoader)
         self.busy = False
 

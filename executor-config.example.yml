@@ -3,15 +3,6 @@
 # It is loosely based on the hardware configuration file for quantify-scheduler
 #
 
-general:
-  # General configuration
-
-  data_directory: data
-  # the directory where to put generated data; default is data on root folder
-
-  simulator_type: scqt
-  # type of simulator being used if any; Default is scqt
-
 # See https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html#sec-qblox-cluster
 # Only two instrument types can be configured:
 # - "Cluster",

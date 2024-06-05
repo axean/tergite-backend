@@ -397,18 +397,10 @@ class SimulatorType(str, enum.Enum):
     CHALMERS = "chalmers"
 
 
-class GeneralConfig(ExecutorConfigItem):
-    """The general config for the hardware"""
-
-    data_directory: str = "data"
-    simulator_type: SimulatorType = SimulatorType.SCQT
-
-
 class QuantifyExecutorConfig(ExecutorConfigItem):
     """The configuration constructed from the quantify hardware config JSON file"""
 
     backend: str = "quantify_scheduler.backends.qblox_backend.hardware_compile"
-    general: GeneralConfig
     clusters: List[Cluster] = []
     generic_qcodes_instruments: List[GenericQcodesInstrument] = []
 

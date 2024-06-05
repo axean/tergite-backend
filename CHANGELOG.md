@@ -13,6 +13,8 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 - QuTip simulator backend
 
 ### Changed
+- BREAKING CHANGE: `EXECUTOR_DATA_DIRNAME` definition in the .env variables instead of `general.data_dir` in `executor-config.yml`
+- BREAKING CHANGE: Removed the whole `general` section in the `executor-config.yml`
 
 ### Fixed
 

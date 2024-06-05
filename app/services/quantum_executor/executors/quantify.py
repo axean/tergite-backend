@@ -36,6 +36,7 @@ from quantify_scheduler.instrument_coordinator.components import generic, Instru
 from quantify_scheduler.instrument_coordinator.components.generic import GenericInstrumentCoordinatorComponent
 from quantify_scheduler.instrument_coordinator.components.qblox import ClusterComponent
 
+import settings
 from ..base import QuantumExecutor
 from ..scheduler.channel import Channel
 from ..scheduler.experiment.quantify import QuantifyExperiment
@@ -72,7 +73,7 @@ class QuantifyExecutor(QuantumExecutor):
         conf = QuantifyExecutorConfig.from_yaml(config_file)
 
         # Tell Quantify where to store data
-        dh.set_datadir(conf.general.data_directory)
+        dh.set_datadir(settings.EXECUTOR_DATA_DIR)
 
         self.quantify_config = conf.to_quantify()
         self.hardware_map = {

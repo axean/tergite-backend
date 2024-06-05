@@ -1,6 +1,3 @@
-general:
-  data_directory: data
-
 clusters:
   - name: cluster0
     instrument_type: Cluster
