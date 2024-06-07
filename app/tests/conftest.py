@@ -24,13 +24,13 @@ from redis.client import Redis
 from rq import SimpleWorker
 
 from ..utils.queues import QueuePool
-from .utils.fixtures import load_json_fixture
+from .utils.fixtures import load_fixture
 from .utils.http import MockHttpResponse, MockHttpSession
 from .utils.modules import remove_modules
 from .utils.rq import get_rq_worker
 
-_lda_parameters_fixture = load_json_fixture("lda_parameters.json")
-_test_backend_props_fixture = load_json_fixture("test_backend_props.json")
+_lda_parameters_fixture = load_fixture("lda_parameters.json")
+_test_backend_props_fixture = load_fixture("test_backend_props.json")
 _real_redis = Redis(db=2)
 _fake_redis = FakeStrictRedis()
 _async_queue_pool = QueuePool(

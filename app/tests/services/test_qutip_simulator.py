@@ -6,32 +6,18 @@ import pytest
 
 from app.services.quantum_executor.utils.serialization import iqx_rld
 
-environ["DATA_DIR"] = "/Users/stefanhi/repos/tergite-backend/app/tests/pytest-datadir"
-# environ['EXECUTOR_CONFIG_FILE'] = '/Users/stefanhi/repos/tergite-bcc/app/tests/fixtures/simulator_backend.yml'
-
 from qiskit.providers.ibmq.utils import json_decoder
 from qiskit.qobj import PulseQobj
 
 from ...services.quantum_executor.executors.qutip import QuTipExecutor
-from app.tests.utils.fixtures import load_json_fixture
+from ..utils.fixtures import load_fixture, get_fixture_path
 
-connector = QuTipExecutor(
-    config_file="/Users/stefanhi/repos/tergite-bcc/app/tests/fixtures/simulator_backend.yml"
-)
-
-
-@pytest.mark.skip
-def test_transpile_x_gate_simulator():
-    # Load job with x gate from the json
-    job_dict = load_json_fixture("x_gate.json")
-
-    # Convert it to an experiment
-    assert True
+connector = QuTipExecutor(config_file=get_fixture_path("simulator-backend.yml"))
 
 
 @pytest.mark.skip
 def test_job_transpile():
-    job_dict = load_json_fixture("y_gate.json")
+    job_dict = load_fixture("y_gate.json")
 
     job_id = job_dict["job_id"]
     qobj = job_dict["params"]["qobj"]

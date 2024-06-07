@@ -18,15 +18,15 @@ from app.tests.conftest import (
     MOCK_NOW,
     TEST_APP_TOKEN_STRING,
 )
-from app.tests.utils.fixtures import load_json_fixture
+from app.tests.utils.fixtures import load_fixture
 from app.tests.utils.http import get_headers
 from app.tests.utils.redis import insert_in_hash, register_app_token_job_id
 
 _PARENT_FOLDER = path.dirname(path.abspath(__file__))
-_JOBS_LIST = load_json_fixture("job_list.json")
+_JOBS_LIST = load_fixture("job_list.json")
 # _DEFAULT_LOGFILE_PATH = get_fixture_path("logfile.hdf5")
-_BACKEND_PROPERTIES = load_json_fixture("backend_properties.json")
-_JOBS_FOR_UPLOAD = load_json_fixture("jobs_to_upload.json")
+_BACKEND_PROPERTIES = load_fixture("backend_properties.json")
+_JOBS_FOR_UPLOAD = load_fixture("jobs_to_upload.json")
 _JOB_ID_FIELD = "job_id"
 _JOB_IDS = [item[_JOB_ID_FIELD] for item in _JOBS_LIST]
 _JOBS_HASH_NAME = "job_supervisor"

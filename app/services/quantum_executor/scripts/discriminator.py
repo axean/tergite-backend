@@ -9,20 +9,22 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+import os
+from typing import Union
 
 import numpy as np
 import yaml
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
-# Replace this with the path to your backend configuration
-BACKEND_CONFIG_FILE = (
-    "/Users/stefanhi/repos/tergite-bcc/app/tests/fixtures/simulator_backend.yml"
-)
 
-
-def train_discriminator():
+def train_discriminator(
+    backend_config_path: Union[str, os.PathLike],
+    save_yml_path: Union[str, os.PathLike],
+    seed=0,
+):
     # Read in the qubits and center values from file this could be the general backend configuration
-    backend_config = yaml.load(open(BACKEND_CONFIG_FILE, "r"), Loader=yaml.FullLoader)
+    np.random.seed(seed)
+    backend_config = yaml.load(open(backend_config_path, "r"), Loader=yaml.FullLoader)
     i_q_mapping = backend_config["simulator"]["i_q_mapping"]
     cov_matrix = backend_config["simulator"]["cov_matrix"]
     # generate measurement results for two blobs
@@ -48,8 +50,14 @@ def train_discriminator():
             "coef_1": float(lda_model.coef_[0][1]),
         }
     discriminator_config = {"discriminators": {"lda": discriminators}}
-    yaml.dump(discriminator_config, open("discriminator_config.yml", "w"))
+    print("trained discriminator")
+    with open(save_yml_path, "w") as f:
+        yaml.dump(discriminator_config, open(save_yml_path, "w"))
+        f.close()
+    return discriminator_config
 
 
 if __name__ == "__main__":
-    train_discriminator()
+    BACKEND_CONFIG_FILE = "PATH_TO_THE_BACKEND_CONFIGURATION"
+    SAVE_YML_PATH = "PATH_TO_THE OUTPUT_FILE"
+    train_discriminator(BACKEND_CONFIG_FILE, SAVE_YML_PATH)
