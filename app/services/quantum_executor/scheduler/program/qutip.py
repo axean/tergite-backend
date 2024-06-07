@@ -25,20 +25,18 @@ from ..schedule import SimulationSchedule, MeasurementOperation, UnitaryOperatio
 
 @dataclass(frozen=True)
 class QuTipProgram(BaseProgram):
-
     @cached_property
-    def schedule(self) -> 'SimulationSchedule':
+    def schedule(self) -> "SimulationSchedule":
         return SimulationSchedule(name=self.name)
 
     @cached_property
-    def compiled_schedule(self) -> 'SimulationSchedule':
+    def compiled_schedule(self) -> "SimulationSchedule":
         return self.schedule
 
-    def get_channel(self, instruction: Instruction, /) -> 'Channel':
+    def get_channel(self, instruction: Instruction, /) -> "Channel":
         return next(filter(lambda ch: instruction.channel == ch.clock, self.channels))
 
     def update_frame(self, instruction: Instruction, /):
-
         # relative phase change
         if instruction.name == "fc":
             self.get_channel(instruction).phase += instruction.phase
@@ -59,7 +57,9 @@ class QuTipProgram(BaseProgram):
             raise RuntimeError(f"Unable to execute command {instruction}.")
 
     def schedule_operation(
-            self, instructions: List['Instruction'], /,
+        self,
+        instructions: List["Instruction"],
+        /,
     ):
         # Get the names of all instructions, so, we have a basis to do a decision which operation it is
         instruction_map = {idx_: i_.name for idx_, i_ in enumerate(instructions)}
@@ -82,8 +82,7 @@ class QuTipProgram(BaseProgram):
                     t0 = i_.t0
 
             # We are adding a measurement to the qubit (channel) on time t0
-            operation = MeasurementOperation(channel,
-                                             t0=t0)
+            operation = MeasurementOperation(channel, t0=t0)
 
         # TODO: We currently cannot handle delays
         # In the simulator, we currently do not handle delays, because it is not necessary for the simple type
@@ -94,7 +93,6 @@ class QuTipProgram(BaseProgram):
 
         # This is handling all other sort of pulses
         elif "parametric_pulse" in instruction_map.values():
-
             # Initialise the parameters we need to define the array that describes the pulse
             frequency = 0.0
             phase = 0.0
@@ -130,26 +128,30 @@ class QuTipProgram(BaseProgram):
             coeffs *= np.exp(1.0j * phase).tolist()
             tlist = np.linspace(0, duration, len(coeffs)).tolist()
 
-            operation = UnitaryOperation(channel,
-                                         t0=t0,
-                                         frequency=frequency,
-                                         phase=phase,
-                                         amp=amp,
-                                         sigma=sigma,
-                                         discrete_steps=discrete_steps)
+            operation = UnitaryOperation(
+                channel,
+                t0=t0,
+                frequency=frequency,
+                phase=phase,
+                amp=amp,
+                sigma=sigma,
+                discrete_steps=discrete_steps,
+            )
 
-            operation.data.update({
-                "pulse_info": [
-                    {
-                        "wf_func": "quantify_scheduler.waveforms.interpolated_complex_waveform",
-                        "samples": coeffs,
-                        "t_samples": tlist,
-                        "duration": duration,
-                        "interpolation": "linear",
-                        "t0": 0.0,
-                    }
-                ],
-            })
+            operation.data.update(
+                {
+                    "pulse_info": [
+                        {
+                            "wf_func": "quantify_scheduler.waveforms.interpolated_complex_waveform",
+                            "samples": coeffs,
+                            "t_samples": tlist,
+                            "duration": duration,
+                            "interpolation": "linear",
+                            "t0": 0.0,
+                        }
+                    ],
+                }
+            )
 
         if operation is not None:
             self.schedule.add(operation)

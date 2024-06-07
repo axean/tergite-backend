@@ -26,7 +26,6 @@ from ...utils.general import rot_left
 
 @dataclass(frozen=True)
 class QuantifyExperiment(BaseExperiment):
-
     @property
     def schedule(self: "QuantifyExperiment") -> Schedule:
         self.logger.info(f"Compiling {self.header.name}")

@@ -32,8 +32,13 @@ from quantify_scheduler.backends.qblox_backend import hardware_compile
 from quantify_scheduler.compilation import determine_absolute_timing
 from quantify_scheduler.helpers.importers import import_python_object_from_string
 from quantify_scheduler.instrument_coordinator import InstrumentCoordinator
-from quantify_scheduler.instrument_coordinator.components import generic, InstrumentCoordinatorComponentBase
-from quantify_scheduler.instrument_coordinator.components.generic import GenericInstrumentCoordinatorComponent
+from quantify_scheduler.instrument_coordinator.components import (
+    generic,
+    InstrumentCoordinatorComponentBase,
+)
+from quantify_scheduler.instrument_coordinator.components.generic import (
+    GenericInstrumentCoordinatorComponent,
+)
 from quantify_scheduler.instrument_coordinator.components.qblox import ClusterComponent
 
 import settings
@@ -228,9 +233,9 @@ class QuantifyExecutor(QuantumExecutor):
 
 
 def _add_component_if_not_exists(
-        coordinator: InstrumentCoordinator,
-        component_type: type[InstrumentCoordinatorComponentBase],
-        device: Instrument,
+    coordinator: InstrumentCoordinator,
+    component_type: type[InstrumentCoordinatorComponentBase],
+    device: Instrument,
 ):
     """Adds a component for the given device to the coordinator
 

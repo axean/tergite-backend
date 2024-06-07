@@ -16,22 +16,19 @@ from quantify_scheduler import Operation
 
 
 class SimulationSchedule:
-
-    def __init__(self,
-                 name: str = ""):
+    def __init__(self, name: str = ""):
         self._name: str = name
         self._operations: List[BaseOperation] = []
 
-    def add(self,
-            operation: 'BaseOperation'):
+    def add(self, operation: "BaseOperation"):
         self._operations.append(operation)
 
     @property
-    def operations(self) -> List['BaseOperation']:
+    def operations(self) -> List["BaseOperation"]:
         return self._operations
 
     @operations.setter
-    def operations(self, value: List['BaseOperation']):
+    def operations(self, value: List["BaseOperation"]):
         self._operations = value
 
     @property
@@ -45,25 +42,23 @@ class SimulationSchedule:
 
 
 class BaseOperation(Operation):
-
-    def __init__(self,
-                 channel: Union[str, int],
-                 t0: Union[int, float] = 0):
+    def __init__(self, channel: Union[str, int], t0: Union[int, float] = 0):
         super().__init__("")  # Takes name as input
         self.channel = channel
         self.t0 = t0
 
 
 class UnitaryOperation(BaseOperation):
-
-    def __init__(self,
-                 *args,
-                 frequency=0.0,
-                 phase=0.0,
-                 amp=0.0,
-                 sigma=1,
-                 discrete_steps=0,
-                 **kwargs):
+    def __init__(
+        self,
+        *args,
+        frequency=0.0,
+        phase=0.0,
+        amp=0.0,
+        sigma=1,
+        discrete_steps=0,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.frequency = frequency
         self.phase = phase
@@ -73,6 +68,5 @@ class UnitaryOperation(BaseOperation):
 
 
 class MeasurementOperation(BaseOperation):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -24,12 +24,12 @@ class QuantumExecutorFactory:
     def __init__(self):
         # This is the map of configuration names for the executors to class implementations
         self._executors = {
-            'hardware': QuantifyExecutor,
-            'scqt': SCQTQuantifyExecutor,
-            'qutip': QuTipExecutor
+            "hardware": QuantifyExecutor,
+            "scqt": SCQTQuantifyExecutor,
+            "qutip": QuTipExecutor,
         }
 
-    def get_executor(self, executor_name: str) -> 'QuantumExecutor':
+    def get_executor(self, executor_name: str) -> "QuantumExecutor":
         """
         Parameters
         ----------
@@ -42,9 +42,9 @@ class QuantumExecutorFactory:
             An implementation of a QuantumExecutor class
         """
         if executor_name not in self._executors.keys():
-            raise KeyError(f"Executor with name: '{executor_name}' not implemented."
-                           f"Please check the value of your EXECUTOR_TYPE variable in the environment."
-                           f"EXECUTOR_TYPE can be: {self._executors.keys()}")
+            raise KeyError(
+                f"Executor with name: '{executor_name}' not implemented."
+                f"Please check the value of your EXECUTOR_TYPE variable in the environment."
+                f"EXECUTOR_TYPE can be: {self._executors.keys()}"
+            )
         return self._executors[str.lower(executor_name)]
-
-

@@ -29,7 +29,6 @@ from app.services.quantum_executor.scheduler.program_base import BaseProgram
 
 @dataclass(frozen=True)
 class QuantifyProgram(BaseProgram):
-
     @cached_property
     def schedule(self: "QuantifyProgram") -> "Schedule":
         return Schedule(name=self.name, repetitions=self.config.shots)
@@ -47,7 +46,7 @@ class QuantifyProgram(BaseProgram):
         return next(filter(lambda ch: instruction.channel == ch.clock, self.channels))
 
     def numerical_pulse(
-            self: "QuantifyProgram", instruction: Instruction, /, *, waveform: np.ndarray
+        self: "QuantifyProgram", instruction: Instruction, /, *, waveform: np.ndarray
     ) -> "Operation":
         waveform *= np.exp(1.0j * self.get_channel(instruction).phase)
         operation = Operation(name=instruction.unique_name)
@@ -93,7 +92,12 @@ class QuantifyProgram(BaseProgram):
             raise RuntimeError(f"Unable to execute command {instruction}.")
 
     def schedule_operation(
-            self: "QuantifyProgram", instruction: Instruction, /, *, rel_time: float, ref_op: str
+        self: "QuantifyProgram",
+        instruction: Instruction,
+        /,
+        *,
+        rel_time: float,
+        ref_op: str,
     ):
         # -----------------------------------------------------------------
         if instruction.name in {"setp", "setf", "fc", "shiftf"}:

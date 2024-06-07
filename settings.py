@@ -50,7 +50,9 @@ JOB_EXECUTION_POOL_DIRNAME = config("JOB_EXECUTION_POOL_DIRNAME", cast=str)
 JOB_SUPERVISOR_LOG = config(
     "JOB_SUPERVISOR_LOG", cast=str, default="job_supervisor.log"
 )
-EXECUTOR_DATA_DIRNAME = config("EXECUTOR_DATA_DIRNAME", cast=str, default="executor_data")
+EXECUTOR_DATA_DIRNAME = config(
+    "EXECUTOR_DATA_DIRNAME", cast=str, default="executor_data"
+)
 
 _executor_data_dir_path = os.path.join(STORAGE_ROOT, EXECUTOR_DATA_DIRNAME)
 if not os.path.exists(_executor_data_dir_path):

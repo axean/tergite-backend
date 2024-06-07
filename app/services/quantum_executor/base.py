@@ -32,7 +32,6 @@ from .utils.logger import ExperimentLogger
 
 
 class QuantumExecutor(abc.ABC):
-
     def __init__(self):
         pass
 
@@ -63,12 +62,12 @@ class QuantumExecutor(abc.ABC):
         pass
 
     def run_experiments(
-            self,
-            qobj: PulseQobj,
-            /,
-            *,
-            enable_traceback: bool = True,
-            job_id: str = None,
+        self,
+        qobj: PulseQobj,
+        /,
+        *,
+        enable_traceback: bool = True,
+        job_id: str = None,
     ) -> Optional[Path]:
         """Runs the experiments and returns the results file path
 
@@ -116,11 +115,11 @@ class QuantumExecutor(abc.ABC):
 
             # run all experiments and store acquisition data
             for experiment_index, experiment in enumerate(
-                    tqdm(
-                        tx,
-                        ascii=" #",
-                        desc=self.tuid,
-                    )
+                tqdm(
+                    tx,
+                    ascii=" #",
+                    desc=self.tuid,
+                )
             ):
                 print(datetime.now(), "IN RUN_EXPERIMENTS, START RUN")
 

@@ -21,9 +21,8 @@ from ..schedule import SimulationSchedule
 
 @dataclass(frozen=True)
 class QuTipExperiment(BaseExperiment):
-
     @property
-    def schedule(self: 'QuTipExperiment') -> 'SimulationSchedule':
+    def schedule(self: "QuTipExperiment") -> "SimulationSchedule":
         self.logger.info(f"Compiling {self.header.name}")
         prog = QuTipProgram(
             name=self.header.name,

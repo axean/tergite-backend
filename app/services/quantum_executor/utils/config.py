@@ -405,7 +405,9 @@ class QuantifyExecutorConfig(ExecutorConfigItem):
     generic_qcodes_instruments: List[GenericQcodesInstrument] = []
 
     @classmethod
-    def from_yaml(cls, file_path: Union[str, bytes, os.PathLike]) -> "QuantifyExecutorConfig":
+    def from_yaml(
+        cls, file_path: Union[str, bytes, os.PathLike]
+    ) -> "QuantifyExecutorConfig":
         """Creates a configuration from a YAML file
 
         Args:
