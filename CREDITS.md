@@ -25,6 +25,7 @@
   [MSS](https://github.com/tergite/tergite-mss) and the general internet.
 - Tracking of execution time of jobs
 - Hardware configuration clean up with YAML
+- integration test suite plus CI/CD
 
 ## Nicklas Botö
 
