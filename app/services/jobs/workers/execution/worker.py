@@ -24,9 +24,9 @@ from qiskit_ibm_provider.utils import json_decoder
 from redis import Redis
 
 import settings
-from app.services.quantum_executor import service as executor_service
-from app.services.quantum_executor.utils.connections import get_executor_lock
-from app.services.quantum_executor.utils.serialization import iqx_rld
+from app.libs.quantum_executor import service as executor_service
+from app.libs.quantum_executor.utils.connections import get_executor_lock
+from app.libs.quantum_executor.utils.serialization import iqx_rld
 from app.utils.queues import QueuePool
 
 from ...service import Location, fetch_job, inform_failure, inform_location
@@ -55,9 +55,6 @@ def job_execute(job_file: Path):
 
     with job_file.open() as f:
         job_dict = json.load(f)
-
-    with open(f"/tmp/QuTipSimulatorA/simulation_job.pickle", "w") as simulator_file:
-        json.dump(job_dict, simulator_file)
 
     job_id = ""
     try:

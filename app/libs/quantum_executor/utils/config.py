@@ -22,7 +22,7 @@ from pydantic.fields import ModelField
 from quantify_scheduler.backends.qblox import instrument_compilers as qblox_compiler
 from ruamel.yaml import YAML
 
-from app.services.quantum_executor.utils.general import get_duplicates
+from app.libs.quantum_executor.utils.general import get_duplicates
 
 yaml = YAML(typ="safe")
 

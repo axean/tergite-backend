@@ -1,7 +1,7 @@
 """Tests for the settings and configs"""
 import pytest
 
-from app.services.quantum_executor.utils.config import QuantifyExecutorConfig
+from app.libs.quantum_executor.utils.config import QuantifyExecutorConfig
 from app.tests.conftest import FASTAPI_CLIENTS
 from app.tests.utils.env import TEST_MSS_APP_TOKEN
 from app.tests.utils.fixtures import get_fixture_path, load_fixture

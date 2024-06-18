@@ -15,7 +15,7 @@ import socket
 
 import pytest
 
-from ...services.quantum_executor.executors.quantify import QuantifyExecutor
+from app.libs.quantum_executor.executors.quantify import QuantifyExecutor
 
 from ..utils.fixtures import get_fixture_path
 

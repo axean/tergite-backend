@@ -25,7 +25,7 @@ from qiskit.qobj import PulseQobj
 from quantify_core.data.handling import gen_tuid, create_exp_folder
 from tqdm import tqdm
 
-from ...libs.storage_file import StorageFile
+from app.libs.storage_file import StorageFile
 from .scheduler.experiment_base import BaseExperiment
 from .scheduler.instruction import meas_settings
 from .utils.logger import ExperimentLogger

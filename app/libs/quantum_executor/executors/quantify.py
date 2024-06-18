@@ -47,7 +47,7 @@ from ..scheduler.channel import Channel
 from ..scheduler.experiment.quantify import QuantifyExperiment
 from ..scheduler.instruction import Instruction
 from ..utils.config import QuantifyExecutorConfig, ClusterModuleType
-from ....libs.storage_file import StorageFile
+from app.libs.storage_file import StorageFile
 
 _QBLOX_CLUSTER_TYPE_MAP: Dict[ClusterModuleType, qblox_instruments.ClusterType] = {
     ClusterModuleType.QCM: qblox_instruments.ClusterType.CLUSTER_QCM,

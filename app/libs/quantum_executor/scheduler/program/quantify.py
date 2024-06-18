@@ -22,9 +22,9 @@ from quantify_scheduler import Schedule, Operation
 from quantify_scheduler.compilation import determine_absolute_timing
 from quantify_scheduler.resources import ClockResource
 
-from app.services.quantum_executor.scheduler.channel import Channel
-from app.services.quantum_executor.scheduler.instruction import Instruction
-from app.services.quantum_executor.scheduler.program_base import BaseProgram
+from app.libs.quantum_executor.scheduler.channel import Channel
+from app.libs.quantum_executor.scheduler.instruction import Instruction
+from app.libs.quantum_executor.scheduler.program_base import BaseProgram
 
 
 @dataclass(frozen=True)
