@@ -1,6 +1,6 @@
 from .utils.fixtures import get_fixture_path, load_fixture
-from app.libs.quantum_executor.scripts.discriminator import train_discriminator
-from app.libs.quantum_executor.scripts.pi_pulse_amplitude import (
+from app.scripts.discriminator import train_discriminator
+from app.scripts.pi_pulse_amplitude import (
     calibrate_pi_pulse_amplitude,
 )
 

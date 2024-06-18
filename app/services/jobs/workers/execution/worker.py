@@ -23,8 +23,9 @@ from qiskit.qobj import PulseQobj
 from qiskit_ibm_provider.utils import json_decoder
 from redis import Redis
 
+import app.libs.quantum_executor.base
 import settings
-from app.libs.quantum_executor import service as executor_service
+from app.libs.quantum_executor.base import QuantumExecutorFactory, QuantumExecutor
 from app.libs.quantum_executor.utils.connections import get_executor_lock
 from app.libs.quantum_executor.utils.serialization import iqx_rld
 from app.utils.queues import QueuePool
@@ -43,11 +44,13 @@ DEFAULT_PREFIX = settings.DEFAULT_PREFIX
 
 # redis connection
 redis_connection = Redis()
-executor = executor_service.QuantumExecutorFactory().get_executor(
-    settings.EXECUTOR_TYPE
-)(config_file=settings.EXECUTOR_CONFIG_FILE)
-
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
+
+# Quantum Executor
+executor_cls: "QuantumExecutor" = QuantumExecutorFactory().get_executor(
+    settings.EXECUTOR_TYPE
+)
+executor = executor_cls(config_file=settings.EXECUTOR_CONFIG_FILE)
 
 
 def job_execute(job_file: Path):
