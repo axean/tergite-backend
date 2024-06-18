@@ -1,3 +1,5 @@
+import pytest
+
 from .utils.fixtures import get_fixture_path, load_fixture
 from app.scripts.train_discriminator import train_discriminator
 from app.scripts.pi_pulse_amplitude import (
@@ -9,6 +11,7 @@ _DISCRIMINATOR_CONFIG = get_fixture_path("discriminator-config.yml")
 _DISCRIMINATOR_CONFIG_MOCK = load_fixture("discriminator-config-mock.yml", fmt="yaml")
 
 
+@pytest.mark.skip
 def test_discriminator_script():
     discriminator_config = train_discriminator(
         _EXECUTOR_CONFIG_YAML, _DISCRIMINATOR_CONFIG

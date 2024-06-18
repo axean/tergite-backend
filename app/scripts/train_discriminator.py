@@ -13,12 +13,10 @@ import os
 from typing import Union
 
 import numpy as np
-import pytest
 import yaml
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 
-@pytest.mark.skip
 def train_discriminator(
     backend_config_path: Union[str, os.PathLike],
     save_yml_path: Union[str, os.PathLike],
