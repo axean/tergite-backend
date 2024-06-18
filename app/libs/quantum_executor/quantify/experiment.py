@@ -12,16 +12,15 @@
 #
 # Refactored by Martin Ahindura (2024)
 # Refactored by Stefan Hill (2024)
-
 from dataclasses import dataclass
 
 import retworkx as rx
 from quantify_scheduler import Schedule
 
-from ..experiment_base import BaseExperiment
-from ..instruction import initial_object
-from ..program.quantify import QuantifyProgram
-from ...utils.general import rot_left
+from app.libs.quantum_executor.experiment_base import BaseExperiment
+from app.libs.quantum_executor.instruction import initial_object
+from app.libs.quantum_executor.quantify.program import QuantifyProgram
+from app.libs.quantum_executor.utils.general import rot_left
 
 
 @dataclass(frozen=True)

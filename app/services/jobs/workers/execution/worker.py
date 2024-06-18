@@ -16,6 +16,7 @@
 
 
 import json
+import typing
 from datetime import datetime
 from pathlib import Path
 
@@ -23,9 +24,10 @@ from qiskit.qobj import PulseQobj
 from qiskit_ibm_provider.utils import json_decoder
 from redis import Redis
 
-import app.libs.quantum_executor.base
 import settings
-from app.libs.quantum_executor.base import QuantumExecutorFactory, QuantumExecutor
+from app.libs.quantum_executor.quantify.executor import QuantifyExecutor
+from app.libs.quantum_executor.qutip.executor import QuTipExecutor
+
 from app.libs.quantum_executor.utils.connections import get_executor_lock
 from app.libs.quantum_executor.utils.serialization import iqx_rld
 from app.utils.queues import QueuePool
@@ -38,19 +40,28 @@ from ..postprocessing import (
 )
 
 # Settings
+# --------
 STORAGE_ROOT = settings.STORAGE_ROOT
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX
 
-# redis connection
+
+# Redis connection
+# ----------------
 redis_connection = Redis()
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 
+
 # Quantum Executor
-executor_cls: "QuantumExecutor" = QuantumExecutorFactory().get_executor(
-    settings.EXECUTOR_TYPE
+# ----------------
+# In case you are adding a new executor type, please update this map as well
+EXECUTOR_MAP = {
+    "hardware": QuantifyExecutor,
+    "qutip": QuTipExecutor,
+}
+executor = EXECUTOR_MAP[settings.EXECUTOR_TYPE](
+    config_file=settings.EXECUTOR_CONFIG_FILE
 )
-executor = executor_cls(config_file=settings.EXECUTOR_CONFIG_FILE)
 
 
 def job_execute(job_file: Path):

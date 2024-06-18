@@ -18,8 +18,8 @@ from typing import FrozenSet
 
 from qiskit.qobj import PulseQobjConfig
 
-from ..utils.logger import ExperimentLogger
-from .channel import Channel
+from app.libs.quantum_executor.utils.logger import ExperimentLogger
+from app.libs.quantum_executor.channel import Channel
 
 
 @dataclass(frozen=True)

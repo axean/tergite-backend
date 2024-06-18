@@ -8,7 +8,7 @@ from app.libs.quantum_executor.utils.serialization import iqx_rld
 from qiskit.providers.ibmq.utils import json_decoder
 from qiskit.qobj import PulseQobj
 
-from app.libs.quantum_executor.executors.qutip import QuTipExecutor
+from ...libs.quantum_executor.qutip.executor import QuTipExecutor
 from ..utils.fixtures import load_fixture, get_fixture_path
 
 connector = QuTipExecutor(config_file=get_fixture_path("simulator-backend.yml"))

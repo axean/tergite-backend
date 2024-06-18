@@ -14,7 +14,7 @@
 
 from dataclasses import dataclass
 
-from ..utils.general import find
+from app.libs.quantum_executor.utils.general import find
 
 
 @dataclass(eq=True, frozen=False)

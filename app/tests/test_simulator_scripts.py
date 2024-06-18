@@ -1,5 +1,5 @@
 from .utils.fixtures import get_fixture_path, load_fixture
-from app.scripts.discriminator import train_discriminator
+from app.scripts.train_discriminator import train_discriminator
 from app.scripts.pi_pulse_amplitude import (
     calibrate_pi_pulse_amplitude,
 )

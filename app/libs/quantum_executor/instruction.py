@@ -21,7 +21,7 @@ from quantify_scheduler.enums import BinMode
 
 from app.libs.storage_file.file import MeasLvl, MeasRet
 
-from ..utils.general import ceil4
+from app.libs.quantum_executor.utils.general import ceil4
 
 
 def meas_settings(config: PulseQobjConfig):

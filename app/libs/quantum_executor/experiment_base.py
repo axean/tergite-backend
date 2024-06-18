@@ -21,9 +21,9 @@ import retworkx as rx
 from pandas import DataFrame
 from qiskit.qobj import PulseQobjConfig, QobjExperimentHeader
 
-from ..utils.logger import ExperimentLogger
-from .channel import Channel
-from .instruction import Instruction
+from app.libs.quantum_executor.utils.logger import ExperimentLogger
+from app.libs.quantum_executor.channel import Channel
+from app.libs.quantum_executor.instruction import Instruction
 
 
 @dataclass(frozen=True)

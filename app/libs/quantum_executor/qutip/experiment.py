@@ -14,9 +14,9 @@ from dataclasses import dataclass
 
 import retworkx as rx
 
-from ..experiment_base import BaseExperiment
-from ..program.qutip import QuTipProgram
-from ..schedule import SimulationSchedule
+from app.libs.quantum_executor.experiment_base import BaseExperiment
+from app.libs.quantum_executor.qutip.schedule import SimulationSchedule
+from app.libs.quantum_executor.qutip.program import QuTipProgram
 
 
 @dataclass(frozen=True)

@@ -17,10 +17,14 @@ from typing import List
 import numpy as np
 import qiskit.pulse
 
-from ..channel import Channel
-from ..instruction import Instruction
-from ..program_base import BaseProgram
-from ..schedule import SimulationSchedule, MeasurementOperation, UnitaryOperation
+from app.libs.quantum_executor.channel import Channel
+from app.libs.quantum_executor.instruction import Instruction
+from app.libs.quantum_executor.program_base import BaseProgram
+from app.libs.quantum_executor.qutip.schedule import (
+    SimulationSchedule,
+    MeasurementOperation,
+    UnitaryOperation,
+)
 
 
 @dataclass(frozen=True)
