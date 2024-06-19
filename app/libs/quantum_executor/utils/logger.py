@@ -14,8 +14,8 @@
 
 import logging
 import logging.handlers
-from typing import Union
 from os.path import abspath, join
+from typing import Union
 
 import pandas as pd
 import quantify_core.data.handling as dh

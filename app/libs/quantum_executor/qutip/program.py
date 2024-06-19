@@ -17,14 +17,14 @@ from typing import List
 import numpy as np
 import qiskit.pulse
 
-from app.libs.quantum_executor.channel import Channel
-from app.libs.quantum_executor.instruction import Instruction
-from app.libs.quantum_executor.program_base import BaseProgram
+from app.libs.quantum_executor.base.program import BaseProgram
 from app.libs.quantum_executor.qutip.schedule import (
-    SimulationSchedule,
     MeasurementOperation,
+    SimulationSchedule,
     UnitaryOperation,
 )
+from app.libs.quantum_executor.utils.channel import Channel
+from app.libs.quantum_executor.utils.instruction import Instruction
 
 
 @dataclass(frozen=True)

@@ -17,10 +17,10 @@ from dataclasses import dataclass
 import retworkx as rx
 from quantify_scheduler import Schedule
 
-from app.libs.quantum_executor.experiment_base import BaseExperiment
-from app.libs.quantum_executor.instruction import initial_object
+from app.libs.quantum_executor.base.experiment import BaseExperiment
 from app.libs.quantum_executor.quantify.program import QuantifyProgram
 from app.libs.quantum_executor.utils.general import rot_left
+from app.libs.quantum_executor.utils.instruction import initial_object
 
 
 @dataclass(frozen=True)

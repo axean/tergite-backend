@@ -27,7 +27,6 @@ from redis import Redis
 import settings
 from app.libs.quantum_executor.quantify.executor import QuantifyExecutor
 from app.libs.quantum_executor.qutip.executor import QuTipExecutor
-
 from app.libs.quantum_executor.utils.connections import get_executor_lock
 from app.libs.quantum_executor.utils.serialization import iqx_rld
 from app.utils.queues import QueuePool

@@ -18,13 +18,13 @@ from functools import cached_property
 
 import numpy as np
 import qiskit.pulse
-from quantify_scheduler import Schedule, Operation
+from quantify_scheduler import Operation, Schedule
 from quantify_scheduler.compilation import determine_absolute_timing
 from quantify_scheduler.resources import ClockResource
 
-from app.libs.quantum_executor.channel import Channel
-from app.libs.quantum_executor.instruction import Instruction
-from app.libs.quantum_executor.program_base import BaseProgram
+from app.libs.quantum_executor.base.program import BaseProgram
+from app.libs.quantum_executor.utils.channel import Channel
+from app.libs.quantum_executor.utils.instruction import Instruction
 
 
 @dataclass(frozen=True)
