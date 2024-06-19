@@ -1,10 +1,9 @@
 import pytest
 
-from .utils.fixtures import get_fixture_path, load_fixture
+from app.scripts.pi_pulse_amplitude import calibrate_pi_pulse_amplitude
 from app.scripts.train_discriminator import train_discriminator
-from app.scripts.pi_pulse_amplitude import (
-    calibrate_pi_pulse_amplitude,
-)
+
+from .utils.fixtures import get_fixture_path, load_fixture
 
 _EXECUTOR_CONFIG_YAML = get_fixture_path("simulator-backend.yml")
 _DISCRIMINATOR_CONFIG = get_fixture_path("discriminator-config.yml")
