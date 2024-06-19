@@ -39,7 +39,7 @@ MSS_PORT=8002
 # This is to configure the hardware or simulated measurement instruments.
 # The type of instrument setup to run. Default is "hardware". Can take:
 # - hardware
-# - scqt
+# - qiskit
 # - qutip
 EXECUTOR_TYPE=hardware
 # The path to the configuration file for quantify. Default is "executor-config.yml" in project directory.

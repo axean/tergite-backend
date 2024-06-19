@@ -16,7 +16,6 @@
 
 
 import json
-import typing
 from datetime import datetime
 from pathlib import Path
 
@@ -25,6 +24,7 @@ from qiskit_ibm_provider.utils import json_decoder
 from redis import Redis
 
 import settings
+from app.libs.quantum_executor.qiskit.executor import QiskitDynamicsExecutor
 from app.libs.quantum_executor.quantify.executor import QuantifyExecutor
 from app.libs.quantum_executor.qutip.executor import QuTipExecutor
 
@@ -57,6 +57,7 @@ rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 # In case you are adding a new executor type, please update this map as well
 EXECUTOR_MAP = {
     "hardware": QuantifyExecutor,
+    "qiskit": QiskitDynamicsExecutor,
     "qutip": QuTipExecutor,
 }
 executor = EXECUTOR_MAP[settings.EXECUTOR_TYPE](
