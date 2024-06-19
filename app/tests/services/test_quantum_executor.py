@@ -16,7 +16,6 @@ import socket
 import pytest
 
 from ...libs.quantum_executor.quantify.executor import QuantifyExecutor
-
 from ..utils.fixtures import get_fixture_path
 
 _REAL_HARDWARE_EXECUTOR_CONFIG_FILE = get_fixture_path("real-executor-config.yml")
