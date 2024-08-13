@@ -14,15 +14,16 @@ from dataclasses import dataclass
 
 import retworkx as rx
 
-from app.libs.quantum_executor.experiment_base import BaseExperiment
+from app.libs.quantum_executor.base.experiment import BaseExperiment
 from app.libs.quantum_executor.qiskit.program import QiskitDynamicsProgram
+
+from qiskit.pulse.schedule import Schedule
 
 
 @dataclass(frozen=True)
 class QiskitDynamicsExperiment(BaseExperiment):
     @property
-    def schedule(self) -> "SimulationSchedule":
-        # TODO: Find return type for qiskit dynamics schedule
+    def schedule(self) -> "Schedule":
         self.logger.info(f"Compiling {self.header.name}")
         prog = QiskitDynamicsProgram(
             name=self.header.name,
@@ -31,9 +32,11 @@ class QiskitDynamicsExperiment(BaseExperiment):
             logger=self.logger,
         )
         wccs = rx.weakly_connected_components(self.dag)
-        # TODO: Do we have any benefits from using the more complex scheduling variant from the quantify connector
         for wcc in wccs:
             wcc_nodes = list(sorted(list(wcc)))
-
-            prog.schedule_operation([self.dag[i_] for i_ in wcc_nodes])
+            instruction_types = list(map(lambda i_: self.dag[i_].name, wcc_nodes))
+            for i_ in wcc_nodes:
+                prog.schedule_operation(
+                    self.dag[i_], is_measurement="acquire" in instruction_types
+                )
         return prog.schedule

@@ -43,7 +43,6 @@ from app.libs.storage_file import file as storagefile
 class QuTipExecutor(QuantumExecutor):
     def __init__(self: "QuTipExecutor", config_file: Union[str, bytes, os.PathLike]):
         super().__init__()
-        dh.set_datadir(settings.EXECUTOR_DATA_DIR)
         self.backend_config = yaml.load(open(config_file, "r"), Loader=yaml.FullLoader)
         self.busy = False
 

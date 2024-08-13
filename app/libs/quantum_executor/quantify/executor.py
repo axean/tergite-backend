@@ -80,9 +80,6 @@ class QuantifyExecutor(QuantumExecutor):
         super().__init__()
         conf = QuantifyExecutorConfig.from_yaml(config_file)
 
-        # Tell Quantify where to store data
-        dh.set_datadir(settings.EXECUTOR_DATA_DIR)
-
         self.quantify_config = conf.to_quantify()
         self.hardware_map = {
             clock: port

@@ -22,9 +22,11 @@ import rich
 import xarray
 from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder as PulseQobj_encoder
 from qiskit.qobj import PulseQobj
+from quantify_core.data import handling as dh
 from quantify_core.data.handling import create_exp_folder, gen_tuid
 from tqdm import tqdm
 
+import settings
 from app.libs.quantum_executor.base.experiment import BaseExperiment
 from app.libs.quantum_executor.utils.instruction import meas_settings
 from app.libs.quantum_executor.utils.logger import ExperimentLogger
@@ -33,7 +35,7 @@ from app.libs.storage_file import StorageFile
 
 class QuantumExecutor(abc.ABC):
     def __init__(self):
-        pass
+        dh.set_datadir(settings.EXECUTOR_DATA_DIR)
 
     def register_job(self, tag: str = ""):
         # TODO: The fields tuid, experiment_folder, and logger could be class properties
