@@ -179,9 +179,7 @@ if __name__ == "__main__":
         and "/" not in device_configuration_file
     ):
         # Passing just a file that exists in configs should load the file.
-        device_configuration_file = os.path.abspath(
-            f"configs/{args.device}"
-        )
+        device_configuration_file = os.path.abspath(f"configs/{args.device}")
 
     layout = None
     default_values = None
