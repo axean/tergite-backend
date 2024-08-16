@@ -1,7 +1,6 @@
 # global variables
 from datetime import datetime
 
-import pytest
 from qiskit.providers.ibmq.utils import json_decoder
 from qiskit.qobj import PulseQobj
 
@@ -13,12 +12,6 @@ from ..utils.fixtures import get_fixture_path, load_fixture
 connector = QiskitDynamicsExecutor(
     config_file=get_fixture_path("simulator-backend.yml")
 )
-
-
-from qiskit.qobj import PulseQobjExperiment
-from qiskit.pulse import Schedule
-
-qobj = PulseQobjExperiment.from_dict()
 
 
 def test_job_transpile():

@@ -20,6 +20,9 @@ from app.libs.quantum_executor.qiskit.program import QiskitDynamicsProgram
 from qiskit.pulse.schedule import Schedule
 
 
+# TODO SIM: If we use the transpile function, this whole Experiment object might become redundant
+
+
 @dataclass(frozen=True)
 class QiskitDynamicsExperiment(BaseExperiment):
     @property
