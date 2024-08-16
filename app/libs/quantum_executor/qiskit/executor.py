@@ -12,11 +12,8 @@
 
 from functools import partial
 
-import jax
-import numpy as np
 import xarray
 from qiskit.qobj import PulseQobj
-from qiskit_dynamics import Solver, DynamicsBackend
 
 import app.libs.storage_file as storagefile
 from app.libs.quantum_executor.base.executor import QuantumExecutor
@@ -25,11 +22,6 @@ from app.libs.quantum_executor.qiskit.experiment import QiskitDynamicsExperiment
 from app.libs.quantum_executor.utils.channel import Channel
 from app.libs.quantum_executor.utils.instruction import Instruction
 from .backend import FakeOpenPulse1Q
-
-# configure jax to use 64 bit mode
-jax.config.update("jax_enable_x64", True)
-# configure jax to use 64 bit mode
-jax.config.update("jax_platform_name", "cpu")
 
 
 class QiskitDynamicsExecutor(QuantumExecutor):
@@ -65,8 +57,7 @@ class QiskitDynamicsExecutor(QuantumExecutor):
             )
 
             # convert OpenPulse experiment to Qiskit Dynamics schedule
-            # TODO SIM: Instead of using this Experiment object, we just need our transpile function
-            #
+            # TODO SIM: If we wanted to get rid of this overly complicated notation of the Experiment object, we would have to check where it is used in the storage file as well
             tx.append(
                 QiskitDynamicsExperiment(
                     header=experiment.header,

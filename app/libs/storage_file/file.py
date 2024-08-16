@@ -356,6 +356,7 @@ class StorageFile:
     def store_graph(self: "StorageFile", graph: object, name: str):
         """Store the bytes of an experiment's graph into its experiment group.
         This graph can be loaded with StorageFile.read_graph.
+        # TODO: I cannot find any place where this read_graph is implemented and I do not see why we would need it
         """
         experiment = self.get_experiment(name)
         blob = pickle.dumps(graph)
