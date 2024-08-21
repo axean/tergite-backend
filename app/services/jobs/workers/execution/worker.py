@@ -24,7 +24,7 @@ from qiskit_ibm_provider.utils import json_decoder
 from redis import Redis
 
 import settings
-from app.libs.quantum_executor.qiskit.executor import QiskitDynamicsExecutor
+from app.libs.quantum_executor.qiskit.executor import QiskitDynamicsExecutor, QiskitDynamics1QBSimulatorExecutor
 from app.libs.quantum_executor.quantify.executor import QuantifyExecutor
 from app.libs.quantum_executor.qutip.executor import QuTipExecutor
 from app.libs.quantum_executor.utils.connections import get_executor_lock
@@ -44,12 +44,10 @@ STORAGE_ROOT = settings.STORAGE_ROOT
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX
 
-
 # Redis connection
 # ----------------
 redis_connection = Redis()
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
-
 
 # Quantum Executor
 # ----------------
@@ -57,6 +55,7 @@ rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 EXECUTOR_MAP = {
     "hardware": QuantifyExecutor,
     "qiskit": QiskitDynamicsExecutor,
+    "1qb_simulator": QiskitDynamics1QBSimulatorExecutor,
     "qutip": QuTipExecutor,
 }
 executor = EXECUTOR_MAP[settings.EXECUTOR_TYPE](

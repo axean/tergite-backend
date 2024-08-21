@@ -18,8 +18,6 @@ connector = QiskitDynamicsExecutor(
 from qiskit.qobj import PulseQobjExperiment
 from qiskit.pulse import Schedule
 
-qobj = PulseQobjExperiment.from_dict()
-
 
 def test_job_transpile():
     job_dict = load_fixture("h_gate_amplitude_corrected.json")
