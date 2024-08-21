@@ -309,7 +309,7 @@ class StorageFile:
 
     @functools.cached_property
     def sorted_measurements(self: "StorageFile") -> list:
-        print(self.experiments)
+        # TODO: this would only find files for simulated readout output 
         return sorted(
             parse.find(self.experiments, "measurement"),
             key=lambda path: path[0].split(self.delimiter)[0],
