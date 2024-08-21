@@ -61,6 +61,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
         **options,
     ):
         backend_name = "fake_openpulse_1q"
+        self.backend_name = backend_name
         backend_version = "1.0.0"
 
         a = np.diag(np.sqrt(np.arange(1, dim)), 1)  # annihilation operator

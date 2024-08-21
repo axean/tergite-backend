@@ -24,7 +24,7 @@ from qiskit_ibm_provider.utils import json_decoder
 from redis import Redis
 
 import settings
-from app.libs.quantum_executor.qiskit.executor import QiskitDynamicsExecutor
+from app.libs.quantum_executor.qiskit.executor import QiskitDynamicsExecutor, QiskitDynamicsPulseSimulator1Q
 from app.libs.quantum_executor.quantify.executor import QuantifyExecutor
 from app.libs.quantum_executor.qutip.executor import QuTipExecutor
 from app.libs.quantum_executor.utils.connections import get_executor_lock
@@ -57,6 +57,7 @@ rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 EXECUTOR_MAP = {
     "hardware": QuantifyExecutor,
     "qiskit": QiskitDynamicsExecutor,
+    "PulseSimulator1Q": QiskitDynamicsPulseSimulator1Q,
     "qutip": QuTipExecutor,
 }
 executor = EXECUTOR_MAP[settings.EXECUTOR_TYPE](

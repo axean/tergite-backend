@@ -260,6 +260,40 @@ class StorageFile:
             raise NotImplementedError(
                 f"Invalid storage file metadata: {self.meas_return} and {self.meas_level} is not implemented."
             )
+    def as_xarray_readout_simulated(self: "StorageFile") -> xr.Dataset:
+        """Attempts to parse the storage file as a single qubit readout 
+        after discrimination for simulated backend. 
+        """
+        if (self.meas_return == MeasRet.APPENDED) and (
+            self.meas_level == MeasLvl.DISCRIMINATED
+        ):
+            return NotImplemented  # discriminator?
+
+        elif (self.meas_return == MeasRet.AVERAGED) and (
+            self.meas_level == MeasLvl.DISCRIMINATED
+        ):
+            return NotImplemented  # discriminator?
+
+        elif (self.meas_return == MeasRet.APPENDED) and (
+            self.meas_level == MeasLvl.INTEGRATED
+        ):
+            return parse.appended_readout(data=self)
+
+        elif (self.meas_return == MeasRet.AVERAGED) and (
+            self.meas_level == MeasLvl.INTEGRATED
+        ):
+            return NotImplemented
+
+        elif (self.meas_return == MeasRet.AVERAGED) and (
+            self.meas_level == MeasLvl.RAW
+        ):
+            return NotImplemented
+
+        else:
+            raise NotImplementedError(
+                f"Invalid storage file metadata: {self.meas_return} and {self.meas_level} is not implemented."
+            )
+
 
     # ------------------------------------------------------------------------
     def get_experiment(self: "StorageFile", name: str):
@@ -275,9 +309,11 @@ class StorageFile:
 
     @functools.cached_property
     def sorted_measurements(self: "StorageFile") -> list:
+        print(self.experiments)
         return sorted(
             parse.find(self.experiments, "measurement"),
-            key=lambda path: int(path[0].split(self.delimiter)[1]),
+            key=lambda path: path[0].split(self.delimiter)[0],
+            # key=lambda path: int(key=lambda path: path[0].split(self.delimiter)[0],)
         )
 
     # ------------------------------------------------------------------------
@@ -401,6 +437,68 @@ class StorageFile:
                 tmp.imag[idx] = np.imag(data["data"][idx])
 
             experiment[ch]["measurement"][...] = tmp
+
+    def store_experiment_array(self: "StorageFile", *, experiment_data: dict, name: str):
+        """Store the acquisition data without experiment structure."""
+        experiment = self.get_experiment(name)
+
+        # TODO: This is a test implementation for one channel acquisition 
+        # from pudb import set_trace; set_trace()
+
+        ch = f"slot{StorageFile.delimiter}{0}"
+
+
+        
+
+        # For each acqusition channel, create a corresponding measurement matrix
+        # in a memory slot whose index corresponds to the acqusition channel,
+        # unless it already exists.
+
+
+        # ----------for complex-IQ pairs--------------------
+        # Get maximum acquisition index in each acquisition channel
+        # max_acq_idx = experiment_data.shape[1] 
+
+
+        # if ch not in experiment.keys():
+        #     channel = experiment.create_group(ch)
+        #     print(f"creating data set for {ch}")
+        #     channel.create_dataset(
+        #             "measurement",
+        #             shape=(max_acq_idx, experiment_data.shape[0]),
+        #             dtype=complex,
+        #         )
+        
+        # tmp = np.zeros(experiment_data.shape[0], dtype=complex)
+
+        # for idx in range(experiment_data.shape[0]):
+        #     tmp.real[idx] = experiment_data[idx][0][0]
+        #     tmp.imag[idx] = experiment_data[idx][0][1]
+
+        # ------------for readout values ---------------------
+
+        # Get maximum acquisition index in each acquisition channel
+        max_acq_idx = 1
+
+        if ch not in experiment.keys():
+            channel = experiment.create_group(ch)
+            print(f"creating data set for {ch}")
+            channel.create_dataset(
+                    "measurement",
+                    shape=(max_acq_idx, experiment_data.shape[0]),
+                    dtype=int,
+                )
+        
+        tmp = np.zeros(experiment_data.shape[0], dtype=int)
+
+        for idx in range(experiment_data.shape[0]):
+            tmp[idx] = experiment_data[idx][0][0]
+        
+        
+        # from pudb import set_trace; set_trace()
+
+        experiment[ch]["measurement"][...] = tmp 
+
 
     # ------------------------------------------------------------------------
     @classmethod

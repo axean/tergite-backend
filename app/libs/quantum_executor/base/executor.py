@@ -127,13 +127,25 @@ class QuantumExecutor(abc.ABC):
 
                 experiment_data = self.run(experiment)
 
-                experiment_data = experiment_data.to_dict()
+            
+                # avoid experiment structure for simulation 
+                # TODO: consider overriding this method in qiskit_executor
+                # TODO: make more appropriate naming value and key
+                import uuid 
 
-                storage.store_experiment_data(
-                    experiment_data=experiment_data,
-                    name=experiment.header.name,
-                )
-                storage.store_graph(graph=experiment.dag, name=experiment.header.name)
+                if self.backend.backend_name == "fake_openpulse_1q":
+                    storage.store_experiment_array(
+                        experiment_data=experiment_data,
+                        name="temp_dummy_name-%s" % uuid.uuid4()
+                    )
+                else:
+                    experiment_data = experiment_data.to_dict()
+
+                    storage.store_experiment_data(
+                        experiment_data=experiment_data,
+                        name=experiment.header.name,
+                    )
+                    storage.store_graph(graph=experiment.dag, name=experiment.header.name)
 
             self.logger.info(f"Stored measurement data at {storage.file.filename}")
 

@@ -172,11 +172,21 @@ def postprocess_storage_file(
                     logging.error(exp)
 
             elif sf.meas_level == MeasLvl.INTEGRATED:
+                # TODO: This was not implemented 
+                # and been adapted for simulator testing workflow 
+                # It might be intended for a different purpose in post-proc steps
+                
+                # client expects hex values for get_counts() to work 
+                # xarray passed from the storage file
+                memory = sf.as_xarray_readout_simulated()
+                
                 save_result_in_mss_and_bcc(
-                    mss_client=mss_client, memory=[], job_id=sf.job_id
+                    mss_client=mss_client, memory=memory, job_id=sf.job_id
                 )
 
             elif sf.meas_level == MeasLvl.RAW:
+                # TODO: Not implemented, expects to pass full trace
+                # with hardcoded 16K values length array  
                 save_result_in_mss_and_bcc(
                     mss_client=mss_client, memory=[], job_id=sf.job_id
                 )

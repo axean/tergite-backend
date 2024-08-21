@@ -84,9 +84,12 @@ def transpile(qobj: dict) -> List[Schedule]:
                 instruction["name"] == "parametric_pulse"
                 and instruction["pulse_shape"] == "gaussian"
             ):
+                # amp values is no longer complex
+                # TODO: find ref to the docs update 
+                # TODO: check with older client version 
                 gauss = Gaussian(
                     int(instruction["parameters"]["duration"]),
-                    float(instruction["parameters"]["amp"][0]),
+                    instruction["parameters"]["amp"],
                     float(instruction["parameters"]["sigma"]),
                 )
                 operation = Play(gauss, DriveChannel(channel))

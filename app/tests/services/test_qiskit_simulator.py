@@ -6,10 +6,10 @@ from qiskit.qobj import PulseQobj
 
 from app.libs.quantum_executor.utils.serialization import iqx_rld
 
-from ...libs.quantum_executor.qiskit.executor import QiskitDynamicsExecutor
+from ...libs.quantum_executor.qiskit.executor import QiskitDynamicsExecutor, QiskitDynamicsPulseSimulator1Q
 from ..utils.fixtures import get_fixture_path, load_fixture
 
-connector = QiskitDynamicsExecutor(
+connector = QiskitDynamicsPulseSimulator1Q(
     config_file=get_fixture_path("simulator-backend.yml")
 )
 
@@ -38,3 +38,4 @@ def test_job_transpile():
     connector.run_experiments(
         PulseQobj.from_dict(qobj), enable_traceback=True, job_id=job_id
     )
+    

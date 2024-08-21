@@ -22,6 +22,7 @@ from app.libs.quantum_executor.qiskit.experiment import QiskitDynamicsExperiment
 from app.libs.quantum_executor.utils.channel import Channel
 from app.libs.quantum_executor.utils.instruction import Instruction
 from .backend import FakeOpenPulse1Q
+from .transpile import transpile
 
 
 class QiskitDynamicsExecutor(QuantumExecutor):
@@ -34,11 +35,9 @@ class QiskitDynamicsExecutor(QuantumExecutor):
         job = self.backend.run(experiment.schedule)
         result = job.result()
         return result.data()["memory"]
-
     def construct_experiments(self, qobj: PulseQobj, /):
         # storage array
         tx = list()
-
         for experiment_index, experiment in enumerate(qobj.experiments):
             # TODO SIM: This whole thing to translate everything into a wrapper object for the instruction is not necessary
             # - We can directly take the qobj as it is
@@ -79,3 +78,32 @@ class QiskitDynamicsExecutor(QuantumExecutor):
 
     def close(self):
         pass
+
+class QiskitDynamicsPulseSimulator1Q(QuantumExecutor):
+    
+    def __init__(self, config_file):
+        super().__init__()
+        self.backend = FakeOpenPulse1Q(
+            meas_level=2, 
+            meas_return="single"
+            )
+    
+
+    def run(self, experiment: BaseExperiment, /) -> xarray.Dataset:
+        job = self.backend.run(experiment)
+        result = job.result()
+        return result.data()["memory"]
+    
+    def construct_experiments(self, qobj: PulseQobj, /):
+        
+         # TODO SIM: If we wanted to get rid of this overly complicated notation of the Experiment object, we would have to check where it is used in the storage file as well
+         # TODO SIM: Some shortcuts were implemented to return readout values to client directly in Storage and here we compile qobj directly 
+
+        qobj_dict = qobj.to_dict()
+        tx = transpile(qobj_dict)
+
+        self.logger.info(f"Translated {len(tx)} OpenPulse experiments.")
+        return tx
+    
+    def close(self):
+        pass 
