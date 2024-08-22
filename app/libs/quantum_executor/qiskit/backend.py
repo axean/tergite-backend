@@ -189,7 +189,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
                 {
                     "id": i,
                     "frequency": self.qubit_properties(i).frequency,
-                    "pi_pulse_amplitude": 0.028497682448563922,
+                    "pi_pulse_amplitude": 0.014248841224281961,
                     "pi_pulse_duration": 56e-9,
                     "pulse_type": "Gaussian",
                     "pulse_sigma": 7e-9,
@@ -200,12 +200,12 @@ class FakeOpenPulse1Q(DynamicsBackend):
             resonator_properties.append(
                 {
                     "id": i,
-                    "acq_delay": 5e-8,
-                    "acq_integration_time": 0.000001,
-                    "frequency": 7260080000,
-                    "pulse_amplitude": 0.1266499392606423,
+                    "acq_delay": 0,
+                    "acq_integration_time": 0,
+                    "frequency": 0,
+                    "pulse_amplitude": 0,
                     "pulse_delay": 0,
-                    "pulse_duration": 9e-7,
+                    "pulse_duration": 0,
                     "pulse_type": "Square",
                 }
             )
