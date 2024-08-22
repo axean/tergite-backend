@@ -55,7 +55,6 @@ rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 EXECUTOR_MAP = {
     "hardware": QuantifyExecutor,
     "qiskit": QiskitDynamicsExecutor,
-    "1qb_simulator": QiskitDynamics1QBSimulatorExecutor,
     "qutip": QuTipExecutor,
 }
 executor = EXECUTOR_MAP[settings.EXECUTOR_TYPE](
