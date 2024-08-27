@@ -126,21 +126,24 @@ class QuantumExecutor(abc.ABC):
                 print(datetime.now(), "IN RUN_EXPERIMENTS, START RUN")
 
                 experiment_data = self.run(experiment)
-
+                
             
                 # avoid experiment structure for simulation 
                 # TODO: consider overriding this method in qiskit_executor
-                # TODO: make more appropriate naming value and key
-                import uuid 
-
+                
                 if self.backend.backend_name == "fake_openpulse_1q":
+                    # print("______________experiment____________________")
+                    # print(experiment)
+                    # TODO: make more appropriate naming value and key
+                    # import uuid 
+                    # dummy_name = "temp_dummy_name-%s" % uuid.uuid4()
+                    
                     storage.store_experiment_array(
                         experiment_data=experiment_data,
-                        name="temp_dummy_name-%s" % uuid.uuid4()
+                        name=experiment.name 
                     )
                 else:
                     experiment_data = experiment_data.to_dict()
-
                     storage.store_experiment_data(
                         experiment_data=experiment_data,
                         name=experiment.header.name,

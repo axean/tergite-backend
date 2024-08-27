@@ -66,9 +66,14 @@ def transpile(qobj: dict) -> List[Schedule]:
                 )
 
             elif instruction["name"] == "delay":
-                operation = Delay(
-                    instruction.parameters["duration"], DriveChannel(channel)
-                )
+                if not "parameters" in instruction:
+                    operation = Delay(
+                        instruction["duration"], DriveChannel(channel)
+                    )
+                else:
+                    operation = Delay(
+                        instruction.parameters["duration"], DriveChannel(channel)
+                    )
 
             elif (
                 instruction["name"] == "parametric_pulse"

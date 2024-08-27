@@ -84,7 +84,7 @@ class QiskitDynamicsPulseSimulator1Q(QuantumExecutor):
     def __init__(self, config_file):
         super().__init__()
         self.backend = FakeOpenPulse1Q(
-            meas_level=2, 
+            meas_level=1, 
             meas_return="single"
             )
     
@@ -92,7 +92,33 @@ class QiskitDynamicsPulseSimulator1Q(QuantumExecutor):
     def run(self, experiment: BaseExperiment, /) -> xarray.Dataset:
         job = self.backend.run(experiment)
         result = job.result()
+ 
         return result.data()["memory"]
+        # if results.success:
+        #     return result.results[0]
+        # else:
+        #     # raise error 
+        #     print("Job failed")
+        #     return {}
+        # TODO: return xarray Dataset with Data for each acquisition channel corresponding to a qubit 
+        # Example of Dataset init 
+        # ds = xr.Dataset(
+        #     data_vars=dict(
+        #         temperature=(["loc", "instrument", "time"], temperature),
+        #         precipitation=(["loc", "instrument", "time"], precipitation),
+        #     ),
+        #     coords=dict(
+        #         lon=("loc", lon),
+        #         lat=("loc", lat),
+        #         instrument=instruments,
+        #         time=time,
+        #         reference_time=reference_time,
+        #     ),
+        #     attrs=dict(description="Weather related data."),
+        # )
+
+
+
     
     def construct_experiments(self, qobj: PulseQobj, /):
         
@@ -107,3 +133,5 @@ class QiskitDynamicsPulseSimulator1Q(QuantumExecutor):
     
     def close(self):
         pass 
+
+
