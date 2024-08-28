@@ -111,13 +111,14 @@ class StorageFile:
             self.header = self.file["header"]
             self.experiments = self.file["experiments"]
 
+    # TODO: leave register_sparsity as full and set it to sparse for cases where there are multiple values per shot 
     def as_readout(
         self: "StorageFile",
         discriminator: callable,
         *,
         disc_two_state: bool = False,
         register_order: str = "little",
-        register_sparsity: str = "full",
+        register_sparsity: str = "sparse",
     ) -> list:
         """
         Interpret measurement data from experiments as bitstrings.
@@ -191,30 +192,31 @@ class StorageFile:
 
             # sort in reverse for little endian (descending slot order)
             for slot_tag, slot_data in self.sort_items(slots, reverse=register_reverse):
-                assert (
-                    slot_data["measurement"].shape[0] == 1
-                ), "Max one acquisition per channel for word readout."
-                slot_idx = int(slot_tag.split(self.delimiter)[1])
-                slot_idxs.append(slot_idx)
-                row = slot_data["measurement"][0, :]
+                # TODO: assert if measurement shape if equal to the number of shots
+                # assert (
+                #     slot_data["measurement"].shape[0] == 1
+                # ), "Max one acquisition per channel for word readout."
+                kets = np.zeros(slot_data["measurement"].shape[0]).astype(int)
+                for i in range(slot_data["measurement"].shape[0]):
+                    slot_idx = int(slot_tag.split(self.delimiter)[1])
+                    slot_idxs.append(slot_idx)
+                    row = slot_data["measurement"][i, :]
 
-                ket01 = discriminator(qubit_idx=slot_idx, iq_points=row)
-                memory.append(ket01)
-
+                    ket01 = discriminator(qubit_idx=slot_idx, iq_points=row)
+                    kets[i] = ket01
+                memory.append(kets)
             # binary matrix where rows are classical register values
             # and columns are register value per shot
             memory = np.asarray(memory)
-
             # transposing the memory we get a binary matrix where columns are
             # classical register values and rows are value per shot
             memory = np.transpose(memory)
-
             # get hexlist of classical registers for every shot
             # and append to readout list
             readout.append(
                 _map_to_hex(
                     memory, slot_idxs=slot_idxs, register_parse_fn=register_parse_fn
-                )
+                ) 
             )
 
         return readout
@@ -260,39 +262,6 @@ class StorageFile:
             raise NotImplementedError(
                 f"Invalid storage file metadata: {self.meas_return} and {self.meas_level} is not implemented."
             )
-    def as_xarray_readout_simulated(self: "StorageFile") -> xr.Dataset:
-        """Attempts to parse the storage file as a single qubit readout 
-        after discrimination for simulated backend. 
-        """
-        if (self.meas_return == MeasRet.APPENDED) and (
-            self.meas_level == MeasLvl.DISCRIMINATED
-        ):
-            return NotImplemented  # discriminator?
-
-        elif (self.meas_return == MeasRet.AVERAGED) and (
-            self.meas_level == MeasLvl.DISCRIMINATED
-        ):
-            return NotImplemented  # discriminator?
-
-        elif (self.meas_return == MeasRet.APPENDED) and (
-            self.meas_level == MeasLvl.INTEGRATED
-        ):
-            return parse.appended_readout(data=self)
-
-        elif (self.meas_return == MeasRet.AVERAGED) and (
-            self.meas_level == MeasLvl.INTEGRATED
-        ):
-            return NotImplemented
-
-        elif (self.meas_return == MeasRet.AVERAGED) and (
-            self.meas_level == MeasLvl.RAW
-        ):
-            return NotImplemented
-
-        else:
-            raise NotImplementedError(
-                f"Invalid storage file metadata: {self.meas_return} and {self.meas_level} is not implemented."
-            )
 
 
     # ------------------------------------------------------------------------
@@ -312,8 +281,8 @@ class StorageFile:
         # TODO: this would only find files for simulated readout output 
         return sorted(
             parse.find(self.experiments, "measurement"),
-            key=lambda path: path[0].split(self.delimiter)[0],
-            # key=lambda path: int(key=lambda path: path[0].split(self.delimiter)[0],)
+            # key=lambda path: path[0].split(self.delimiter)[0],
+            key=lambda path: int(key=lambda path: path[0].split(self.delimiter)[0],)
         )
 
     # ------------------------------------------------------------------------
@@ -436,76 +405,20 @@ class StorageFile:
                 tmp.real[idx] = np.real(data["data"][idx])
                 tmp.imag[idx] = np.imag(data["data"][idx])
 
-            experiment[ch]["measurement"][...] = tmp
-
-    def store_experiment_array(self: "StorageFile", *, experiment_data: dict, name: str):
-        """Store the acquisition data without experiment structure."""
-        experiment = self.get_experiment(name)
-
-        # TODO: This is a test implementation for one channel acquisition 
-        # from pudb import set_trace; set_trace()
-
-        ch = f"slot{StorageFile.delimiter}{0}"
-
-
-        
-
-        # For each acqusition channel, create a corresponding measurement matrix
-        # in a memory slot whose index corresponds to the acqusition channel,
-        # unless it already exists.
-
-
-        # ----------for complex-IQ pairs--------------------
-        # Get maximum acquisition index in each acquisition channel
-        # max_acq_idx = experiment_data.shape[1] 
-
-
-        # if ch not in experiment.keys():
-        #     channel = experiment.create_group(ch)
-        #     print(f"creating data set for {ch}")
-        #     channel.create_dataset(
-        #             "measurement",
-        #             shape=(max_acq_idx, experiment_data.shape[0]),
-        #             dtype=complex,
-        #         )
-        
-        # tmp = np.zeros(experiment_data.shape[0], dtype=complex)
-
-        # for idx in range(experiment_data.shape[0]):
-        #     tmp.real[idx] = experiment_data[idx][0][0]
-        #     tmp.imag[idx] = experiment_data[idx][0][1]
-
-        # ------------for readout values ---------------------
-
-        # Get maximum acquisition index in each acquisition channel
-        max_acq_idx = 1
-
-        if ch not in experiment.keys():
-            channel = experiment.create_group(ch)
-            print(f"creating data set for {ch}")
-            channel.create_dataset(
-                    "measurement",
-                    shape=(max_acq_idx, experiment_data.shape[0]),
-                    dtype=int,
-                )
-        
-        tmp = np.zeros(experiment_data.shape[0], dtype=int)
-
-        for idx in range(experiment_data.shape[0]):
-            tmp[idx] = experiment_data[idx][0][0]
-        
-        
-        # from pudb import set_trace; set_trace()
-
-        experiment[ch]["measurement"][...] = tmp 
-
+            experiment[ch]["measurement"][...] = tmp.reshape(-1, self.meas_return_cols)
 
     # ------------------------------------------------------------------------
+    
+
     @classmethod
     def sort_items(cls: "StorageFile", items: list, reverse: bool = False) -> iter:
-        return sorted(
-            items, key=lambda tup: int(tup[0].split(cls.delimiter)[1]), reverse=reverse
-        )
+        def get_sort_key(tup):
+            try:
+                return int(tup[0].split(cls.delimiter)[1])
+            except (IndexError, ValueError) as e:
+                print(f"Error processing tuple {tup}: {e}")
+                return float('inf')  # or some other default value
+        return sorted(items, key=get_sort_key, reverse=reverse)
 
     @staticmethod
     def sanitized_name(users_experiment_name: str, experiment_index: int):

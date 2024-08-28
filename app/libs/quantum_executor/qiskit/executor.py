@@ -12,6 +12,7 @@
 
 from functools import partial
 
+import numpy as np
 import xarray
 from qiskit.qobj import PulseQobj
 
@@ -83,6 +84,7 @@ class QiskitDynamicsPulseSimulator1Q(QuantumExecutor):
     
     def __init__(self, config_file):
         super().__init__()
+        # TODO: Use measurement level provided by the client request if discriminator is not provided
         self.backend = FakeOpenPulse1Q(
             meas_level=1, 
             meas_return="single"
@@ -93,30 +95,30 @@ class QiskitDynamicsPulseSimulator1Q(QuantumExecutor):
         job = self.backend.run(experiment)
         result = job.result()
  
-        return result.data()["memory"]
-        # if results.success:
-        #     return result.results[0]
-        # else:
-        #     # raise error 
-        #     print("Job failed")
-        #     return {}
-        # TODO: return xarray Dataset with Data for each acquisition channel corresponding to a qubit 
-        # Example of Dataset init 
-        # ds = xr.Dataset(
-        #     data_vars=dict(
-        #         temperature=(["loc", "instrument", "time"], temperature),
-        #         precipitation=(["loc", "instrument", "time"], precipitation),
-        #     ),
-        #     coords=dict(
-        #         lon=("loc", lon),
-        #         lat=("loc", lat),
-        #         instrument=instruments,
-        #         time=time,
-        #         reference_time=reference_time,
-        #     ),
-        #     attrs=dict(description="Weather related data."),
-        # )
+        data = result.data()["memory"]
 
+        
+        # TODO: depending on the measurement level, adjust dataset structure 
+        
+        # Combine real and imaginary parts into complex numbers
+        complex_data = data[:, 0, 0] + 1j * data[:, 0, 1]
+
+        # Create acquisition index coordinate that matches the length of complex_data
+        acq_index = np.arange(complex_data.shape[0])  # Should match the number of rows in complex_data
+        
+        coords = {
+                "acq_index_0": acq_index,  # Coordinate array that matches the dimension length
+            }
+
+        # Create the xarray Dataset
+        ds = xarray.Dataset(
+            data_vars={
+                "0": (["acq_index_0"], complex_data)  # Ensure the length of complex_data matches acq_index
+            },
+            coords=coords
+        )    
+        return ds
+   
 
 
     
