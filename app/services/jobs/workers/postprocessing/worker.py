@@ -131,7 +131,8 @@ def _apply_linear_discriminator(
     discriminator_ = backend["discriminators"]["lda"]
     # TODO: We are having two "qubit_id" (e.g. q12 = 0, q13 = 1) and we should have some more meaningful representation
     qubit_id_ = backend["qubit_ids"][qubit_idx]
-    print(discriminator_, qubit_idx, qubit_id_)
+    # When we run on 1000+ shots it gets too noisy
+    # print(discriminator_, qubit_idx, qubit_id_)
     coefficients = np.array(
         [discriminator_[qubit_id_]["coef_0"], discriminator_[qubit_id_]["coef_1"]]
     )

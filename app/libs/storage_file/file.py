@@ -281,8 +281,8 @@ class StorageFile:
         # TODO: this would only find files for simulated readout output 
         return sorted(
             parse.find(self.experiments, "measurement"),
-            # key=lambda path: path[0].split(self.delimiter)[0],
-            key=lambda path: int(key=lambda path: path[0].split(self.delimiter)[0],)
+            key=lambda path: path[0].split(self.delimiter)[1],
+            # key=lambda path: int(key=lambda path: path[0].split(self.delimiter)[0])
         )
 
     # ------------------------------------------------------------------------
