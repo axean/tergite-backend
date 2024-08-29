@@ -16,11 +16,13 @@ import numpy as np
 import jax
 
 from qiskit.providers.models import PulseBackendConfiguration, GateConfig, PulseDefaults
+from qiskit.quantum_info import Statevector
 from qiskit_dynamics import DynamicsBackend, Solver
 from qiskit.transpiler import Target, InstructionProperties
 from qiskit.providers import QubitProperties
 from qiskit.circuit import Delay, Reset, Parameter
 from qiskit.circuit.library import XGate, SXGate, RZGate
+from qiskit.pulse import Acquire, AcquireChannel, MemorySlot, Schedule
 import datetime
     
 
@@ -248,3 +250,18 @@ class FakeOpenPulse1Q(DynamicsBackend):
         }
         return backend_db_schema
 
+    def train_discriminator(self):
+        # Generate the iq values
+        schedule = Schedule((0,Acquire(1, AcquireChannel(0), MemorySlot(0))))
+
+        job_0 = self.run(schedule)
+        i_q_values_0 = job_0.result().data()["memory"].reshape(1024, 2)
+        job_1 = self.run(schedule, initial_state=Statevector([0, 1, 0, 0]))
+        i_q_values_1 = job_1.result().data()["memory"].reshape(1024, 2)
+        # i_q_values_1 = self.run(schedule)
+
+        # Train scikit learn discriminator
+
+
+
+        # Bring it to the right format
