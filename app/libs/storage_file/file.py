@@ -282,7 +282,6 @@ class StorageFile:
         return sorted(
             parse.find(self.experiments, "measurement"),
             key=lambda path: path[0].split(self.delimiter)[1],
-            # key=lambda path: int(key=lambda path: path[0].split(self.delimiter)[0])
         )
 
     # ------------------------------------------------------------------------
@@ -412,13 +411,7 @@ class StorageFile:
 
     @classmethod
     def sort_items(cls: "StorageFile", items: list, reverse: bool = False) -> iter:
-        def get_sort_key(tup):
-            try:
-                return int(tup[0].split(cls.delimiter)[1])
-            except (IndexError, ValueError) as e:
-                print(f"Error processing tuple {tup}: {e}")
-                return float('inf')  # or some other default value
-        return sorted(items, key=get_sort_key, reverse=reverse)
+        return sorted(items, key=lambda tup:int(tup[0].split(cls.delimiter)[1]), reverse=reverse)
 
     @staticmethod
     def sanitized_name(users_experiment_name: str, experiment_index: int):
