@@ -89,16 +89,13 @@ class QiskitDynamicsPulseSimulator1Q(QuantumExecutor):
             meas_level=1, 
             meas_return="single"
             )
+        self.shots = 1024
     
 
     def run(self, experiment: BaseExperiment, /) -> xarray.Dataset:
-        job = self.backend.run(experiment)
+        job = self.backend.run(experiment, shots=self.shots)
         result = job.result()
- 
         data = result.data()["memory"]
-
-        
-        # TODO: depending on the measurement level, adjust dataset structure 
         
         # Combine real and imaginary parts into complex numbers
         complex_data = data[:, 0, 0] + 1j * data[:, 0, 1]
@@ -113,7 +110,7 @@ class QiskitDynamicsPulseSimulator1Q(QuantumExecutor):
         # Create the xarray Dataset
         ds = xarray.Dataset(
             data_vars={
-                "0": (["acq_index_0"], complex_data)  # Ensure the length of complex_data matches acq_index
+                "0": (["acq_index_0"], complex_data)  
             },
             coords=coords
         )    
@@ -123,10 +120,8 @@ class QiskitDynamicsPulseSimulator1Q(QuantumExecutor):
 
     
     def construct_experiments(self, qobj: PulseQobj, /):
-        
-         # TODO SIM: If we wanted to get rid of this overly complicated notation of the Experiment object, we would have to check where it is used in the storage file as well
-         # TODO SIM: Some shortcuts were implemented to return readout values to client directly in Storage and here we compile qobj directly 
-
+        # because we avoid experiments structure we have to pass shots and measurement level configurations to the run function
+        self.shots = qobj.config.shots
         qobj_dict = qobj.to_dict()
         tx = transpile(qobj_dict)
 

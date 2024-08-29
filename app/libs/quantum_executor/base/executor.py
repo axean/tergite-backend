@@ -21,6 +21,7 @@ import numpy as np
 import rich
 import xarray
 from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder as PulseQobj_encoder
+from qiskit.pulse import Schedule 
 from qiskit.qobj import PulseQobj
 from quantify_core.data import handling as dh
 from quantify_core.data.handling import create_exp_folder, gen_tuid
@@ -127,21 +128,22 @@ class QuantumExecutor(abc.ABC):
 
                 experiment_data = self.run(experiment)
                 experiment_data = experiment_data.to_dict()
-            
-                # avoid experiment structure for simulation 
-                # TODO: consider overriding this method in qiskit_executor
-                # if  self.backend.backend_name == "fake_openpulse_1q":
-                if  True:
-                    storage.store_experiment_data(
-                        experiment_data=experiment_data,
-                        name=experiment.name 
+                
+                if isinstance(experiment, BaseExperiment):
+                    experiment_name = experiment.header.name
+                elif isinstance(experiment, Schedule):
+                    experiment_name = storage.sanitized_name(
+                        qobj.experiments[0].header.name, experiment_index + 1
                     )
                 else:
-                    storage.store_experiment_data(
+                    raise ValueError("Experiment object type is incorrect %s" % type(experiment))
+                
+                storage.store_experiment_data(
                         experiment_data=experiment_data,
-                        name=experiment.header.name,
+                        name=experiment_name 
                     )
-                    storage.store_graph(graph=experiment.dag, name=experiment.header.name)
+                if isinstance(experiment, BaseExperiment):
+                    storage.store_graph(graph=experiment.dag, name=experiment_name)
 
             self.logger.info(f"Stored measurement data at {storage.file.filename}")
 

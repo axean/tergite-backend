@@ -167,6 +167,7 @@ def postprocess_storage_file(
                 try:
                     memory = sf.as_readout(
                         discriminator=discriminator_fn,
+                        register_sparsity="sparse" if backend_name == "fake_openpulse_1q" else "full"
                     )
                     save_result_in_mss_and_bcc(
                         mss_client=mss_client, memory=memory, job_id=sf.job_id
