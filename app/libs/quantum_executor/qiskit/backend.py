@@ -24,8 +24,8 @@ from qiskit.circuit import Delay, Reset, Parameter
 from qiskit.circuit.library import XGate, SXGate, RZGate
 from qiskit.pulse import Acquire, AcquireChannel, MemorySlot, Schedule
 import datetime
-    
 
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 # configure jax to use 64 bit mode
 jax.config.update("jax_enable_x64", True)
@@ -52,18 +52,18 @@ class FakeOpenPulse1Q(DynamicsBackend):
     """
 
     def __init__(
-        self,
-        f: float = 4.7e9,
-        alpha: float = -0.17e9,
-        t1: float = 71e-6,
-        t2: float = 69e-6,
-        r: float = 1e9,
-        dt: float = 1e-9,
-        atol: float = 1e-6,
-        rtol: float = 1e-6,
-        dim: int = 4,
-        noise: bool = True,
-        **options,
+            self,
+            f: float = 4.7e9,
+            alpha: float = -0.17e9,
+            t1: float = 71e-6,
+            t2: float = 69e-6,
+            r: float = 1e9,
+            dt: float = 1e-9,
+            atol: float = 1e-6,
+            rtol: float = 1e-6,
+            dim: int = 4,
+            noise: bool = True,
+            **options,
     ):
         backend_name = "fake_openpulse_1q"
         self.backend_name = backend_name
@@ -245,23 +245,46 @@ class FakeOpenPulse1Q(DynamicsBackend):
                 "qubit": qubit_properties,
                 "readout_resonator": resonator_properties,
             },
-            "discriminators": "TODO",
+            "discriminators": self.train_discriminator()["discriminators"],
             "gates": "TODO",
         }
         return backend_db_schema
 
-    def train_discriminator(self):
-        # Generate the iq values
-        schedule = Schedule((0,Acquire(1, AcquireChannel(0), MemorySlot(0))))
+    def train_discriminator(self,
+                            shots: int = 1024):
+        """
+        Generates |0> and |1> states, trains a linear discriminator
+        Args:
+            shots: number of shots for generating i q data
 
-        job_0 = self.run(schedule)
-        i_q_values_0 = job_0.result().data()["memory"].reshape(1024, 2)
-        job_1 = self.run(schedule, initial_state=Statevector([0, 1, 0, 0]))
-        i_q_values_1 = job_1.result().data()["memory"].reshape(1024, 2)
-        # i_q_values_1 = self.run(schedule)
+        Returns:
+            Discriminator object as json in the format to store it in the database
+
+        """
+        # Generate the iq values
+        schedule = Schedule((0, Acquire(1, AcquireChannel(0), MemorySlot(0))))
+
+        job_0 = self.run([schedule], shots=shots)
+        i_q_values_0 = job_0.result().data()["memory"].reshape(shots, 2)
+        job_1 = self.run([schedule], shots=shots, initial_state=Statevector([0, 1, 0, 0]))
+        i_q_values_1 = job_1.result().data()["memory"].reshape(shots, 2)
 
         # Train scikit learn discriminator
+        combined_i_q_values = np.vstack((i_q_values_0, i_q_values_1))
+        labels = np.append(np.zeros(shots), np.ones(shots))
 
-
+        lda_model = LinearDiscriminantAnalysis()
+        lda_model.fit(combined_i_q_values, labels)
 
         # Bring it to the right format
+        return {
+            "discriminators": {
+                "lda": {
+                    "q0": {
+                        "intercept": float(lda_model.intercept_),
+                        "coef_0": float(lda_model.coef_[0][0]),
+                        "coef_1": float(lda_model.coef_[0][1]),
+                    }
+                }
+            }
+        }
