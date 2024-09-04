@@ -231,7 +231,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
             },
             "version": self.configuration().backend_version,
             "meas_map": self.configuration().meas_map,
-            "coupling_map": self.configuration().coupling_map,
+            "coupling_map": [[0, 0]],
             "description": self.configuration().description,
             "simulator": self.configuration().simulator,
             "num_qubits": self.configuration().num_qubits,
@@ -246,7 +246,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
                 "readout_resonator": resonator_properties,
             },
             "discriminators": self.train_discriminator()["discriminators"],
-            "gates": "TODO",
+            "gates": {},
         }
         return backend_db_schema
 

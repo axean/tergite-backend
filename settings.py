@@ -25,6 +25,9 @@ from starlette.datastructures import URL
 env_file = os.environ.get("ENV_FILE", default=".env")
 config = Config(Path(__file__).parent / env_file)
 
+# Automatic root directory settings
+APP_ROOT_DIR = Path(__file__).parent / "app"
+
 # Misc settings
 APP_SETTINGS = config("APP_SETTINGS", cast=str, default="production")
 IS_AUTH_ENABLED = config("IS_AUTH_ENABLED", cast=bool, default=True)
