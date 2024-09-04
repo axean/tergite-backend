@@ -21,6 +21,7 @@
 import json
 from os import path
 from pathlib import Path
+from typing import Mapping, Any
 
 import requests
 import toml
@@ -104,10 +105,22 @@ def create_backend_snapshot() -> dict:
     }
 
 
-def update_mss(collection: str = None):
-    """Pushes the snapshot of this backend to the given collection in MSS"""
-    current_backend_snapshot = create_backend_snapshot()
-    backend_snapshot_json = json.dumps(current_backend_snapshot, indent=4)
+def post_mss_backend(backend_json: Mapping[str, Any] = None,
+                     collection: str = None):
+    """
+    Push a backend definition to the MSS endpoint
+
+    Args:
+        backend_json: Backend definition as JSON object
+                      Will be automatically generated if not provided
+        collection: Please specify if backend should not be pushed to the standard collection in the DB
+
+    Returns:
+
+    """
+    if backend_json is None:
+        backend_json = create_backend_snapshot()
+    backend_snapshot_json = json.dumps(backend_json, indent=4)
     if collection:
         response = requests.put(
             mss_url + f"/backends?collection={collection}", backend_snapshot_json
@@ -117,9 +130,9 @@ def update_mss(collection: str = None):
 
     if response:
         print(
-            f"'{current_backend_snapshot['name']}' backend configuration is sent to mss"
+            f"'{backend_json['name']}' backend configuration is sent to mss"
         )
     else:
         print(
-            f"Could not send '{current_backend_snapshot['name']} 'backend configuration to mss"
+            f"Could not send '{backend_json['name']} 'backend configuration to mss"
         )
