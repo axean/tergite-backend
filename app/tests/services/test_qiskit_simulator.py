@@ -6,7 +6,10 @@ from qiskit.qobj import PulseQobj
 
 from app.libs.quantum_executor.utils.serialization import iqx_rld
 
-from ...libs.quantum_executor.qiskit.executor import QiskitDynamicsExecutor, QiskitDynamicsPulseSimulator1Q
+from ...libs.quantum_executor.qiskit.executor import (
+    QiskitDynamicsExecutor,
+    QiskitDynamicsPulseSimulator1Q,
+)
 
 
 from ..utils.fixtures import get_fixture_path, load_fixture
@@ -17,9 +20,6 @@ connector = QiskitDynamicsPulseSimulator1Q(
 
 
 def test_job_transpile():
-
-
-
     job_dict = load_fixture("h_gate_amplitude_corrected.json")
 
     job_id = job_dict["job_id"]
@@ -43,4 +43,3 @@ def test_job_transpile():
     connector.run_experiments(
         PulseQobj.from_dict(qobj), enable_traceback=True, job_id=job_id
     )
-    

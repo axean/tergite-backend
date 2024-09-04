@@ -111,7 +111,7 @@ class StorageFile:
             self.header = self.file["header"]
             self.experiments = self.file["experiments"]
 
-    # TODO: leave register_sparsity as full and set it to sparse for cases where there are multiple values per shot 
+    # TODO: leave register_sparsity as full and set it to sparse for cases where there are multiple values per shot
     def as_readout(
         self: "StorageFile",
         discriminator: callable,
@@ -216,7 +216,7 @@ class StorageFile:
             readout.append(
                 _map_to_hex(
                     memory, slot_idxs=slot_idxs, register_parse_fn=register_parse_fn
-                ) 
+                )
             )
 
         return readout
@@ -263,7 +263,6 @@ class StorageFile:
                 f"Invalid storage file metadata: {self.meas_return} and {self.meas_level} is not implemented."
             )
 
-
     # ------------------------------------------------------------------------
     def get_experiment(self: "StorageFile", name: str):
         """Returns an experiment group in the file, if it exists.
@@ -278,7 +277,7 @@ class StorageFile:
 
     @functools.cached_property
     def sorted_measurements(self: "StorageFile") -> list:
-        # TODO: this would only find files for simulated readout output 
+        # TODO: this would only find files for simulated readout output
         return sorted(
             parse.find(self.experiments, "measurement"),
             key=lambda path: path[0].split(self.delimiter)[1],
@@ -407,11 +406,12 @@ class StorageFile:
             experiment[ch]["measurement"][...] = tmp.reshape(-1, self.meas_return_cols)
 
     # ------------------------------------------------------------------------
-    
 
     @classmethod
     def sort_items(cls: "StorageFile", items: list, reverse: bool = False) -> iter:
-        return sorted(items, key=lambda tup:int(tup[0].split(cls.delimiter)[1]), reverse=reverse)
+        return sorted(
+            items, key=lambda tup: int(tup[0].split(cls.delimiter)[1]), reverse=reverse
+        )
 
     @staticmethod
     def sanitized_name(users_experiment_name: str, experiment_index: int):

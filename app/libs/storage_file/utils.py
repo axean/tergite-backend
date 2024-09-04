@@ -86,6 +86,7 @@ def load_data(data) -> dict:
 
 # -------------------------- PARSING FUNCTIONS -------------------------- #
 
+
 def appended_integrated(data) -> xr.Dataset:
     """Measurement type: m10
     These types of measurements contain a row of complex datapoints

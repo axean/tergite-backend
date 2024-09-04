@@ -24,7 +24,10 @@ from qiskit_ibm_provider.utils import json_decoder
 from redis import Redis
 
 import settings
-from app.libs.quantum_executor.qiskit.executor import QiskitDynamicsExecutor, QiskitDynamicsPulseSimulator1Q
+from app.libs.quantum_executor.qiskit.executor import (
+    QiskitDynamicsExecutor,
+    QiskitDynamicsPulseSimulator1Q,
+)
 from app.libs.quantum_executor.quantify.executor import QuantifyExecutor
 from app.libs.quantum_executor.qutip.executor import QuTipExecutor
 from app.libs.quantum_executor.utils.connections import get_executor_lock

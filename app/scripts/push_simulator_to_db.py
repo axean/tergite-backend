@@ -1,4 +1,5 @@
 from app.libs.quantum_executor.qiskit.backend import FakeOpenPulse1Q
+
 # This code is part of Tergite
 #
 # (C) Pontus Vikstål, Adilet Tuleouv, Stefan Hill (2024)
@@ -15,10 +16,7 @@ from app.services.properties.service import post_mss_backend
 from app.utils.validation import validate_schema
 
 if __name__ == "__main__":
-    backend = FakeOpenPulse1Q(
-        meas_level=1,
-        meas_return="single"
-    )
+    backend = FakeOpenPulse1Q(meas_level=1, meas_return="single")
     backend.train_discriminator()
     backend_json = backend.to_db()
 

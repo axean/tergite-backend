@@ -105,8 +105,7 @@ def create_backend_snapshot() -> dict:
     }
 
 
-def post_mss_backend(backend_json: Mapping[str, Any] = None,
-                     collection: str = None):
+def post_mss_backend(backend_json: Mapping[str, Any] = None, collection: str = None):
     """
     Push a backend definition to the MSS endpoint
 
@@ -129,10 +128,6 @@ def post_mss_backend(backend_json: Mapping[str, Any] = None,
         response = requests.put(mss_url + "/backends", backend_snapshot_json)
 
     if response:
-        print(
-            f"'{backend_json['name']}' backend configuration is sent to mss"
-        )
+        print(f"'{backend_json['name']}' backend configuration is sent to mss")
     else:
-        print(
-            f"Could not send '{backend_json['name']} 'backend configuration to mss"
-        )
+        print(f"Could not send '{backend_json['name']} 'backend configuration to mss")

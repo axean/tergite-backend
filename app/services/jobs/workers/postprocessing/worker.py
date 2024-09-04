@@ -166,8 +166,7 @@ def postprocess_storage_file(
 
                 try:
                     memory = sf.as_readout(
-                        discriminator=discriminator_fn,
-                        register_sparsity="sparse"
+                        discriminator=discriminator_fn, register_sparsity="sparse"
                     )
                     save_result_in_mss_and_bcc(
                         mss_client=mss_client, memory=memory, job_id=sf.job_id
@@ -177,14 +176,14 @@ def postprocess_storage_file(
 
             elif sf.meas_level == MeasLvl.INTEGRATED:
                 memory = sf.as_xarray()
-                
+
                 save_result_in_mss_and_bcc(
                     mss_client=mss_client, memory=memory, job_id=sf.job_id
                 )
 
             elif sf.meas_level == MeasLvl.RAW:
                 # TODO: Not implemented, expects to pass full trace
-                # with hardcoded 16K values length array  
+                # with hardcoded 16K values length array
                 save_result_in_mss_and_bcc(
                     mss_client=mss_client, memory=[], job_id=sf.job_id
                 )

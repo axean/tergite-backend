@@ -21,7 +21,7 @@ import numpy as np
 import rich
 import xarray
 from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder as PulseQobj_encoder
-from qiskit.pulse import Schedule 
+from qiskit.pulse import Schedule
 from qiskit.qobj import PulseQobj
 from quantify_core.data import handling as dh
 from quantify_core.data.handling import create_exp_folder, gen_tuid
@@ -128,7 +128,7 @@ class QuantumExecutor(abc.ABC):
 
                 experiment_data = self.run(experiment)
                 experiment_data = experiment_data.to_dict()
-                
+
                 if isinstance(experiment, BaseExperiment):
                     experiment_name = experiment.header.name
                 elif isinstance(experiment, Schedule):
@@ -136,12 +136,13 @@ class QuantumExecutor(abc.ABC):
                         qobj.experiments[0].header.name, experiment_index + 1
                     )
                 else:
-                    raise ValueError("Experiment object type is incorrect %s" % type(experiment))
-                
-                storage.store_experiment_data(
-                        experiment_data=experiment_data,
-                        name=experiment_name 
+                    raise ValueError(
+                        "Experiment object type is incorrect %s" % type(experiment)
                     )
+
+                storage.store_experiment_data(
+                    experiment_data=experiment_data, name=experiment_name
+                )
                 if isinstance(experiment, BaseExperiment):
                     storage.store_graph(graph=experiment.dag, name=experiment_name)
 

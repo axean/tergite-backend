@@ -36,6 +36,7 @@ class QiskitDynamicsExecutor(QuantumExecutor):
         job = self.backend.run(experiment.schedule)
         result = job.result()
         return result.data()["memory"]
+
     def construct_experiments(self, qobj: PulseQobj, /):
         # storage array
         tx = list()
@@ -80,45 +81,37 @@ class QiskitDynamicsExecutor(QuantumExecutor):
     def close(self):
         pass
 
+
 class QiskitDynamicsPulseSimulator1Q(QuantumExecutor):
-    
     def __init__(self, config_file):
         super().__init__()
         # TODO: Use measurement level provided by the client request if discriminator is not provided
-        self.backend = FakeOpenPulse1Q(
-            meas_level=1, 
-            meas_return="single"
-            )
+        self.backend = FakeOpenPulse1Q(meas_level=1, meas_return="single")
         self.shots = 1024
-    
 
     def run(self, experiment: BaseExperiment, /) -> xarray.Dataset:
         job = self.backend.run(experiment, shots=self.shots)
         result = job.result()
         data = result.data()["memory"]
-        
+
         # Combine real and imaginary parts into complex numbers
         complex_data = data[:, 0, 0] + 1j * data[:, 0, 1]
 
         # Create acquisition index coordinate that matches the length of complex_data
-        acq_index = np.arange(complex_data.shape[0])  # Should match the number of rows in complex_data
-        
+        acq_index = np.arange(
+            complex_data.shape[0]
+        )  # Should match the number of rows in complex_data
+
         coords = {
-                "acq_index_0": acq_index,  # Coordinate array that matches the dimension length
-            }
+            "acq_index_0": acq_index,  # Coordinate array that matches the dimension length
+        }
 
         # Create the xarray Dataset
         ds = xarray.Dataset(
-            data_vars={
-                "0": (["acq_index_0"], complex_data)  
-            },
-            coords=coords
-        )    
+            data_vars={"0": (["acq_index_0"], complex_data)}, coords=coords
+        )
         return ds
-   
 
-
-    
     def construct_experiments(self, qobj: PulseQobj, /):
         # because we avoid experiments structure we have to pass shots and measurement level configurations to the run function
         self.shots = qobj.config.shots
@@ -127,8 +120,6 @@ class QiskitDynamicsPulseSimulator1Q(QuantumExecutor):
 
         self.logger.info(f"Translated {len(tx)} OpenPulse experiments.")
         return tx
-    
+
     def close(self):
-        pass 
-
-
+        pass

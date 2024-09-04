@@ -51,18 +51,18 @@ class FakeOpenPulse1Q(DynamicsBackend):
     """
 
     def __init__(
-            self,
-            f: float = 4.7e9,
-            alpha: float = -0.17e9,
-            t1: float = 71e-6,
-            t2: float = 69e-6,
-            r: float = 1e9,
-            dt: float = 1e-9,
-            atol: float = 1e-6,
-            rtol: float = 1e-6,
-            dim: int = 4,
-            noise: bool = True,
-            **options,
+        self,
+        f: float = 4.7e9,
+        alpha: float = -0.17e9,
+        t1: float = 71e-6,
+        t2: float = 69e-6,
+        r: float = 1e9,
+        dt: float = 1e-9,
+        atol: float = 1e-6,
+        rtol: float = 1e-6,
+        dim: int = 4,
+        noise: bool = True,
+        **options,
     ):
         backend_name = "fake_openpulse_1q"
         self.backend_name = backend_name
@@ -249,8 +249,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
         }
         return backend_db_schema
 
-    def train_discriminator(self,
-                            shots: int = 1024):
+    def train_discriminator(self, shots: int = 1024):
         """
         Generates |0> and |1> states, trains a linear discriminator
         Args:
@@ -265,7 +264,9 @@ class FakeOpenPulse1Q(DynamicsBackend):
 
         job_0 = self.run([schedule], shots=shots)
         i_q_values_0 = job_0.result().data()["memory"].reshape(shots, 2)
-        job_1 = self.run([schedule], shots=shots, initial_state=Statevector([0, 1, 0, 0]))
+        job_1 = self.run(
+            [schedule], shots=shots, initial_state=Statevector([0, 1, 0, 0])
+        )
         i_q_values_1 = job_1.result().data()["memory"].reshape(shots, 2)
 
         # Train scikit learn discriminator

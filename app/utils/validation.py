@@ -35,8 +35,7 @@ def _load_json_schema_definition(schema_definition_name: str) -> Mapping[str, An
     return schema_definition
 
 
-def validate_schema(json_obj: Mapping[str, Any],
-                    schema_definition_name: str) -> bool:
+def validate_schema(json_obj: Mapping[str, Any], schema_definition_name: str) -> bool:
     """
     Validates a JSON object against a predefined schema definition
 

@@ -67,9 +67,7 @@ def transpile(qobj: dict) -> List[Schedule]:
 
             elif instruction["name"] == "delay":
                 if not "parameters" in instruction:
-                    operation = Delay(
-                        instruction["duration"], DriveChannel(channel)
-                    )
+                    operation = Delay(instruction["duration"], DriveChannel(channel))
                 else:
                     operation = Delay(
                         instruction.parameters["duration"], DriveChannel(channel)
@@ -90,8 +88,8 @@ def transpile(qobj: dict) -> List[Schedule]:
                 and instruction["pulse_shape"] == "gaussian"
             ):
                 # amp values is no longer complex
-                # TODO: find ref to the docs update 
-                # TODO: check with older client version 
+                # TODO: find ref to the docs update
+                # TODO: check with older client version
                 gauss = Gaussian(
                     int(instruction["parameters"]["duration"]),
                     instruction["parameters"]["amp"],
