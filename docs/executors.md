@@ -4,8 +4,7 @@ The executor is the core component to run the quantum circuit on a backend.
 It manages the access to the instruments or sets up the simulator in case the backend is a simulator.
 Right now, we have implemented the following backends:
 - "hardware": This is interfacing to qblox hardware via quantify and the recommended option, because the WACQT quantum processor is running on that platform. It can be run in the dummy mode, check out the [configuration manual](./configuration.md) on how to do it.
-- "qutip": Interfaces to a [simulator from the AQP group on Chalmers](https://github.com/aqp-mc2-chalmers/chalmers-qubit), which is based on qutip. This is currently in experimental phase.
-- "scqt": Interfaces to the OrangeQS simulator. This is not the preferred option, because it is proprietary and you would need a license.
+- "qiskit_pulse_1q": Single qubit simulator using qiskit-dynamics
 
 If you want to implement a new executor, follow these steps below.
 

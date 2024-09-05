@@ -10,7 +10,7 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 ### Added
 - The `QuantumExecutor` as abstract class to implement a backend
 - `EXECUTOR_TYPE` keyword in the .env variables to select the backend
-- QuTip simulator backend
+- Qiskit dynamics simulator backend with one qubit ("qiskit_pulse_1q")
 
 ### Changed
 - BREAKING CHANGE: `EXECUTOR_DATA_DIRNAME` definition in the .env variables instead of `general.data_dir` in `executor-config.yml`

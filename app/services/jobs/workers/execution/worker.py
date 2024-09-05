@@ -29,7 +29,6 @@ from app.libs.quantum_executor.qiskit.executor import (
     QiskitDynamicsPulseSimulator1Q,
 )
 from app.libs.quantum_executor.quantify.executor import QuantifyExecutor
-from app.libs.quantum_executor.qutip.executor import QuTipExecutor
 from app.libs.quantum_executor.utils.connections import get_executor_lock
 from app.libs.quantum_executor.utils.serialization import iqx_rld
 from app.utils.queues import QueuePool
@@ -60,8 +59,7 @@ rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 EXECUTOR_MAP = {
     "hardware": QuantifyExecutor,
     "qiskit": QiskitDynamicsExecutor,
-    "PulseSimulator1Q": QiskitDynamicsPulseSimulator1Q,
-    "qutip": QuTipExecutor,
+    "qiskit_pulse_1q": QiskitDynamicsPulseSimulator1Q,
 }
 executor = EXECUTOR_MAP[settings.EXECUTOR_TYPE](
     config_file=settings.EXECUTOR_CONFIG_FILE
