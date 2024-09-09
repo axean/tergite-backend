@@ -96,7 +96,6 @@ class QiskitDynamicsPulseSimulator1Q(QuantumExecutor):
 
         # Combine real and imaginary parts into complex numbers
         complex_data = data[:, 0, 0] + 1j * data[:, 0, 1]
-
         # Create acquisition index coordinate that matches the length of complex_data
         acq_index = np.arange(
             complex_data.shape[0]

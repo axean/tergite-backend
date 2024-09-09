@@ -102,6 +102,7 @@ class QuantumExecutor(abc.ABC):
             # create a storage hdf file
             filename = "measurement.hdf5" if job_id is None else f"{job_id}.hdf5"
             results_file_path = self.experiment_folder / filename
+            print(program_settings)
             storage = StorageFile(
                 results_file_path,
                 mode="w",
@@ -112,6 +113,8 @@ class QuantumExecutor(abc.ABC):
                 meas_level=program_settings["meas_level"],
                 memory_slot_size=qobj.config.memory_slot_size,
             )
+
+            print(qobj.header.to_dict())
 
             # store numpy header metadata
             storage.store_qobj_header(qobj_header=qobj.header.to_dict())
@@ -139,6 +142,7 @@ class QuantumExecutor(abc.ABC):
                     raise ValueError(
                         "Experiment object type is incorrect %s" % type(experiment)
                     )
+                print(experiment_name)
 
                 storage.store_experiment_data(
                     experiment_data=experiment_data, name=experiment_name

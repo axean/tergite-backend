@@ -102,9 +102,7 @@ def logfile_postprocess(logfile: Path) -> JobID:
 
     # The return value will be passed to postprocessing_success_callback
     print("Identified TQC storage file, reading file using storage file")
-    print("Storage file before")
     sf = StorageFile(new_file, mode="r")
-    print("Storage file after %s" % sf)
     return postprocess_storage_file(sf)
 
 
@@ -166,7 +164,7 @@ def postprocess_storage_file(
 
                 try:
                     memory = sf.as_readout(
-                        discriminator=discriminator_fn, register_sparsity="sparse"
+                        discriminator=discriminator_fn
                     )
                     save_result_in_mss_and_bcc(
                         mss_client=mss_client, memory=memory, job_id=sf.job_id

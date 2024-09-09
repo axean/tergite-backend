@@ -118,7 +118,7 @@ class StorageFile:
         *,
         disc_two_state: bool = False,
         register_order: str = "little",
-        register_sparsity: str = "sparse",
+        register_sparsity: str = "full",
     ) -> list:
         """
         Interpret measurement data from experiments as bitstrings.
@@ -197,13 +197,10 @@ class StorageFile:
                 #     slot_data["measurement"].shape[0] == 1
                 # ), "Max one acquisition per channel for word readout."
                 kets = np.zeros(slot_data["measurement"].shape[0]).astype(int)
-                for i in range(slot_data["measurement"].shape[0]):
-                    slot_idx = int(slot_tag.split(self.delimiter)[1])
-                    slot_idxs.append(slot_idx)
-                    row = slot_data["measurement"][i, :]
-
-                    ket01 = discriminator(qubit_idx=slot_idx, iq_points=row)
-                    kets[i] = ket01
+                slot_idx = int(slot_tag.split(self.delimiter)[1])
+                slot_idxs.append(slot_idx)
+                row = slot_data["measurement"][0, :]
+                kets = discriminator(qubit_idx=slot_idx, iq_points=row)
                 memory.append(kets)
             # binary matrix where rows are classical register values
             # and columns are register value per shot
@@ -403,7 +400,7 @@ class StorageFile:
                 tmp.real[idx] = np.real(data["data"][idx])
                 tmp.imag[idx] = np.imag(data["data"][idx])
 
-            experiment[ch]["measurement"][...] = tmp.reshape(-1, self.meas_return_cols)
+            experiment[ch]["measurement"][...] = tmp
 
     # ------------------------------------------------------------------------
 
