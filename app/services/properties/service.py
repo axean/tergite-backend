@@ -19,6 +19,7 @@
 # Any change on this file should be done in both repositories until they are eventually merged!
 
 import json
+import logging
 from os import path
 from pathlib import Path
 from typing import Mapping, Any
@@ -131,3 +132,33 @@ def post_mss_backend(backend_json: Mapping[str, Any] = None, collection: str = N
         print(f"'{backend_json['name']}' backend configuration is sent to mss")
     else:
         print(f"Could not send '{backend_json['name']} 'backend configuration to mss")
+
+
+def post_mss_device_calibrations(
+    device_json: Mapping[str, Any], calibration_json: Mapping[str, Any]
+):
+    """
+    Push a device v2 definition to the MSS endpoint
+
+    Args:
+        device_json: Device definition as JSON object
+        calibration_json: Calibrations as JSON object
+
+    Returns:
+
+    """
+    response_devices = requests.put(f"{mss_url}/v2/devices", json=device_json)
+
+    if response_devices.status_code == 200:
+        print(f"'{device_json['name']}' device configuration is sent to mss")
+    else:
+        print(f"Could not send '{device_json['name']} 'device configuration to mss")
+
+    response_calibrations = requests.post(
+        f"{mss_url}/v2/calibrations", json=[calibration_json]
+    )
+
+    if response_calibrations.status_code == 200:
+        print(f"'{calibration_json['name']}' calibrations are sent to mss")
+    else:
+        print(f"Could not send '{calibration_json['name']} 'calibrations to mss")

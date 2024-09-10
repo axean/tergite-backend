@@ -57,7 +57,9 @@ EXECUTOR_DATA_DIRNAME = config(
     "EXECUTOR_DATA_DIRNAME", cast=str, default="executor_data"
 )
 
-_executor_data_dir_path = os.path.join(STORAGE_ROOT, DEFAULT_PREFIX, EXECUTOR_DATA_DIRNAME)
+_executor_data_dir_path = os.path.join(
+    STORAGE_ROOT, DEFAULT_PREFIX, EXECUTOR_DATA_DIRNAME
+)
 if not os.path.exists(_executor_data_dir_path):
     os.makedirs(_executor_data_dir_path)
 EXECUTOR_DATA_DIR = _executor_data_dir_path

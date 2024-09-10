@@ -189,7 +189,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
         """Contains information for circuit transpilation."""
         return self._target
 
-    def to_db(self):
+    def backend_to_db(self):
         num_qubits = self.configuration().num_qubits
 
         qubit_properties = []
@@ -248,6 +248,66 @@ class FakeOpenPulse1Q(DynamicsBackend):
             "gates": {},
         }
         return backend_db_schema
+
+    def device_to_db(self):
+        return {
+            "name": self.configuration().backend_name,
+            "version": "24.9.0",
+            "number_of_qubits": 1,
+            "is_online": True,
+            "last_online": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f"),
+            "basis_gates": ["u", "h", "x"],
+            "is_simulator": True,
+            "coupling_map": [[0, 0], [1, 1]],
+            "coordinates": [[1, 1], [1, 2]],
+        }
+
+    def calibrations_to_db(self):
+        time_now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
+        return {
+            "name": self.backend_name,
+            "version": "24.9.0",
+            "last_calibrated": time_now,
+            "qubits": [
+                {
+                    "t1_decoherence": {
+                        "date": datetime.datetime.now().strftime(
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ),
+                        "unit": "us",
+                        "value": 0.0,
+                    },
+                    "t2_decoherence": {
+                        "date": datetime.datetime.now().strftime(
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ),
+                        "unit": "us",
+                        "value": 0.0,
+                    },
+                    "frequency": {
+                        "date": datetime.datetime.now().strftime(
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ),
+                        "unit": "GHz",
+                        "value": self.qubit_properties(0).frequency,
+                    },
+                    "anharmonicity": {
+                        "date": datetime.datetime.now().strftime(
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ),
+                        "unit": "GHz",
+                        "value": -0.3132760394092362,
+                    },
+                    "readout_assignment_error": {
+                        "date": datetime.datetime.now().strftime(
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ),
+                        "unit": "",
+                        "value": 0.006299999999999972,
+                    },
+                }
+            ],
+        }
 
     def train_discriminator(self, shots: int = 1024):
         """
