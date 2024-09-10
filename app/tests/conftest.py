@@ -221,7 +221,7 @@ def async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient:
 
 # @pytest.fixture
 # def sync_fastapi_client_with_qiskit_simulator(mocker) -> TestClient:
-#     """A test client for fast api when rq is running synchronously when qutip is executor"""
+#     """A test client for fast api when rq is running synchronously when qiskit-dynamics is executor"""
 #     remove_modules(["app", "settings"])
 #     _patch_sync_client(mocker)
 #     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
