@@ -163,9 +163,7 @@ def postprocess_storage_file(
                     print(f"Response error {response}")
 
                 try:
-                    memory = sf.as_readout(
-                        discriminator=discriminator_fn
-                    )
+                    memory = sf.as_readout(discriminator=discriminator_fn)
                     save_result_in_mss_and_bcc(
                         mss_client=mss_client, memory=memory, job_id=sf.job_id
                     )
