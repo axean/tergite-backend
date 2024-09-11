@@ -32,7 +32,7 @@ from sklearn.utils.extmath import safe_sparse_dot
 import settings
 from app.libs.storage_file import MeasLvl, StorageFile
 from app.services.jobs.workers.postprocessing.exc import PostProcessingError
-from app.utils import date_time
+from app.libs.properties.utils import date_time
 from app.utils.http import get_mss_client
 
 from ...service import (

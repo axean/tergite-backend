@@ -5,6 +5,8 @@ from .utils.env import (
     TEST_STORAGE_PREFIX_DIRNAME,
     TEST_STORAGE_ROOT,
     setup_test_env,
+    TEST_SIMQ1_BACKEND_SETTINGS_FILE,
+    TEST_BACKEND_SETTINGS_FILE,
 )
 
 # set up the environment before any other import
@@ -187,6 +189,7 @@ def async_fastapi_client(mocker) -> TestClient:
     remove_modules(["app", "settings"])
     _patch_async_client(mocker)
     os.environ["EXECUTOR_TYPE"] = "hardware"
+    os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
 
     from app.api import app
 
@@ -200,6 +203,7 @@ def async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient:
     remove_modules(["app", "settings"])
     _patch_async_client(mocker)
     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
+    os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
 
     from app.api import app
 
@@ -213,6 +217,7 @@ def async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient:
 #     remove_modules(["app", "settings"])
 #     _patch_sync_client(mocker)
 #     os.environ["EXECUTOR_TYPE"] = "hardware"
+#     os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
 #
 #     from app.api import app
 #
@@ -225,6 +230,7 @@ def async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient:
 #     remove_modules(["app", "settings"])
 #     _patch_sync_client(mocker)
 #     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
+#     os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
 #
 #     from app.api import app
 #
@@ -239,6 +245,7 @@ def blacklisted_async_fastapi_client(mocker) -> TestClient:
     _patch_async_client(mocker)
     os.environ["BLACKLISTED"] = "True"
     os.environ["EXECUTOR_TYPE"] = "hardware"
+    os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
 
     from app.api import app
 
@@ -253,6 +260,7 @@ def blacklisted_async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient
     _patch_async_client(mocker)
     os.environ["BLACKLISTED"] = "True"
     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
+    os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
 
     from app.api import app
 
@@ -267,6 +275,7 @@ def blacklisted_async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient
 #     _patch_sync_client(mocker)
 #     os.environ["BLACKLISTED"] = "True"
 #     os.environ["EXECUTOR_TYPE"] = "hardware"
+#     os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
 #
 #     from app.api import app
 #
@@ -281,6 +290,7 @@ def blacklisted_async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient
 #     _patch_sync_client(mocker)
 #     os.environ["BLACKLISTED"] = "True"
 #     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
+#     os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
 #
 #     from app.api import app
 #

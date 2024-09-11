@@ -21,6 +21,8 @@ TEST_BCC_PORT = 8000
 TEST_MSS_APP_TOKEN = "some-mss-app-token-for-testing"
 
 TEST_EXECUTOR_CONFIG_FILE = get_fixture_path("dummy-executor-config.yml")
+TEST_BACKEND_SETTINGS_FILE = get_fixture_path("backend_config.toml")
+TEST_SIMQ1_BACKEND_SETTINGS_FILE = get_fixture_path("backend_config.simq1.toml")
 
 
 def setup_test_env():
@@ -31,6 +33,7 @@ def setup_test_env():
     environ["APP_SETTINGS"] = "test"
     environ["DEFAULT_PREFIX"] = TEST_DEFAULT_PREFIX
     environ["STORAGE_ROOT"] = TEST_STORAGE_ROOT
+    environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
 
     environ["LOGFILE_DOWNLOAD_POOL_DIRNAME"] = TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME
     environ["LOGFILE_UPLOAD_POOL_DIRNAME"] = TEST_LOGFILE_UPLOAD_POOL_DIRNAME

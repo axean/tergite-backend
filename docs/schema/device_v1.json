@@ -1,45 +1,39 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/tergite/tergite-backend/tree/main/app/resources/schemas/device_v2.json",
-    "title": "DeviceV2FullDeviceConfig",
-    "description": "Superset of configurations for older qiskit version and new qiskit schema for devices.",
+    "$id": "https://github.com/tergite/tergite-backend/tree/main/docs/device_v1.json",
+    "title": "device_v1",
+    "description": "Configurations for older qiskit version for tergite devices.",
     "type": "object",
     "properties": {
-      "id": {
-        "description": "The unique identifier of the record in the database",
-        "type": "string"
-      },
       "name": {
         "description": "The unique name of the quantum computer",
         "type": "string"
+      },
+      "characterized": {
+        "description": "Whether qubits are characterized on the backend i.e. do we have device properties defined for qubits.",
+        "type": "boolean"
+      },
+      "open_pulse": {
+        "description": "Does backend support OpenPulse instructions.",
+        "type": "boolean"
+      },
+      "timelog": {
+        "description": "Dictionary of ISO 8601 timestamps with creation and update timestamps",
+        "type": "object",
+        "additionalProperties" : true
       },
       "version": {
         "description": "The revision of this quantum computer",
         "type": "string"
       },
-      "number_of_qubits": {
-        "description": "The number of qubits in the quantum computer",
-        "type": "integer"
-      },
-      "last_online": {
-        "description": "The last time this device was seen online",
-        "anyOf": [
-          {
-            "type": "string",
-            "format": "date-time"
-          },
-          { "type": "null" }
-        ]
-      },
-      "is_online": {
-        "description": "Whether the quantum computer is online or not",
-        "type": "boolean"
-      },
-      "basis_gates": {
-        "description": "The unique name of the quantum computer",
+      "meas_map": {
+        "description": "Grouping of measurement which are multiplexed",
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
         }
       },
       "coupling_map": {
@@ -55,65 +49,9 @@
           "maxItems": 2
         }
       },
-      "coordinates": {
-        "description": "The x,y coordinates of the qubits on the chip",
-        "type": "array",
-        "items": {
-          "type": "array",
-          "items": {
-            "type": "integer",
-            "minimum": 0
-          },
-          "minItems": 2,
-          "maxItems": 2
-        }
-      },
-      "is_simulator": {
-        "description": "Whether this is a simulator",
-        "type": "boolean"
-      },
-      "created_at": {
-        "description": "The ISO 8601 timestamp when this record was created in the database",
-        "anyOf": [
-          {
-            "type": "string",
-            "format": "date-time"
-          },
-          { "type": "null" }
-        ]
-      },
-      "updated_at": {
-        "description": "The ISO 8601 timestamp when this record was last updated in the database",
-        "anyOf": [
-          {
-            "type": "string",
-            "format": "date-time"
-          },
-          { "type": "null" }
-        ]
-      },
-      "characterized": {
-        "description": "Whether qubits are characterized on the backend i.e. do we have device properties defined for qubits.",
-        "type": "boolean"
-      },
-      "open_pulse": {
-        "description": "Does backend support OpenPulse instructions.",
-        "type": "boolean"
-      },
-      "timelog": {
-        "description": "Dictionary of ISO 8601 timestamps with creation and update timestamps",
-        "type": ["object", "null"],
-        "additionalProperties" : true
-      },
-      "meas_map": {
-        "description": "Grouping of measurement which are multiplexed",
-        "type": "array",
-        "items": {
-          "type": "array",
-          "items": {
-            "type": "integer"
-          }
-        }
+      "description": {
+        "description": "Description of the backend",
+        "type": ["string", "null"]
       },
       "simulator": {
         "description": "Whether this is a simulator",
@@ -183,11 +121,11 @@
                   "id": {"type": "number"},
                   "acq_delay": {"type": "number"},
                   "acq_integration_time": {"type": "number"},
-                  "freqency": {"type": "number"},
+                  "frequency": {"type": "number"},
                   "pulse_amplitude": {"type": "number"},
                   "pulse_delay": {"type": "number"},
                   "pulse_duration": {"type": "number"},
-                  "pulse_type": {"type": "number"}
+                  "pulse_type": {"type": "string"}
                 },
                 "additionalProperties": false
               }
@@ -243,24 +181,14 @@
       "is_active": {
         "description": "Whether backend is active now",
         "type": ["boolean", "null"]
-      },
-      "description": {
-        "description": "Description of the backend",
-        "type": ["string", "null"]
       }
     },
     "required": [
-      "id",
       "name",
-      "version",
-      "number_of_qubits",
-      "is_online",
-      "basis_gates",
-      "is_simulator",
-      "coupling_map",
-      "coordinates",
       "characterized",
       "open_pulse",
-      "meas_map"
+      "version",
+      "meas_map",
+      "coupling_map"
     ]
   }

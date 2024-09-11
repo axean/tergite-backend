@@ -70,17 +70,10 @@ MEASUREMENT_DEFAULT_FILES = config(
 )
 
 # Definition of backend property names
-# See also configs/device_*.toml
-BACKEND_PROPERTIES_TEMPLATE = config(
-    "BACKEND_PROPERTIES_TEMPLATE",
-    cast=str,
-    default="configs/property_templates_default.toml",
-)
-
 BACKEND_SETTINGS = config(
     "BACKEND_SETTINGS",
     cast=str,
-    default="configs/backend_config_default.toml",
+    default=Path(__file__).parent / "backend_config.toml",
 )
 
 # Connectivity settings

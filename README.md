@@ -66,7 +66,7 @@ cp app/tests/fixtures/dummy-executor-config.yml executor-config.yml
 - Run start script
 
 ```shell
-./start_bcc.sh --device configs/device_default.toml
+./start_bcc.sh
 ```
 
 - Open your browser at [http://localhost:8000/docs](http://localhost:8000/docs) to see the interactive API docs

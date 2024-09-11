@@ -26,6 +26,8 @@ import datetime
 
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
+from app.libs.properties import BackendConfig
+
 # configure jax to use 64 bit mode
 jax.config.update("jax_enable_x64", True)
 # configure jax to use 64 bit mode
@@ -36,6 +38,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
     r"""Backend for pulse simulations on a single transmon qubit.
 
     Args:
+        backend_config: the configuration of this backend
         f (float): The qubit frequency in Hz. Default is 4.7e9.
         alpha (float): The qubit anharmonicity in Hz. Default is -0.17e9.
         t1 (float): The qubit T1 relaxation time in seconds. Default is 71e-8.
@@ -52,21 +55,26 @@ class FakeOpenPulse1Q(DynamicsBackend):
 
     def __init__(
         self,
-        f: float = 4.7e9,
+        backend_config: BackendConfig,
         alpha: float = -0.17e9,
-        t1: float = 71e-6,
-        t2: float = 69e-6,
         r: float = 1e9,
-        dt: float = 1e-9,
-        atol: float = 1e-6,
-        rtol: float = 1e-6,
+        # atol: float = 1e-6,
+        # rtol: float = 1e-6,
         dim: int = 4,
         noise: bool = True,
         **options,
     ):
-        backend_name = "fake_openpulse_1q"
-        self.backend_name = backend_name
-        backend_version = "1.0.0"
+        backend_name = backend_config.general_config.name
+        backend_version = backend_config.general_config.version
+        dt = backend_config.general_config.dt
+
+        self.backend_config = backend_config
+        self.backend_name = backend_config.general_config.name
+        # This is for a single qubit backend
+        first_qubit_conf = backend_config.simulator_config.qubit[0]
+        freq = first_qubit_conf["frequency"]
+        t1 = first_qubit_conf["t1_decoherence"]
+        t2 = first_qubit_conf["t2_decoherence"]
 
         a = np.diag(np.sqrt(np.arange(1, dim)), 1)  # annihilation operator
         adag = np.diag(np.sqrt(np.arange(1, dim)), -1)  # creation operator
@@ -74,7 +82,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
         ident = np.eye(dim, dtype=complex)
 
         # Create static Hamiltonian
-        static_ham = 2 * np.pi * f * N + np.pi * alpha * N * (N - ident)
+        static_ham = 2 * np.pi * freq * N + np.pi * alpha * N * (N - ident)
 
         # Create drive operator
         drive_op = 2 * np.pi * r * (a + adag)
@@ -88,36 +96,35 @@ class FakeOpenPulse1Q(DynamicsBackend):
         else:
             static_dissipators = None
 
+        gates_configs = [
+            GateConfig(name=k, **v) for k, v in backend_config.gates.items()
+        ]
+
         configuration = PulseBackendConfiguration(
             backend_name=backend_name,
             backend_version=backend_version,
-            n_qubits=1,
-            basis_gates=["x"],
-            gates=GateConfig(
-                name="x",
-                parameters=[],
-                qasm_def="gate x q { U(pi, 0, pi) q; }",
-                coupling_map=[[0]],
-            ),
+            n_qubits=backend_config.general_config.num_qubits,
+            basis_gates=list(backend_config.gates.keys()),
+            gates=gates_configs[0],
             local=True,
-            simulator=True,
+            simulator=backend_config.general_config.simulator,
             conditional=False,
-            open_pulse=True,
+            open_pulse=backend_config.general_config.open_pulse,
             memory=True,
             max_shots=4000,
-            coupling_map=[],
-            meas_map=[[0]],
+            coupling_map=backend_config.device_config.coupling_map,
+            meas_map=backend_config.device_config.meas_map,
             n_uchannels=0,
             u_channel_lo=[],
             meas_levels=[1, 2],
-            qubit_lo_range=[[f / 1e9 - 0.1, f / 1e9 + 0.1]],  # in GHz
+            qubit_lo_range=[[freq / 1e9 - 0.1, freq / 1e9 + 0.1]],  # in GHz
             meas_lo_range=[],
             dt=dt / 1e-9,  # in nanoseconds
             dtm=dt / 1e-9,  # in nanoseconds
             rep_times=[],
             meas_kernels=["boxcar"],
             discriminators=["max_1Q_fidelity"],
-            description="A single transmon Hamiltonian with 4 levels",
+            description=backend_config.general_config.description,
             hamiltonian={
                 "h_str": [
                     "2*np.pi*f*N0",
@@ -125,7 +132,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
                     "-np.pi*alpha*N0",
                     "X0||D0",
                 ],
-                "vars": {"f": f, "alpha": alpha},
+                "vars": {"f": freq, "alpha": alpha},
                 "qub": {"0": dim},
                 "osc": {},
                 "description": "A single transmon Hamiltonian with 4 levels",
@@ -134,7 +141,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
 
         # Not sure if this information is needed or used.
         defaults = PulseDefaults(
-            qubit_freq_est=[f / 1e9],
+            qubit_freq_est=[freq / 1e9],
             meas_freq_est=[0],
             buffer=0,
             pulse_library=[],
@@ -145,7 +152,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
 
         target = Target(
             num_qubits=1,
-            qubit_properties=[QubitProperties(frequency=f, t1=t1, t2=t2)],
+            qubit_properties=[QubitProperties(frequency=freq, t1=t1, t2=t2)],
             dt=dt,
             granularity=1,
         )
@@ -161,18 +168,19 @@ class FakeOpenPulse1Q(DynamicsBackend):
             hamiltonian_operators=[drive_op],
             rotating_frame=static_ham,
             hamiltonian_channels=["d0"],
-            channel_carrier_freqs={"d0": f},
+            channel_carrier_freqs={"d0": freq},
             static_dissipators=static_dissipators,
             dt=dt,
             array_library="numpy",
         )
 
-        solver_options = {
-            "method": "jax_odeint",
-            "atol": atol,
-            "rtol": rtol,
-            "hmax": dt,
-        }
+        # FIXME: I wonder why this is not used.
+        # solver_options = {
+        #     "method": "jax_odeint",
+        #     "atol": atol,
+        #     "rtol": rtol,
+        #     "hmax": dt,
+        # }
 
         super().__init__(
             solver=solver,
@@ -188,66 +196,6 @@ class FakeOpenPulse1Q(DynamicsBackend):
     def target(self):
         """Contains information for circuit transpilation."""
         return self._target
-
-    def to_db(self):
-        num_qubits = self.configuration().num_qubits
-
-        qubit_properties = []
-        resonator_properties = []
-
-        for i in range(num_qubits):
-            qubit_properties.append(
-                {
-                    "id": i,
-                    "frequency": self.qubit_properties(i).frequency,
-                    "pi_pulse_amplitude": 0.05,
-                    "pi_pulse_duration": 56e-9,
-                    "pulse_type": "Gaussian",
-                    "pulse_sigma": 7e-9,
-                    "t1_decoherence": self.qubit_properties(i).t1,
-                    "t2_decoherence": self.qubit_properties(i).t2,
-                }
-            )
-            resonator_properties.append(
-                {
-                    "id": i,
-                    "acq_delay": 5e-8,
-                    "acq_integration_time": 0.000001,
-                    "frequency": 7260080000,
-                    "pulse_amplitude": 0.1266499392606423,
-                    "pulse_delay": 0,
-                    "pulse_duration": 9e-7,
-                    "pulse_type": "Square",
-                }
-            )
-
-        backend_db_schema = {
-            "name": self.configuration().backend_name,
-            "characterized": True,
-            "open_pulse": self.configuration().open_pulse,
-            "timelog": {
-                "CREATED": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
-            },
-            "version": self.configuration().backend_version,
-            "meas_map": self.configuration().meas_map,
-            "coupling_map": [[0, 0]],
-            "description": self.configuration().description,
-            "simulator": self.configuration().simulator,
-            "num_qubits": self.configuration().num_qubits,
-            "num_couplers": 0,
-            "num_resonators": 1,
-            "online_date": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f"),
-            "dt": self.configuration().dt,
-            "dtm": self.configuration().dtm,
-            "qubit_ids": [f"q{i_}" for i_ in range(num_qubits)],
-            "device_properties": {
-                "qubit": qubit_properties,
-                "readout_resonator": resonator_properties,
-            },
-            "discriminators": self.train_discriminator()["discriminators"],
-            "gates": {},
-        }
-        return backend_db_schema
 
     def train_discriminator(self, shots: int = 1024):
         """
@@ -280,11 +228,11 @@ class FakeOpenPulse1Q(DynamicsBackend):
         return {
             "discriminators": {
                 "lda": {
-                    "q0": {
+                    qubit_id: {
                         "intercept": float(lda_model.intercept_),
                         "coef_0": float(lda_model.coef_[0][0]),
                         "coef_1": float(lda_model.coef_[0][1]),
-                    }
+                    } for qubit_id in self.backend_config.device_config.qubit_ids
                 }
             }
         }
