@@ -14,9 +14,7 @@ from ...libs.quantum_executor.qiskit.executor import (
 
 from ..utils.fixtures import get_fixture_path, load_fixture
 
-connector = QiskitPulse1QExecutor(
-    config_file=get_fixture_path("simulator-backend.yml")
-)
+connector = QiskitPulse1QExecutor(config_file=get_fixture_path("simulator-backend.yml"))
 
 
 def test_job_transpile():
