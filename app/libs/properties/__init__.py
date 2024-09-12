@@ -30,7 +30,7 @@ from .dtos import (
     DeviceV1,
     DeviceV2,
     DeviceCalibrationV2,
-    QubitCalibration,
+    QubitCalibration
 )
 from .utils.data import (
     read_qubit_calibration_data,

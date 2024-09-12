@@ -101,6 +101,11 @@ frequency = "Hz"
 pulse_delay = "s"
 pulse_duration = "s"
 
+[simulator_config.units.discriminators]
+coef_0 = ""  
+coef_1 = ""
+intercept = ""
+
 # qubits
 [[qubit]]
 frequency = 4_700_000_000

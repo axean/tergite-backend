@@ -65,6 +65,10 @@ class _DeviceProperties(BaseModel):
     readout_resonator: Optional[List[_ReadoutResonatorProps]] = None
     coupler: Optional[List[Dict[str, Any]]] = None
 
+    class Config:
+        arbitrary_types_allowed = True
+
+
 
 class DeviceV1(BaseModel):
     """Basic structure of the config of a device"""
@@ -176,7 +180,7 @@ class _BackendDeviceConfig(BaseModel):
     coupling_map: List[Tuple[int, int]] = []
     # the [x, y] coordinates of the qubits
     coordinates: List[Tuple[int, int]] = []
-    meas_map: List[Tuple[int, int]] = []
+    meas_map: List[List[int]] = []
     qubit_parameters: List[str] = []
     resonator_parameters: List[str] = []
     coupler_parameters: List[str] = []
@@ -186,8 +190,10 @@ class _BackendDeviceConfig(BaseModel):
 class _BackendSimulatorConfig(BaseModel):
     """The device config for the simulated or dummy backends"""
 
+     # Adjusted the type hint for units to support nested structure within discriminators
     units: Dict[
-        Literal["qubit", "readout_resonator", "discriminators"], Dict[str, str]
+        Literal["qubit", "readout_resonator", "discriminators"], 
+        Dict[str, str]
     ] = {}
     qubit: List[Dict[str, Union[float, str]]] = []
     readout_resonator: List[Dict[str, Union[float, str]]] = []
@@ -201,7 +207,7 @@ class BackendConfig(BaseModel):
     device_config: _BackendDeviceConfig
     gates: Dict[str, Dict[str, Any]] = {}
     simulator_config: _BackendSimulatorConfig = _BackendSimulatorConfig()
-
+    
     @classmethod
     def from_toml(cls, file: PathLike):
         """Creates a BackendConfig instance from a TOML file"""
