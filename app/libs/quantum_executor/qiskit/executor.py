@@ -22,7 +22,7 @@ from app.libs.quantum_executor.base.experiment import BaseExperiment
 from app.libs.quantum_executor.qiskit.experiment import QiskitDynamicsExperiment
 from app.libs.quantum_executor.utils.channel import Channel
 from app.libs.quantum_executor.utils.instruction import Instruction
-from .backend import FakeOpenPulse1Q
+from .backend import QiskitPulse1Q
 from .transpile import transpile
 
 
@@ -30,7 +30,7 @@ class QiskitDynamicsExecutor(QuantumExecutor):
     def __init__(self, config_file):
         super().__init__()
 
-        self.backend = FakeOpenPulse1Q()
+        self.backend = QiskitPulse1Q()
 
     def run(self, experiment: BaseExperiment, /) -> xarray.Dataset:
         job = self.backend.run(experiment.schedule)
@@ -82,11 +82,11 @@ class QiskitDynamicsExecutor(QuantumExecutor):
         pass
 
 
-class QiskitDynamicsPulseSimulator1Q(QuantumExecutor):
+class QiskitPulse1QExecutor(QuantumExecutor):
     def __init__(self, config_file):
         super().__init__()
         # TODO: Use measurement level provided by the client request if discriminator is not provided
-        self.backend = FakeOpenPulse1Q(meas_level=1, meas_return="single")
+        self.backend = QiskitPulse1Q(meas_level=1, meas_return="single")
         self.shots = 1024
 
     def run(self, experiment: BaseExperiment, /) -> xarray.Dataset:

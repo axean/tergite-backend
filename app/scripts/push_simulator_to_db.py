@@ -1,4 +1,4 @@
-from app.libs.quantum_executor.qiskit.backend import FakeOpenPulse1Q
+from app.libs.quantum_executor.qiskit.backend import QiskitPulse1Q
 
 # This code is part of Tergite
 #
@@ -19,7 +19,7 @@ from app.services.properties.service import (
 from app.utils.validation import validate_schema
 
 if __name__ == "__main__":
-    backend = FakeOpenPulse1Q(meas_level=1, meas_return="single")
+    backend = QiskitPulse1Q(meas_level=1, meas_return="single")
     backend.train_discriminator()
     backend_json = backend.backend_to_db()
     device_json = backend.device_to_db()

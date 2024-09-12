@@ -44,6 +44,8 @@ pip install -r requirements.txt
 
 - Copy the `dot-env-template.txt` file to `.env` and 
   update the environment variables there appropriately.
+- The default executor is set to `qiskit_pulse_1q`.
+  Keep this setting if you want to start a simulator with one transmon qubit.
 
 ```shell
 cp dot-env-template.txt .env

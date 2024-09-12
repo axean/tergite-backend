@@ -32,7 +32,7 @@ jax.config.update("jax_enable_x64", True)
 jax.config.update("jax_platform_name", "cpu")
 
 
-class FakeOpenPulse1Q(DynamicsBackend):
+class QiskitPulse1Q(DynamicsBackend):
     r"""Backend for pulse simulations on a single transmon qubit.
 
     Args:
@@ -64,7 +64,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
         noise: bool = True,
         **options,
     ):
-        backend_name = "fake_openpulse_1q"
+        backend_name = "qiskit_pulse_1q"
         self.backend_name = backend_name
         backend_version = "1.0.0"
 
