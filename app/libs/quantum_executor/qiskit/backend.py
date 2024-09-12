@@ -145,7 +145,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
             granularity=1,
         )
 
-        solver = Solver(
+        self.solver = Solver(
             static_hamiltonian=static_ham,
             hamiltonian_operators=[drive_op],
             rotating_frame=static_ham,
@@ -164,7 +164,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
         }
 
         super().__init__(
-            solver=solver,
+            solver=self.solver,
             target=target,
             subsystem_dims=[dim],
             solver_options=solver_options,
