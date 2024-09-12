@@ -17,6 +17,10 @@ from ..utils.fixtures import get_fixture_path, load_fixture
 connector = QiskitPulse1QExecutor(config_file=get_fixture_path("simulator-backend.yml"))
 
 
+from qiskit.qobj import PulseQobjExperiment
+from qiskit.pulse import Schedule
+
+
 def test_job_transpile():
     job_dict = load_fixture("h_gate_amplitude_corrected.json")
 

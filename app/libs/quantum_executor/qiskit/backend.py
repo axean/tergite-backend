@@ -10,20 +10,17 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-import numpy as np
+import datetime
+import datetime
+from qiskit.quantum_info import Statevector
 
 import jax
-
-from qiskit.providers.models import PulseBackendConfiguration, GateConfig, PulseDefaults
-from qiskit.quantum_info import Statevector
-from qiskit_dynamics import DynamicsBackend, Solver
-from qiskit.transpiler import Target, InstructionProperties
+import numpy as np
 from qiskit.providers import QubitProperties
-from qiskit.circuit import Delay, Reset, Parameter
-from qiskit.circuit.library import XGate, SXGate, RZGate
+from qiskit.providers.models import PulseBackendConfiguration, GateConfig, PulseDefaults
 from qiskit.pulse import Acquire, AcquireChannel, MemorySlot, Schedule
-import datetime
-
+from qiskit.transpiler import Target
+from qiskit_dynamics import DynamicsBackend, Solver
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 # configure jax to use 64 bit mode
@@ -65,7 +62,6 @@ class QiskitPulse1Q(DynamicsBackend):
         **options,
     ):
         backend_name = "qiskit_pulse_1q"
-        self.backend_name = backend_name
         backend_version = "1.0.0"
 
         a = np.diag(np.sqrt(np.arange(1, dim)), 1)  # annihilation operator
@@ -149,14 +145,8 @@ class QiskitPulse1Q(DynamicsBackend):
             dt=dt,
             granularity=1,
         )
-        for instruction in (Reset(), RZGate(Parameter("angle")), SXGate(), XGate()):
-            target.add_instruction(
-                instruction,
-                properties={(0,): InstructionProperties(duration=0)},
-            )
-        target.add_instruction(Delay(Parameter("duration")))
 
-        solver = Solver(
+        self.solver = Solver(
             static_hamiltonian=static_ham,
             hamiltonian_operators=[drive_op],
             rotating_frame=static_ham,
@@ -175,10 +165,10 @@ class QiskitPulse1Q(DynamicsBackend):
         }
 
         super().__init__(
-            solver=solver,
+            solver=self.solver,
             target=target,
             subsystem_dims=[dim],
-            solver_options={},
+            solver_options=solver_options,
             configuration=configuration,
             defaults=defaults,
             **options,
@@ -200,7 +190,7 @@ class QiskitPulse1Q(DynamicsBackend):
                 {
                     "id": i,
                     "frequency": self.qubit_properties(i).frequency,
-                    "pi_pulse_amplitude": 0.05,
+                    "pi_pulse_amplitude": 0.014248841224281961,
                     "pi_pulse_duration": 56e-9,
                     "pulse_type": "Gaussian",
                     "pulse_sigma": 7e-9,
@@ -211,12 +201,12 @@ class QiskitPulse1Q(DynamicsBackend):
             resonator_properties.append(
                 {
                     "id": i,
-                    "acq_delay": 5e-8,
-                    "acq_integration_time": 0.000001,
-                    "frequency": 7260080000,
-                    "pulse_amplitude": 0.1266499392606423,
+                    "acq_delay": 0,
+                    "acq_integration_time": 0,
+                    "frequency": 0,
+                    "pulse_amplitude": 0,
                     "pulse_delay": 0,
-                    "pulse_duration": 9e-7,
+                    "pulse_duration": 0,
                     "pulse_type": "Square",
                 }
             )
