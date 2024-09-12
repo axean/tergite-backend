@@ -38,6 +38,8 @@ from app.libs.quantum_executor.utils.instruction import (
 )
 from app.libs.quantum_executor.utils.logger import ExperimentLogger
 
+# TODO SIM: If we use the transpile function, this whole Experiment object might become redundant
+
 
 # @dataclass(frozen=True)
 class QiskitDynamicsProgram:
@@ -85,6 +87,7 @@ class QiskitDynamicsProgram:
     ):
         operation: "Instruction"
 
+        # TODO SIM: This is hardcoded right now, we have to pass it manually to some extend
         dt = 1e-9
 
         channel = int(instruction.channel.strip("d").strip("readout").strip("m"))

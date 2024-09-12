@@ -111,6 +111,7 @@ class StorageFile:
             self.header = self.file["header"]
             self.experiments = self.file["experiments"]
 
+    # TODO: leave register_sparsity as full and set it to sparse for cases where there are multiple values per shot
     def as_readout(
         self: "StorageFile",
         discriminator: callable,
@@ -191,24 +192,22 @@ class StorageFile:
 
             # sort in reverse for little endian (descending slot order)
             for slot_tag, slot_data in self.sort_items(slots, reverse=register_reverse):
-                assert (
-                    slot_data["measurement"].shape[0] == 1
-                ), "Max one acquisition per channel for word readout."
+                # TODO: assert if measurement shape if equal to the number of shots
+                # assert (
+                #     slot_data["measurement"].shape[0] == 1
+                # ), "Max one acquisition per channel for word readout."
+                kets = np.zeros(slot_data["measurement"].shape[0]).astype(int)
                 slot_idx = int(slot_tag.split(self.delimiter)[1])
                 slot_idxs.append(slot_idx)
                 row = slot_data["measurement"][0, :]
-
-                ket01 = discriminator(qubit_idx=slot_idx, iq_points=row)
-                memory.append(ket01)
-
+                kets = discriminator(qubit_idx=slot_idx, iq_points=row)
+                memory.append(kets)
             # binary matrix where rows are classical register values
             # and columns are register value per shot
             memory = np.asarray(memory)
-
             # transposing the memory we get a binary matrix where columns are
             # classical register values and rows are value per shot
             memory = np.transpose(memory)
-
             # get hexlist of classical registers for every shot
             # and append to readout list
             readout.append(
@@ -275,9 +274,10 @@ class StorageFile:
 
     @functools.cached_property
     def sorted_measurements(self: "StorageFile") -> list:
+        # TODO: this would only find files for simulated readout output
         return sorted(
             parse.find(self.experiments, "measurement"),
-            key=lambda path: int(path[0].split(self.delimiter)[1]),
+            key=lambda path: path[0].split(self.delimiter)[1],
         )
 
     # ------------------------------------------------------------------------
@@ -356,6 +356,7 @@ class StorageFile:
     def store_graph(self: "StorageFile", graph: object, name: str):
         """Store the bytes of an experiment's graph into its experiment group.
         This graph can be loaded with StorageFile.read_graph.
+        # TODO: I cannot find any place where this read_graph is implemented and I do not see why we would need it
         """
         experiment = self.get_experiment(name)
         blob = pickle.dumps(graph)
@@ -370,7 +371,6 @@ class StorageFile:
 
         for acq_index, acq in enumerate(experiment_data["data_vars"]):
             ch = f"slot{StorageFile.delimiter}{acq}"
-
             # Get maximum acquisition index in each acquisition channel
             max_acq_idx = experiment_data["dims"][f"acq_index_{acq_index}"]
 
@@ -402,6 +402,7 @@ class StorageFile:
             experiment[ch]["measurement"][...] = tmp
 
     # ------------------------------------------------------------------------
+
     @classmethod
     def sort_items(cls: "StorageFile", items: list, reverse: bool = False) -> iter:
         return sorted(

@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tergite/tergite-dashboard/tree/main/src/schemas/2024-07/device.json",
+  "title": "Device",
+  "description": "A quantum computing backend specification",
+  "type": "object",
+  "properties": {
+    "name": {
+      "description": "The unique name of the quantum computer",
+      "type": "string"
+    },
+    "version": {
+      "description": "The revision of this quantum computer",
+      "type": "string"
+    },
+    "number_of_qubits": {
+      "description": "The number of qubits in the quantum computer",
+      "type": "integer",
+      "minimum": 0
+    },
+    "last_online": {
+      "description": "The last time this device was seen online",
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        { "type": "null" }
+      ]
+    },
+    "is_online": {
+      "description": "Whether the quantum computer is online or not",
+      "type": "boolean"
+    },
+    "basis_gates": {
+      "description": "The unique name of the quantum computer",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "coupling_map": {
+      "description": "The uni-directional mapping showing how each qubit is connected",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "coordinates": {
+      "description": "The x,y coordinates of the qubits on the chip",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "is_simulator": {
+      "description": "Whether this is a simulator",
+      "type": "boolean"
+    },
+    "created_at": {
+      "description": "The ISO 8601 timestamp when this record was created in the database",
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        { "type": "null" }
+      ]
+    },
+    "updated_at": {
+      "description": "The ISO 8601 timestamp when this record was last updated in the database",
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        { "type": "null" }
+      ]
+    }
+  },
+  "required": [
+    "name",
+    "version",
+    "number_of_qubits",
+    "is_online",
+    "basis_gates",
+    "is_simulator",
+    "coupling_map",
+    "coordinates"
+  ]
+}

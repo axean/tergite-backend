@@ -21,6 +21,7 @@ import numpy as np
 import rich
 import xarray
 from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder as PulseQobj_encoder
+from qiskit.pulse import Schedule
 from qiskit.qobj import PulseQobj
 from quantify_core.data import handling as dh
 from quantify_core.data.handling import create_exp_folder, gen_tuid
@@ -101,6 +102,7 @@ class QuantumExecutor(abc.ABC):
             # create a storage hdf file
             filename = "measurement.hdf5" if job_id is None else f"{job_id}.hdf5"
             results_file_path = self.experiment_folder / filename
+            print(program_settings)
             storage = StorageFile(
                 results_file_path,
                 mode="w",
@@ -111,6 +113,8 @@ class QuantumExecutor(abc.ABC):
                 meas_level=program_settings["meas_level"],
                 memory_slot_size=qobj.config.memory_slot_size,
             )
+
+            print(qobj.header.to_dict())
 
             # store numpy header metadata
             storage.store_qobj_header(qobj_header=qobj.header.to_dict())
@@ -126,14 +130,25 @@ class QuantumExecutor(abc.ABC):
                 print(datetime.now(), "IN RUN_EXPERIMENTS, START RUN")
 
                 experiment_data = self.run(experiment)
-
                 experiment_data = experiment_data.to_dict()
 
+                if isinstance(experiment, BaseExperiment):
+                    experiment_name = experiment.header.name
+                elif isinstance(experiment, Schedule):
+                    experiment_name = storage.sanitized_name(
+                        qobj.experiments[0].header.name, experiment_index + 1
+                    )
+                else:
+                    raise ValueError(
+                        "Experiment object type is incorrect %s" % type(experiment)
+                    )
+                print(experiment_name)
+
                 storage.store_experiment_data(
-                    experiment_data=experiment_data,
-                    name=experiment.header.name,
+                    experiment_data=experiment_data, name=experiment_name
                 )
-                storage.store_graph(graph=experiment.dag, name=experiment.header.name)
+                if isinstance(experiment, BaseExperiment):
+                    storage.store_graph(graph=experiment.dag, name=experiment_name)
 
             self.logger.info(f"Stored measurement data at {storage.file.filename}")
 

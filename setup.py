@@ -37,7 +37,7 @@ setuptools.setup(
     version="2024.04.0",
     author="Miroslav Dobsicek",
     maintainer="Chalmers Next Labs AB",
-    maintainer_email="quantum.nextlabs@chalmers.se",
+    maintainer_email="quantum-nextlabs@chalmers.se",
     author_email="dobsicek@chalmers.se",
     description="The Backend of the Tergite software stack of the Swedish Quantum Computer",
     long_description=_README,

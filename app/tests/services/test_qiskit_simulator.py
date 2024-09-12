@@ -1,16 +1,20 @@
 # global variables
 from datetime import datetime
 
-import pytest
 from qiskit.providers.ibmq.utils import json_decoder
 from qiskit.qobj import PulseQobj
 
 from app.libs.quantum_executor.utils.serialization import iqx_rld
 
-from ...libs.quantum_executor.qiskit.executor import QiskitDynamicsExecutor
+from ...libs.quantum_executor.qiskit.executor import (
+    QiskitDynamicsExecutor,
+    QiskitPulse1QExecutor,
+)
+
+
 from ..utils.fixtures import get_fixture_path, load_fixture
 
-connector = QiskitDynamicsExecutor(
+connector = QiskitPulse1QExecutor(
     config_file=get_fixture_path("simulator-backend.yml")
 )
 

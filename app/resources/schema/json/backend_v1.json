@@ -1,0 +1,194 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://github.com/tergite/tergite-backend/tree/main/app/resources/schemas/backend_v1.json",
+    "title": "BackendV1Config",
+    "description": "Configurations for older qiskit version for tergite devices.",
+    "type": "object",
+    "properties": {
+      "name": {
+        "description": "The unique name of the quantum computer",
+        "type": "string"
+      },
+      "characterized": {
+        "description": "Whether qubits are characterized on the backend i.e. do we have device properties defined for qubits.",
+        "type": "boolean"
+      },
+      "open_pulse": {
+        "description": "Does backend support OpenPulse instructions.",
+        "type": "boolean"
+      },
+      "timelog": {
+        "description": "Dictionary of ISO 8601 timestamps with creation and update timestamps",
+        "type": "object",
+        "additionalProperties" : true
+      },
+      "version": {
+        "description": "The revision of this quantum computer",
+        "type": "string"
+      },
+      "meas_map": {
+        "description": "Grouping of measurement which are multiplexed",
+        "type": "array",
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        }
+      },
+      "coupling_map": {
+        "description": "The uni-directional mapping showing how each qubit is connected",
+        "type": "array",
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "description": {
+        "description": "Description of the backend",
+        "type": ["string", "null"]
+      },
+      "simulator": {
+        "description": "Whether this is a simulator",
+        "type": "boolean",
+        "default": false
+      },
+      "num_qubits": {
+        "description": "Number of qubits in the device",
+        "type": "integer",
+        "default": 0
+      },
+      "num_couplers": {
+        "description": "Number of couplers in the device",
+        "type": "integer",
+        "default": 0
+      },
+      "num_resonators": {
+        "description": "Number of resonators in the device",
+        "type": "integer",
+        "default": 0
+      },
+      "online_date": {
+        "description": "The date that the device went online",
+        "type": ["string", "null"]
+      },
+      "dt": {
+        "description": "Qubit drive channel timestep in nanoseconds",
+        "type": ["number", "null"]
+      },
+      "dtm": {
+        "description": "Measurement drive channel timestep in nanoseconds.",
+        "type": ["number", "null"]
+      },
+      "qubit_ids": {
+        "description": "List of qubit id values",
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "device_properties": {
+        "description": "Characterized properties of qubits, resonators and couplers.",
+        "type": ["object", "null"],
+        "properties":{
+            "qubit":{
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "number"},
+                  "frequency": {"type": "number"},
+                  "pi_pulse_amplitude": {"type": "number"},
+                  "pi_pulse_duration": {"type": "number"},
+                  "pulse_sigma": {"type": "number"},
+                  "pulse_type": {"type": "string"},
+                  "t1_decoherence": {"type": "number"},
+                  "t2_decoherence": {"type": "number"}
+                },
+                "additionalProperties": false
+              }
+            },
+            "readout_resonator":{
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {"type": "number"},
+                  "acq_delay": {"type": "number"},
+                  "acq_integration_time": {"type": "number"},
+                  "frequency": {"type": "number"},
+                  "pulse_amplitude": {"type": "number"},
+                  "pulse_delay": {"type": "number"},
+                  "pulse_duration": {"type": "number"},
+                  "pulse_type": {"type": "string"}
+                },
+                "additionalProperties": false
+              }
+            },
+            "coupler":{
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+        },
+        "additionalProperties": false
+      },
+      "discriminators": {
+        "description": "Parameters for custom discriminators on the tergite backend.",
+        "type": ["object", "null"],
+        "additionalProperties": true
+      },
+      "meas_lo_freq": {
+        "description": "List of measurement LO frequencies in Hz. Must have length n_qubits.",
+        "type": ["array", "null"],
+        "items": {
+          "type": "integer"
+        }
+      },
+      "qubit_lo_freq": {
+        "description": "List of job level qubit drive LO frequencies in Hz. Must have length n_qubits.",
+        "type": ["array", "null"],
+        "items": {
+          "type": "integer"
+        }
+      },
+      "qubit_calibrations": {
+        "description": "Information about qubit calibrations with the references to particular calibration jobs in Tergite backends",
+        "type": ["object", "null"],
+        "additionalProperties": true
+      },
+      "coupler_calibrations": {
+        "description": "Information about coupler calibrations with the references to particular calibration jobs in Tergite backends",
+        "type": ["object", "null"],
+        "additionalProperties": true
+      },
+      "resonator_calibrations": {
+        "description": "Information about resonator calibrations with the references to particular calibration jobs in Tergite backends",
+        "type": ["object", "null"],
+        "additionalProperties": true
+      },
+      "gates": {
+        "description": "The list of GateConfig objects for the basis gates of the backend",
+        "type": ["object", "null"],
+        "additionalProperties": true
+      },
+      "is_active": {
+        "description": "Whether backend is active now",
+        "type": ["boolean", "null"]
+      }
+    },
+    "required": [
+      "name",
+      "characterized",
+      "open_pulse",
+      "version",
+      "meas_map",
+      "coupling_map"
+    ]
+  }

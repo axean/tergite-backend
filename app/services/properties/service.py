@@ -19,8 +19,10 @@
 # Any change on this file should be done in both repositories until they are eventually merged!
 
 import json
+import logging
 from os import path
 from pathlib import Path
+from typing import Mapping, Any
 
 import requests
 import toml
@@ -104,10 +106,21 @@ def create_backend_snapshot() -> dict:
     }
 
 
-def update_mss(collection: str = None):
-    """Pushes the snapshot of this backend to the given collection in MSS"""
-    current_backend_snapshot = create_backend_snapshot()
-    backend_snapshot_json = json.dumps(current_backend_snapshot, indent=4)
+def post_mss_backend(backend_json: Mapping[str, Any] = None, collection: str = None):
+    """
+    Push a backend definition to the MSS endpoint
+
+    Args:
+        backend_json: Backend definition as JSON object
+                      Will be automatically generated if not provided
+        collection: Please specify if backend should not be pushed to the standard collection in the DB
+
+    Returns:
+
+    """
+    if backend_json is None:
+        backend_json = create_backend_snapshot()
+    backend_snapshot_json = json.dumps(backend_json, indent=4)
     if collection:
         response = requests.put(
             mss_url + f"/backends?collection={collection}", backend_snapshot_json
@@ -116,10 +129,36 @@ def update_mss(collection: str = None):
         response = requests.put(mss_url + "/backends", backend_snapshot_json)
 
     if response:
-        print(
-            f"'{current_backend_snapshot['name']}' backend configuration is sent to mss"
-        )
+        print(f"'{backend_json['name']}' backend configuration is sent to mss")
     else:
-        print(
-            f"Could not send '{current_backend_snapshot['name']} 'backend configuration to mss"
-        )
+        print(f"Could not send '{backend_json['name']} 'backend configuration to mss")
+
+
+def post_mss_device_calibrations(
+    device_json: Mapping[str, Any], calibration_json: Mapping[str, Any]
+):
+    """
+    Push a device v2 definition to the MSS endpoint
+
+    Args:
+        device_json: Device definition as JSON object
+        calibration_json: Calibrations as JSON object
+
+    Returns:
+
+    """
+    response_devices = requests.put(f"{mss_url}/v2/devices", json=device_json)
+
+    if response_devices.status_code == 200:
+        print(f"'{device_json['name']}' device configuration is sent to mss")
+    else:
+        print(f"Could not send '{device_json['name']} 'device configuration to mss")
+
+    response_calibrations = requests.post(
+        f"{mss_url}/v2/calibrations", json=[calibration_json]
+    )
+
+    if response_calibrations.status_code == 200:
+        print(f"'{calibration_json['name']}' calibrations are sent to mss")
+    else:
+        print(f"Could not send '{calibration_json['name']} 'calibrations to mss")

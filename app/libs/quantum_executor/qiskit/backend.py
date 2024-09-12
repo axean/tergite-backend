@@ -11,16 +11,17 @@
 # that they have been altered from the originals.
 
 import datetime
-import numpy as np
+import datetime
+from qiskit.quantum_info import Statevector
 
 import jax
-
-from qiskit.providers.models import PulseBackendConfiguration, GateConfig, PulseDefaults
-from qiskit_dynamics import DynamicsBackend, Solver
-from qiskit.transpiler import Target, InstructionProperties
+import numpy as np
 from qiskit.providers import QubitProperties
-from qiskit.circuit import Delay, Reset, Parameter
-from qiskit.circuit.library import RZGate, SXGate, XGate
+from qiskit.providers.models import PulseBackendConfiguration, GateConfig, PulseDefaults
+from qiskit.pulse import Acquire, AcquireChannel, MemorySlot, Schedule
+from qiskit.transpiler import Target
+from qiskit_dynamics import DynamicsBackend, Solver
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 # configure jax to use 64 bit mode
 jax.config.update("jax_enable_x64", True)
@@ -28,7 +29,7 @@ jax.config.update("jax_enable_x64", True)
 jax.config.update("jax_platform_name", "cpu")
 
 
-class FakeOpenPulse1Q(DynamicsBackend):
+class QiskitPulse1Q(DynamicsBackend):
     r"""Backend for pulse simulations on a single transmon qubit.
 
     Args:
@@ -60,7 +61,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
         noise: bool = True,
         **options,
     ):
-        backend_name = "fake_openpulse_1q"
+        backend_name = "qiskit_pulse_1q"
         backend_version = "1.0.0"
 
         a = np.diag(np.sqrt(np.arange(1, dim)), 1)  # annihilation operator
@@ -178,7 +179,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
         """Contains information for circuit transpilation."""
         return self._target
 
-    def to_db(self):
+    def backend_to_db(self):
         num_qubits = self.configuration().num_qubits
 
         qubit_properties = []
@@ -219,7 +220,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
             },
             "version": self.configuration().backend_version,
             "meas_map": self.configuration().meas_map,
-            "coupling_map": self.configuration().coupling_map,
+            "coupling_map": [[0, 0]],
             "description": self.configuration().description,
             "simulator": self.configuration().simulator,
             "num_qubits": self.configuration().num_qubits,
@@ -233,7 +234,107 @@ class FakeOpenPulse1Q(DynamicsBackend):
                 "qubit": qubit_properties,
                 "readout_resonator": resonator_properties,
             },
-            "discriminators": "TODO",
-            "gates": "TODO",
+            "discriminators": self.train_discriminator()["discriminators"],
+            "gates": {},
         }
         return backend_db_schema
+
+    def device_to_db(self):
+        return {
+            "name": self.configuration().backend_name,
+            "version": "24.9.0",
+            "number_of_qubits": 1,
+            "is_online": True,
+            "last_online": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f"),
+            "basis_gates": ["u", "h", "x"],
+            "is_simulator": True,
+            "coupling_map": [[0, 0], [1, 1]],
+            "coordinates": [[1, 1], [1, 2]],
+        }
+
+    def calibrations_to_db(self):
+        time_now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
+        return {
+            "name": self.backend_name,
+            "version": "24.9.0",
+            "last_calibrated": time_now,
+            "qubits": [
+                {
+                    "t1_decoherence": {
+                        "date": datetime.datetime.now().strftime(
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ),
+                        "unit": "us",
+                        "value": 0.0,
+                    },
+                    "t2_decoherence": {
+                        "date": datetime.datetime.now().strftime(
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ),
+                        "unit": "us",
+                        "value": 0.0,
+                    },
+                    "frequency": {
+                        "date": datetime.datetime.now().strftime(
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ),
+                        "unit": "GHz",
+                        "value": self.qubit_properties(0).frequency,
+                    },
+                    "anharmonicity": {
+                        "date": datetime.datetime.now().strftime(
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ),
+                        "unit": "GHz",
+                        "value": -0.3132760394092362,
+                    },
+                    "readout_assignment_error": {
+                        "date": datetime.datetime.now().strftime(
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ),
+                        "unit": "",
+                        "value": 0.006299999999999972,
+                    },
+                }
+            ],
+        }
+
+    def train_discriminator(self, shots: int = 1024):
+        """
+        Generates |0> and |1> states, trains a linear discriminator
+        Args:
+            shots: number of shots for generating i q data
+
+        Returns:
+            Discriminator object as json in the format to store it in the database
+
+        """
+        # Generate the iq values
+        schedule = Schedule((0, Acquire(1, AcquireChannel(0), MemorySlot(0))))
+
+        job_0 = self.run([schedule], shots=shots)
+        i_q_values_0 = job_0.result().data()["memory"].reshape(shots, 2)
+        job_1 = self.run(
+            [schedule], shots=shots, initial_state=Statevector([0, 1, 0, 0])
+        )
+        i_q_values_1 = job_1.result().data()["memory"].reshape(shots, 2)
+
+        # Train scikit learn discriminator
+        combined_i_q_values = np.vstack((i_q_values_0, i_q_values_1))
+        labels = np.append(np.zeros(shots), np.ones(shots))
+
+        lda_model = LinearDiscriminantAnalysis()
+        lda_model.fit(combined_i_q_values, labels)
+
+        # Bring it to the right format
+        return {
+            "discriminators": {
+                "lda": {
+                    "q0": {
+                        "intercept": float(lda_model.intercept_),
+                        "coef_0": float(lda_model.coef_[0][0]),
+                        "coef_1": float(lda_model.coef_[0][1]),
+                    }
+                }
+            }
+        }
