@@ -24,7 +24,7 @@ from app.utils.http import get_mss_client
 
 def get_executor(
     executor_type: str = settings.EXECUTOR_TYPE,
-    config_file: str = settings.EXECUTOR_CONFIG_FILE,
+    config_file: str = settings.QUANTIFY_CONFIG_FILE,
     mss_url: str = settings.MSS_MACHINE_ROOT_URL,
 ) -> QuantumExecutor:
     """Gets the executor for running jobs
@@ -45,7 +45,7 @@ def get_executor(
     resonator_config = None
     discriminator_config = None
 
-    if executor_type == "hardware":
+    if executor_type == "quantify":
         executor = QuantifyExecutor(config_file=config_file)
 
     if executor_type == "qiskit_pulse_1q":

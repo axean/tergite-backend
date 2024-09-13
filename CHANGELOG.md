@@ -19,6 +19,7 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 ### Changed
 - BREAKING CHANGE: `EXECUTOR_DATA_DIRNAME` definition in the .env variables instead of `general.data_dir` in `executor-config.yml`
 - BREAKING CHANGE: Removed the whole `general` section in the `executor-config.yml`
+- BREAKING CHANGE: Renamed `executor-config.yml` to `quantify-config.yml`
 - Removed the old config files that were used for setting up automatic calibration
 - Removed the script that loaded automatic calibration configurations at the start
 - Moved the `backend_config.toml` file from `/configs` folder

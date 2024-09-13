@@ -37,12 +37,18 @@ MSS_PORT=8002
 
 # (5) Instrument interfacing and simulators
 # This is to configure the hardware or simulated measurement instruments.
-# The type of instrument setup to run. Default is "hardware". Can take:
-# - hardware
+# The type of instrument setup to run.
+#
+# Can take:
+# - quantify
 # - qiskit_pulse_1q
+#
+# Default is "quantify".
+# Note: - 'quantify' can be the real instruments or dummy clusters
+#       - 'qiskit_pulse_1q' is a one-qubit simulator based on qiskit-dynamics library
 EXECUTOR_TYPE=qiskit_pulse_1q
-# The path to the configuration file for quantify. Default is "executor-config.yml" in project directory.
-EXECUTOR_CONFIG_FILE=executor-config.yml
+# The path to the configuration file for quantify. Default is "quantify-config.yml" in project directory.
+QUANTIFY_CONFIG_FILE=quantify-config.yml
 
 # (6) Authentication
 # The app token used to authenticate this BCC with MSS.
@@ -61,3 +67,7 @@ IS_AUTH_ENABLED=True
 #  - test
 # Default: production
 APP_SETTINGS=production
+
+# Whether to run with MSS or not
+# Default is false. Setting this to true when MSS is not running will raise connection errors
+IS_STANDALONE=False

@@ -3,7 +3,7 @@
 The executor is the core component to run the quantum circuit on a backend.
 It manages the access to the instruments or sets up the simulator in case the backend is a simulator.
 Right now, we have implemented the following backends:
-- "hardware": This is interfacing to qblox hardware via quantify and the recommended option, because the WACQT quantum processor is running on that platform. It can be run in the dummy mode, check out the [configuration manual](./configuration.md) on how to do it.
+- "quantify": This is interfacing to qblox quantify via quantify and the recommended option, because the WACQT quantum processor is running on that platform. It can be run in the dummy mode, check out the [configuration manual](./configuration.md) on how to do it.
 - "qiskit_pulse_1q": Single qubit simulator using qiskit-dynamics
 
 If you want to implement a new executor, follow these steps below.
@@ -24,7 +24,7 @@ If you want to implement a new executor, follow these steps below.
 ### 3. Next steps
 - If your backend needs some basic tune-up or training for a discriminator, you can add these actions in the `scripts` folder.
 - Add documentation for your executor.
-  - You probably have to update the `dot_env_template.txt` and the `executor-config.example.yml`.
+  - You probably have to update the `dot_env_template.txt` and the `quantify-config.example.yml`.
 - Add the executor to the factory such that it can be loaded from the execution worker.
 - Check whether all tests are running.
 

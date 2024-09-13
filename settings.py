@@ -31,6 +31,7 @@ APP_ROOT_DIR = Path(__file__).parent / "app"
 # Misc settings
 APP_SETTINGS = config("APP_SETTINGS", cast=str, default="production")
 IS_AUTH_ENABLED = config("IS_AUTH_ENABLED", cast=bool, default=True)
+IS_STANDALONE = config("IS_STANDALONE", cast=bool, default=False)
 _is_production = APP_SETTINGS == "production"
 
 if not IS_AUTH_ENABLED and _is_production:
@@ -105,9 +106,9 @@ if APP_SETTINGS == "test" and not os.environ.get("BLACKLISTED"):
 # The executor type specifies which implementations of the QuantumExecutor to use.
 # For more information on the values check:
 # - dot-env-template.txt
-EXECUTOR_TYPE = config("EXECUTOR_TYPE", default="hardware")
+EXECUTOR_TYPE = config("EXECUTOR_TYPE", default="quantify")
 
 # This will load the hardware configuration from a yaml file, which contains the properties for the
 # cluster or other instrument setup. For more information check:
-# - executor-config.example.yml
-EXECUTOR_CONFIG_FILE = config("EXECUTOR_CONFIG_FILE", default="executor-config.yml")
+# - quantify-config.example.yml
+QUANTIFY_CONFIG_FILE = config("QUANTIFY_CONFIG_FILE", default="quantify-config.yml")

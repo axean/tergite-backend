@@ -199,7 +199,7 @@ def async_fastapi_client(mocker) -> TestClient:
     """A test client for fast api when rq is running asynchronously"""
     remove_modules(["app", "settings"])
     _patch_async_client(mocker)
-    os.environ["EXECUTOR_TYPE"] = "hardware"
+    os.environ["EXECUTOR_TYPE"] = "quantify"
     os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
 
     from app.api import app
@@ -222,12 +222,30 @@ def async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient:
         yield TestClient(app)
 
 
+@pytest.fixture
+def async_standalone_backend_client(mocker) -> TestClient:
+    """A test client for fast api when rq is running asynchronously and backend is standalone"""
+    remove_modules(["app", "settings"])
+
+    mocker.patch("redis.Redis", return_value=_real_redis)
+    mocker.patch("app.utils.queues.QueuePool", return_value=_async_queue_pool)
+
+    os.environ["EXECUTOR_TYPE"] = "quantify"
+    os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
+    os.environ["IS_STANDALONE"] = "True"
+
+    from app.api import app
+
+    with freeze_time(MOCK_NOW):
+        yield TestClient(app)
+
+
 # @pytest.fixture
 # def sync_fastapi_client(mocker) -> TestClient:
 #     """A test client for fast api when rq is running synchronously"""
 #     remove_modules(["app", "settings"])
 #     _patch_sync_client(mocker)
-#     os.environ["EXECUTOR_TYPE"] = "hardware"
+#     os.environ["EXECUTOR_TYPE"] = "quantify"
 #     os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
 #
 #     from app.api import app
@@ -255,7 +273,7 @@ def blacklisted_async_fastapi_client(mocker) -> TestClient:
     remove_modules(["app", "settings"])
     _patch_async_client(mocker)
     os.environ["BLACKLISTED"] = "True"
-    os.environ["EXECUTOR_TYPE"] = "hardware"
+    os.environ["EXECUTOR_TYPE"] = "quantify"
     os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
 
     from app.api import app
@@ -286,7 +304,7 @@ def blacklisted_async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient
 #     remove_modules(["app", "settings"])
 #     _patch_sync_client(mocker)
 #     os.environ["BLACKLISTED"] = "True"
-#     os.environ["EXECUTOR_TYPE"] = "hardware"
+#     os.environ["EXECUTOR_TYPE"] = "quantify"
 #     os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
 #
 #     from app.api import app

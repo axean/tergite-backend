@@ -18,7 +18,7 @@ import pytest
 from ...libs.quantum_executor.quantify.executor import QuantifyExecutor
 from ..utils.fixtures import get_fixture_path
 
-_REAL_HARDWARE_EXECUTOR_CONFIG_FILE = get_fixture_path("real-executor-config.yml")
+_REAL_HARDWARE_QUANTIFY_CONFIG_FILE = get_fixture_path("real-quantify-config.yml")
 
 
 def test_attempts_to_connect_to_real_hardware():
@@ -26,4 +26,4 @@ def test_attempts_to_connect_to_real_hardware():
     QuantifyExecutor.close()
 
     with pytest.raises(socket.timeout):
-        QuantifyExecutor(config_file=_REAL_HARDWARE_EXECUTOR_CONFIG_FILE)
+        QuantifyExecutor(config_file=_REAL_HARDWARE_QUANTIFY_CONFIG_FILE)

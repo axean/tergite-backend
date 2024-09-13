@@ -159,10 +159,10 @@ pytest-data/
 
 # env
 *.env
-executor-config.yml
-!**/fixtures/executor-config.yml
-executor-config.**.yml
-!executor-config.example.yml
+quantify-config.yml
+!**/fixtures/quantify-config.yml
+quantify-config.**.yml
+!quantify-config.example.yml
 
 # backend configs
 backend_config.toml

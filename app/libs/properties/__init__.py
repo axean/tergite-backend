@@ -69,6 +69,7 @@ def initialize_backend(
     discriminator_config: Optional[
         Dict[str, Dict[str, Dict[str, Union[float, str]]]]
     ] = None,
+    is_standalone: bool = settings.IS_STANDALONE,
 ):
     """Runs a number of operations to initialize the backend
 
@@ -82,6 +83,7 @@ def initialize_backend(
                 defaults to what is in the backend_config.toml
         discriminator_config: the discriminator calibration data to initialize the backend with;
                 defaults to what is in the backend_config.toml
+        is_standalone: whether this backend is standalone or is connected to an MSS
 
     Raises:
         ValueError: error message from MSS when it attempts to update mss
@@ -116,12 +118,13 @@ def initialize_backend(
             }
             set_discriminator_data(disc_data)
 
-    # update MSS of this backend's configuration
-    send_backend_info_to_mss(
-        backend_config=backend_config,
-        mss_client=mss_client,
-        mss_url=mss_url,
-    )
+    if not is_standalone:
+        # update MSS of this backend's configuration
+        send_backend_info_to_mss(
+            backend_config=backend_config,
+            mss_client=mss_client,
+            mss_url=mss_url,
+        )
 
 
 def get_device_v1_info(
