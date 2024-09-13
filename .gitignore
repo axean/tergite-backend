@@ -169,3 +169,6 @@ backend_config.toml
 backend_config.**.toml
 !**/fixtures/backend_config**.toml
 !backend_config.example.toml
+
+# redis
+**.rdb
