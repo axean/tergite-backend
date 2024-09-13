@@ -117,11 +117,7 @@ def initialize_backend(
             }
             set_discriminator_data(disc_data)
     
-    backend_config.device_config.qubit_ids = {}
     
-    for i, q_id in enumerate(backend_config.device_config.qubit_ids):
-        backend_config.device_config.qubit_ids[i] = q_id
-
     # update MSS of this backend's configuration
     send_backend_info_to_mss(
         backend_config=backend_config,
@@ -160,11 +156,16 @@ def get_device_v1_info(
         )
         for item in discriminators
     }
+    qubit_ids = {}
+    
+    for i, q_id in enumerate(backend_config.device_config.qubit_ids):
+        qubit_ids[i] = q_id
+
     return DeviceV1(
         **backend_config.general_config.dict(),
         meas_map=backend_config.device_config.meas_map,
         coupling_map=backend_config.device_config.coupling_map,
-        qubit_ids=backend_config.device_config.qubit_ids,
+        qubit_ids=qubit_ids,
         gates=backend_config.gates,
         device_properties={
             "qubit":[_QubitProps(**{k:get_inner_value(v) for k,v in item.items()}) for item in qubit_conf], 
@@ -253,7 +254,7 @@ def send_backend_info_to_mss(
     device_v2_info = get_device_v2_info(backend_config=backend_config).dict()
     calibration_v2_info = get_device_calibration_v2_info(
         backend_config=backend_config
-    ).dict()
+    ).json()
 
 
     collection_query = "" if collection is None else f"?collection={collection}"

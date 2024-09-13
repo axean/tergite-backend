@@ -145,7 +145,7 @@ class DeviceCalibrationV2(BaseModel):
     name: str
     version: str
     qubits: List[QubitCalibration]
-    last_calibrated: Optional[datetime] = None
+    last_calibrated: datetime
 
     class Config:
         json_encoders = {
