@@ -134,6 +134,8 @@ def get_device_v1_info(
     qubit_ids = backend_config.device_config.qubit_ids
     discriminator_params = backend_config.device_config.discriminator_parameters
     discriminators = backend_config.device_config.discriminators
+
+ 
     qubit_conf = read_qubit_calibration_data(
         qubit_ids=qubit_ids,
         qubit_params=backend_config.device_config.qubit_parameters,

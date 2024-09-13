@@ -14,7 +14,7 @@
 from typing import List, Dict, Optional, Literal, Union
 
 from ..dtos import CalibrationValue
-from .storage import get_component_property, set_component_property
+from .storage import get_component_property, set_component_property, get_component_value
 
 
 def get_inner_value(
@@ -49,7 +49,7 @@ def read_qubit_calibration_data(
         {
             param: qubit_id
             if param is "id"
-            else _read_calibration_value("qubit", param, qubit_id)
+            else _read_calibration_value(component_type="qubit", component_id=qubit_id.strip("q"), prop_name=param)
             for param in qubit_params
         }
         for qubit_id in qubit_ids
@@ -72,7 +72,7 @@ def read_resonator_calibration_data(
         {
             param: qubit_id
             if param is "id"
-            else _read_calibration_value("readout_resonator", param, qubit_id)
+            else _read_calibration_value(component_type="readout_resonator", component_id=qubit_id.strip("q"), prop_name=param)
             for param in resonator_params
         }
         for qubit_id in qubit_ids
@@ -94,7 +94,7 @@ def read_discriminator_data(
     """
     return {
         qubit_id: {
-            param: _read_calibration_value("discriminator", param, qubit_id)
+            param: _read_calibration_value(component_type="discriminator", component_id=qubit_id.strip("q"), prop_name=param)
             for param in params
         }
         for qubit_id in qubit_ids
@@ -117,10 +117,10 @@ def _read_calibration_value(
         the calibration value of the property of the given component
     """
     result = get_component_property(
-        component_type, prop_name, str(component_id).strip("q")
+        component=component_type, name=prop_name, component_id=component_id
     )
     if result is not None:
-        return CalibrationValue(date=result[1], **result[0])
+        return CalibrationValue(date=result[1], **result[0].__dict__)
 
 
 def set_qubit_calibration_data(data: List[Dict[str, Optional[Dict]]]):
@@ -132,10 +132,10 @@ def set_qubit_calibration_data(data: List[Dict[str, Optional[Dict]]]):
     # FIXME: Use this at the start of the simulator or whenever an automatic recalibration occurs
     #   so that it can be picked up when new calibration data is requested
     for qubit_conf in data:
-        qubit_id = str(qubit_conf["id"]).strip("q")
+        qubit_id = str(qubit_conf["id"]["value"]).strip("q")
         for k, v in qubit_conf.items():
             if isinstance(v, dict):
-                set_component_property("qubit", k, qubit_id, **v)
+                set_component_property(component="qubit", name=k, component_id=qubit_id, **v)
 
 
 def set_resonator_calibration_data(data: List[Dict[str, Optional[Dict]]]):
@@ -147,10 +147,10 @@ def set_resonator_calibration_data(data: List[Dict[str, Optional[Dict]]]):
     # FIXME: Use this at the start of the simulator or whenever an automatic recalibration occurs
     #   so that it can be picked up when new calibration data is requested
     for resonator_conf in data:
-        qubit_id = str(resonator_conf["id"]).strip("q")
+        qubit_id = str(resonator_conf["id"]["value"]).strip("q")
         for k, v in resonator_conf.items():
             if isinstance(v, dict):
-                set_component_property("readout_resonator", k, qubit_id, **v)
+                set_component_property(component="readout_resonator", name=k, component_id=qubit_id, **v)
 
 
 def set_discriminator_data(data: Dict[str, Dict[str, Optional[Dict]]]):
@@ -162,10 +162,10 @@ def set_discriminator_data(data: Dict[str, Dict[str, Optional[Dict]]]):
     # FIXME: Use this at the start of the simulator or whenever an automatic recalibration occurs
     #   so that it can be picked up when new calibration data is requested
     for key, discriminator_conf in data.items():
-        qubit_id = str(key).strip("q")
         for k, v in discriminator_conf.items():
+            qubit_id = str(k).strip("q")
             if isinstance(v, dict):
-                set_component_property("discriminator", k, qubit_id, **v)
+                set_component_property(component="discriminator", name=key, component_id=qubit_id, **v)
 
 
 def attach_units_many(
