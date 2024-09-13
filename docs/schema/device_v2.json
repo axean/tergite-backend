@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/tergite/tergite-dashboard/tree/main/src/schemas/2024-07/device.json",
+  "$id": "https://github.com/tergite/tergite-dashboard/tree/main/docs/schemas/device_v2.json",
   "title": "Device",
   "description": "A quantum computing backend specification",
   "type": "object",

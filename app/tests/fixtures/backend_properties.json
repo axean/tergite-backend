@@ -1,131 +1,146 @@
 {
   "name": "system_test",
-  "is_active": true,
   "characterized": true,
   "open_pulse": true,
-  "simulator": false,
   "version": "2023.06.10",
-  "online_date": "2022-04-13T19:50:31",
-  "num_qubits": 3,
-  "num_couplers": 2,
-  "num_resonators": 3,
-  "description": "15 qubit device in Loke",
-  "dt": 1e-9,
-  "dtm": 1e-9,
-  "qubit_ids": ["q12", "q13", "q14"],
-  "device_properties": {
-    "qubit": [
-      {
-        "id": "q12",
-        "x_position": null,
-        "y_position": null,
-        "xy_drive_line": null,
-        "z_drive_line": null,
-        "frequency": null,
-        "pi_pulse_amplitude": null,
-        "pi_pulse_duration": null,
-        "pulse_type": null,
-        "pulse_sigma": null,
-        "t1_decoherence": null,
-        "t2_decoherence": null
-      },
-      {
-        "id": "q13",
-        "x_position": null,
-        "y_position": null,
-        "xy_drive_line": null,
-        "z_drive_line": null,
-        "frequency": null,
-        "pi_pulse_amplitude": null,
-        "pi_pulse_duration": null,
-        "pulse_type": null,
-        "pulse_sigma": null,
-        "t1_decoherence": null,
-        "t2_decoherence": null
-      },
-      {
-        "id": "q14",
-        "x_position": null,
-        "y_position": null,
-        "xy_drive_line": null,
-        "z_drive_line": null,
-        "frequency": null,
-        "pi_pulse_amplitude": null,
-        "pi_pulse_duration": null,
-        "pulse_type": null,
-        "pulse_sigma": null,
-        "t1_decoherence": null,
-        "t2_decoherence": null
-      }
-    ],
-    "readout_resonator": [
-      {
-        "id": "q12",
-        "x_position": null,
-        "y_position": null,
-        "readout_line": null,
-        "acq_delay": null,
-        "acq_integration_time": null,
-        "frequency": null,
-        "pulse_delay": null,
-        "pulse_duration": null,
-        "pulse_type": null,
-        "pulse_amplitude": null
-      },
-      {
-        "id": "q13",
-        "x_position": null,
-        "y_position": null,
-        "readout_line": null,
-        "acq_delay": null,
-        "acq_integration_time": null,
-        "frequency": null,
-        "pulse_delay": null,
-        "pulse_duration": null,
-        "pulse_type": null,
-        "pulse_amplitude": null
-      },
-      {
-        "id": "q14",
-        "x_position": null,
-        "y_position": null,
-        "readout_line": null,
-        "acq_delay": null,
-        "acq_integration_time": null,
-        "frequency": null,
-        "pulse_delay": null,
-        "pulse_duration": null,
-        "pulse_type": null,
-        "pulse_amplitude": null
-      }
-    ]
-  },
-  "discriminators": {
-    "lda": {
-      "q12": {
-        "coef_0": null,
-        "coef_1": null,
-        "intercept": null
-      },
-      "q13": {
-        "coef_0": null,
-        "coef_1": null,
-        "intercept": null
-      },
-      "q14": {
-        "coef_0": null,
-        "coef_1": null,
-        "intercept": null
-      }
-    }
-  },
+  "meas_map": [[0, 1, 2]],
   "coupling_map": [
     [0, 1],
     [1, 0],
     [0, 2],
     [2, 0]
   ],
-  "meas_map": [[0, 1, 2]],
+  "description": "15 qubit device in Loke",
+  "simulator": true,
+  "num_qubits": 3,
+  "num_couplers": 2,
+  "num_resonators": 3,
+  "online_date": "2022-04-13T19:50:31",
+  "dt": 1e-9,
+  "dtm": 1e-9,
+  "timelog": {},
+  "qubit_ids": { "0": "q12", "1": "q13", "2": "q14" },
+  "device_properties": {
+    "qubit": [
+      {
+        "frequency": 4511480043,
+        "pi_pulse_amplitude": 0.17555712637424228,
+        "pi_pulse_duration": 5.6e-8,
+        "pulse_type": "Gaussian",
+        "pulse_sigma": 7e-9,
+        "t1_decoherence": 3.4e-5,
+        "t2_decoherence": 3.3e-5,
+        "id": 0,
+        "index": null,
+        "x_position": null,
+        "y_position": null,
+        "xy_drive_line": null,
+        "z_drive_line": null
+      },
+      {
+        "frequency": 4677112343,
+        "pi_pulse_amplitude": 0.17535338530538067,
+        "pi_pulse_duration": 5.6e-8,
+        "pulse_type": "Gaussian",
+        "pulse_sigma": 7e-9,
+        "t1_decoherence": 3.4e-5,
+        "t2_decoherence": 3.3e-5,
+        "id": 1,
+        "index": null,
+        "x_position": null,
+        "y_position": null,
+        "xy_drive_line": null,
+        "z_drive_line": null
+      },
+      {
+        "frequency": 5770226599,
+        "pi_pulse_amplitude": 0.17873594718151276,
+        "pi_pulse_duration": 5.6e-8,
+        "pulse_type": "Gaussian",
+        "pulse_sigma": 7e-9,
+        "t1_decoherence": 3.4e-5,
+        "t2_decoherence": 3.3e-5,
+        "id": 2,
+        "index": null,
+        "x_position": null,
+        "y_position": null,
+        "xy_drive_line": null,
+        "z_drive_line": null
+      }
+    ],
+    "readout_resonator": [
+      {
+        "acq_delay": 5e-8,
+        "acq_integration_time": 1e-6,
+        "frequency": 7260080000,
+        "pulse_amplitude": 0.1266499392606423,
+        "pulse_delay": 0.0,
+        "pulse_duration": 9e-7,
+        "pulse_type": "Square",
+        "id": 0,
+        "index": null,
+        "x_position": null,
+        "y_position": null,
+        "readout_line": null,
+        "lda_parameters": null
+      },
+      {
+        "acq_delay": 5e-8,
+        "acq_integration_time": 1e-6,
+        "frequency": 7380000000,
+        "pulse_amplitude": 0.12660078572926436,
+        "pulse_delay": 0.0,
+        "pulse_duration": 9e-7,
+        "pulse_type": "Square",
+        "id": 1,
+        "index": null,
+        "x_position": null,
+        "y_position": null,
+        "readout_line": null,
+        "lda_parameters": null
+      },
+      {
+        "acq_delay": 5e-8,
+        "acq_integration_time": 1e-6,
+        "frequency": 7502000000,
+        "pulse_amplitude": 0.08245560237524203,
+        "pulse_delay": 0.0,
+        "pulse_duration": 9e-7,
+        "pulse_type": "Square",
+        "id": 2,
+        "index": null,
+        "x_position": null,
+        "y_position": null,
+        "readout_line": null,
+        "lda_parameters": null
+      }
+    ],
+    "coupler": null
+  },
+  "discriminators": {
+    "lda": {
+      "q12": {
+        "coef_0": -98953.87504155144,
+        "coef_1": -114154.48696231026,
+        "intercept": -38.4344477840827
+      },
+      "q13": {
+        "coef_0": -107941.00358803963,
+        "coef_1": -124239.32054386326,
+        "intercept": -42.05181160328822
+      },
+      "q14": {
+        "coef_0": -191087.42493249022,
+        "coef_1": -20803.06874845618,
+        "intercept": -22.684588212281916
+      }
+    }
+  },
+  "meas_lo_freq": null,
+  "qubit_lo_freq": null,
+  "qubit_calibrations": null,
+  "coupler_calibrations": null,
+  "resonator_calibrations": null,
   "gates": {
     "u": {
       "qubits": [0],
@@ -142,5 +157,7 @@
       "qasm_def": "gate id q { U(0, 0, 0) q; }",
       "parameters": []
     }
-  }
+  },
+  "is_active": true,
+  "properties": null
 }

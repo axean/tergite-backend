@@ -11,13 +11,13 @@
 # that they have been altered from the originals.
 
 import ast
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from enum import Enum, unique
-from typing import Any, List, Optional, Tuple, TypeVar
+from typing import Any, List, Optional, Tuple, TypeVar, Union
 
 import redis
 
-from app.utils.representation import to_string
+from .representation import to_string
 
 from .date_time import utc_now_iso
 from .logging import get_logger
@@ -98,6 +98,10 @@ class BackendProperty:
     tags: Optional[List[str]] = None
     source: Optional[str] = None  # "measurement", "config", or "mock_up"
 
+    def dict(self):
+        """Returns the dict representation of this data class"""
+        return asdict(self)
+
     def write_value(self) -> bool:
         """Write the "value" field to Redis. Set the timestamp, and
         increase the counter. Return True if write succeeded, and
@@ -153,7 +157,7 @@ class BackendProperty:
         name: str,
         component: Optional[str] = None,
         component_id: Optional[str] = None,
-    ) -> Optional[Tuple[_BackendProperty, TimeStamp, Counter]]:
+    ) -> Optional[Tuple["BackendProperty", TimeStamp, Counter]]:
         """Get the backend property from Redis associated with kind,
         name, component, and component_id, when relevant, together with its
         metadata fields, plus Counter and TimeStamp (that are not
@@ -205,9 +209,9 @@ class BackendProperty:
         field_entries = dict(
             {
                 # all values v were created with to_string(v), therefore
-                # ast.literal_eval is safe here, unless something else has
+                # ast.literal_eval (in _eval_redis_value) is safe here, unless something else has
                 # gone seriously wrong
-                (field, ast.literal_eval(value))
+                (field, _eval_redis_value(value))
                 for field, value in zip(fields + ["timestamp", "count"], results)
                 if value is not None  # don't include keys absent in Redis
             }
@@ -253,7 +257,7 @@ class BackendProperty:
         )
         result = red.get(value_key)
         return (
-            ast.literal_eval(result)
+            _eval_redis_value(result)
             if result is not None and str(result).lower() != "nan"
             else None
         )
@@ -366,7 +370,7 @@ class BackendProperty:
         # The timestamp was stored by to_string as a quoted string, and
         # will now be turned into an unquoted string
         return (
-            ast.literal_eval(result)
+            _eval_redis_value(result)
             if result is not None and str(result).lower() != "nan"
             else None
         )
@@ -489,7 +493,7 @@ def get_component_property(
     component: str,
     name: str,
     component_id: str,
-) -> Optional[Tuple[_BackendProperty, TimeStamp, Counter]]:
+):
     property_type = PropertyType.DEVICE
     return BackendProperty.read(
         property_type, name, component=component, component_id=component_id
@@ -540,67 +544,14 @@ def get_resonator_value(name: str, component_id: str) -> Optional[T]:
     return get_component_value("resonator", name, component_id)
 
 
-"""Qubit helpers"""
+def _eval_redis_value(value: Union[bytes, str]) -> Any:
+    """Evaluates the value from redis
 
+    Args:
+        value: the value to evaluate
 
-def set_qubit_property(name: str, component_id: str, **fields):
-    """Write given fields into Redis for qubit property identified
-    by the given arguments.
+    Returns:
+        the evaluated value
     """
-    set_component_property("qubit", name, component_id, **fields)
-
-
-def get_qubit_property(
-    name: str, component_id: str
-) -> Optional[Tuple[_BackendProperty, TimeStamp, Counter]]:
-    """Get all fields associated with the qubit property
-    identified by the given arguments.
-    """
-    return get_component_property("qubit", name, component_id)
-
-
-def set_qubit_value(name: str, component_id: str, value: T):
-    """Write given value into Redis for qubit property identified
-    by the given arguments.
-    """
-    set_component_property("qubit", name, component_id, value=value)
-
-
-def get_qubit_value(name: str, component_id: str) -> Optional[T]:
-    """Get the value associated with the qubit property
-    identified by the given arguments.
-    """
-    return get_component_value("qubit", name, component_id)
-
-
-"""Coupler helpers"""
-
-
-def set_coupler_property(name: str, component_id: str, **fields):
-    """Write given fields into Redis for coupler property identified
-    by the given arguments.
-    """
-    set_component_property("coupler", name, component_id, **fields)
-
-
-def get_coupler_property(
-    name: str, component_id: str
-) -> Optional[Tuple[_BackendProperty, TimeStamp, Counter]]:
-    """Get all fields associated with the coupler property
-    identified by the given arguments.
-    """
-    return get_component_property("coupler", name, component_id)
-
-
-def set_coupler_value(name: str, component_id: str, value: T):
-    """Write given value into Redis for coupler property identified
-    by the given arguments.
-    """
-    set_component_property("coupler", name, component_id, value=value)
-
-
-def get_coupler_value(name: str, component_id: str) -> Optional[T]:
-    """Get the value associated with the coupler property
-    identified by the given arguments.
-    """
-    return get_component_value("coupler", name, component_id)
+    value_str = value if isinstance(value, str) else value.decode("utf-8")
+    return ast.literal_eval(value_str)

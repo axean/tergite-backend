@@ -164,3 +164,8 @@ executor-config.yml
 executor-config.**.yml
 !executor-config.example.yml
 
+# backend configs
+backend_config.toml
+backend_config.**.toml
+!**/fixtures/backend_config**.toml
+!backend_config.example.toml

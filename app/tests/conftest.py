@@ -5,6 +5,8 @@ from .utils.env import (
     TEST_STORAGE_PREFIX_DIRNAME,
     TEST_STORAGE_ROOT,
     setup_test_env,
+    TEST_SIMQ1_BACKEND_SETTINGS_FILE,
+    TEST_BACKEND_SETTINGS_FILE,
 )
 
 # set up the environment before any other import
@@ -151,6 +153,17 @@ def mock_mss_put_requests(url: str, **kwargs):
         return MockHttpResponse(status_code=200)
     if is_jobs_update_url and "result" in payload:
         return MockHttpResponse(status_code=200)
+    if url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/v2/devices"):
+        return MockHttpResponse(status_code=200)
+
+    return MockHttpResponse(status_code=405)
+
+
+def mock_mss_post_requests(url: str, **kwargs):
+    """Mock POST requests sent to MSS for testing"""
+
+    if url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/v2/calibrations"):
+        return MockHttpResponse(status_code=200)
 
     return MockHttpResponse(status_code=405)
 
@@ -187,6 +200,7 @@ def async_fastapi_client(mocker) -> TestClient:
     remove_modules(["app", "settings"])
     _patch_async_client(mocker)
     os.environ["EXECUTOR_TYPE"] = "hardware"
+    os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
 
     from app.api import app
 
@@ -200,6 +214,7 @@ def async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient:
     remove_modules(["app", "settings"])
     _patch_async_client(mocker)
     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
+    os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
 
     from app.api import app
 
@@ -213,6 +228,7 @@ def async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient:
 #     remove_modules(["app", "settings"])
 #     _patch_sync_client(mocker)
 #     os.environ["EXECUTOR_TYPE"] = "hardware"
+#     os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
 #
 #     from app.api import app
 #
@@ -225,6 +241,7 @@ def async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient:
 #     remove_modules(["app", "settings"])
 #     _patch_sync_client(mocker)
 #     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
+#     os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
 #
 #     from app.api import app
 #
@@ -239,6 +256,7 @@ def blacklisted_async_fastapi_client(mocker) -> TestClient:
     _patch_async_client(mocker)
     os.environ["BLACKLISTED"] = "True"
     os.environ["EXECUTOR_TYPE"] = "hardware"
+    os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
 
     from app.api import app
 
@@ -254,6 +272,7 @@ def blacklisted_async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient
     _patch_async_client(mocker)
     os.environ["BLACKLISTED"] = "True"
     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
+    os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
 
     from app.api import app
 
@@ -268,6 +287,7 @@ def blacklisted_async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient
 #     _patch_sync_client(mocker)
 #     os.environ["BLACKLISTED"] = "True"
 #     os.environ["EXECUTOR_TYPE"] = "hardware"
+#     os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
 #
 #     from app.api import app
 #
@@ -282,6 +302,7 @@ def blacklisted_async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient
 #     _patch_sync_client(mocker)
 #     os.environ["BLACKLISTED"] = "True"
 #     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
+#     os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
 #
 #     from app.api import app
 #
@@ -331,7 +352,11 @@ def app_token_header() -> Dict[str, str]:
 
 def _patch_async_client(mocker):
     """Patches the async client"""
-    mss_client = MockHttpSession(put=mock_mss_put_requests, get=mock_mss_get_requests)
+    mss_client = MockHttpSession(
+        put=mock_mss_put_requests,
+        get=mock_mss_get_requests,
+        post=mock_mss_post_requests,
+    )
 
     mocker.patch("redis.Redis", return_value=_real_redis)
     mocker.patch("app.utils.queues.QueuePool", return_value=_async_queue_pool)
@@ -342,7 +367,11 @@ def _patch_async_client(mocker):
 
 def _patch_sync_client(mocker):
     """Patches the sync client"""
-    mss_client = MockHttpSession(put=mock_mss_put_requests, get=mock_mss_get_requests)
+    mss_client = MockHttpSession(
+        put=mock_mss_put_requests,
+        get=mock_mss_get_requests,
+        post=mock_mss_post_requests,
+    )
 
     mocker.patch("redis.Redis", return_value=_fake_redis)
     mocker.patch("app.utils.queues.QueuePool", return_value=_sync_queue_pool)

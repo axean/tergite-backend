@@ -1,7 +1,7 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/tergite/tergite-backend/tree/main/app/resources/schemas/backend_v1.json",
-    "title": "BackendV1Config",
+    "$id": "https://github.com/tergite/tergite-backend/tree/main/docs/device_v1.json",
+    "title": "device_v1",
     "description": "Configurations for older qiskit version for tergite devices.",
     "type": "object",
     "properties": {

@@ -24,13 +24,14 @@ from app.libs.quantum_executor.utils.channel import Channel
 from app.libs.quantum_executor.utils.instruction import Instruction
 from .backend import QiskitPulse1Q
 from .transpile import transpile
+from ...properties import BackendConfig
 
 
 class QiskitDynamicsExecutor(QuantumExecutor):
-    def __init__(self, config_file):
+    def __init__(self, backend_config: BackendConfig):
         super().__init__()
 
-        self.backend = QiskitPulse1Q()
+        self.backend = QiskitPulse1Q(backend_config=backend_config)
 
     def run(self, experiment: BaseExperiment, /) -> xarray.Dataset:
         job = self.backend.run(experiment.schedule)
@@ -83,10 +84,10 @@ class QiskitDynamicsExecutor(QuantumExecutor):
 
 
 class QiskitPulse1QExecutor(QuantumExecutor):
-    def __init__(self, config_file):
+    def __init__(self, backend_config: BackendConfig):
         super().__init__()
         # TODO: Use measurement level provided by the client request if discriminator is not provided
-        self.backend = QiskitPulse1Q(meas_level=1, meas_return="single")
+        self.backend = QiskitPulse1Q(meas_level=1, meas_return="single", backend_config=backend_config)
         self.shots = 1024
 
     def run(self, experiment: BaseExperiment, /) -> xarray.Dataset:
@@ -130,7 +131,8 @@ class QiskitPulse1QExecutor(QuantumExecutor):
         return ds
 
     def construct_experiments(self, qobj: PulseQobj, /):
-        # because we avoid experiments structure we have to pass shots and measurement level configurations to the run function
+        # because we avoid experiments structure we have to pass shots and
+        # measurement level configurations to the run function
         self.shots = qobj.config.shots
         self.meas_return = qobj.config.meas_return
         qobj_dict = qobj.to_dict()

@@ -392,11 +392,6 @@ class GenericQcodesInstrument(ExecutorConfigItem):
         return raw_dict
 
 
-class SimulatorType(str, enum.Enum):
-    SCQT = "scqt"
-    CHALMERS = "chalmers"
-
-
 class QuantifyExecutorConfig(ExecutorConfigItem):
     """The configuration constructed from the quantify hardware config JSON file"""
 

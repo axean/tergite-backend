@@ -24,14 +24,10 @@ from qiskit_ibm_provider.utils import json_decoder
 from redis import Redis
 
 import settings
-from app.libs.quantum_executor.qiskit.executor import (
-    QiskitDynamicsExecutor,
-    QiskitPulse1QExecutor,
-)
-from app.libs.quantum_executor.quantify.executor import QuantifyExecutor
 from app.libs.quantum_executor.utils.connections import get_executor_lock
 from app.libs.quantum_executor.utils.serialization import iqx_rld
 from app.utils.queues import QueuePool
+from .utils import get_executor
 
 from ...service import Location, fetch_job, inform_failure, inform_location
 from ..postprocessing import (
@@ -51,19 +47,7 @@ DEFAULT_PREFIX = settings.DEFAULT_PREFIX
 # ----------------
 redis_connection = Redis()
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
-
-
-# Quantum Executor
-# ----------------
-# In case you are adding a new executor type, please update this map as well
-EXECUTOR_MAP = {
-    "hardware": QuantifyExecutor,
-    "qiskit": QiskitDynamicsExecutor,
-    "qiskit_pulse_1q": QiskitPulse1QExecutor,
-}
-executor = EXECUTOR_MAP[settings.EXECUTOR_TYPE](
-    config_file=settings.EXECUTOR_CONFIG_FILE
-)
+executor = get_executor()
 
 
 def job_execute(job_file: Path):
