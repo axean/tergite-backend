@@ -24,7 +24,7 @@
 - Authenticated and authorized requests to/from clients including 
   [MSS](https://github.com/tergite/tergite-mss) and the general internet.
 - Tracking of execution time of jobs
-- Hardware configuration clean up with YAML
+- Hardware configuration clean up with YAML and TOML
 - integration test suite plus CI/CD
 
 ## Nicklas Botö
@@ -36,3 +36,16 @@
 
 - Integration of Bachelors students' project on data visualization
 - Support for simulator backend
+
+## Pontus Vikstål
+
+- Implemented the Qiskit pulse simulator
+
+## Stefan Hill
+
+- Implemented the Qiskit pulse simulator
+
+## Adilet Tuleouv
+
+- Implemented the Qiskit pulse simulator
+- Hardware configuration cleanup with TOML
