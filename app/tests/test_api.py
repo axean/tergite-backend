@@ -1,3 +1,4 @@
+import copy
 import json
 from itertools import zip_longest
 from os import path
@@ -276,6 +277,8 @@ def test_fetch_job_status(redis_client, client, job_id: str, app_token_header):
         response = client.get(f"/jobs/{job_id}/status", headers=app_token_header)
         got = response.json()
         expected_job = list(filter(lambda x: x["job_id"] == job_id, _JOBS_LIST))[0]
+        # We add this, because we do not want to overwrite values as in the lines below
+        expected_job = copy.deepcopy(expected_job)
 
         try:
             status = expected_job["status"]

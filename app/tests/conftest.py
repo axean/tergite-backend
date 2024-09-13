@@ -246,6 +246,7 @@ def blacklisted_async_fastapi_client(mocker) -> TestClient:
         yield TestClient(app)
 
 
+@pytest.fixture
 def blacklisted_async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient:
     """A test client with black listed ip for fast api when rq is running asynchronously
     when qiskit dynamics is executor"""
