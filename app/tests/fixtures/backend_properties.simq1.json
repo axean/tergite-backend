@@ -1,0 +1,72 @@
+{
+  "name": "fake_openpulse_1q",
+  "characterized": true,
+  "open_pulse": true,
+  "version": "1.0.0",
+  "meas_map": [[0]],
+  "coupling_map": [],
+  "description": "A single transmon Hamiltonian with 4 levels",
+  "simulator": true,
+  "num_qubits": 1,
+  "num_couplers": 0,
+  "num_resonators": 1,
+  "online_date": "2024-09-11T18:07:31",
+  "dt": 1e-9,
+  "dtm": 1e-9,
+  "timelog": {},
+  "qubit_ids": { "0": "q0" },
+  "device_properties": {
+    "qubit": [
+      {
+        "frequency": 4700000000,
+        "pi_pulse_amplitude": 0.05,
+        "pi_pulse_duration": 5.6e-9,
+        "pulse_type": "Gaussian",
+        "pulse_sigma": 7e-9,
+        "t1_decoherence": 7.1e-5,
+        "t2_decoherence": 6.9e-5,
+        "id": 0,
+        "index": null,
+        "x_position": null,
+        "y_position": null,
+        "xy_drive_line": null,
+        "z_drive_line": null
+      }
+    ],
+    "readout_resonator": [
+      {
+        "acq_delay": 5e-8,
+        "acq_integration_time": 1e-6,
+        "frequency": 7260080000,
+        "pulse_amplitude": 0.1266499392606423,
+        "pulse_delay": 0.0,
+        "pulse_duration": 9e-7,
+        "pulse_type": "Square",
+        "id": 0,
+        "index": null,
+        "x_position": null,
+        "y_position": null,
+        "readout_line": null,
+        "lda_parameters": null
+      }
+    ],
+    "coupler": null
+  },
+  "discriminators": {
+    "lda": { "q0": { "coef_0": null, "coef_1": null, "intercept": null } }
+  },
+  "meas_lo_freq": null,
+  "qubit_lo_freq": null,
+  "qubit_calibrations": null,
+  "coupler_calibrations": null,
+  "resonator_calibrations": null,
+  "gates": {
+    "x": {
+      "qasm_def": "gate x q { U(pi, 0, pi) q; }",
+      "parameters": [],
+      "coupling_map": [[0]]
+    }
+  },
+  "is_active": true,
+  "properties": null
+}

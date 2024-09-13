@@ -25,8 +25,10 @@ from app.tests.utils.redis import insert_in_hash, register_app_token_job_id
 
 _PARENT_FOLDER = path.dirname(path.abspath(__file__))
 _JOBS_LIST = load_fixture("job_list.json")
-# _DEFAULT_LOGFILE_PATH = get_fixture_path("logfile.hdf5")
-_BACKEND_PROPERTIES = load_fixture("backend_properties.json")
+_BACKEND_PROPERTIES = [
+    load_fixture("backend_properties.json"),
+    load_fixture("backend_properties.simq1.json"),
+]
 _SIMULATOR_JOBS_FOR_UPLOAD = load_fixture("jobs_to_upload_simulator.json")
 _JOBS_FOR_UPLOAD = load_fixture("jobs_to_upload.json")
 _JOB_ID_FIELD = "job_id"
@@ -82,6 +84,9 @@ _BLACKLISTED_UPLOAD_JOB_PARAMS = [
     (client, redis_client, rq_worker, job)
     for job in _JOBS_FOR_UPLOAD
     for client, redis_client, rq_worker in BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES
+]
+_BACKEND_PROPERTIES_PARAMS = [
+    (client, resp) for client, resp in zip(FASTAPI_CLIENTS, _BACKEND_PROPERTIES)
 ]
 
 
@@ -760,15 +765,15 @@ def test_blacklisted_get_rq_info(client, redis_client, rq_worker):
         assert response.content == b""
 
 
-@pytest.mark.parametrize("client", FASTAPI_CLIENTS)
-def test_get_backend_properties(client):
+@pytest.mark.parametrize("client, expected", _BACKEND_PROPERTIES_PARAMS)
+def test_get_backend_properties(client, expected):
     """Get to '/backend_properties' retrieves the current snapshot of the backend properties"""
     # using context manager to ensure on_startup runs
     with client as client:
         response = client.get("/backend_properties")
         got = response.json()
         assert response.status_code == 200
-        assert got == _BACKEND_PROPERTIES
+        assert got == expected
 
 
 @pytest.mark.parametrize("client", BLACKLISTED_FASTAPI_CLIENTS)

@@ -87,7 +87,9 @@ class QiskitPulse1QExecutor(QuantumExecutor):
     def __init__(self, backend_config: BackendConfig):
         super().__init__()
         # TODO: Use measurement level provided by the client request if discriminator is not provided
-        self.backend = QiskitPulse1Q(meas_level=1, meas_return="single", backend_config=backend_config)
+        self.backend = QiskitPulse1Q(
+            meas_level=1, meas_return="single", backend_config=backend_config
+        )
         self.shots = 1024
 
     def run(self, experiment: BaseExperiment, /) -> xarray.Dataset:
