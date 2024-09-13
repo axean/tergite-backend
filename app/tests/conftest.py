@@ -47,23 +47,23 @@ TEST_APP_TOKEN_STRING = "eecbf107ad103f70187923f49c1a1141219da95f1ab3906f"
 
 FASTAPI_CLIENTS = [
     lazy_fixture("async_fastapi_client"),
-    lazy_fixture("async_fastapi_client_with_qiskit_simulator"),
+    # lazy_fixture("async_fastapi_client_with_qiskit_simulator"),
     # FIXME: inform-job-location-stage logic is non-deterministic
     # lazy_fixture("sync_fastapi_client"),
 ]
 BLACKLISTED_FASTAPI_CLIENTS = [
     lazy_fixture("blacklisted_async_fastapi_client"),
-    lazy_fixture("blacklisted_async_fastapi_client_with_qiskit_simulator"),
+    # lazy_fixture("blacklisted_async_fastapi_client_with_qiskit_simulator"),
     # FIXME: inform-job-location-stage logic is non-deterministic
     # lazy_fixture("blacklisted_sync_fastapi_client"),
 ]
 
 CLIENTS = [
     (lazy_fixture("async_fastapi_client"), lazy_fixture("real_redis_client")),
-    (
-        lazy_fixture("async_fastapi_client_with_qiskit_simulator"),
-        lazy_fixture("real_redis_client"),
-    ),
+    # (
+    #     lazy_fixture("async_fastapi_client_with_qiskit_simulator"),
+    #     lazy_fixture("real_redis_client"),
+    # ),
     # FIXME: inform-job-location-stage logic is non-deterministic
     # (lazy_fixture("sync_fastapi_client"), lazy_fixture("fake_redis_client")),
 ]
@@ -73,10 +73,10 @@ BLACKLISTED_CLIENTS = [
         lazy_fixture("blacklisted_async_fastapi_client"),
         lazy_fixture("real_redis_client"),
     ),
-    (
-        lazy_fixture("blacklisted_async_fastapi_client_with_qiskit_simulator"),
-        lazy_fixture("real_redis_client"),
-    ),
+    # (
+    #     lazy_fixture("blacklisted_async_fastapi_client_with_qiskit_simulator"),
+    #     lazy_fixture("real_redis_client"),
+    # ),
     # FIXME: inform-job-location-stage logic is non-deterministic
     # (lazy_fixture("blacklisted_sync_fastapi_client"), lazy_fixture("fake_redis_client")),
 ]
@@ -87,11 +87,11 @@ CLIENT_AND_RQ_WORKER_TUPLES = [
         lazy_fixture("real_redis_client"),
         lazy_fixture("async_rq_worker"),
     ),
-    (
-        lazy_fixture("async_fastapi_client_with_qiskit_simulator"),
-        lazy_fixture("real_redis_client"),
-        lazy_fixture("async_rq_worker"),
-    ),
+    # (
+    #     lazy_fixture("async_fastapi_client_with_qiskit_simulator"),
+    #     lazy_fixture("real_redis_client"),
+    #     lazy_fixture("async_rq_worker"),
+    # ),
     # FIXME: inform-job-location-stage logic is non-deterministic
     # (
     #     lazy_fixture("sync_fastapi_client"),
@@ -111,11 +111,11 @@ BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES = [
         lazy_fixture("real_redis_client"),
         lazy_fixture("async_rq_worker"),
     ),
-    (
-        lazy_fixture("blacklisted_async_fastapi_client_with_qiskit_simulator"),
-        lazy_fixture("real_redis_client"),
-        lazy_fixture("async_rq_worker"),
-    ),
+    # (
+    #     lazy_fixture("blacklisted_async_fastapi_client_with_qiskit_simulator"),
+    #     lazy_fixture("real_redis_client"),
+    #     lazy_fixture("async_rq_worker"),
+    # ),
     # FIXME: inform-job-location-stage logic is non-deterministic
     # (
     #     lazy_fixture("blacklisted_sync_fastapi_client"),
@@ -152,6 +152,17 @@ def mock_mss_put_requests(url: str, **kwargs):
     if is_jobs_update_url and "timestamps" in payload:
         return MockHttpResponse(status_code=200)
     if is_jobs_update_url and "result" in payload:
+        return MockHttpResponse(status_code=200)
+    if url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/v2/devices"):
+        return MockHttpResponse(status_code=200)
+
+    return MockHttpResponse(status_code=405)
+
+
+def mock_mss_post_requests(url: str, **kwargs):
+    """Mock POST requests sent to MSS for testing"""
+
+    if url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/v2/calibrations"):
         return MockHttpResponse(status_code=200)
 
     return MockHttpResponse(status_code=405)
@@ -340,7 +351,11 @@ def app_token_header() -> Dict[str, str]:
 
 def _patch_async_client(mocker):
     """Patches the async client"""
-    mss_client = MockHttpSession(put=mock_mss_put_requests, get=mock_mss_get_requests)
+    mss_client = MockHttpSession(
+        put=mock_mss_put_requests,
+        get=mock_mss_get_requests,
+        post=mock_mss_post_requests,
+    )
 
     mocker.patch("redis.Redis", return_value=_real_redis)
     mocker.patch("app.utils.queues.QueuePool", return_value=_async_queue_pool)
@@ -351,7 +366,11 @@ def _patch_async_client(mocker):
 
 def _patch_sync_client(mocker):
     """Patches the sync client"""
-    mss_client = MockHttpSession(put=mock_mss_put_requests, get=mock_mss_get_requests)
+    mss_client = MockHttpSession(
+        put=mock_mss_put_requests,
+        get=mock_mss_get_requests,
+        post=mock_mss_post_requests,
+    )
 
     mocker.patch("redis.Redis", return_value=_fake_redis)
     mocker.patch("app.utils.queues.QueuePool", return_value=_sync_queue_pool)

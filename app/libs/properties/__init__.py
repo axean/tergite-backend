@@ -2,6 +2,7 @@
 #
 # (C) Copyright Abdullah-Al Amin 2023
 # (C) Copyright Martin Ahindura 2024
+# (C) Copyright Adilet Tuleouv 2024
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -31,8 +32,9 @@ from .dtos import (
     DeviceV2,
     DeviceCalibrationV2,
     QubitCalibration,
-    _QubitProps,
-    _ReadoutResonatorProps,
+    QubitProps,
+    ReadoutResonatorProps,
+    DeviceProperties,
 )
 from .utils.data import (
     read_qubit_calibration_data,
@@ -92,8 +94,6 @@ def initialize_backend(
         qubit_units = simulator_config.units["qubit"]
         qubit_data = simulator_config.qubit if qubit_config is None else qubit_config
         qubit_data = attach_units_many(qubit_data, qubit_units)
-        for item in qubit_data:
-            item["id"]["value"] = item["id"]["value"].replace("q", "")
         set_qubit_calibration_data(qubit_data)
 
         # set readout_resonator calibration data
@@ -101,8 +101,6 @@ def initialize_backend(
         resonator_data = resonator_config
         if resonator_config is None:
             resonator_data = simulator_config.readout_resonator
-        for item in resonator_data:
-            item["id"] = item["id"].replace("q", "")
         resonator_data = attach_units_many(resonator_data, resonator_units)
         set_resonator_calibration_data(resonator_data)
 
@@ -155,29 +153,25 @@ def get_device_v1_info(
         )
         for item in discriminators
     }
-    qubit_ids = {}
-
-    for i, q_id in enumerate(backend_config.device_config.qubit_ids):
-        qubit_ids[i] = q_id
 
     return DeviceV1(
         **backend_config.general_config.dict(),
         meas_map=backend_config.device_config.meas_map,
         coupling_map=backend_config.device_config.coupling_map,
-        qubit_ids=qubit_ids,
+        qubit_ids={idx: v for idx, v in enumerate(qubit_ids)},
         gates=backend_config.gates,
-        device_properties={
-            "qubit": [
-                _QubitProps(**{k: get_inner_value(v) for k, v in item.items()})
+        device_properties=DeviceProperties(
+            qubit=[
+                QubitProps(**{k: get_inner_value(v) for k, v in item.items()})
                 for item in qubit_conf
             ],
-            "readout_resonator": [
-                _ReadoutResonatorProps(
+            readout_resonator=[
+                ReadoutResonatorProps(
                     **{k: get_inner_value(v) for k, v in item.items()}
                 )
                 for item in resonator_conf
             ],
-        },
+        ),
         discriminators={
             discriminator: {
                 qubit_id: {k: get_inner_value(v) for k, v in conf.items()}

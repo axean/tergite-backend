@@ -14,12 +14,12 @@
 from typing import List, Dict, Optional, Literal, Union
 
 from ..dtos import CalibrationValue
-from .storage import get_component_property, set_component_property, get_component_value
+from .storage import get_component_property, set_component_property
 
 
 def get_inner_value(
-    calib_value: Union[str, CalibrationValue, None]
-) -> Union[str, float]:
+    calib_value: Union[int, CalibrationValue, None]
+) -> Union[int, float]:
     """Extracts value from a possible calibration value
 
     Args:
@@ -35,7 +35,7 @@ def get_inner_value(
 
 def read_qubit_calibration_data(
     qubit_ids: List[str], qubit_params: List[str]
-) -> List[Dict[str, Union[str, CalibrationValue, None]]]:
+) -> List[Dict[str, Union[int, CalibrationValue, None]]]:
     """Reads the calibration of the qubits of the device from the store (redis)
 
     Args:
@@ -47,8 +47,8 @@ def read_qubit_calibration_data(
     """
     return [
         {
-            param: qubit_id
-            if param is "id"
+            param: idx
+            if param == "id"
             else _read_calibration_value(
                 component_type="qubit",
                 component_id=qubit_id.strip("q"),
@@ -56,13 +56,13 @@ def read_qubit_calibration_data(
             )
             for param in qubit_params
         }
-        for qubit_id in qubit_ids
+        for idx, qubit_id in enumerate(qubit_ids)
     ]
 
 
 def read_resonator_calibration_data(
     qubit_ids: List[str], resonator_params: List[str]
-) -> List[Dict[str, Union[str, CalibrationValue, None]]]:
+) -> List[Dict[str, Union[int, CalibrationValue, None]]]:
     """Reads the calibration of the resonators of the device from the store (redis)
 
     Args:
@@ -74,8 +74,8 @@ def read_resonator_calibration_data(
     """
     return [
         {
-            param: qubit_id
-            if param is "id"
+            param: idx
+            if param == "id"
             else _read_calibration_value(
                 component_type="readout_resonator",
                 component_id=qubit_id.strip("q"),
@@ -83,7 +83,7 @@ def read_resonator_calibration_data(
             )
             for param in resonator_params
         }
-        for qubit_id in qubit_ids
+        for idx, qubit_id in enumerate(qubit_ids)
     ]
 
 
@@ -132,7 +132,7 @@ def _read_calibration_value(
         component=component_type, name=prop_name, component_id=component_id
     )
     if result is not None:
-        return CalibrationValue(date=result[1], **result[0].__dict__)
+        return CalibrationValue(date=result[1], **result[0].dict())
 
 
 def set_qubit_calibration_data(data: List[Dict[str, Optional[Dict]]]):
@@ -178,11 +178,11 @@ def set_discriminator_data(data: Dict[str, Dict[str, Optional[Dict]]]):
     # FIXME: Use this at the start of the simulator or whenever an automatic recalibration occurs
     #   so that it can be picked up when new calibration data is requested
     for key, discriminator_conf in data.items():
+        qubit_id = str(key).strip("q")
         for k, v in discriminator_conf.items():
-            qubit_id = str(k).strip("q")
             if isinstance(v, dict):
                 set_component_property(
-                    component="discriminator", name=key, component_id=qubit_id, **v
+                    component="discriminator", name=k, component_id=qubit_id, **v
                 )
 
 

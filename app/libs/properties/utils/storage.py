@@ -11,9 +11,9 @@
 # that they have been altered from the originals.
 
 import ast
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from enum import Enum, unique
-from typing import Any, List, Optional, Tuple, TypeVar
+from typing import Any, List, Optional, Tuple, TypeVar, Union
 
 import redis
 
@@ -97,6 +97,10 @@ class BackendProperty:
     notes: Optional[str] = None
     tags: Optional[List[str]] = None
     source: Optional[str] = None  # "measurement", "config", or "mock_up"
+
+    def dict(self):
+        """Returns the dict representation of this data class"""
+        return asdict(self)
 
     def write_value(self) -> bool:
         """Write the "value" field to Redis. Set the timestamp, and
@@ -205,9 +209,9 @@ class BackendProperty:
         field_entries = dict(
             {
                 # all values v were created with to_string(v), therefore
-                # ast.literal_eval is safe here, unless something else has
+                # ast.literal_eval (in _eval_redis_value) is safe here, unless something else has
                 # gone seriously wrong
-                (field, ast.literal_eval(value))
+                (field, _eval_redis_value(value))
                 for field, value in zip(fields + ["timestamp", "count"], results)
                 if value is not None  # don't include keys absent in Redis
             }
@@ -253,7 +257,7 @@ class BackendProperty:
         )
         result = red.get(value_key)
         return (
-            ast.literal_eval(result)
+            _eval_redis_value(result)
             if result is not None and str(result).lower() != "nan"
             else None
         )
@@ -366,7 +370,7 @@ class BackendProperty:
         # The timestamp was stored by to_string as a quoted string, and
         # will now be turned into an unquoted string
         return (
-            ast.literal_eval(result)
+            _eval_redis_value(result)
             if result is not None and str(result).lower() != "nan"
             else None
         )
@@ -538,3 +542,16 @@ def get_resonator_value(name: str, component_id: str) -> Optional[T]:
     identified by the given arguments.
     """
     return get_component_value("resonator", name, component_id)
+
+
+def _eval_redis_value(value: Union[bytes, str]) -> Any:
+    """Evaluates the value from redis
+
+    Args:
+        value: the value to evaluate
+
+    Returns:
+        the evaluated value
+    """
+    value_str = value if isinstance(value, str) else value.decode("utf-8")
+    return ast.literal_eval(value_str)

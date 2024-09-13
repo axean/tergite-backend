@@ -22,7 +22,7 @@ from pydantic import BaseModel, Extra
 from app.libs.properties.utils.date_time import utc_to_iso, utc_now_iso
 
 
-class _QubitProps(BaseModel):
+class QubitProps(BaseModel):
     """Qubit Device configuration"""
 
     frequency: int
@@ -40,7 +40,7 @@ class _QubitProps(BaseModel):
     z_drive_line: Optional[int] = None
 
 
-class _ReadoutResonatorProps(BaseModel):
+class ReadoutResonatorProps(BaseModel):
     """ReadoutResonator Device configuration"""
 
     acq_delay: float
@@ -58,15 +58,12 @@ class _ReadoutResonatorProps(BaseModel):
     lda_parameters: Optional[Dict[str, Any]] = None
 
 
-class _DeviceProperties(BaseModel):
+class DeviceProperties(BaseModel):
     """All Device Properties"""
 
-    qubit: Optional[List[_QubitProps]] = None
-    readout_resonator: Optional[List[_ReadoutResonatorProps]] = None
+    qubit: Optional[List[QubitProps]] = None
+    readout_resonator: Optional[List[ReadoutResonatorProps]] = None
     coupler: Optional[List[Dict[str, Any]]] = None
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 class DeviceV1(BaseModel):
@@ -88,7 +85,7 @@ class DeviceV1(BaseModel):
     dtm: Optional[float] = None
     timelog: Dict[str, Any] = {}
     qubit_ids: Dict[int, str] = {}
-    device_properties: Optional[_DeviceProperties] = None
+    device_properties: Optional[DeviceProperties] = None
     discriminators: Optional[Dict[str, Any]] = None
     meas_lo_freq: Optional[List[int]] = None
     qubit_lo_freq: Optional[List[int]] = None
