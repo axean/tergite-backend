@@ -34,7 +34,7 @@ import settings
 from ..services.auth import service as auth_service
 from ..services.jobs import service as jobs_service
 from ..services.jobs.workers.registration import job_register
-from ..services.properties import service as props_service
+from ..libs import properties as props_lib
 from ..utils.queues import QueuePool
 from .dependencies import (
     get_bearer_token,
@@ -242,7 +242,7 @@ async def get_rq_info(redis_connection: RedisDep):
 
 @app.get("/backend_properties", dependencies=[Depends(get_whitelisted_ip)])
 async def create_current_snapshot():
-    return props_service.create_backend_snapshot()
+    return props_lib.get_device_v1_info()
 
 
 # FIXME: this endpoint might be unnecessary

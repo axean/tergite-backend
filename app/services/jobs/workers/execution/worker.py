@@ -24,10 +24,10 @@ from qiskit_ibm_provider.utils import json_decoder
 from redis import Redis
 
 import settings
-from app.services.quantum_executor import service as executor_service
-from app.services.quantum_executor.utils.connections import get_executor_lock
-from app.services.quantum_executor.utils.serialization import iqx_rld
+from app.libs.quantum_executor.utils.connections import get_executor_lock
+from app.libs.quantum_executor.utils.serialization import iqx_rld
 from app.utils.queues import QueuePool
+from .utils import get_executor
 
 from ...service import Location, fetch_job, inform_failure, inform_location
 from ..postprocessing import (
@@ -37,15 +37,17 @@ from ..postprocessing import (
 )
 
 # Settings
+# --------
 STORAGE_ROOT = settings.STORAGE_ROOT
 BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
 DEFAULT_PREFIX = settings.DEFAULT_PREFIX
 
-# redis connection
-redis_connection = Redis()
-executor = executor_service.QuantumExecutor(config_file=settings.EXECUTOR_CONFIG_FILE)
 
+# Redis connection
+# ----------------
+redis_connection = Redis()
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
+executor = get_executor()
 
 
 def job_execute(job_file: Path):

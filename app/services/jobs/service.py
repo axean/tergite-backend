@@ -25,7 +25,7 @@ from rq.job import Job
 
 import settings
 
-from ...utils import date_time
+from ...libs.properties.utils import date_time
 
 STORAGE_ROOT = settings.STORAGE_ROOT
 JOB_SUPERVISOR_LOG = settings.JOB_SUPERVISOR_LOG

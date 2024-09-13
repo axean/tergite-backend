@@ -32,7 +32,7 @@ from sklearn.utils.extmath import safe_sparse_dot
 import settings
 from app.libs.storage_file import MeasLvl, StorageFile
 from app.services.jobs.workers.postprocessing.exc import PostProcessingError
-from app.utils import date_time
+from app.libs.properties.utils import date_time
 from app.utils.http import get_mss_client
 
 from ...service import (
@@ -129,7 +129,8 @@ def _apply_linear_discriminator(
     discriminator_ = backend["discriminators"]["lda"]
     # TODO: We are having two "qubit_id" (e.g. q12 = 0, q13 = 1) and we should have some more meaningful representation
     qubit_id_ = backend["qubit_ids"][qubit_idx]
-    print(discriminator_, qubit_idx, qubit_id_)
+    # When we run on 1000+ shots it gets too noisy
+    # print(discriminator_, qubit_idx, qubit_id_)
     coefficients = np.array(
         [discriminator_[qubit_id_]["coef_0"], discriminator_[qubit_id_]["coef_1"]]
     )
@@ -162,9 +163,7 @@ def postprocess_storage_file(
                     print(f"Response error {response}")
 
                 try:
-                    memory = sf.as_readout(
-                        discriminator=discriminator_fn,
-                    )
+                    memory = sf.as_readout(discriminator=discriminator_fn)
                     save_result_in_mss_and_bcc(
                         mss_client=mss_client, memory=memory, job_id=sf.job_id
                     )
@@ -172,11 +171,15 @@ def postprocess_storage_file(
                     logging.error(exp)
 
             elif sf.meas_level == MeasLvl.INTEGRATED:
+                memory = sf.as_xarray()
+
                 save_result_in_mss_and_bcc(
-                    mss_client=mss_client, memory=[], job_id=sf.job_id
+                    mss_client=mss_client, memory=memory, job_id=sf.job_id
                 )
 
             elif sf.meas_level == MeasLvl.RAW:
+                # TODO: Not implemented, expects to pass full trace
+                # with hardcoded 16K values length array
                 save_result_in_mss_and_bcc(
                     mss_client=mss_client, memory=[], job_id=sf.job_id
                 )

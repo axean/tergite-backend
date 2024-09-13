@@ -7,6 +7,28 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ## [Unreleased]
 
+### Added
+- The `QuantumExecutor` as abstract class to implement a backend
+- `EXECUTOR_TYPE` keyword in the .env variables to select the backend
+- Qiskit dynamics simulator backend with one qubit ("qiskit_pulse_1q")
+- Added the initialization of the redis store with configuration picked from the `backend_config.toml` file
+  when the execution worker starts
+- Added an initial request to update the backend information in MSS 
+  when the execution worker starts
+
+### Changed
+- BREAKING CHANGE: `EXECUTOR_DATA_DIRNAME` definition in the .env variables instead of `general.data_dir` in `executor-config.yml`
+- BREAKING CHANGE: Removed the whole `general` section in the `executor-config.yml`
+- BREAKING CHANGE: Renamed `executor-config.yml` to `quantify-config.yml`
+- Removed the old config files that were used for setting up automatic calibration
+- Removed the script that loaded automatic calibration configurations at the start
+- Moved the `backend_config.toml` file from `/configs` folder
+- Moved the `properties` service to the `libs` folder
+- Moved the `storage`, `date_time`, `representation` and `logging` utils to the `properties` lib
+- Removed the `scripts` folder
+
+### Fixed
+
 ## [2024.04.0] - 2024-05-28
 
 This is part of the tergite release v2024.04 which merges the tergite stack into three clear parts: front, back, client/sdks
@@ -16,6 +38,7 @@ This is part of the tergite release v2024.04 which merges the tergite stack into
 - Added storage_file lib (formerly tergite-quantify-connector-storagefile)
 - Added `quantum_executor` service (formerly tergite-quantify-connector)
 - Added the `executor-config.yml` and its python-based validators
+- Added a simulator for one transmon qubit `qiskit_pulse_1q`
 
 ### Changed
 

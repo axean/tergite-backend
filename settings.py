@@ -25,9 +25,13 @@ from starlette.datastructures import URL
 env_file = os.environ.get("ENV_FILE", default=".env")
 config = Config(Path(__file__).parent / env_file)
 
+# Automatic root directory settings
+APP_ROOT_DIR = Path(__file__).parent / "app"
+
 # Misc settings
 APP_SETTINGS = config("APP_SETTINGS", cast=str, default="production")
 IS_AUTH_ENABLED = config("IS_AUTH_ENABLED", cast=bool, default=True)
+IS_STANDALONE = config("IS_STANDALONE", cast=bool, default=False)
 _is_production = APP_SETTINGS == "production"
 
 if not IS_AUTH_ENABLED and _is_production:
@@ -50,6 +54,16 @@ JOB_EXECUTION_POOL_DIRNAME = config("JOB_EXECUTION_POOL_DIRNAME", cast=str)
 JOB_SUPERVISOR_LOG = config(
     "JOB_SUPERVISOR_LOG", cast=str, default="job_supervisor.log"
 )
+EXECUTOR_DATA_DIRNAME = config(
+    "EXECUTOR_DATA_DIRNAME", cast=str, default="executor_data"
+)
+
+_executor_data_dir_path = os.path.join(
+    STORAGE_ROOT, DEFAULT_PREFIX, EXECUTOR_DATA_DIRNAME
+)
+if not os.path.exists(_executor_data_dir_path):
+    os.makedirs(_executor_data_dir_path)
+EXECUTOR_DATA_DIR = _executor_data_dir_path
 
 # Measurement default file mapping
 MEASUREMENT_DEFAULT_FILES = config(
@@ -59,17 +73,10 @@ MEASUREMENT_DEFAULT_FILES = config(
 )
 
 # Definition of backend property names
-# See also configs/device_*.toml
-BACKEND_PROPERTIES_TEMPLATE = config(
-    "BACKEND_PROPERTIES_TEMPLATE",
-    cast=str,
-    default="configs/property_templates_default.toml",
-)
-
 BACKEND_SETTINGS = config(
     "BACKEND_SETTINGS",
     cast=str,
-    default="configs/backend_config_default.toml",
+    default=Path(__file__).parent / "backend_config.toml",
 )
 
 # Connectivity settings
@@ -93,5 +100,15 @@ CLIENT_IP_WHITELIST = {
 if APP_SETTINGS == "test" and not os.environ.get("BLACKLISTED"):
     CLIENT_IP_WHITELIST["testclient"] = True
 
+# -----------------------
 # Hardware configurations
-EXECUTOR_CONFIG_FILE = config("EXECUTOR_CONFIG_FILE", default="executor-config.yml")
+# -----------------------
+# The executor type specifies which implementations of the QuantumExecutor to use.
+# For more information on the values check:
+# - dot-env-template.txt
+EXECUTOR_TYPE = config("EXECUTOR_TYPE", default="quantify")
+
+# This will load the hardware configuration from a yaml file, which contains the properties for the
+# cluster or other instrument setup. For more information check:
+# - quantify-config.example.yml
+QUANTIFY_CONFIG_FILE = config("QUANTIFY_CONFIG_FILE", default="quantify-config.yml")

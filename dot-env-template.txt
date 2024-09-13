@@ -2,38 +2,72 @@
 # The .env file is a simple list of keys and values. It is also known as the INI file on MS Windows.
 # Fill in the necessary values.
 
-# This first block can be left as is
-# It contains definitions for the temporary directories and file names
+# (1) General
+# Set the default file prefix and the backend name for the backend application.
+# If you are using any of the backends from the mongoDB, please enter this name for DEFAULT_PREFIX
 DEFAULT_PREFIX=loke
+
+# (2) Jobs and workers
+# This first block can be left as is. Do not change any variable unless you know what you are doing!
+# It contains definitions for the temporary directories and file names.
 STORAGE_ROOT=/tmp
 LOGFILE_DOWNLOAD_POOL_DIRNAME=logfile_download_pool
 LOGFILE_UPLOAD_POOL_DIRNAME=logfile_upload_pool
 JOB_UPLOAD_POOL_DIRNAME=job_upload_pool
 JOB_PRE_PROC_POOL_DIRNAME=job_preproc_pool
 JOB_EXECUTION_POOL_DIRNAME=job_execution_pool
+# Store the temporary data from the backend-specific executor class
+EXECUTOR_DATA_DIRNAME=executor_data
 
-# 1 MSS
-# Running it locally:
-MSS_MACHINE_ROOT_URL=http://host:port
-# Or a remote VM:
-# MSS_MACHINE_ROOT_URL=http://host:port
-MSS_PORT=8002
-
-# 2 BCC
+# (3) BCC
+# This is to configure port and URLs for the backend machine.
 # Running it locally:
 BCC_MACHINE_ROOT_URL=http://host:port
 # Or a remote VM:
 # BCC_MACHINE_ROOT_URL=http://host:port
 BCC_PORT=8000
 
-# 3 Instrument server
-# The path to the configuration file for quantify. Default is "executor-config.yml" in project directory
-EXECUTOR_CONFIG_FILE=executor-config.yml
+# (4) MSS
+# This is to configure port and URL for the frontend machine.
+# Running it locally:
+MSS_MACHINE_ROOT_URL=http://host:port
+# Or a remote VM:
+# MSS_MACHINE_ROOT_URL=http://host:port
+MSS_PORT=8002
 
-# 4 Authentication
-# the app token used to authenticate this BCC with MSS.
+# (5) Instrument interfacing and simulators
+# This is to configure the hardware or simulated measurement instruments.
+# The type of instrument setup to run.
+#
+# Can take:
+# - quantify
+# - qiskit_pulse_1q
+#
+# Default is "quantify".
+# Note: - 'quantify' can be the real instruments or dummy clusters
+#       - 'qiskit_pulse_1q' is a one-qubit simulator based on qiskit-dynamics library
+EXECUTOR_TYPE=qiskit_pulse_1q
+# The path to the configuration file for quantify. Default is "quantify-config.yml" in project directory.
+QUANTIFY_CONFIG_FILE=quantify-config.yml
+
+# (6) Authentication
+# The app token used to authenticate this BCC with MSS.
 # A system user (user with the system role) should log in to QAL 9000, generate an app token
-# and set it here
+# and set it here.
 MSS_APP_TOKEN=
 # Default is true. Setting this to False in production will raise a ValueError at startup.
 IS_AUTH_ENABLED=True
+
+# (7) Operation mode
+# APP_SETTINGS reflect which environment the app is to run in.
+# Options
+#  - development
+#  - production
+#  - staging
+#  - test
+# Default: production
+APP_SETTINGS=production
+
+# Whether to run with MSS or not
+# Default is false. Setting this to true when MSS is not running will raise connection errors
+IS_STANDALONE=False

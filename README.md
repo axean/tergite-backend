@@ -42,31 +42,45 @@ cd tergite-backend
 pip install -r requirements.txt
 ```
 
-- Copy the `dot-env-template.txt` file to `.env` and 
-  update the environment variables there appropriately.
+- Copy the `dot-env-template.txt` file to `.env` and update the environment variables there appropriately.
 
 ```shell
 cp dot-env-template.txt .env
 ```
 
-- Copy the hardware example config file `executor-config.example.yml` into the `executor-config.yml` file and update the variables there in. Contact your teammates for
- the variables you are not sure of.
+_Note: If you want to run without a running MSS, set the variable `IS_STANDALONE=True` in the `.env`_  
+_Note: If you don't want to use the simulator, set the variable `EXECUTOR_TYPE=quantify` in the `.env`_  
+
+- **If you have `EXECUTOR_TYPE=quantify`**, copy the quantify example config file `quantify-config.example.yml` into 
+ the `quantify-config.yml` file and update the variables there in.    
+ **Ignore this if you are using the qiskit pulse simulator**
 
 ```shell
-cp executor-config.example.yml executor-config.yml
+cp quantify-config.example.yml quantify-config.yml
 ```
 
 _Note: If you want to just run a dummy cluster, you can copy the one in the test fixtures_
 
 ```shell
-cp app/tests/fixtures/dummy-executor-config.yml executor-config.yml
+cp app/tests/fixtures/dummy-quantify-config.yml quantify-config.yml
 ```
 
+- Copy the backend example config file `backend_config.example.toml` into the `backend_config.toml` file and update the variables there in.
+
+```shell
+cp backend_config.example.toml backend_config.toml
+```
+
+_Note: If you are running the simulator, you can copy the one in the test fixtures_
+
+```shell
+cp app/tests/fixtures/backend_config.simq1.toml backend_config.toml
+```
 
 - Run start script
 
 ```shell
-./start_bcc.sh --device configs/device_default.toml
+./start_bcc.sh
 ```
 
 - Open your browser at [http://localhost:8000/docs](http://localhost:8000/docs) to see the interactive API docs

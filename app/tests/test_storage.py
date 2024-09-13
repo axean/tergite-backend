@@ -13,8 +13,8 @@
 import pytest
 import redis
 
-from ..utils.logging import get_logger
-from ..utils.storage import (
+from app.libs.properties.utils.logging import get_logger
+from app.libs.properties.utils.storage import (
     BackendProperty,
     PropertyType,
     get_resonator_property,

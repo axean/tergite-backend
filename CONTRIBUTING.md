@@ -1,6 +1,6 @@
 # Contributing to tergite-backend
 
-**This project is currently not accepting pull requests from the general public yet.**
+**This project is not accepting pull requests from the general public yet.**
 
 **It is currently being developed by the core developers only.**
 
@@ -10,7 +10,7 @@
 
 ## Version Control
 
-Tergite is developed on a separate version control system and mirrored on Github.
+Tergite is developed on a separate version control system and mirrored publicly on GitHub.
 If you are reading this on GitHub, then you are looking at a mirror. 
 
 ## Versioning
@@ -19,15 +19,15 @@ When versioning we follow the format `{year}.{month}.{patch_number}` e.g. `2023.
 
 ## Contacting the Tergite Developers
 
-Since the Github repositories are only mirrors, no Github pull requests or Github issue/bug reports 
-are looked at. Please get in touch via email <quantum.nextlabs@chalmers.se> instead. 
+Since the GitHub repositories are only mirrors, no GitHub pull requests or GitHub issue/bug reports 
+are looked at. Please get in touch via email <quantum-nextlabs@chalmers.se> instead. 
 
 Take note that the maintainers may not answer every email.
 
-## But We Use [Github Flow](https://docs.github.com/en/get-started/quickstart/github-flow), So All Code Changes Happen Through Pull Requests
+## But We Use [GitHub Flow](https://docs.github.com/en/get-started/quickstart/github-flow), So All Code Changes Happen Through Pull Requests
 
 Pull requests are the best way to propose changes to the codebase (we
-use [Github Flow](https://docs.github.com/en/get-started/quickstart/github-flow)). We actively welcome your pull
+use [GitHub Flow](https://docs.github.com/en/get-started/quickstart/github-flow)). We actively welcome your pull
 requests:
 
 1. Clone the repo and create your branch from `main`.
@@ -37,7 +37,7 @@ requests:
 5. Make sure your code lints.
 6. Issue that pull request!
 
-## Any contributions you make will be under the Apache 2.0 Software Licenses
+## Any contributions you make will be under the Apache 2.0 software licenses
 
 In short, when you submit code changes, your submissions are understood to be under the
 same [Apache 2.0 License](./LICENSE.txt) that covers the project. Feel free to contact the maintainers if that's a concern.
@@ -76,7 +76,7 @@ Please note that if your contribution is part of your employment or
 your contribution is the property of your employer, 
 you will also most likely need to sign a [corporate CLA](https://tergite.github.io/contributing/ccla.pdf).
 
-All signed CLAs are emails to us at <quantum.nextlabs@chalmers.se>.
+All signed CLAs are emails to us at <quantum-nextlabs@chalmers.se>.
 
 ## How to Test
 
@@ -135,11 +135,11 @@ cd tergite-backend
 cp dot-env-template.txt .env
 ```
 
-- Copy the hardware example config file `executor-config.example.yml` into the `executor-config.yml` file and update the variables there in. Contact your teammates for
+- Copy the quantify example config file `quantify-config.example.yml` into the `quantify-config.yml` file and update the variables there in. Contact your teammates for
  the variables you are not sure of.
 
 ```shell
-cp executor-config.example.yml executor-config.yml
+cp quantify-config.example.yml quantify-config.yml
 ```
 
 - Copy `bcc.service` to the systemd services folder
