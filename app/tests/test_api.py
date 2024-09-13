@@ -1,3 +1,4 @@
+import copy
 import json
 from itertools import zip_longest
 from os import path
@@ -26,6 +27,7 @@ _PARENT_FOLDER = path.dirname(path.abspath(__file__))
 _JOBS_LIST = load_fixture("job_list.json")
 # _DEFAULT_LOGFILE_PATH = get_fixture_path("logfile.hdf5")
 _BACKEND_PROPERTIES = load_fixture("backend_properties.json")
+_SIMULATOR_JOBS_FOR_UPLOAD = load_fixture("jobs_to_upload_simulator.json")
 _JOBS_FOR_UPLOAD = load_fixture("jobs_to_upload.json")
 _JOB_ID_FIELD = "job_id"
 _JOB_IDS = [item[_JOB_ID_FIELD] for item in _JOBS_LIST]
@@ -45,10 +47,15 @@ _WRONG_APP_TOKENS = ["foohsjaghds", "barrr", "yeahhhjhdjf"]
 
 # params
 _UPLOAD_JOB_PARAMS = [
-    (client, redis_client, rq_worker, job)
-    for job in _JOBS_FOR_UPLOAD
-    for client, redis_client, rq_worker in CLIENT_AND_RQ_WORKER_TUPLES
+    (*CLIENT_AND_RQ_WORKER_TUPLES[0], job) for job in _JOBS_FOR_UPLOAD
 ]
+
+_SIMULATOR_UPLOAD_JOB_PARAMS = [
+    (*CLIENT_AND_RQ_WORKER_TUPLES[1], job) for job in _SIMULATOR_JOBS_FOR_UPLOAD
+]
+
+_ALL_UPLOAD_JOB_PARAMS = _UPLOAD_JOB_PARAMS + _SIMULATOR_UPLOAD_JOB_PARAMS
+
 _FETCH_JOB_PARAMS = [
     (client, redis_client, job_id)
     for job_id in _JOB_IDS
@@ -276,6 +283,8 @@ def test_fetch_job_status(redis_client, client, job_id: str, app_token_header):
         response = client.get(f"/jobs/{job_id}/status", headers=app_token_header)
         got = response.json()
         expected_job = list(filter(lambda x: x["job_id"] == job_id, _JOBS_LIST))[0]
+        # We add this, because we do not want to overwrite values as in the lines below
+        expected_job = copy.deepcopy(expected_job)
 
         try:
             status = expected_job["status"]
@@ -317,7 +326,7 @@ def test_unauthenticated_fetch_job_status(
         assert got == expected
 
 
-@pytest.mark.parametrize("client, redis_client, rq_worker, job", _UPLOAD_JOB_PARAMS)
+@pytest.mark.parametrize("client, redis_client, rq_worker, job", _ALL_UPLOAD_JOB_PARAMS)
 def test_upload_job(
     client, redis_client, client_jobs_folder, rq_worker, job, app_token_header
 ):
@@ -370,8 +379,17 @@ def test_upload_job(
         rq_worker.work(burst=True)
         raw_job_in_redis = redis_client.hget(_JOBS_HASH_NAME, job_id)
         job_in_redis = json.loads(raw_job_in_redis)
+
         assert response.status_code == 200
         assert got == expected
+
+        # Check whether the result is plausible
+        # This can be seen as testing gate fidelity ~70%
+        assert job_in_redis["result"]["memory"][0].count("0x0") > 750
+
+        # Remove the result, because it is probabilistic
+        job_in_redis.pop("result")
+        expected_job_in_redis.pop("result")
         assert job_in_redis == expected_job_in_redis
 
 
