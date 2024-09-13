@@ -26,6 +26,7 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 - Moved the `properties` service to the `libs` folder
 - Moved the `storage`, `date_time`, `representation` and `logging` utils to the `properties` lib
 - Removed the `scripts` folder
+- Removed the `archive` folder
 
 ### Fixed
 
