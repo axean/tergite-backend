@@ -49,7 +49,11 @@ def read_qubit_calibration_data(
         {
             param: qubit_id
             if param is "id"
-            else _read_calibration_value(component_type="qubit", component_id=qubit_id.strip("q"), prop_name=param)
+            else _read_calibration_value(
+                component_type="qubit",
+                component_id=qubit_id.strip("q"),
+                prop_name=param,
+            )
             for param in qubit_params
         }
         for qubit_id in qubit_ids
@@ -72,7 +76,11 @@ def read_resonator_calibration_data(
         {
             param: qubit_id
             if param is "id"
-            else _read_calibration_value(component_type="readout_resonator", component_id=qubit_id.strip("q"), prop_name=param)
+            else _read_calibration_value(
+                component_type="readout_resonator",
+                component_id=qubit_id.strip("q"),
+                prop_name=param,
+            )
             for param in resonator_params
         }
         for qubit_id in qubit_ids
@@ -94,7 +102,11 @@ def read_discriminator_data(
     """
     return {
         qubit_id: {
-            param: _read_calibration_value(component_type="discriminator", component_id=qubit_id.strip("q"), prop_name=param)
+            param: _read_calibration_value(
+                component_type="discriminator",
+                component_id=qubit_id.strip("q"),
+                prop_name=param,
+            )
             for param in params
         }
         for qubit_id in qubit_ids
@@ -135,7 +147,9 @@ def set_qubit_calibration_data(data: List[Dict[str, Optional[Dict]]]):
         qubit_id = str(qubit_conf["id"]["value"]).strip("q")
         for k, v in qubit_conf.items():
             if isinstance(v, dict):
-                set_component_property(component="qubit", name=k, component_id=qubit_id, **v)
+                set_component_property(
+                    component="qubit", name=k, component_id=qubit_id, **v
+                )
 
 
 def set_resonator_calibration_data(data: List[Dict[str, Optional[Dict]]]):
@@ -150,7 +164,9 @@ def set_resonator_calibration_data(data: List[Dict[str, Optional[Dict]]]):
         qubit_id = str(resonator_conf["id"]["value"]).strip("q")
         for k, v in resonator_conf.items():
             if isinstance(v, dict):
-                set_component_property(component="readout_resonator", name=k, component_id=qubit_id, **v)
+                set_component_property(
+                    component="readout_resonator", name=k, component_id=qubit_id, **v
+                )
 
 
 def set_discriminator_data(data: Dict[str, Dict[str, Optional[Dict]]]):
@@ -165,7 +181,9 @@ def set_discriminator_data(data: Dict[str, Dict[str, Optional[Dict]]]):
         for k, v in discriminator_conf.items():
             qubit_id = str(k).strip("q")
             if isinstance(v, dict):
-                set_component_property(component="discriminator", name=key, component_id=qubit_id, **v)
+                set_component_property(
+                    component="discriminator", name=key, component_id=qubit_id, **v
+                )
 
 
 def attach_units_many(

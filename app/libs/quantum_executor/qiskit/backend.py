@@ -232,7 +232,8 @@ class FakeOpenPulse1Q(DynamicsBackend):
                         "intercept": float(lda_model.intercept_),
                         "coef_0": float(lda_model.coef_[0][0]),
                         "coef_1": float(lda_model.coef_[0][1]),
-                    } for qubit_id in self.backend_config.device_config.qubit_ids
+                    }
+                    for qubit_id in self.backend_config.device_config.qubit_ids
                 }
             }
         }

@@ -69,7 +69,6 @@ class _DeviceProperties(BaseModel):
         arbitrary_types_allowed = True
 
 
-
 class DeviceV1(BaseModel):
     """Basic structure of the config of a device"""
 
@@ -190,10 +189,9 @@ class _BackendDeviceConfig(BaseModel):
 class _BackendSimulatorConfig(BaseModel):
     """The device config for the simulated or dummy backends"""
 
-     # Adjusted the type hint for units to support nested structure within discriminators
+    # Adjusted the type hint for units to support nested structure within discriminators
     units: Dict[
-        Literal["qubit", "readout_resonator", "discriminators"], 
-        Dict[str, str]
+        Literal["qubit", "readout_resonator", "discriminators"], Dict[str, str]
     ] = {}
     qubit: List[Dict[str, Union[float, str]]] = []
     readout_resonator: List[Dict[str, Union[float, str]]] = []
@@ -207,7 +205,7 @@ class BackendConfig(BaseModel):
     device_config: _BackendDeviceConfig
     gates: Dict[str, Dict[str, Any]] = {}
     simulator_config: _BackendSimulatorConfig = _BackendSimulatorConfig()
-    
+
     @classmethod
     def from_toml(cls, file: PathLike):
         """Creates a BackendConfig instance from a TOML file"""
