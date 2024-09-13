@@ -3,14 +3,8 @@
 # Run this script as follows:
 #
 # - go to the root of the tergite-backend repository (this directory)
-# - run ./start_bcc.sh --device [FILEPATH]
+# - run ./start_bcc.sh
 #
-# where FILEPATH is a TOML file with device configuration. See
-# configs/device_test.toml for an example.
-#
-# For convenience, for instance do:
-# ln -s FILEPATH ./device.toml
-# where FILEPATH is the full path to the desired TOML file.
 
 # enable multiprocessing for python in macOS
 # See https://stackoverflow.com/questions/50168647/multiprocessing-causes-python-to-crash-and-gives-an-error-may-have-been-in-progr#answer-52230415
