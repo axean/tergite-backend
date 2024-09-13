@@ -22,7 +22,7 @@ from pydantic import BaseModel, Extra
 from app.libs.properties.utils.date_time import utc_to_iso, utc_now_iso
 
 
-class _QubitProps:
+class _QubitProps(BaseModel):
     """Qubit Device configuration"""
 
     frequency: int
@@ -145,7 +145,7 @@ class DeviceCalibrationV2(BaseModel):
     name: str
     version: str
     qubits: List[QubitCalibration]
-    last_calibrated: datetime
+    last_calibrated: Optional[datetime] = None
 
     class Config:
         json_encoders = {

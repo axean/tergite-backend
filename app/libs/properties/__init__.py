@@ -30,7 +30,8 @@ from .dtos import (
     DeviceV1,
     DeviceV2,
     DeviceCalibrationV2,
-    QubitCalibration
+    QubitCalibration,
+    _QubitProps,    _ReadoutResonatorProps
 )
 from .utils.data import (
     read_qubit_calibration_data,
@@ -90,6 +91,8 @@ def initialize_backend(
         qubit_units = simulator_config.units["qubit"]
         qubit_data = simulator_config.qubit if qubit_config is None else qubit_config
         qubit_data = attach_units_many(qubit_data, qubit_units)
+        for item in qubit_data:
+            item["id"]["value"] = item["id"]["value"].replace("q", "")
         set_qubit_calibration_data(qubit_data)
 
         # set readout_resonator calibration data
@@ -97,6 +100,8 @@ def initialize_backend(
         resonator_data = resonator_config
         if resonator_config is None:
             resonator_data = simulator_config.readout_resonator
+        for item in resonator_data:
+            item["id"] = item["id"].replace("q", "")
         resonator_data = attach_units_many(resonator_data, resonator_units)
         set_resonator_calibration_data(resonator_data)
 
@@ -111,6 +116,11 @@ def initialize_backend(
                 qbit: attach_units(v, disc_units) for qbit, v in disc_conf.items()
             }
             set_discriminator_data(disc_data)
+    
+    backend_config.device_config.qubit_ids = {}
+    
+    for i, q_id in enumerate(backend_config.device_config.qubit_ids):
+        backend_config.device_config.qubit_ids[i] = q_id
 
     # update MSS of this backend's configuration
     send_backend_info_to_mss(
@@ -157,13 +167,8 @@ def get_device_v1_info(
         qubit_ids=backend_config.device_config.qubit_ids,
         gates=backend_config.gates,
         device_properties={
-            "qubit": [
-                {k: get_inner_value(v) for k, v in item.items()} for item in qubit_conf
-            ],
-            "readout_resonator": [
-                {k: get_inner_value(v) for k, v in item.items()}
-                for item in resonator_conf
-            ],
+            "qubit":[_QubitProps(**{k:get_inner_value(v) for k,v in item.items()}) for item in qubit_conf], 
+            "readout_resonator": [_ReadoutResonatorProps(**{k:get_inner_value(v) for k,v in item.items()}) for item in resonator_conf]
         },
         discriminators={
             discriminator: {
@@ -250,12 +255,13 @@ def send_backend_info_to_mss(
         backend_config=backend_config
     ).dict()
 
+
     collection_query = "" if collection is None else f"?collection={collection}"
 
     responses = [
         mss_client.put(f"{mss_url}/backends{collection_query}", json=device_v1_info),
         mss_client.put(f"{mss_url}/v2/devices", json=device_v2_info),
-        mss_client.put(f"{mss_url}/v2/calibrations", json=calibration_v2_info),
+        mss_client.post(f"{mss_url}/v2/calibrations", json=[calibration_v2_info]),
     ]
 
     error_message = ",".join([v.text for v in responses if not v.ok])
