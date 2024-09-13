@@ -255,7 +255,7 @@ class QiskitPulse1Q(DynamicsBackend):
     def calibrations_to_db(self):
         time_now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
         return {
-            "name": self.backend_name,
+            "name": self.configuration().backend_name,
             "version": "24.9.0",
             "last_calibrated": time_now,
             "qubits": [
