@@ -22,7 +22,7 @@ from app.libs.quantum_executor.base.experiment import BaseExperiment
 from app.libs.quantum_executor.qiskit.experiment import QiskitDynamicsExperiment
 from app.libs.quantum_executor.utils.channel import Channel
 from app.libs.quantum_executor.utils.instruction import Instruction
-from .backend import FakeOpenPulse1Q
+from .backend import QiskitPulse1Q
 from .transpile import transpile
 
 
@@ -30,7 +30,7 @@ class QiskitDynamicsExecutor(QuantumExecutor):
     def __init__(self, config_file):
         super().__init__()
 
-        self.backend = FakeOpenPulse1Q()
+        self.backend = QiskitPulse1Q()
 
     def run(self, experiment: BaseExperiment, /) -> xarray.Dataset:
         job = self.backend.run(experiment.schedule)
@@ -82,24 +82,35 @@ class QiskitDynamicsExecutor(QuantumExecutor):
         pass
 
 
-class QiskitDynamicsPulseSimulator1Q(QuantumExecutor):
+class QiskitPulse1QExecutor(QuantumExecutor):
     def __init__(self, config_file):
         super().__init__()
         # TODO: Use measurement level provided by the client request if discriminator is not provided
-        self.backend = FakeOpenPulse1Q(meas_level=1, meas_return="single")
+        self.backend = QiskitPulse1Q(meas_level=1, meas_return="single")
         self.shots = 1024
 
     def run(self, experiment: BaseExperiment, /) -> xarray.Dataset:
-        job = self.backend.run(experiment, shots=self.shots)
+        job = self.backend.run(
+            experiment, shots=self.shots, meas_return=self.meas_return
+        )
         result = job.result()
         data = result.data()["memory"]
 
         # Combine real and imaginary parts into complex numbers
-        complex_data = data[:, 0, 0] + 1j * data[:, 0, 1]
-        # Create acquisition index coordinate that matches the length of complex_data
-        acq_index = np.arange(
-            complex_data.shape[0]
-        )  # Should match the number of rows in complex_data
+        if self.meas_return == "avg":
+            # for meas_return avg, there is only one data point averaged across the shots
+            # Create acquisition index coordinate that matches the length of complex_data
+            acq_index = np.arange(
+                data.shape[0]
+            )  # Should match the number of rows in complex_data
+            complex_data = data[:, 0] + 1j * data[:, 1]
+        else:
+            # Create acquisition index coordinate that matches the length of complex_data
+            acq_index = np.arange(
+                data.shape[1]
+            )  # Should match the number of rows in complex_data
+
+            complex_data = data[:, 0, 0] + 1j * data[:, 0, 1]
 
         coords = {
             "acq_index_0": acq_index,  # Coordinate array that matches the dimension length
@@ -107,13 +118,21 @@ class QiskitDynamicsPulseSimulator1Q(QuantumExecutor):
 
         # Create the xarray Dataset
         ds = xarray.Dataset(
-            data_vars={"0": (["acq_index_0"], complex_data)}, coords=coords
+            data_vars={
+                "0": (
+                    ["repetition", "acq_index_0"],
+                    np.expand_dims(complex_data, axis=1),
+                )
+            },
+            coords=coords,
         )
+
         return ds
 
     def construct_experiments(self, qobj: PulseQobj, /):
         # because we avoid experiments structure we have to pass shots and measurement level configurations to the run function
         self.shots = qobj.config.shots
+        self.meas_return = qobj.config.meas_return
         qobj_dict = qobj.to_dict()
         tx = transpile(qobj_dict)
 

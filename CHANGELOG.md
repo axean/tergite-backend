@@ -27,6 +27,7 @@ This is part of the tergite release v2024.04 which merges the tergite stack into
 - Added storage_file lib (formerly tergite-quantify-connector-storagefile)
 - Added `quantum_executor` service (formerly tergite-quantify-connector)
 - Added the `executor-config.yml` and its python-based validators
+- Added a simulator for one transmon qubit `qiskit_pulse_1q`
 
 ### Changed
 

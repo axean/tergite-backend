@@ -371,7 +371,6 @@ class StorageFile:
 
         for acq_index, acq in enumerate(experiment_data["data_vars"]):
             ch = f"slot{StorageFile.delimiter}{acq}"
-
             # Get maximum acquisition index in each acquisition channel
             max_acq_idx = experiment_data["dims"][f"acq_index_{acq_index}"]
 

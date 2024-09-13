@@ -10,20 +10,17 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-import numpy as np
+import datetime
+import datetime
+from qiskit.quantum_info import Statevector
 
 import jax
-
-from qiskit.providers.models import PulseBackendConfiguration, GateConfig, PulseDefaults
-from qiskit.quantum_info import Statevector
-from qiskit_dynamics import DynamicsBackend, Solver
-from qiskit.transpiler import Target, InstructionProperties
+import numpy as np
 from qiskit.providers import QubitProperties
-from qiskit.circuit import Delay, Reset, Parameter
-from qiskit.circuit.library import XGate, SXGate, RZGate
+from qiskit.providers.models import PulseBackendConfiguration, GateConfig, PulseDefaults
 from qiskit.pulse import Acquire, AcquireChannel, MemorySlot, Schedule
-import datetime
-
+from qiskit.transpiler import Target
+from qiskit_dynamics import DynamicsBackend, Solver
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 # configure jax to use 64 bit mode
@@ -32,7 +29,7 @@ jax.config.update("jax_enable_x64", True)
 jax.config.update("jax_platform_name", "cpu")
 
 
-class FakeOpenPulse1Q(DynamicsBackend):
+class QiskitPulse1Q(DynamicsBackend):
     r"""Backend for pulse simulations on a single transmon qubit.
 
     Args:
@@ -64,8 +61,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
         noise: bool = True,
         **options,
     ):
-        backend_name = "fake_openpulse_1q"
-        self.backend_name = backend_name
+        backend_name = "qiskit_pulse_1q"
         backend_version = "1.0.0"
 
         a = np.diag(np.sqrt(np.arange(1, dim)), 1)  # annihilation operator
@@ -149,14 +145,8 @@ class FakeOpenPulse1Q(DynamicsBackend):
             dt=dt,
             granularity=1,
         )
-        for instruction in (Reset(), RZGate(Parameter("angle")), SXGate(), XGate()):
-            target.add_instruction(
-                instruction,
-                properties={(0,): InstructionProperties(duration=0)},
-            )
-        target.add_instruction(Delay(Parameter("duration")))
 
-        solver = Solver(
+        self.solver = Solver(
             static_hamiltonian=static_ham,
             hamiltonian_operators=[drive_op],
             rotating_frame=static_ham,
@@ -175,10 +165,10 @@ class FakeOpenPulse1Q(DynamicsBackend):
         }
 
         super().__init__(
-            solver=solver,
+            solver=self.solver,
             target=target,
             subsystem_dims=[dim],
-            solver_options={},
+            solver_options=solver_options,
             configuration=configuration,
             defaults=defaults,
             **options,
@@ -189,7 +179,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
         """Contains information for circuit transpilation."""
         return self._target
 
-    def to_db(self):
+    def backend_to_db(self):
         num_qubits = self.configuration().num_qubits
 
         qubit_properties = []
@@ -200,7 +190,7 @@ class FakeOpenPulse1Q(DynamicsBackend):
                 {
                     "id": i,
                     "frequency": self.qubit_properties(i).frequency,
-                    "pi_pulse_amplitude": 0.05,
+                    "pi_pulse_amplitude": 0.014248841224281961,
                     "pi_pulse_duration": 56e-9,
                     "pulse_type": "Gaussian",
                     "pulse_sigma": 7e-9,
@@ -211,12 +201,12 @@ class FakeOpenPulse1Q(DynamicsBackend):
             resonator_properties.append(
                 {
                     "id": i,
-                    "acq_delay": 5e-8,
-                    "acq_integration_time": 0.000001,
-                    "frequency": 7260080000,
-                    "pulse_amplitude": 0.1266499392606423,
+                    "acq_delay": 0,
+                    "acq_integration_time": 0,
+                    "frequency": 0,
+                    "pulse_amplitude": 0,
                     "pulse_delay": 0,
-                    "pulse_duration": 9e-7,
+                    "pulse_duration": 0,
                     "pulse_type": "Square",
                 }
             )
@@ -248,6 +238,66 @@ class FakeOpenPulse1Q(DynamicsBackend):
             "gates": {},
         }
         return backend_db_schema
+
+    def device_to_db(self):
+        return {
+            "name": self.configuration().backend_name,
+            "version": "24.9.0",
+            "number_of_qubits": 1,
+            "is_online": True,
+            "last_online": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f"),
+            "basis_gates": ["u", "h", "x"],
+            "is_simulator": True,
+            "coupling_map": [[0, 0], [1, 1]],
+            "coordinates": [[1, 1], [1, 2]],
+        }
+
+    def calibrations_to_db(self):
+        time_now = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")
+        return {
+            "name": self.backend_name,
+            "version": "24.9.0",
+            "last_calibrated": time_now,
+            "qubits": [
+                {
+                    "t1_decoherence": {
+                        "date": datetime.datetime.now().strftime(
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ),
+                        "unit": "us",
+                        "value": 0.0,
+                    },
+                    "t2_decoherence": {
+                        "date": datetime.datetime.now().strftime(
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ),
+                        "unit": "us",
+                        "value": 0.0,
+                    },
+                    "frequency": {
+                        "date": datetime.datetime.now().strftime(
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ),
+                        "unit": "GHz",
+                        "value": self.qubit_properties(0).frequency,
+                    },
+                    "anharmonicity": {
+                        "date": datetime.datetime.now().strftime(
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ),
+                        "unit": "GHz",
+                        "value": -0.3132760394092362,
+                    },
+                    "readout_assignment_error": {
+                        "date": datetime.datetime.now().strftime(
+                            "%Y-%m-%dT%H:%M:%S.%f"
+                        ),
+                        "unit": "",
+                        "value": 0.006299999999999972,
+                    },
+                }
+            ],
+        }
 
     def train_discriminator(self, shots: int = 1024):
         """

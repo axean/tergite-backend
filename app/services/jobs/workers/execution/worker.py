@@ -26,7 +26,7 @@ from redis import Redis
 import settings
 from app.libs.quantum_executor.qiskit.executor import (
     QiskitDynamicsExecutor,
-    QiskitDynamicsPulseSimulator1Q,
+    QiskitPulse1QExecutor,
 )
 from app.libs.quantum_executor.quantify.executor import QuantifyExecutor
 from app.libs.quantum_executor.utils.connections import get_executor_lock
@@ -59,7 +59,7 @@ rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
 EXECUTOR_MAP = {
     "hardware": QuantifyExecutor,
     "qiskit": QiskitDynamicsExecutor,
-    "qiskit_pulse_1q": QiskitDynamicsPulseSimulator1Q,
+    "qiskit_pulse_1q": QiskitPulse1QExecutor,
 }
 executor = EXECUTOR_MAP[settings.EXECUTOR_TYPE](
     config_file=settings.EXECUTOR_CONFIG_FILE
