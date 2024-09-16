@@ -14,7 +14,7 @@
   "dt": 1e-9,
   "dtm": 1e-9,
   "timelog": {},
-  "qubit_ids": { "0": "q0" },
+  "qubit_ids": ["q0"],
   "device_properties": {
     "qubit": [
       {
@@ -53,7 +53,13 @@
     "coupler": null
   },
   "discriminators": {
-    "lda": { "q0": { "coef_0": null, "coef_1": null, "intercept": null } }
+    "lda": {
+      "q0": {
+        "coef_0": -24.30078533,
+        "coef_1": 22.61843697,
+        "intercept": 0.70658014
+      }
+    }
   },
   "meas_lo_freq": null,
   "qubit_lo_freq": null,

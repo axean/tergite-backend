@@ -10,17 +10,18 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""Utility functions for dealing with modules"""
-import sys
-from typing import List
+"""Utilities for analysis"""
+import copy
+from typing import Dict, Any
+
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 
-def remove_modules(module_names: List[str]):
-    """Removes all modules whose names start with the given list of modules
+class MockLinearDiscriminantAnalysis(LinearDiscriminantAnalysis):
+    def __init__(self, result: Dict[str, Any]):
+        super().__init__()
+        self.__result = copy.deepcopy(result)
 
-    Args:
-        module_names: names of modules to remove
-    """
-    for key in list(sys.modules.keys()):
-        if any(key.startswith(name) for name in module_names):
-            del sys.modules[key]
+    def fit(self, X, y, **kwargs):
+        for k, v in self.__result.items():
+            setattr(self, k, v)

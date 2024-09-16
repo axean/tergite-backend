@@ -19,7 +19,7 @@
   "dt": 1e-9,
   "dtm": 1e-9,
   "timelog": {},
-  "qubit_ids": { "0": "q12", "1": "q13", "2": "q14" },
+  "qubit_ids": ["q12", "q13", "q14" ],
   "device_properties": {
     "qubit": [
       {

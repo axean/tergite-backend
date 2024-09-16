@@ -1,3 +1,4 @@
+from .utils.analysis import MockLinearDiscriminantAnalysis
 from .utils.env import (
     TEST_DEFAULT_PREFIX,
     TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME,
@@ -18,6 +19,7 @@ from pathlib import Path
 from typing import Dict
 
 import pytest
+import numpy as np
 from fakeredis import FakeStrictRedis
 from fastapi.testclient import TestClient
 from freezegun import freeze_time
@@ -128,6 +130,13 @@ BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES = [
     #     lazy_fixture("sync_rq_worker"),
     # ),
 ]
+
+_mock_linear_discriminant_analysis = MockLinearDiscriminantAnalysis(
+    result={
+        "intercept_": np.array([0.70658014]),
+        "coef_": np.array([[-24.30078533, 22.61843697]]),
+    }
+)
 
 
 def mock_post_requests(url: str, **kwargs):
@@ -380,6 +389,10 @@ def _patch_async_client(mocker):
     mocker.patch("app.utils.queues.QueuePool", return_value=_async_queue_pool)
     mocker.patch("requests.post", side_effect=mock_post_requests)
     mocker.patch("requests.Session", return_value=mss_client)
+    mocker.patch(
+        "sklearn.discriminant_analysis.LinearDiscriminantAnalysis",
+        return_value=_mock_linear_discriminant_analysis,
+    )
     os.environ["BLACKLISTED"] = ""
 
 
@@ -395,4 +408,8 @@ def _patch_sync_client(mocker):
     mocker.patch("app.utils.queues.QueuePool", return_value=_sync_queue_pool)
     mocker.patch("requests.post", side_effect=mock_post_requests)
     mocker.patch("requests.Session", return_value=mss_client)
+    mocker.patch(
+        "sklearn.discriminant_analysis.LinearDiscriminantAnalysis",
+        return_value=_mock_linear_discriminant_analysis,
+    )
     os.environ["BLACKLISTED"] = ""
