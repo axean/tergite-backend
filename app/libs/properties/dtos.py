@@ -84,7 +84,7 @@ class DeviceV1(BaseModel):
     dt: Optional[float] = None
     dtm: Optional[float] = None
     timelog: Dict[str, Any] = {}
-    qubit_ids: Dict[int, str] = {}
+    qubit_ids: List[str] = []
     device_properties: Optional[DeviceProperties] = None
     discriminators: Optional[Dict[str, Any]] = None
     meas_lo_freq: Optional[List[int]] = None

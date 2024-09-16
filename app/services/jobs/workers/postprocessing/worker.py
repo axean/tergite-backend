@@ -169,6 +169,12 @@ def postprocess_storage_file(
                     )
                 except Exception as exp:
                     logging.error(exp)
+                    response = _update_job_in_mss(
+                        mss_client=mss_client,
+                        job_id=sf.job_id,
+                        payload={"status": "ERROR"},
+                    )
+                    raise exp
 
             elif sf.meas_level == MeasLvl.INTEGRATED:
                 memory = sf.as_xarray()
