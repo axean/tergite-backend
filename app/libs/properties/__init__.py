@@ -161,7 +161,7 @@ def get_device_v1_info(
         **backend_config.general_config.dict(),
         meas_map=backend_config.device_config.meas_map,
         coupling_map=backend_config.device_config.coupling_map,
-        qubit_ids={idx: v for idx, v in enumerate(qubit_ids)},
+        qubit_ids=qubit_ids,
         gates=backend_config.gates,
         device_properties=DeviceProperties(
             qubit=[

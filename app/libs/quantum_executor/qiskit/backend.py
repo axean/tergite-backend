@@ -216,14 +216,12 @@ class QiskitPulse1Q(DynamicsBackend):
 
         # Bring it to the right format
         return {
-            "discriminators": {
-                "lda": {
-                    qubit_id: {
-                        "intercept": float(lda_model.intercept_),
-                        "coef_0": float(lda_model.coef_[0][0]),
-                        "coef_1": float(lda_model.coef_[0][1]),
-                    }
-                    for qubit_id in self.backend_config.device_config.qubit_ids
+            "lda": {
+                qubit_id: {
+                    "intercept": float(lda_model.intercept_),
+                    "coef_0": float(lda_model.coef_[0][0]),
+                    "coef_1": float(lda_model.coef_[0][1]),
                 }
+                for qubit_id in self.backend_config.device_config.qubit_ids
             }
         }
