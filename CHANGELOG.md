@@ -7,6 +7,8 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ## [Unreleased]
 
+## [2024.09.0] - 2024-09-16
+
 ### Added
 - The `QuantumExecutor` as abstract class to implement a backend
 - `EXECUTOR_TYPE` keyword in the .env variables to select the backend
@@ -29,6 +31,8 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 - Removed the `archive` folder
 
 ### Fixed
+
+- Fixed the reporting to MSS of errors in jobs during post-processing
 
 ## [2024.04.0] - 2024-05-28
 
