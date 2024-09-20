@@ -93,13 +93,13 @@ def initialize_backend(
         simulator_config = backend_config.simulator_config
 
         # set qubit calibration data
-        qubit_units = simulator_config.units["qubit"]
+        qubit_units = simulator_config.units.get("qubit", {})
         qubit_data = simulator_config.qubit if qubit_config is None else qubit_config
         qubit_data = attach_units_many(qubit_data, qubit_units)
         set_qubit_calibration_data(qubit_data)
 
         # set readout_resonator calibration data
-        resonator_units = simulator_config.units["readout_resonator"]
+        resonator_units = simulator_config.units.get("readout_resonator", {})
         resonator_data = resonator_config
         if resonator_config is None:
             resonator_data = simulator_config.readout_resonator
@@ -107,7 +107,7 @@ def initialize_backend(
         set_resonator_calibration_data(resonator_data)
 
         # set discriminator data
-        disc_units = backend_config.simulator_config.units["discriminators"]
+        disc_units = backend_config.simulator_config.units.get("discriminators", {})
         discriminator_data = discriminator_config
         if discriminator_config is None:
             discriminator_data = simulator_config.discriminators
