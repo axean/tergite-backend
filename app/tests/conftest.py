@@ -1,4 +1,3 @@
-from .utils.analysis import MockLinearDiscriminantAnalysis
 from .utils.env import (
     TEST_DEFAULT_PREFIX,
     TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME,
@@ -13,6 +12,7 @@ from .utils.env import (
 # set up the environment before any other import
 setup_test_env()
 
+import logging
 import os
 import shutil
 from pathlib import Path
@@ -30,8 +30,10 @@ from rq import SimpleWorker
 from ..utils.queues import QueuePool
 from .utils.fixtures import load_fixture
 from .utils.http import MockHttpResponse, MockHttpSession
+from .utils.analysis import MockLinearDiscriminantAnalysis
 from .utils.modules import remove_modules
 from .utils.rq import get_rq_worker
+from ..libs.properties import DeviceCalibrationV2
 
 _lda_parameters_fixture = load_fixture("lda_parameters.json")
 _test_backend_props_fixture = load_fixture("test_backend_props.json")
@@ -170,9 +172,15 @@ def mock_mss_put_requests(url: str, **kwargs):
 
 def mock_mss_post_requests(url: str, **kwargs):
     """Mock POST requests sent to MSS for testing"""
+    payload = kwargs.get("json", [])
 
     if url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/v2/calibrations"):
-        return MockHttpResponse(status_code=200)
+        try:
+            _parsed_payload = [DeviceCalibrationV2(**props) for props in payload]
+            return MockHttpResponse(status_code=200)
+        except Exception as exp:
+            logging.error(exp)
+            return MockHttpResponse(status_code=400)
 
     return MockHttpResponse(status_code=405)
 

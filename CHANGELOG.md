@@ -7,6 +7,16 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ## [Unreleased]
 
+### Added
+
+### Changed
+
+### Fixed
+
+- Fixed 'KeyError' when no units are not passed in the backend_config file
+- Fixed "...bin/conda/activate: Not a directory" error when starting as systemd service
+- Fixed silent error where calibrations are not sent to MSS on executor initialization
+
 ## [2024.09.0] - 2024-09-16
 
 ### Added

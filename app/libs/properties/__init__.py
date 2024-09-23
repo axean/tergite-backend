@@ -258,7 +258,7 @@ def send_backend_info_to_mss(
     device_v2_info = get_device_v2_info(backend_config=backend_config).dict()
     calibration_v2_info = get_device_calibration_v2_info(
         backend_config=backend_config
-    ).json()
+    ).dict()
 
     collection_query = "" if collection is None else f"?collection={collection}"
 
