@@ -269,7 +269,7 @@ def send_backend_info_to_mss(
     ]
 
     error_message = ",".join([v.text for v in responses if not v.ok])
-    if error_message is not "":
+    if error_message != "":
         raise ValueError(error_message)
 
     print(f"'{device_v1_info['name']}' backend v1 configuration is sent to MSS")
