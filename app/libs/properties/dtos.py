@@ -141,12 +141,7 @@ class DeviceCalibrationV2(BaseModel):
     name: str
     version: str
     qubits: List[QubitCalibration]
-    last_calibrated: datetime
-
-    class Config:
-        json_encoders = {
-            datetime: utc_to_iso,
-        }
+    last_calibrated: str
 
 
 class _BackendGeneralConfig(BaseModel):

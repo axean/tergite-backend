@@ -16,6 +16,7 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 - Fixed 'KeyError' when no units are not passed in the backend_config file
 - Fixed "...bin/conda/activate: Not a directory" error when starting as systemd service
 - Fixed silent error where calibrations are not sent to MSS on executor initialization
+- Fixed "TypeError: Object of type datetime is not JSON serializable" when sending calibration data to MSS
 
 ## [2024.09.0] - 2024-09-16
 

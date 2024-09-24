@@ -224,7 +224,7 @@ def get_device_calibration_v2_info(
         qubit_params=backend_config.device_config.qubit_parameters,
     )
     qubit_conf = [QubitCalibration(**conf) for conf in raw_qubit_conf]
-    last_calibrated: Optional[datetime] = None
+    last_calibrated: Optional[str] = None
     if len(qubit_conf) > 0:
         last_calibrated = qubit_conf[0].t2_decoherence.date
 
