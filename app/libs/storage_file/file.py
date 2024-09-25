@@ -307,6 +307,12 @@ class StorageFile:
             backend_grp = header_grp.create_group("backend")
             self.store_metadata("header/qobj/backend", "backend_name", qobj_header)
 
+            backend_grp = header_grp.create_group("metadata")
+            self.store_metadata("header/qobj/metadata", "upload_url", qobj_header)
+            self.store_metadata("header/qobj/metadata", "shots", qobj_header)
+            self.store_metadata("header/qobj/metadata", "qobj_id", qobj_header)
+            self.store_metadata("header/qobj/metadata", "num_experiments", qobj_header)
+
         if "sweep" in qobj_header:
             sweep_grp = header_grp.create_group("sweep")
 
