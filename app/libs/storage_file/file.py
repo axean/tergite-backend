@@ -19,6 +19,7 @@ from typing import Literal, Union
 import h5py
 import numpy as np
 import xarray as xr
+import json
 
 from . import utils as parse
 
@@ -412,6 +413,14 @@ class StorageFile:
         self.store_metadata("header/qobj_metadata", "shots", qobj_metadata)
         self.store_metadata("header/qobj_metadata", "qobj_id", qobj_metadata)
         self.store_metadata("header/qobj_metadata", "num_experiments", qobj_metadata)
+
+    def store_qobj_data(self: "StorageFile", qobj_str: str):
+        """Stores metadata about the experiment from the qobj header."""
+        data_grp = self.header.create_group("qobj_data")
+        qobj_data = {}
+        qobj_data["experiment_data"] = qobj_str
+
+        self.store_metadata("header/qobj_data", "experiment_data", qobj_data)
 
     # ------------------------------------------------------------------------
 
