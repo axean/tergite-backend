@@ -307,12 +307,6 @@ class StorageFile:
             backend_grp = header_grp.create_group("backend")
             self.store_metadata("header/qobj/backend", "backend_name", qobj_header)
 
-            backend_grp = header_grp.create_group("metadata")
-            self.store_metadata("header/qobj/metadata", "upload_url", qobj_header)
-            self.store_metadata("header/qobj/metadata", "shots", qobj_header)
-            self.store_metadata("header/qobj/metadata", "qobj_id", qobj_header)
-            self.store_metadata("header/qobj/metadata", "num_experiments", qobj_header)
-
         if "sweep" in qobj_header:
             sweep_grp = header_grp.create_group("sweep")
 
@@ -407,6 +401,17 @@ class StorageFile:
 
             experiment[ch]["measurement"][...] = tmp
 
+    def store_qobj_metadata(self: "StorageFile", qobj: dict):
+        """Stores metadata about the experiment from the qobj header."""
+        metadata_grp = self.header.create_group("qobj_metadata")
+        qobj_metadata = {}
+        qobj_metadata["shots"] = qobj["config"]["shots"]
+        qobj_metadata["qobj_id"] = qobj["qobj_id"]
+        qobj_metadata["num_experiments"] = len(qobj["experiments"])
+
+        self.store_metadata("header/qobj_metadata", "shots", qobj_metadata)
+        self.store_metadata("header/qobj_metadata", "qobj_id", qobj_metadata)
+        self.store_metadata("header/qobj_metadata", "num_experiments", qobj_metadata)
     # ------------------------------------------------------------------------
 
     @classmethod
