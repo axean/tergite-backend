@@ -151,7 +151,7 @@ sudo cp bcc.service /etc/systemd/system/bcc.service
 - Get the path to your conda bin:
 
 ```shell
-YOUR_CONDA_BIN_PATH="${$(conda info --base)}/bin/conda"
+YOUR_CONDA_BIN_PATH="$(conda info --base)/bin"
 ```
 
 

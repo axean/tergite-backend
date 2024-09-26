@@ -93,13 +93,13 @@ def initialize_backend(
         simulator_config = backend_config.simulator_config
 
         # set qubit calibration data
-        qubit_units = simulator_config.units["qubit"]
+        qubit_units = simulator_config.units.get("qubit", {})
         qubit_data = simulator_config.qubit if qubit_config is None else qubit_config
         qubit_data = attach_units_many(qubit_data, qubit_units)
         set_qubit_calibration_data(qubit_data)
 
         # set readout_resonator calibration data
-        resonator_units = simulator_config.units["readout_resonator"]
+        resonator_units = simulator_config.units.get("readout_resonator", {})
         resonator_data = resonator_config
         if resonator_config is None:
             resonator_data = simulator_config.readout_resonator
@@ -107,7 +107,7 @@ def initialize_backend(
         set_resonator_calibration_data(resonator_data)
 
         # set discriminator data
-        disc_units = backend_config.simulator_config.units["discriminators"]
+        disc_units = backend_config.simulator_config.units.get("discriminators", {})
         discriminator_data = discriminator_config
         if discriminator_config is None:
             discriminator_data = simulator_config.discriminators
@@ -224,7 +224,7 @@ def get_device_calibration_v2_info(
         qubit_params=backend_config.device_config.qubit_parameters,
     )
     qubit_conf = [QubitCalibration(**conf) for conf in raw_qubit_conf]
-    last_calibrated: Optional[datetime] = None
+    last_calibrated: Optional[str] = None
     if len(qubit_conf) > 0:
         last_calibrated = qubit_conf[0].t2_decoherence.date
 
@@ -258,7 +258,7 @@ def send_backend_info_to_mss(
     device_v2_info = get_device_v2_info(backend_config=backend_config).dict()
     calibration_v2_info = get_device_calibration_v2_info(
         backend_config=backend_config
-    ).json()
+    ).dict()
 
     collection_query = "" if collection is None else f"?collection={collection}"
 
@@ -269,7 +269,7 @@ def send_backend_info_to_mss(
     ]
 
     error_message = ",".join([v.text for v in responses if not v.ok])
-    if error_message is not "":
+    if error_message != "":
         raise ValueError(error_message)
 
     print(f"'{device_v1_info['name']}' backend v1 configuration is sent to MSS")
