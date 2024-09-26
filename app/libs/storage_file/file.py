@@ -412,6 +412,7 @@ class StorageFile:
         self.store_metadata("header/qobj_metadata", "shots", qobj_metadata)
         self.store_metadata("header/qobj_metadata", "qobj_id", qobj_metadata)
         self.store_metadata("header/qobj_metadata", "num_experiments", qobj_metadata)
+
     # ------------------------------------------------------------------------
 
     @classmethod
