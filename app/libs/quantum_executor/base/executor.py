@@ -115,6 +115,11 @@ class QuantumExecutor(abc.ABC):
 
             # store numpy header metadata
             storage.store_qobj_header(qobj_header=qobj.header.to_dict())
+            # store experiment metadata
+            storage.store_qobj_metadata(qobj=qobj.to_dict())
+            storage.store_qobj_data(
+                qobj_str=json.dumps(qobj.to_dict(), cls=PulseQobj_encoder, indent="\t")
+            )
 
             # run all experiments and store acquisition data
             for experiment_index, experiment in enumerate(
