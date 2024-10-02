@@ -1,3 +1,5 @@
+import redis
+
 from .utils.env import (
     TEST_DEFAULT_PREFIX,
     TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME,
@@ -7,6 +9,9 @@ from .utils.env import (
     setup_test_env,
     TEST_SIMQ1_BACKEND_SETTINGS_FILE,
     TEST_BACKEND_SETTINGS_FILE,
+    TEST_REDIS_HOST,
+    TEST_REDIS_PORT,
+    TEST_REDIS_DB,
 )
 
 # set up the environment before any other import
@@ -35,9 +40,14 @@ from .utils.modules import remove_modules
 from .utils.rq import get_rq_worker
 from ..libs.properties import DeviceCalibrationV2
 
+
 _lda_parameters_fixture = load_fixture("lda_parameters.json")
 _test_backend_props_fixture = load_fixture("test_backend_props.json")
-_real_redis = Redis(db=2)
+_real_redis = redis.Redis(
+    host=TEST_REDIS_HOST,
+    port=TEST_REDIS_PORT,
+    db=TEST_REDIS_DB,
+)
 _fake_redis = FakeStrictRedis()
 _async_queue_pool = QueuePool(
     prefix=TEST_DEFAULT_PREFIX, connection=_real_redis, is_async=True

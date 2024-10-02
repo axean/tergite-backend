@@ -9,7 +9,7 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-
+import os
 from os import environ
 
 from app.tests.utils.fixtures import get_fixture_path
@@ -35,6 +35,10 @@ TEST_MSS_APP_TOKEN = "some-mss-app-token-for-testing"
 TEST_QUANTIFY_CONFIG_FILE = get_fixture_path("dummy-quantify-config.yml")
 TEST_BACKEND_SETTINGS_FILE = get_fixture_path("backend_config.toml")
 TEST_SIMQ1_BACKEND_SETTINGS_FILE = get_fixture_path("backend_config.simq1.toml")
+
+TEST_REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+TEST_REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+TEST_REDIS_DB = int(os.getenv("REDIS_DB", "2"))
 
 
 def setup_test_env():
@@ -63,3 +67,7 @@ def setup_test_env():
     environ["MSS_APP_TOKEN"] = TEST_MSS_APP_TOKEN
     environ["QUANTIFY_CONFIG_FILE"] = TEST_QUANTIFY_CONFIG_FILE
     environ["IS_AUTH_ENABLED"] = "True"
+
+    environ["REDIS_HOST"] = TEST_REDIS_HOST
+    environ["REDIS_PORT"] = f"{TEST_REDIS_PORT}"
+    environ["REDIS_DB"] = f"{TEST_REDIS_DB}"

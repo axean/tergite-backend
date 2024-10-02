@@ -13,6 +13,7 @@
 import pytest
 import redis
 
+import settings
 from app.libs.properties.utils.logging import get_logger
 from app.libs.properties.utils.storage import (
     BackendProperty,
@@ -29,7 +30,7 @@ logger = get_logger()
 
 
 """Redis initialization"""
-red = redis.Redis()
+red = settings.REDIS_CONNECTION
 
 
 """Test fixture"""

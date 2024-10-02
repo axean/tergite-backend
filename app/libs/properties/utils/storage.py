@@ -17,6 +17,7 @@ from typing import Any, List, Optional, Tuple, TypeVar, Union
 
 import redis
 
+import settings
 from .representation import to_string
 
 from .date_time import utc_now_iso
@@ -42,13 +43,6 @@ Hex = str  # type(hex(5))
 # ============================================================================
 
 logger = get_logger()
-
-
-# ============================================================================
-# Initialization for Redis storage
-# ============================================================================
-
-red = redis.Redis(decode_responses=True)
 
 # ============================================================================
 # Constants
@@ -255,7 +249,7 @@ class BackendProperty:
             component_id=component_id,
             field="value",
         )
-        result = red.get(value_key)
+        result = settings.REDIS_CONNECTION.get(value_key)
         return (
             _eval_redis_value(result)
             if result is not None and str(result).lower() != "nan"
@@ -290,7 +284,7 @@ class BackendProperty:
         key_stem = create_redis_key(
             property_type, name, component=component, component_id=component_id
         )
-        if next(red.scan_iter(key_stem + "*"), None) is None:
+        if next(settings.REDIS_CONNECTION.scan_iter(key_stem + "*"), None) is None:
             return None
 
         count_key = create_redis_key(
@@ -300,7 +294,7 @@ class BackendProperty:
             component_id=component_id,
             field="count",
         )
-        result = red.get(count_key)
+        result = settings.REDIS_CONNECTION.get(count_key)
         # if the metadata is set, but the counter is not yet
         # incremented, treat it as 0
         return int(result) if result is not None else 0
@@ -366,7 +360,7 @@ class BackendProperty:
             component_id=component_id,
             field="timestamp",
         )
-        result = red.get(timestamp_key)
+        result = settings.REDIS_CONNECTION.get(timestamp_key)
         # The timestamp was stored by to_string as a quoted string, and
         # will now be turned into an unquoted string
         return (
@@ -389,8 +383,8 @@ class BackendProperty:
         key_stem = create_redis_key(
             property_type, name, component=component, component_id=component_id
         )
-        for key in red.scan_iter(key_stem + "*"):
-            red.delete(key)
+        for key in settings.REDIS_CONNECTION.scan_iter(key_stem + "*"):
+            settings.REDIS_CONNECTION.delete(key)
 
 
 # The fields of BackendProperty as a set
@@ -417,7 +411,7 @@ def _transaction(watch_keys: List[str], command: callable) -> Optional[list]:
     returned. If successful, a list of results of the pipeline
     operation results is returned.
     """
-    with red.pipeline() as pipe:
+    with settings.REDIS_CONNECTION.pipeline() as pipe:
         n_retries = 0
         while True:
             try:

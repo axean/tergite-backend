@@ -101,10 +101,10 @@ conda activate bcc
 pip install -r requirements.txt
 ```
 
-- Start the redis server in another terminal
+- Start the redis server in another terminal on port 6378
 
 ```shell
-redis-server
+redis-server --port 6378
 ```
 
 - Lint with black

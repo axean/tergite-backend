@@ -18,6 +18,7 @@ import os
 import socket
 from pathlib import Path
 
+import redis
 from starlette.config import Config
 from starlette.datastructures import URL
 
@@ -112,3 +113,21 @@ EXECUTOR_TYPE = config("EXECUTOR_TYPE", default="quantify")
 # cluster or other instrument setup. For more information check:
 # - quantify-config.example.yml
 QUANTIFY_CONFIG_FILE = config("QUANTIFY_CONFIG_FILE", default="quantify-config.yml")
+
+# -------------
+# Redis config
+# -------------
+REDIS_HOST = config("REDIS_HOST", default="localhost")
+REDIS_PORT = config("REDIS_PORT", default=6379)
+REDIS_USER = config("REDIS_USER", default=None)
+REDIS_PASSWORD = config("REDIS_PASSWORD", default=None)
+REDIS_DB = config("REDIS_DB", cast=int, default=0)
+
+# For convenience to import globally
+REDIS_CONNECTION = redis.Redis(
+    host=REDIS_HOST,
+    port=REDIS_PORT,
+    db=REDIS_DB,
+    username=REDIS_USER,
+    password=REDIS_PASSWORD,
+)
