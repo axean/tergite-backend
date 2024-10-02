@@ -12,6 +12,8 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 ### Added
 
 ### Changed
+- Make redis configuration global and configurable
+- Migrated pipline from GitHub actions to GitLab CI/CD
 
 ### Fixed
 

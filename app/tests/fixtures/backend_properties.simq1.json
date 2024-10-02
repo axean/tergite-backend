@@ -1,10 +1,10 @@
 {
-  "name": "fake_openpulse_1q",
+  "name": "qiskit_pulse_1q",
   "characterized": true,
   "open_pulse": true,
   "version": "1.0.0",
   "meas_map": [[0]],
-  "coupling_map": [],
+  "coupling_map": [[0,0]],
   "description": "A single transmon Hamiltonian with 4 levels",
   "simulator": true,
   "num_qubits": 1,

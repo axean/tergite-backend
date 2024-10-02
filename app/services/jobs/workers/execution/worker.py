@@ -45,8 +45,7 @@ DEFAULT_PREFIX = settings.DEFAULT_PREFIX
 
 # Redis connection
 # ----------------
-redis_connection = Redis()
-rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
+rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=settings.REDIS_CONNECTION)
 executor = get_executor()
 
 

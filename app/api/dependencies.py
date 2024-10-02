@@ -23,12 +23,10 @@ from ..services import auth as auth_service
 from ..utils.uuid import validate_uuid4_str
 from .exc import InvalidJobIdInUploadedFileError, IpNotAllowedError
 
-_redis_connection = Redis()
-
 
 def get_redis_connection():
     """Returns a redis connection"""
-    return _redis_connection
+    return settings.REDIS_CONNECTION
 
 
 def get_job_id_dependency(job_id_field: str):

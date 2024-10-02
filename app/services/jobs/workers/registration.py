@@ -27,10 +27,10 @@ STORAGE_ROOT = settings.STORAGE_ROOT
 STORAGE_PREFIX_DIRNAME = settings.STORAGE_PREFIX_DIRNAME
 JOB_EXECUTION_POOL_DIRNAME = settings.JOB_EXECUTION_POOL_DIRNAME
 JOB_PRE_PROC_POOL_DIRNAME = settings.JOB_PRE_PROC_POOL_DIRNAME
-# redis connection
-redis_connection = Redis()
+
+
 # preprocessing queue
-rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=redis_connection)
+rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=settings.REDIS_CONNECTION)
 
 
 def job_register(job_file: Path) -> None:

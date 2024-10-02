@@ -40,9 +40,6 @@ _EXECUTION_STAGE = "execution"
 _POST_PROCESSING_STAGE = "post_processing"
 _FINAL_STAGE = "final"
 
-# Redis connection
-red = redis.Redis()
-
 # Type hint constants
 Entry = Dict[str, Any]
 Result = Tuple[str, str]
@@ -116,7 +113,7 @@ def now() -> str:
 
 def fetch_redis_entry(job_id: str) -> Entry:
     """Query redis for job supervisor entry."""
-    entry = red.hget(_SUPERVISOR_HASH_KEY, job_id)
+    entry = settings.REDIS_CONNECTION.hget(_SUPERVISOR_HASH_KEY, job_id)
 
     if not entry:
         log(f"Job {job_id} not found", level=LogLevel.ERROR)
@@ -134,7 +131,7 @@ def does_job_exist(job_id: str) -> bool:
     Returns:
         True if the job exists else False
     """
-    entry = red.hget(_SUPERVISOR_HASH_KEY, job_id)
+    entry = settings.REDIS_CONNECTION.hget(_SUPERVISOR_HASH_KEY, job_id)
     return entry is not None
 
 
@@ -162,7 +159,9 @@ def register_job(job_id: str) -> None:
         },
         "result": None,
     }
-    red.hset(_SUPERVISOR_HASH_KEY, job_id, json.dumps(entry, cls=EnumEncoder))
+    settings.REDIS_CONNECTION.hset(
+        _SUPERVISOR_HASH_KEY, job_id, json.dumps(entry, cls=EnumEncoder)
+    )
 
     # log entry
     log(f"Registered entry for job {job_id}")
@@ -178,7 +177,9 @@ def update_job_entry(job_id: str, value: Any, *keys: str) -> None:
     """
     entry: Entry = fetch_redis_entry(job_id)
     _deep_update(entry, value, keys)
-    red.hset(_SUPERVISOR_HASH_KEY, job_id, json.dumps(entry, cls=EnumEncoder))
+    settings.REDIS_CONNECTION.hset(
+        _SUPERVISOR_HASH_KEY, job_id, json.dumps(entry, cls=EnumEncoder)
+    )
 
 
 def _deep_update(dict: Entry, value: Any, keys: Tuple[str]) -> Entry:
@@ -215,12 +216,14 @@ def cancel_job(job_id: str, reason: str) -> None:
     # Tries to fetch all jobs with Location suffixes for given job id
     # Somewhat redundant solution, adding more information to the Location enum
     # will mend this.
-    jobs = Job.fetch_many([f"{job_id}_{loc.name}" for loc in Location], red)
+    jobs = Job.fetch_many(
+        [f"{job_id}_{loc.name}" for loc in Location], settings.REDIS_CONNECTION
+    )
 
     for job in filter(None, jobs):
         # Depending on whether job is in a worker or queue, call appropriate cancel method
         if job.worker_name:
-            send_stop_job_command(red, job.id)
+            send_stop_job_command(settings.REDIS_CONNECTION, job.id)
         else:
             job.cancel()
 
@@ -328,7 +331,7 @@ def fetch_all_jobs() -> Dict[str, Any]:
     Returns:
         The dict of job entries.
     """
-    entries = red.hgetall(_SUPERVISOR_HASH_KEY)
+    entries = settings.REDIS_CONNECTION.hgetall(_SUPERVISOR_HASH_KEY)
     return {k: _load_json(v) for k, v in entries.items()}
 
 
@@ -357,7 +360,7 @@ def remove_job(job_id: str) -> None:
         job_id (str): Identifier of the job to be deleted
     """
     cancel_job(job_id, f"Job ID {job_id} was deleted")
-    red.hdel(_SUPERVISOR_HASH_KEY, job_id)
+    settings.REDIS_CONNECTION.hdel(_SUPERVISOR_HASH_KEY, job_id)
     log(f"Job {job_id} was deleted")
 
 

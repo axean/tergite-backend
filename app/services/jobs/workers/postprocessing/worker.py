@@ -70,10 +70,6 @@ REST_API_MAP = {
 
 JobID = str
 
-# Redis connection
-
-red = redis.Redis(decode_responses=True)
-
 
 # =========================================================================
 # Post-processing entry function

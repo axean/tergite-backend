@@ -5,7 +5,7 @@
 # (1) General
 # Set the default file prefix and the backend name for the backend application.
 # If you are using any of the backends from the mongoDB, please enter this name for DEFAULT_PREFIX
-DEFAULT_PREFIX=loke
+DEFAULT_PREFIX=qiskit_pulse_1q
 
 # (2) Jobs and workers
 # This first block can be left as is. Do not change any variable unless you know what you are doing!
@@ -60,14 +60,31 @@ IS_AUTH_ENABLED=True
 
 # (7) Operation mode
 # APP_SETTINGS reflect which environment the app is to run in.
-# Options
+# Options:
 #  - development
 #  - production
 #  - staging
 #  - test
-# Default: production
+# Default is production
 APP_SETTINGS=production
 
 # Whether to run with MSS or not
 # Default is false. Setting this to true when MSS is not running will raise connection errors
 IS_STANDALONE=False
+
+# (8) Redis storage
+# If you do not want to configure a custom redis instance, you can also not set (i.e. delete all the variables of
+# this section in the .env file), because the defaults will assume a default redis installation.
+# Set the host on which redis is running
+# Default is "localhost"
+REDIS_HOST="localhost"
+# Set the port on which redis is running
+# Default is 6379
+REDIS_PORT=6379
+
+# Redis authentication:
+# For more information, please read in the redis documentation: https://redis.io/topics/acl
+# Set the user on which to connect to redis
+# REDIS_USER=""
+# Set the password, which to use when connecting to redis
+# REDIS_PASSWORD=""
