@@ -7,13 +7,19 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ## [Unreleased]
 
+### Added
+
+- Added redis connection environment variables
+- Added GitLab CI configuration
+- Added storing of Qobj header data in the logfiles of the quantum jobs
+
+### Fixed
+
 ## [2024.09.1] - 2024-09-24
 
 ### Added
 
 ### Changed
-- Make redis configuration global and configurable
-- Migrated pipline from GitHub actions to GitLab CI/CD
 
 ### Fixed
 
