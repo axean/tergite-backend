@@ -87,6 +87,33 @@ def read_resonator_calibration_data(
     ]
 
 
+def read_coupler_calibration_data(
+    coupler_ids: List[str], coupler_params: List[str]
+) -> List[Dict[str, Union[int, CalibrationValue, None]]]:
+    """Reads the calibration of the couplers of the device from the store (redis)
+
+    Args:
+        coupler_ids: the unique identifiers of the couplers
+        coupler_params: the parameters stored for each coupler
+
+    Returns:
+        a list of dictionaries of coupler parameters and their values
+    """
+    return [
+        {
+            param: idx
+            if param == "id"
+            else _read_calibration_value(
+                component_type="coupler",
+                component_id=coupler_id.strip("c"),
+                prop_name=param,
+            )
+            for param in coupler_params
+        }
+        for idx, coupler_id in enumerate(coupler_ids)
+    ]
+
+
 def read_discriminator_data(
     qubit_ids: List[str],
     params: List[str],
@@ -183,6 +210,23 @@ def set_discriminator_data(data: Dict[str, Dict[str, Optional[Dict]]]):
             if isinstance(v, dict):
                 set_component_property(
                     component="discriminator", name=k, component_id=qubit_id, **v
+                )
+
+
+def set_coupler_calibration_data(data: List[Dict[str, Optional[Dict]]]):
+    """Sets the calibration of the couplers of the device in the store (redis)
+
+    Args:
+        data: the calibration data for all the couplers of a given device
+    """
+    # FIXME: Use this at the start of the simulator or whenever an automatic recalibration occurs
+    #   so that it can be picked up when new calibration data is requested
+    for coupler_conf in data:
+        coupler_id = str(coupler_conf["id"]["value"]).strip("c")
+        for k, v in coupler_conf.items():
+            if isinstance(v, dict):
+                set_component_property(
+                    component="coupler", name=k, component_id=coupler_id, **v
                 )
 
 

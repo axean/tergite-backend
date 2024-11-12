@@ -3,7 +3,7 @@ import json
 from itertools import zip_longest
 from os import path
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pytest
 import redis
@@ -23,13 +23,16 @@ from app.tests.utils.fixtures import load_fixture
 from app.tests.utils.http import get_headers
 from app.tests.utils.redis import insert_in_hash, register_app_token_job_id
 
+
 _PARENT_FOLDER = path.dirname(path.abspath(__file__))
 _JOBS_LIST = load_fixture("job_list.json")
 _BACKEND_PROPERTIES = [
     load_fixture("backend_properties.json"),
     load_fixture("backend_properties.simq1.json"),
+    load_fixture("backend_properties.simq2.json"),
 ]
 _SIMULATOR_JOBS_FOR_UPLOAD = load_fixture("jobs_to_upload_simulator.json")
+_SIMULATOR_JOBS_FOR_UPLOAD_2Q = load_fixture("jobs_to_upload_simulator_2q.json")
 _JOBS_FOR_UPLOAD = load_fixture("jobs_to_upload.json")
 _JOB_ID_FIELD = "job_id"
 _JOB_IDS = [item[_JOB_ID_FIELD] for item in _JOBS_LIST]
@@ -56,7 +59,17 @@ _SIMULATOR_UPLOAD_JOB_PARAMS = [
     (*CLIENT_AND_RQ_WORKER_TUPLES[1], job) for job in _SIMULATOR_JOBS_FOR_UPLOAD
 ]
 
-_ALL_UPLOAD_JOB_PARAMS = _UPLOAD_JOB_PARAMS + _SIMULATOR_UPLOAD_JOB_PARAMS
+_SIMULATOR_UPLOAD_JOB_PARAMS_2Q = [
+    (*CLIENT_AND_RQ_WORKER_TUPLES[2], job) for job in _SIMULATOR_JOBS_FOR_UPLOAD_2Q
+]
+
+
+_ALL_UPLOAD_JOB_PARAMS = (
+    [(*args, {"0x0": 750}) for args in _UPLOAD_JOB_PARAMS]
+    + [(*args, {"0x0": 750}) for args in _SIMULATOR_UPLOAD_JOB_PARAMS]
+    + [(*args, {"0x0": 400, "0x3": 400}) for args in _SIMULATOR_UPLOAD_JOB_PARAMS_2Q]
+    # the bell state of 00 and 11 == ~512
+)
 
 _FETCH_JOB_PARAMS = [
     (client, redis_client, job_id)
@@ -331,9 +344,17 @@ def test_unauthenticated_fetch_job_status(
         assert got == expected
 
 
-@pytest.mark.parametrize("client, redis_client, rq_worker, job", _ALL_UPLOAD_JOB_PARAMS)
+@pytest.mark.parametrize(
+    "client, redis_client, rq_worker, job, expected_counts", _ALL_UPLOAD_JOB_PARAMS
+)
 def test_upload_job(
-    client, redis_client, client_jobs_folder, rq_worker, job, app_token_header
+    client,
+    redis_client,
+    client_jobs_folder,
+    rq_worker,
+    job,
+    expected_counts,
+    app_token_header,
 ):
     """POST to '/jobs' uploads a new job"""
     job_id = job[_JOB_ID_FIELD]
@@ -388,13 +409,15 @@ def test_upload_job(
         assert response.status_code == 200
         assert got == expected
 
+        # Remove the result, because it is probabilistic
+        results = job_in_redis.pop("result")
+        expected_job_in_redis.pop("result")
+
         # Check whether the result is plausible
         # This can be seen as testing gate fidelity ~70%
-        assert job_in_redis["result"]["memory"][0].count("0x0") > 750
-
-        # Remove the result, because it is probabilistic
-        job_in_redis.pop("result")
-        expected_job_in_redis.pop("result")
+        assert _job_results_match(
+            results=results["memory"][0], expected_min_counts=expected_counts
+        )
         assert job_in_redis == expected_job_in_redis
 
 
@@ -847,3 +870,19 @@ def _save_job_file(folder: Path, job: Dict[str, Any], ext: str = ".json") -> Pat
         json.dump(job, file)
 
     return file_path
+
+
+# FIXME: How do we simplify this?
+def _job_results_match(results: List[str], expected_min_counts: Dict[str, int]):
+    """Matches job results, keeping in mind that the results are probabilistic
+
+    The states are written in hex '0x0', '0x1', '0x2', '0x3' i.e. 00, 01, 10, 11
+
+    Args:
+        results: the results obtained
+        expected_min_counts: the expected counts minimum counts for each state
+
+    Returns:
+        True if they match, False if they don't
+    """
+    return all([results.count(k) >= v for k, v in expected_min_counts.items()])

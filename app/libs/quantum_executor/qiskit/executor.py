@@ -22,7 +22,7 @@ from app.libs.quantum_executor.base.experiment import BaseExperiment
 from app.libs.quantum_executor.qiskit.experiment import QiskitDynamicsExperiment
 from app.libs.quantum_executor.utils.channel import Channel
 from app.libs.quantum_executor.utils.instruction import Instruction
-from .backend import QiskitPulse1Q
+from .backend import QiskitPulse1Q, QiskitPulse2Q
 from .transpile import transpile
 from ...properties import BackendConfig
 
@@ -138,6 +138,56 @@ class QiskitPulse1QExecutor(QuantumExecutor):
         self.shots = qobj.config.shots
         self.meas_return = qobj.config.meas_return
         qobj_dict = qobj.to_dict()
+        tx = transpile(qobj_dict)
+
+        self.logger.info(f"Translated {len(tx)} OpenPulse experiments.")
+        return tx
+
+    def close(self):
+        pass
+
+
+class QiskitPulse2QExecutor(QuantumExecutor):
+    def __init__(self, backend_config: BackendConfig):
+        super().__init__()
+        self.backend = QiskitPulse2Q(
+            meas_level=1, meas_return="single", backend_config=backend_config
+        )
+
+    def run(self, experiment: BaseExperiment, /) -> xarray.Dataset:
+        job = self.backend.run(
+            experiment, shots=self.shots, meas_return=self.meas_return
+        )
+        result = job.result()
+        data = result.data()["memory"]
+
+        num_measured = data.shape[1]
+        if self.meas_return == "avg":
+            raise NotImplementedError("Not implemented 2q avg.")
+        else:
+            # TODO: depending on the measurement level, adjust dataset structure
+            # Combine real and imaginary parts into complex numbers
+            complex_data = data[:, :, 0] + 1j * data[:, :, 1]
+
+        # Create acquisition index coordinate that matches the length of a single repetition
+        acq_index = np.arange(1)
+
+        coords = {}
+        data_vars = {}
+        for i in range(num_measured):
+            coords[f"acq_index_{i}"] = acq_index
+            data_vars[f"{i}"] = (
+                ["repetition", f"acq_index_{i}"],
+                np.expand_dims(complex_data[:, i], axis=1),
+            )
+
+        ds = xarray.Dataset(data_vars=data_vars, coords=coords)
+        return ds
+
+    def construct_experiments(self, qobj: PulseQobj, /):
+        qobj_dict = qobj.to_dict()
+        self.shots = qobj.config.shots
+        self.meas_return = qobj.config.meas_return
         tx = transpile(qobj_dict)
 
         self.logger.info(f"Translated {len(tx)} OpenPulse experiments.")
