@@ -2,12 +2,15 @@ import redis
 
 from .utils.env import (
     TEST_DEFAULT_PREFIX,
+    TEST_DEFAULT_PREFIX_SIM_1Q,
+    TEST_DEFAULT_PREFIX_SIM_2Q,
     TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME,
     TEST_MSS_MACHINE_ROOT_URL,
     TEST_STORAGE_PREFIX_DIRNAME,
     TEST_STORAGE_ROOT,
     setup_test_env,
     TEST_SIMQ1_BACKEND_SETTINGS_FILE,
+    TEST_SIMQ2_BACKEND_SETTINGS_FILE,
     TEST_BACKEND_SETTINGS_FILE,
     TEST_REDIS_HOST,
     TEST_REDIS_PORT,
@@ -43,6 +46,8 @@ from ..libs.properties import DeviceCalibrationV2
 
 _lda_parameters_fixture = load_fixture("lda_parameters.json")
 _test_backend_props_fixture = load_fixture("test_backend_props.json")
+_test_backend_sim1q_props_fixture = load_fixture("test_backend_sim1q_props.json")
+_test_backend_sim2q_props_fixture = load_fixture("test_backend_sim2q_props.json")
 _real_redis = redis.Redis(
     host=TEST_REDIS_HOST,
     port=TEST_REDIS_PORT,
@@ -62,12 +67,14 @@ TEST_APP_TOKEN_STRING = "eecbf107ad103f70187923f49c1a1141219da95f1ab3906f"
 FASTAPI_CLIENTS = [
     lazy_fixture("async_fastapi_client"),
     lazy_fixture("async_fastapi_client_with_qiskit_simulator"),
+    lazy_fixture("async_fastapi_client_with_qiskit_simulator_2_qubit")
     # FIXME: inform-job-location-stage logic is non-deterministic
     # lazy_fixture("sync_fastapi_client"),
 ]
 BLACKLISTED_FASTAPI_CLIENTS = [
     lazy_fixture("blacklisted_async_fastapi_client"),
     lazy_fixture("blacklisted_async_fastapi_client_with_qiskit_simulator"),
+    lazy_fixture("blacklisted_async_fastapi_client_with_qiskit_simulator_2_qubit"),
     # FIXME: inform-job-location-stage logic is non-deterministic
     # lazy_fixture("blacklisted_sync_fastapi_client"),
 ]
@@ -76,6 +83,10 @@ CLIENTS = [
     (lazy_fixture("async_fastapi_client"), lazy_fixture("real_redis_client")),
     (
         lazy_fixture("async_fastapi_client_with_qiskit_simulator"),
+        lazy_fixture("real_redis_client"),
+    ),
+    (
+        lazy_fixture("async_fastapi_client_with_qiskit_simulator_2_qubit"),
         lazy_fixture("real_redis_client"),
     ),
     # FIXME: inform-job-location-stage logic is non-deterministic
@@ -91,6 +102,10 @@ BLACKLISTED_CLIENTS = [
         lazy_fixture("blacklisted_async_fastapi_client_with_qiskit_simulator"),
         lazy_fixture("real_redis_client"),
     ),
+    (
+        lazy_fixture("blacklisted_async_fastapi_client_with_qiskit_simulator_2_qubit"),
+        lazy_fixture("real_redis_client"),
+    ),
     # FIXME: inform-job-location-stage logic is non-deterministic
     # (lazy_fixture("blacklisted_sync_fastapi_client"), lazy_fixture("fake_redis_client")),
 ]
@@ -103,6 +118,11 @@ CLIENT_AND_RQ_WORKER_TUPLES = [
     ),
     (
         lazy_fixture("async_fastapi_client_with_qiskit_simulator"),
+        lazy_fixture("real_redis_client"),
+        lazy_fixture("async_rq_worker"),
+    ),
+    (
+        lazy_fixture("async_fastapi_client_with_qiskit_simulator_2_qubit"),
         lazy_fixture("real_redis_client"),
         lazy_fixture("async_rq_worker"),
     ),
@@ -130,6 +150,11 @@ BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES = [
         lazy_fixture("real_redis_client"),
         lazy_fixture("async_rq_worker"),
     ),
+    (
+        lazy_fixture("blacklisted_async_fastapi_client_with_qiskit_simulator_2_qubit"),
+        lazy_fixture("real_redis_client"),
+        lazy_fixture("async_rq_worker"),
+    ),
     # FIXME: inform-job-location-stage logic is non-deterministic
     # (
     #     lazy_fixture("blacklisted_sync_fastapi_client"),
@@ -150,6 +175,18 @@ _mock_linear_discriminant_analysis = MockLinearDiscriminantAnalysis(
     }
 )
 
+_mock_linear_discriminant_analysis_sim2q = MockLinearDiscriminantAnalysis(
+    result={
+        "intercept_": np.array([-0.3046965737769689, -0.38509625914248247]),
+        "coef_": np.array(
+            [
+                [-33.678566762457024, 20.606250322051658],
+                [-37.36457774060694, 22.99757458442274],
+            ]
+        ),
+    }
+)
+
 
 def mock_post_requests(url: str, **kwargs):
     """Mock POST requests for testing"""
@@ -163,6 +200,10 @@ def mock_mss_get_requests(url: str, **kwargs):
         return MockHttpResponse(status_code=200, json=_lda_parameters_fixture)
     if url.endswith(f"backends/{TEST_DEFAULT_PREFIX}"):
         return MockHttpResponse(status_code=200, json=_test_backend_props_fixture)
+    if url.endswith(f"backends/{TEST_DEFAULT_PREFIX_SIM_1Q}"):
+        return MockHttpResponse(status_code=200, json=_test_backend_sim1q_props_fixture)
+    if url.endswith(f"backends/{TEST_DEFAULT_PREFIX_SIM_2Q}"):
+        return MockHttpResponse(status_code=200, json=_test_backend_sim2q_props_fixture)
 
 
 def mock_mss_put_requests(url: str, **kwargs):
@@ -241,7 +282,23 @@ def async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient:
     remove_modules(["app", "settings"])
     _patch_async_client(mocker)
     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
+    os.environ["DEFAULT_PREFIX"] = "qiskit_pulse_1q"
     os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
+
+    from app.api import app
+
+    with freeze_time(MOCK_NOW):
+        yield TestClient(app)
+
+
+@pytest.fixture
+def async_fastapi_client_with_qiskit_simulator_2_qubit(mocker) -> TestClient:
+    """A test client for fast api when rq is running asynchronously"""
+    remove_modules(["app", "settings"])
+    _patch_async_client_sim2q(mocker)
+    os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_2q"
+    os.environ["DEFAULT_PREFIX"] = "qiskit_pulse_2q"
+    os.environ["BACKEND_SETTINGS"] = TEST_SIMQ2_BACKEND_SETTINGS_FILE
 
     from app.api import app
 
@@ -318,6 +375,24 @@ def blacklisted_async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient
     os.environ["BLACKLISTED"] = "True"
     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
     os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
+
+    from app.api import app
+
+    with freeze_time(MOCK_NOW):
+        yield TestClient(app)
+
+
+@pytest.fixture
+def blacklisted_async_fastapi_client_with_qiskit_simulator_2_qubit(
+    mocker,
+) -> TestClient:
+    """A test client with black listed ip for fast api when rq is running asynchronously
+    when qiskit dynamics is executor"""
+    remove_modules(["app", "settings"])
+    _patch_async_client(mocker)
+    os.environ["BLACKLISTED"] = "True"
+    os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_2q"
+    os.environ["BACKEND_SETTINGS"] = TEST_SIMQ2_BACKEND_SETTINGS_FILE
 
     from app.api import app
 
@@ -410,6 +485,25 @@ def _patch_async_client(mocker):
     mocker.patch(
         "sklearn.discriminant_analysis.LinearDiscriminantAnalysis",
         return_value=_mock_linear_discriminant_analysis,
+    )
+    os.environ["BLACKLISTED"] = ""
+
+
+def _patch_async_client_sim2q(mocker):
+    """Patches the async client"""
+    mss_client = MockHttpSession(
+        put=mock_mss_put_requests,
+        get=mock_mss_get_requests,
+        post=mock_mss_post_requests,
+    )
+
+    mocker.patch("redis.Redis", return_value=_real_redis)
+    mocker.patch("app.utils.queues.QueuePool", return_value=_async_queue_pool)
+    mocker.patch("requests.post", side_effect=mock_post_requests)
+    mocker.patch("requests.Session", return_value=mss_client)
+    mocker.patch(
+        "sklearn.discriminant_analysis.LinearDiscriminantAnalysis",
+        return_value=_mock_linear_discriminant_analysis_sim2q,
     )
     os.environ["BLACKLISTED"] = ""
 

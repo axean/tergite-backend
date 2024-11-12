@@ -58,17 +58,18 @@ resonator_parameters = [
 
 coupler_parameters = [
   "id",
-  "x_position",
-  "y_position",
-  "xy_drive_line",
-  "z_drive_line",
   "frequency",
-  "pi_pulse_amplitude",
-  "pi_pulse_duration",
-  "pulse_type",
-  "pulse_sigma",
-  "t1_decoherence",
-  "t2_decoherence"
+  "frequency_detuning",
+  "anharmonicity",
+  "coupling_strength_02",
+  "coupling_strength_12",
+  "cz_pulse_amplitude",
+  "cz_pulse_dc_bias",
+  "cz_pulse_phase_offset",
+  "cz_pulse_duration_before",
+  "cz_pulse_duration_rise",
+  "cz_pulse_duration_constant",
+  "pulse_type"
 ]
 
 [device_config.discriminator_parameters]
@@ -108,6 +109,20 @@ acq_integration_time = "s"
 frequency = "Hz"
 pulse_delay = "s"
 pulse_duration = "s"
+
+[simulator_config.units.coupler]
+frequency = "Hz"
+frequency_detuning = "Hz"
+anharmonicity = "Hz"
+coupling_strength_02 = "Hz"
+coupling_strength_12 = "Hz"
+cz_pulse_amplitude = ""
+cz_pulse_dc_bias = ""
+cz_pulse_phase_offset = "rad"
+cz_pulse_duration_before = "s"
+cz_pulse_duration_rise = "s"
+cz_pulse_duration_constant = "s"
+pulse_type = ""
 
 [simulator_config.units.discriminators]
 coef_0 = ""
@@ -175,6 +190,36 @@ pulse_duration = 9e-7
 pulse_type = "Square"
 pulse_amplitude = 0.08245560237524203
 id = "q14"
+
+[[simulator_config.coupler]]
+id = "c0"
+frequency = 0
+frequency_detuning = 0
+anharmonicity = 0
+coupling_strength_02 = 0
+coupling_strength_12 = 0
+cz_pulse_amplitude = 0
+cz_pulse_dc_bias = 0
+cz_pulse_phase_offset = 0
+cz_pulse_duration_before = 0
+cz_pulse_duration_rise = 0
+cz_pulse_duration_constant = 0
+pulse_type = ""
+
+[[simulator_config.coupler]]
+id = "c1"
+frequency = 0
+frequency_detuning = 0
+anharmonicity = 0
+coupling_strength_02 = 0
+coupling_strength_12 = 0
+cz_pulse_amplitude = 0
+cz_pulse_dc_bias = 0
+cz_pulse_phase_offset = 0
+cz_pulse_duration_before = 0
+cz_pulse_duration_rise = 0
+cz_pulse_duration_constant = 0
+pulse_type = ""
 
 # discriminators
 [simulator_config.discriminators.lda.q12]

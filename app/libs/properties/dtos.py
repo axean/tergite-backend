@@ -58,12 +58,31 @@ class ReadoutResonatorProps(BaseModel):
     lda_parameters: Optional[Dict[str, Any]] = None
 
 
+# FIXME: Confirm with Eleftherios if the autocalibration library provides these properties
+class CouplerProps(BaseModel):
+    """Coupler Device configuration"""
+
+    frequency: int
+    frequency_detuning: int
+    anharmonicity: int
+    coupling_strength_02: int
+    coupling_strength_12: int
+    cz_pulse_amplitude: float
+    cz_pulse_dc_bias: float
+    cz_pulse_phase_offset: float
+    cz_pulse_duration_before: float
+    cz_pulse_duration_rise: float
+    cz_pulse_duration_constant: float
+    pulse_type: str
+    id: Optional[int] = None
+
+
 class DeviceProperties(BaseModel):
     """All Device Properties"""
 
     qubit: Optional[List[QubitProps]] = None
     readout_resonator: Optional[List[ReadoutResonatorProps]] = None
-    coupler: Optional[List[Dict[str, Any]]] = None
+    coupler: Optional[List[CouplerProps]] = None
 
 
 class DeviceV1(BaseModel):
@@ -183,11 +202,13 @@ class _BackendSimulatorConfig(BaseModel):
 
     # Adjusted the type hint for units to support nested structure within discriminators
     units: Dict[
-        Literal["qubit", "readout_resonator", "discriminators"], Dict[str, str]
+        Literal["qubit", "readout_resonator", "discriminators", "coupler"],
+        Dict[str, str],
     ] = {}
     qubit: List[Dict[str, Union[float, str]]] = []
     readout_resonator: List[Dict[str, Union[float, str]]] = []
     discriminators: Dict[str, Dict[str, Dict[str, Union[float, str]]]] = {}
+    coupler: List[Dict[str, Union[float, str]]] = []
 
 
 class BackendConfig(BaseModel):

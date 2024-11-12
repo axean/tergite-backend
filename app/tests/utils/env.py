@@ -17,6 +17,9 @@ from app.tests.utils.fixtures import get_fixture_path
 TEST_DEFAULT_PREFIX = "test"
 TEST_STORAGE_ROOT = "/tmp/jobs"
 
+TEST_DEFAULT_PREFIX_SIM_1Q = "qiskit_pulse_1q"
+TEST_DEFAULT_PREFIX_SIM_2Q = "qiskit_pulse_2q"
+
 TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME = "logfile_download_pool"
 TEST_LOGFILE_UPLOAD_POOL_DIRNAME = "logfile_upload_pool"
 TEST_JOB_UPLOAD_POOL_DIRNAME = "job_upload_pool"
@@ -35,6 +38,7 @@ TEST_MSS_APP_TOKEN = "some-mss-app-token-for-testing"
 TEST_QUANTIFY_CONFIG_FILE = get_fixture_path("dummy-quantify-config.yml")
 TEST_BACKEND_SETTINGS_FILE = get_fixture_path("backend_config.toml")
 TEST_SIMQ1_BACKEND_SETTINGS_FILE = get_fixture_path("backend_config.simq1.toml")
+TEST_SIMQ2_BACKEND_SETTINGS_FILE = get_fixture_path("backend_config.simq2.toml")
 
 TEST_REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 TEST_REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))

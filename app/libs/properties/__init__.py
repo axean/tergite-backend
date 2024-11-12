@@ -33,16 +33,19 @@ from .dtos import (
     DeviceCalibrationV2,
     QubitCalibration,
     QubitProps,
+    CouplerProps,
     ReadoutResonatorProps,
     DeviceProperties,
 )
 from .utils.data import (
     read_qubit_calibration_data,
     read_resonator_calibration_data,
+    read_coupler_calibration_data,
     read_discriminator_data,
     get_inner_value,
     set_qubit_calibration_data,
     set_resonator_calibration_data,
+    set_coupler_calibration_data,
     set_discriminator_data,
     attach_units_many,
     attach_units,
@@ -66,6 +69,7 @@ def initialize_backend(
     mss_url: str,
     qubit_config: Optional[List[Dict[str, Union[float, str]]]] = None,
     resonator_config: Optional[List[Dict[str, Union[float, str]]]] = None,
+    coupler_config: Optional[List[Dict[str, Union[float, str]]]] = None,
     discriminator_config: Optional[
         Dict[str, Dict[str, Dict[str, Union[float, str]]]]
     ] = None,
@@ -118,6 +122,14 @@ def initialize_backend(
             }
             set_discriminator_data(disc_data)
 
+        # set coupler calibration data
+        coupler_units = simulator_config.units.get("coupler", {})
+        coupler_data = coupler_config
+        if coupler_config is None:
+            coupler_data = simulator_config.coupler  # Fetch from simulator_config
+        coupler_data = attach_units_many(coupler_data, coupler_units)
+        set_coupler_calibration_data(coupler_data)
+
     if not is_standalone:
         # update MSS of this backend's configuration
         send_backend_info_to_mss(
@@ -142,6 +154,12 @@ def get_device_v1_info(
     discriminator_params = backend_config.device_config.discriminator_parameters
     discriminators = backend_config.device_config.discriminators
 
+    num_qubits = len(qubit_ids)
+    coupling_map = backend_config.device_config.coupling_map
+
+    # coupling map defined in symmetrical pairs, so id of coupler for [0, 1] and [1, 0] is the same
+    coupler_ids = [f"c{x}" for x in range(len(coupling_map) // 2)]
+
     qubit_conf = read_qubit_calibration_data(
         qubit_ids=qubit_ids,
         qubit_params=backend_config.device_config.qubit_parameters,
@@ -149,6 +167,10 @@ def get_device_v1_info(
     resonator_conf = read_resonator_calibration_data(
         qubit_ids=qubit_ids,
         resonator_params=backend_config.device_config.resonator_parameters,
+    )
+    coupler_conf = read_coupler_calibration_data(
+        coupler_ids=coupler_ids,
+        coupler_params=backend_config.device_config.coupler_parameters,
     )
     raw_discriminator_conf = {
         item: read_discriminator_data(
@@ -173,6 +195,10 @@ def get_device_v1_info(
                     **{k: get_inner_value(v) for k, v in item.items()}
                 )
                 for item in resonator_conf
+            ],
+            coupler=[
+                CouplerProps(**{k: get_inner_value(v) for k, v in item.items()})
+                for item in coupler_conf
             ],
         ),
         discriminators={

@@ -50,7 +50,7 @@
         "lda_parameters": null
       }
     ],
-    "coupler": null
+    "coupler": []
   },
   "discriminators": {
     "lda": {

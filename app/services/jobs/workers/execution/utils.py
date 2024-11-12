@@ -16,6 +16,7 @@ from app.libs.properties import initialize_backend, get_backend_config
 from app.libs.quantum_executor.base.executor import QuantumExecutor
 from app.libs.quantum_executor.qiskit.executor import (
     QiskitPulse1QExecutor,
+    QiskitPulse2QExecutor,
     QiskitDynamicsExecutor,
 )
 from app.libs.quantum_executor.quantify.executor import QuantifyExecutor
@@ -44,12 +45,19 @@ def get_executor(
     qubit_config = None
     resonator_config = None
     discriminator_config = None
+    coupler_config = None
 
     if executor_type == "quantify":
         executor = QuantifyExecutor(config_file=config_file)
 
     if executor_type == "qiskit_pulse_1q":
         executor: QiskitPulse1QExecutor = QiskitPulse1QExecutor(
+            backend_config=backend_config
+        )
+        discriminator_config = executor.backend.train_discriminator()
+
+    if executor_type == "qiskit_pulse_2q":
+        executor: QiskitPulse2QExecutor = QiskitPulse2QExecutor(
             backend_config=backend_config
         )
         discriminator_config = executor.backend.train_discriminator()
@@ -67,6 +75,7 @@ def get_executor(
         qubit_config=qubit_config,
         resonator_config=resonator_config,
         discriminator_config=discriminator_config,
+        coupler_config=coupler_config,
     )
 
     return executor
