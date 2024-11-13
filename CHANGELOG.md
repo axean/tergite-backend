@@ -12,6 +12,8 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 - Added redis connection environment variables
 - Added GitLab CI configuration
 - Added storing of Qobj header data in the logfiles of the quantum jobs
+- Qiskit dynamics simulator backend with two-qubit CZ gate ("qiskit_pulse_2q")
+- Added CouplerProps to Backend Configurations
 
 ### Fixed
 
