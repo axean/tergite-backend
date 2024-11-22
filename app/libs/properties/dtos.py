@@ -133,6 +133,24 @@ class DeviceV2(BaseModel):
     coordinates: List[Tuple[int, int]]
     is_simulator: bool
     coupling_dict: Dict[str, Union[str, List[str]]]
+    characterized: bool
+    open_pulse: bool
+    meas_map: List[List[int]]
+    description: str = None
+    simulator: bool = False
+    num_qubits: int = 0
+    num_couplers: int = 0
+    num_resonators: int = 0
+    online_date: Optional[str] = None
+    dt: Optional[float] = None
+    dtm: Optional[float] = None
+    timelog: Dict[str, Any] = {}
+    qubit_ids: List[str] = []
+    meas_lo_freq: Optional[List[int]] = None
+    qubit_lo_freq: Optional[List[int]] = None
+    gates: Optional[Dict[str, Any]] = None
+    is_active: Optional[bool] = None
+    properties: Optional[Dict[str, Any]] = None
 
     class Config:
         extra = Extra.allow
@@ -141,7 +159,7 @@ class DeviceV2(BaseModel):
 class CalibrationValue(BaseModel, extra=Extra.allow):
     """A calibration value"""
 
-    value: Union[float, str]
+    value: Union[float, str, int]
     date: Optional[str] = None
     unit: str = ""
 
@@ -154,6 +172,52 @@ class QubitCalibration(BaseModel, extra=Extra.allow):
     frequency: Optional[CalibrationValue] = None
     anharmonicity: Optional[CalibrationValue] = None
     readout_assignment_error: Optional[CalibrationValue] = None
+    # parameters for x gate
+    pi_pulse_amplitude: Optional[CalibrationValue] = None
+    pi_pulse_duration: Optional[CalibrationValue] = None
+    pulse_type: Optional[CalibrationValue] = None
+    pulse_sigma: Optional[CalibrationValue] = None
+    id: Optional[int] = None
+    index: Optional[CalibrationValue] = None
+    x_position: Optional[CalibrationValue] = None
+    y_position: Optional[CalibrationValue] = None
+    xy_drive_line: Optional[CalibrationValue] = None
+    z_drive_line: Optional[CalibrationValue] = None
+
+
+class ResonatorCalibration(BaseModel, extra=Extra.allow):
+    """Schema for the calibration data of the resonator"""
+
+    acq_delay: Optional[CalibrationValue] = None
+    acq_integration_time: Optional[CalibrationValue] = None
+    frequency: Optional[CalibrationValue] = None
+    pulse_amplitude: Optional[CalibrationValue] = None
+    pulse_delay: Optional[CalibrationValue] = None
+    pulse_duration: Optional[CalibrationValue] = None
+    pulse_type: Optional[CalibrationValue] = None
+    id: Optional[int] = None
+    index: Optional[CalibrationValue] = None
+    x_position: Optional[CalibrationValue] = None
+    y_position: Optional[CalibrationValue] = None
+    readout_line: Optional[CalibrationValue] = None
+
+
+class CouplersCalibration(BaseModel, extra=Extra.allow):
+    """Schema for the calibration data of the coupler"""
+
+    frequency: Optional[CalibrationValue] = None
+    frequency_detuning: Optional[CalibrationValue] = None
+    anharmonicity: Optional[CalibrationValue] = None
+    coupling_strength_02: Optional[CalibrationValue] = None
+    coupling_strength_12: Optional[CalibrationValue] = None
+    cz_pulse_amplitude: Optional[CalibrationValue] = None
+    cz_pulse_dc_bias: Optional[CalibrationValue] = None
+    cz_pulse_phase_offset: Optional[CalibrationValue] = None
+    cz_pulse_duration_before: Optional[CalibrationValue] = None
+    cz_pulse_duration_rise: Optional[CalibrationValue] = None
+    cz_pulse_duration_constant: Optional[CalibrationValue] = None
+    pulse_type: Optional[CalibrationValue] = None
+    id: Optional[int] = None
 
 
 class DeviceCalibrationV2(BaseModel):
@@ -162,6 +226,9 @@ class DeviceCalibrationV2(BaseModel):
     name: str
     version: str
     qubits: List[QubitCalibration]
+    resonators: Optional[List[ResonatorCalibration]] = None
+    couplers: Optional[List[CouplersCalibration]] = None
+    discriminators: Optional[Dict[str, Any]] = None
     last_calibrated: str
 
 
@@ -192,7 +259,7 @@ class _BackendDeviceConfig(BaseModel):
     coupling_dict: Dict[str, Union[str, List[str]]] = {}
     # the [x, y] coordinates of the qubits
     coordinates: List[Tuple[int, int]] = []
-    coupling_map: Optional[List[Tuple[str, str]]] = None
+    coupling_map: Optional[List[Tuple[int, int]]] = None
     meas_map: List[List[int]] = []
     qubit_parameters: List[str] = []
     resonator_parameters: List[str] = []
@@ -202,18 +269,8 @@ class _BackendDeviceConfig(BaseModel):
     @root_validator(allow_reuse=True)
     def set_coupling_map(cls, values):
         coupling_dict = values.get("coupling_dict", {})
-        # values['coupling_map'] = [
-        #     (v[0].strip("q"), v[1].strip("q")) for k, v in coupling_dict.items()
-        # ] + [
-        #     (v[1].strip("q"), v[0].strip("q")) for k, v in coupling_dict.items()
-        # ]
         values["coupling_map"] = [
-            pair
-            for k, v in coupling_dict.items()
-            for pair in [
-                (v[0].strip("q"), v[1].strip("q")),
-                (v[1].strip("q"), v[0].strip("q")),
-            ]
+            (int(v[0].strip("q")), int(v[1].strip("q"))) for v in coupling_dict.values()
         ]
 
         return values

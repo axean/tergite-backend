@@ -14,7 +14,7 @@
     "dtm": 1e-11,
     
     "meas_map": [[0], [1]],
-    "coupling_map": [[0, 1], [1, 0]],
+    "coupling_map": [[0, 1]],
     "timelog": {},
     "qubit_ids": ["q0", "q1"],
     "device_properties": {
