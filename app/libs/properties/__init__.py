@@ -32,6 +32,8 @@ from .dtos import (
     DeviceV2,
     DeviceCalibrationV2,
     QubitCalibration,
+    ResonatorCalibration,
+    CouplersCalibration,
     QubitProps,
     CouplerProps,
     ReadoutResonatorProps,
@@ -219,9 +221,12 @@ def get_device_v2_info(
     Returns:
         the deviceV2 info of the device
     """
+    qubit_ids = backend_config.device_config.qubit_ids
     return DeviceV2(
-        name=backend_config.general_config.name,
-        version=backend_config.general_config.version,
+        **backend_config.general_config.dict(),
+        meas_map=backend_config.device_config.meas_map,
+        qubit_ids=qubit_ids,
+        gates=backend_config.gates,
         number_of_qubits=backend_config.general_config.num_qubits,
         is_online=backend_config.general_config.is_active,
         basis_gates=list(backend_config.gates.keys()),
@@ -243,8 +248,15 @@ def get_device_calibration_v2_info(
     Returns:
         the DeviceCalibrationV2 info of the device
     """
+    qubit_ids = backend_config.device_config.qubit_ids
+    discriminator_params = backend_config.device_config.discriminator_parameters
+    discriminators = backend_config.device_config.discriminators
+
+    # Couplng dicts is a dictionary of id as a keys and qubits list for each couplers
+    coupler_ids = backend_config.device_config.coupling_dict.keys()
+
     raw_qubit_conf = read_qubit_calibration_data(
-        qubit_ids=backend_config.device_config.qubit_ids,
+        qubit_ids=qubit_ids,
         qubit_params=backend_config.device_config.qubit_parameters,
     )
     qubit_conf = [QubitCalibration(**conf) for conf in raw_qubit_conf]
@@ -252,10 +264,37 @@ def get_device_calibration_v2_info(
     if len(qubit_conf) > 0:
         last_calibrated = qubit_conf[0].t2_decoherence.date
 
+    raw_resonator_conf = read_resonator_calibration_data(
+        qubit_ids=qubit_ids,
+        resonator_params=backend_config.device_config.resonator_parameters,
+    )
+    resonator_conf = [ResonatorCalibration(**conf) for conf in raw_resonator_conf]
+    raw_coupler_conf = read_coupler_calibration_data(
+        coupler_ids=coupler_ids,
+        coupler_params=backend_config.device_config.coupler_parameters,
+    )
+    coupler_conf = [CouplersCalibration(**conf) for conf in raw_coupler_conf]
+    raw_discriminator_conf = {
+        item: read_discriminator_data(
+            qubit_ids=qubit_ids, params=discriminator_params[item]
+        )
+        for item in discriminators
+    }
+    discriminator_conf = {
+        discriminator: {
+            qubit_id: {k: get_inner_value(v) for k, v in conf.items()}
+            for qubit_id, conf in discriminator_conf.items()
+        }
+        for discriminator, discriminator_conf in raw_discriminator_conf.items()
+    }
+
     return DeviceCalibrationV2(
         name=backend_config.general_config.name,
         version=backend_config.general_config.version,
-        qubits=[QubitCalibration(**conf) for conf in raw_qubit_conf],
+        qubits=qubit_conf,
+        resonators=resonator_conf,
+        couplers=coupler_conf,
+        discriminators=discriminator_conf,
         last_calibrated=last_calibrated,
     )
 
