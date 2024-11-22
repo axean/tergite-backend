@@ -12,12 +12,13 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+import dataclasses
 from datetime import datetime
 from os import PathLike
 from typing import Optional, Dict, Any, List, Tuple, Union, Literal
 
 import toml
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra, root_validator
 
 from app.libs.properties.utils.date_time import utc_to_iso, utc_now_iso
 
@@ -131,6 +132,7 @@ class DeviceV2(BaseModel):
     coupling_map: List[Tuple[int, int]]
     coordinates: List[Tuple[int, int]]
     is_simulator: bool
+    coupling_dict: Dict[str, Union[str, List[str]]]
 
     class Config:
         extra = Extra.allow
@@ -187,14 +189,34 @@ class _BackendDeviceConfig(BaseModel):
     qubit_ids: List[str]
     discriminators: List[str] = ["lda", "thresholded_acquisition"]
     # the bidirectional coupling i.e. 1-to-2 coupling is represented by two tuples [1, 2], [2, 1]
-    coupling_map: List[Tuple[int, int]] = []
+    coupling_dict: Dict[str, Union[str, List[str]]] = {}
     # the [x, y] coordinates of the qubits
     coordinates: List[Tuple[int, int]] = []
+    coupling_map: Optional[List[Tuple[str, str]]] = None
     meas_map: List[List[int]] = []
     qubit_parameters: List[str] = []
     resonator_parameters: List[str] = []
     coupler_parameters: List[str] = []
     discriminator_parameters: Dict[str, List[str]] = {}
+
+    @root_validator(allow_reuse=True)
+    def set_coupling_map(cls, values):
+        coupling_dict = values.get("coupling_dict", {})
+        # values['coupling_map'] = [
+        #     (v[0].strip("q"), v[1].strip("q")) for k, v in coupling_dict.items()
+        # ] + [
+        #     (v[1].strip("q"), v[0].strip("q")) for k, v in coupling_dict.items()
+        # ]
+        values["coupling_map"] = [
+            pair
+            for k, v in coupling_dict.items()
+            for pair in [
+                (v[0].strip("q"), v[1].strip("q")),
+                (v[1].strip("q"), v[0].strip("q")),
+            ]
+        ]
+
+        return values
 
 
 class _BackendSimulatorConfig(BaseModel):

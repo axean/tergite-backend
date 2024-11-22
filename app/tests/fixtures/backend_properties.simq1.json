@@ -4,7 +4,7 @@
   "open_pulse": true,
   "version": "1.0.0",
   "meas_map": [[0]],
-  "coupling_map": [[0,0]],
+  "coupling_map": [],
   "description": "A single transmon Hamiltonian with 4 levels",
   "simulator": true,
   "num_qubits": 1,
