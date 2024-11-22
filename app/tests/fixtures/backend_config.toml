@@ -22,8 +22,6 @@ discriminators = [ "lda"]
 
 qubit_ids = [ "q12", "q13", "q14" ]
 
-coupling_map = [ [ 0, 1 ], [ 1, 0 ], [ 0, 2 ], [ 2, 0 ]  ]
-
 coordinates = [ [ 0, 0 ], [ 0, 1 ], [ 1, 0 ] ]
 
 meas_map = [ [ 0, 1, 2 ] ]
@@ -71,6 +69,11 @@ coupler_parameters = [
   "cz_pulse_duration_constant",
   "pulse_type"
 ]
+
+[device_config.coupling_dict]
+u0 = ["q0", "q1"]
+u1 = ["q0", "q2"]
+
 
 [device_config.discriminator_parameters]
 lda = [
@@ -192,7 +195,7 @@ pulse_amplitude = 0.08245560237524203
 id = "q14"
 
 [[simulator_config.coupler]]
-id = "c0"
+id = "u0"
 frequency = 0
 frequency_detuning = 0
 anharmonicity = 0
@@ -207,7 +210,7 @@ cz_pulse_duration_constant = 0
 pulse_type = ""
 
 [[simulator_config.coupler]]
-id = "c1"
+id = "u1"
 frequency = 0
 frequency_detuning = 0
 anharmonicity = 0

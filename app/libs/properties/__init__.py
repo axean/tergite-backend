@@ -154,11 +154,8 @@ def get_device_v1_info(
     discriminator_params = backend_config.device_config.discriminator_parameters
     discriminators = backend_config.device_config.discriminators
 
-    num_qubits = len(qubit_ids)
-    coupling_map = backend_config.device_config.coupling_map
-
-    # coupling map defined in symmetrical pairs, so id of coupler for [0, 1] and [1, 0] is the same
-    coupler_ids = [f"c{x}" for x in range(len(coupling_map) // 2)]
+    # Couplng dicts is a dictionary of id as a keys and qubits list for each couplers
+    coupler_ids = backend_config.device_config.coupling_dict.keys()
 
     qubit_conf = read_qubit_calibration_data(
         qubit_ids=qubit_ids,
@@ -231,6 +228,7 @@ def get_device_v2_info(
         coupling_map=backend_config.device_config.coupling_map,
         coordinates=backend_config.device_config.coordinates,
         is_simulator=backend_config.general_config.simulator,
+        coupling_dict=backend_config.device_config.coupling_dict,
     )
 
 

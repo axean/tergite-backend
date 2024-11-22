@@ -22,8 +22,6 @@ discriminators = [ "lda" ]
 
 qubit_ids = [ "q0" ]
 
-# take note that this is bidirectional coupling i.e. 1-to-2 coupling is represented by two tuples [1, 2], [2, 1]
-coupling_map = [ [ 0, 0 ] ]
 
 # the spacial [x,y] coordinates of the qubits
 coordinates = [ [ 0, 0 ] ]
@@ -72,6 +70,10 @@ coupler_parameters = [
   "t1_decoherence",
   "t2_decoherence"
 ]
+
+
+[device_config.coupling_dict]
+
 
 [device_config.discriminator_parameters]
 lda = [
