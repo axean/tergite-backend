@@ -19,8 +19,8 @@
     "qubit": [
       {
         "frequency": 4700000000,
-        "pi_pulse_amplitude": 0.05,
-        "pi_pulse_duration": 5.6e-9,
+        "pi_pulse_amplitude": 0.0284977,
+        "pi_pulse_duration": 56e-9,
         "pulse_type": "Gaussian",
         "pulse_sigma": 7e-9,
         "t1_decoherence": 7.1e-5,
