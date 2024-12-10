@@ -1,5 +1,5 @@
+# backend_config.toml
 [general_config]
-# general static configuration for the simulator backend of qiskit dynamics single qubit
 name = "qiskit_pulse_1q"
 version = "1.0.0"
 is_active = true
@@ -13,7 +13,6 @@ num_resonators = 1
 description = "A single transmon Hamiltonian with 4 levels"
 dt = 1e-9
 dtm = 1e-9
-
 
 [device_config]
 # config names for specification of calibration values
@@ -71,10 +70,6 @@ coupler_parameters = [
   "t2_decoherence"
 ]
 
-
-[device_config.coupling_dict]
-
-
 [device_config.discriminator_parameters]
 lda = [
   "coef_0",
@@ -111,8 +106,8 @@ intercept = ""
 # qubits
 [[simulator_config.qubit]]
 frequency = 4_700_000_000
-pi_pulse_amplitude = 0.05
-pi_pulse_duration = 5.6e-9
+pi_pulse_amplitude = 0.0284977
+pi_pulse_duration = 56e-9
 pulse_sigma = 7e-9
 pulse_type = "Gaussian"
 t1_decoherence = 0.000071
