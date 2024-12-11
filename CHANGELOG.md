@@ -7,6 +7,8 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ## [Unreleased]
 
+## [2024.12.0] - 2024-12-11
+
 ### Added
 
 - Added redis connection environment variables
@@ -14,8 +16,15 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 - Added storing of Qobj header data in the logfiles of the quantum jobs
 - Qiskit dynamics simulator backend with two-qubit CZ gate ("qiskit_pulse_2q")
 - Added CouplerProps to Backend Configurations
+- Added the `coupling_dict` to the `backend_config.toml`
 
 ### Fixed
+
+- Fixed httpx version to 0.27.2 as 0.28.0 removes many deprecations that we were still dependent on in FastAPI testClient
+
+### Changed
+
+- Removed the `coupling_map` from the `backend_config.toml` as it is generated on-the-fly from the `coupling_dict`.
 
 ## [2024.09.1] - 2024-09-24
 
