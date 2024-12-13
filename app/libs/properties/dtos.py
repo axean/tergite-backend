@@ -151,6 +151,7 @@ class DeviceV2(BaseModel):
     gates: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
     properties: Optional[Dict[str, Any]] = None
+    qubit_ids_coupler_map: List[Tuple[Tuple[int, int], int]] = []
 
     class Config:
         extra = Extra.allow
@@ -255,10 +256,19 @@ class _BackendDeviceConfig(BaseModel):
 
     qubit_ids: List[str]
     discriminators: List[str] = ["lda", "thresholded_acquisition"]
-    # the bidirectional coupling i.e. 1-to-2 coupling is represented by two tuples [1, 2], [2, 1]
-    coupling_dict: Dict[str, Union[str, List[str]]] = {}
+    # unidirectional map of coupler to qubit pair e.g. {u1: (q1,q2), u3: (q2,q3)}
+    coupling_dict: Dict[str, Tuple[str, str]] = {}
+
+    # `qubit_ids_coupler_map` is a list of tuples of qubit couplings and their respective
+    # couplers, with the qubits represented by their ids in integer form
+    # e.g. [((1,2), 1), ((2,3), 3)]
+    qubit_ids_coupler_map: List[Tuple[Tuple[int, int], int]] = []
     # the [x, y] coordinates of the qubits
     coordinates: List[Tuple[int, int]] = []
+
+    # `coupling_map` is a list of bi-directional couplings with the qubits represented
+    # by their indexes in the list of qubit_ids available
+    # e.g. 1-to-2 coupling is represented by two tuples [1, 2], [2, 1]
     coupling_map: Optional[List[Tuple[int, int]]] = None
     meas_map: List[List[int]] = []
     qubit_parameters: List[str] = []
@@ -269,9 +279,41 @@ class _BackendDeviceConfig(BaseModel):
     @root_validator(allow_reuse=True)
     def set_coupling_map(cls, values):
         coupling_dict = values.get("coupling_dict", {})
-        values["coupling_map"] = [
-            (int(v[0].strip("q")), int(v[1].strip("q"))) for v in coupling_dict.values()
-        ]
+        qubit_ids: List[str] = values.get("qubit_ids", [])
+
+        if len(coupling_dict) == 0:
+            # special case when technically there is no coupler but there might be some qubits,
+            # let each qubit be seen to couple with itself
+            values["coupling_map"] = [(idx, idx) for idx, _ in enumerate(qubit_ids)]
+        else:
+            qubit_index = {_id: psn for psn, _id in enumerate(qubit_ids)}
+
+            def get_index(str_id) -> int:
+                return qubit_index[str_id]
+
+            def get_id(str_id: str) -> int:
+                return int(str_id.strip("q").strip("u"))
+
+            # coupling_map is a list of bi-directional couplings with the qubits represented
+            # by their indexes in the list of qubit_ids available
+            index_couplings = [
+                (get_index(q1), get_index(q2)) for q1, q2 in coupling_dict.values()
+            ]
+            reverse_index_couplings = [(q2, q1) for q1, q2 in index_couplings]
+            values["coupling_map"] = index_couplings + reverse_index_couplings
+
+            # qubit_ids_coupler_map is a list of tuples of qubit couplings and their respective
+            # couplers, with the qubits represented by their ids in integer form
+            id_coupling_items = [
+                ((get_id(q1), get_id(q2)), get_id(c))
+                for c, (q1, q2) in coupling_dict.items()
+            ]
+            reverse_id_coupling_items = [
+                ((q2, q1), c) for (q1, q2), c in id_coupling_items
+            ]
+            values["qubit_ids_coupler_map"] = (
+                id_coupling_items + reverse_id_coupling_items
+            )
 
         return values
 

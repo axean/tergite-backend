@@ -245,6 +245,16 @@ async def create_current_snapshot():
     return props_lib.get_device_v1_info()
 
 
+@app.get("/v2/static-properties", dependencies=[Depends(get_whitelisted_ip)])
+async def create_current_snapshot():
+    return props_lib.get_device_v2_info()
+
+
+@app.get("/v2/dynamic-properties", dependencies=[Depends(get_whitelisted_ip)])
+async def create_current_snapshot():
+    return props_lib.get_device_calibration_v2_info()
+
+
 # FIXME: this endpoint might be unnecessary
 @app.get("/web-gui", dependencies=[Depends(get_whitelisted_ip)])
 async def get_snapshot(redis_connection: RedisDep):

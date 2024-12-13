@@ -1,0 +1,37 @@
+{
+  "basis_gates": ["x"],
+  "characterized": true,
+  "coordinates": [[0, 0]],
+  "coupling_dict": {},
+  "coupling_map": [[0, 0]],
+  "description": "A single transmon Hamiltonian with 4 levels",
+  "dt": 1e-9,
+  "dtm": 1e-9,
+  "gates": {
+    "x": {
+      "coupling_map": [[0]],
+      "parameters": [],
+      "qasm_def": "gate x q { U(pi, 0, pi) q; }"
+    }
+  },
+  "qubit_ids_coupler_map": [],
+  "is_active": true,
+  "is_online": true,
+  "is_simulator": true,
+  "last_online": null,
+  "meas_lo_freq": null,
+  "meas_map": [[0]],
+  "name": "qiskit_pulse_1q",
+  "num_couplers": 0,
+  "num_qubits": 1,
+  "num_resonators": 1,
+  "number_of_qubits": 1,
+  "online_date": "2024-09-11T18:07:31",
+  "open_pulse": true,
+  "properties": null,
+  "qubit_ids": ["q0"],
+  "qubit_lo_freq": null,
+  "simulator": true,
+  "timelog": {},
+  "version": "1.0.0"
+}
