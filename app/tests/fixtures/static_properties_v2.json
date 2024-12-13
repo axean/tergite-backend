@@ -1,0 +1,61 @@
+{
+  "basis_gates": ["u", "h", "x"],
+  "characterized": true,
+  "coordinates": [
+    [0, 0],
+    [0, 1],
+    [1, 0]
+  ],
+  "coupling_dict": { "u0": ["q12", "q13"], "u1": ["q12", "q14"] },
+  "coupling_map": [
+    [0, 1],
+    [0, 2],
+    [1, 0],
+    [2, 0]
+  ],
+  "qubit_ids_coupler_map": [
+    [[12, 13], 0],
+    [[12, 14], 1],
+    [[13, 12], 0],
+    [[14, 12], 1]
+  ],
+  "description": "15 qubit device in Loke",
+  "dt": 1e-9,
+  "dtm": 1e-9,
+  "gates": {
+    "h": {
+      "parameters": [],
+      "qasm_def": "gate id q { U(0, 0, 0) q; }",
+      "qubits": [0]
+    },
+    "u": {
+      "parameters": [],
+      "qasm_def": "gate id q { U(0, 0, 0) q; }",
+      "qubits": [0]
+    },
+    "x": {
+      "parameters": [],
+      "qasm_def": "gate id q { U(0, 0, 0) q; }",
+      "qubits": [0]
+    }
+  },
+  "is_active": true,
+  "is_online": true,
+  "is_simulator": true,
+  "last_online": null,
+  "meas_lo_freq": null,
+  "meas_map": [[0, 1, 2]],
+  "name": "system_test",
+  "num_couplers": 2,
+  "num_qubits": 3,
+  "num_resonators": 3,
+  "number_of_qubits": 3,
+  "online_date": "2022-04-13T19:50:31",
+  "open_pulse": true,
+  "properties": null,
+  "qubit_ids": ["q12", "q13", "q14"],
+  "qubit_lo_freq": null,
+  "simulator": true,
+  "timelog": {},
+  "version": "2023.06.10"
+}

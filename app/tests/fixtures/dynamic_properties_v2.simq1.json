@@ -1,0 +1,218 @@
+{
+  "couplers": [],
+  "discriminators": {
+    "lda": {
+      "q0": {
+        "coef_0": -24.30078533,
+        "coef_1": 22.61843697,
+        "intercept": 0.70658014
+      }
+    }
+  },
+  "last_calibrated": "NOW-PLACEHOLDER",
+  "name": "qiskit_pulse_1q",
+  "qubits": [
+    {
+      "anharmonicity": null,
+      "frequency": {
+        "component": "qubit",
+        "component_id": "0",
+        "date": "NOW-PLACEHOLDER",
+        "long_name": null,
+        "name": "frequency",
+        "notes": null,
+        "property_type": "device",
+        "source": null,
+        "tags": null,
+        "unit": "Hz",
+        "value": 4700000000.0
+      },
+      "id": 0,
+      "index": null,
+      "pi_pulse_amplitude": {
+        "component": "qubit",
+        "component_id": "0",
+        "date": "NOW-PLACEHOLDER",
+        "long_name": null,
+        "name": "pi_pulse_amplitude",
+        "notes": null,
+        "property_type": "device",
+        "source": null,
+        "tags": null,
+        "unit": "",
+        "value": 0.0284977
+      },
+      "pi_pulse_duration": {
+        "component": "qubit",
+        "component_id": "0",
+        "date": "NOW-PLACEHOLDER",
+        "long_name": null,
+        "name": "pi_pulse_duration",
+        "notes": null,
+        "property_type": "device",
+        "source": null,
+        "tags": null,
+        "unit": "",
+        "value": 5.6e-8
+      },
+      "pulse_sigma": {
+        "component": "qubit",
+        "component_id": "0",
+        "date": "NOW-PLACEHOLDER",
+        "long_name": null,
+        "name": "pulse_sigma",
+        "notes": null,
+        "property_type": "device",
+        "source": null,
+        "tags": null,
+        "unit": "",
+        "value": 7e-9
+      },
+      "pulse_type": {
+        "component": "qubit",
+        "component_id": "0",
+        "date": "NOW-PLACEHOLDER",
+        "long_name": null,
+        "name": "pulse_type",
+        "notes": null,
+        "property_type": "device",
+        "source": null,
+        "tags": null,
+        "unit": "",
+        "value": "Gaussian"
+      },
+      "readout_assignment_error": null,
+      "t1_decoherence": {
+        "component": "qubit",
+        "component_id": "0",
+        "date": "NOW-PLACEHOLDER",
+        "long_name": null,
+        "name": "t1_decoherence",
+        "notes": null,
+        "property_type": "device",
+        "source": null,
+        "tags": null,
+        "unit": "s",
+        "value": 7.1e-5
+      },
+      "t2_decoherence": {
+        "component": "qubit",
+        "component_id": "0",
+        "date": "NOW-PLACEHOLDER",
+        "long_name": null,
+        "name": "t2_decoherence",
+        "notes": null,
+        "property_type": "device",
+        "source": null,
+        "tags": null,
+        "unit": "s",
+        "value": 6.9e-5
+      },
+      "x_position": null,
+      "xy_drive_line": null,
+      "y_position": null,
+      "z_drive_line": null
+    }
+  ],
+  "resonators": [
+    {
+      "acq_delay": {
+        "component": "readout_resonator",
+        "component_id": "0",
+        "date": "NOW-PLACEHOLDER",
+        "long_name": null,
+        "name": "acq_delay",
+        "notes": null,
+        "property_type": "device",
+        "source": null,
+        "tags": null,
+        "unit": "s",
+        "value": 5e-8
+      },
+      "acq_integration_time": {
+        "component": "readout_resonator",
+        "component_id": "0",
+        "date": "NOW-PLACEHOLDER",
+        "long_name": null,
+        "name": "acq_integration_time",
+        "notes": null,
+        "property_type": "device",
+        "source": null,
+        "tags": null,
+        "unit": "s",
+        "value": 1e-6
+      },
+      "frequency": {
+        "component": "readout_resonator",
+        "component_id": "0",
+        "date": "NOW-PLACEHOLDER",
+        "long_name": null,
+        "name": "frequency",
+        "notes": null,
+        "property_type": "device",
+        "source": null,
+        "tags": null,
+        "unit": "Hz",
+        "value": 7260080000.0
+      },
+      "id": 0,
+      "index": null,
+      "pulse_amplitude": {
+        "component": "readout_resonator",
+        "component_id": "0",
+        "date": "NOW-PLACEHOLDER",
+        "long_name": null,
+        "name": "pulse_amplitude",
+        "notes": null,
+        "property_type": "device",
+        "source": null,
+        "tags": null,
+        "unit": "",
+        "value": 0.1266499392606423
+      },
+      "pulse_delay": {
+        "component": "readout_resonator",
+        "component_id": "0",
+        "date": "NOW-PLACEHOLDER",
+        "long_name": null,
+        "name": "pulse_delay",
+        "notes": null,
+        "property_type": "device",
+        "source": null,
+        "tags": null,
+        "unit": "s",
+        "value": 0.0
+      },
+      "pulse_duration": {
+        "component": "readout_resonator",
+        "component_id": "0",
+        "date": "NOW-PLACEHOLDER",
+        "long_name": null,
+        "name": "pulse_duration",
+        "notes": null,
+        "property_type": "device",
+        "source": null,
+        "tags": null,
+        "unit": "s",
+        "value": 9e-7
+      },
+      "pulse_type": {
+        "component": "readout_resonator",
+        "component_id": "0",
+        "date": "NOW-PLACEHOLDER",
+        "long_name": null,
+        "name": "pulse_type",
+        "notes": null,
+        "property_type": "device",
+        "source": null,
+        "tags": null,
+        "unit": "",
+        "value": "Square"
+      },
+      "readout_line": null,
+      "x_position": null,
+      "y_position": null
+    }
+  ],
+  "version": "1.0.0"
+}

@@ -234,6 +234,7 @@ def get_device_v2_info(
         coordinates=backend_config.device_config.coordinates,
         is_simulator=backend_config.general_config.simulator,
         coupling_dict=backend_config.device_config.coupling_dict,
+        qubit_ids_coupler_map=backend_config.device_config.qubit_ids_coupler_map,
     )
 
 

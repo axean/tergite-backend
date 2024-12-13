@@ -31,6 +31,16 @@ _BACKEND_PROPERTIES = [
     load_fixture("backend_properties.simq1.json"),
     load_fixture("backend_properties.simq2.json"),
 ]
+_STATIC_PROPERTIES_V2 = [
+    load_fixture("static_properties_v2.json"),
+    load_fixture("static_properties_v2.simq1.json"),
+    load_fixture("static_properties_v2.simq2.json"),
+]
+_DYNAMIC_PROPERTIES_V2 = [
+    load_fixture("dynamic_properties_v2.json"),
+    load_fixture("dynamic_properties_v2.simq1.json"),
+    load_fixture("dynamic_properties_v2.simq2.json"),
+]
 _SIMULATOR_JOBS_FOR_UPLOAD = load_fixture("jobs_to_upload_simulator.json")
 _SIMULATOR_JOBS_FOR_UPLOAD_2Q = load_fixture("jobs_to_upload_simulator_2q.json")
 _JOBS_FOR_UPLOAD = load_fixture("jobs_to_upload.json")
@@ -100,6 +110,12 @@ _BLACKLISTED_UPLOAD_JOB_PARAMS = [
 ]
 _BACKEND_PROPERTIES_PARAMS = [
     (client, resp) for client, resp in zip(FASTAPI_CLIENTS, _BACKEND_PROPERTIES)
+]
+_STATIC_PROPERTIES_V2_PARAMS = [
+    (client, resp) for client, resp in zip(FASTAPI_CLIENTS, _STATIC_PROPERTIES_V2)
+]
+_DYNAMIC_PROPERTIES_V2_PARAMS = [
+    (client, resp) for client, resp in zip(FASTAPI_CLIENTS, _DYNAMIC_PROPERTIES_V2)
 ]
 
 
@@ -799,12 +815,54 @@ def test_get_backend_properties(client, expected):
         assert got == expected
 
 
+@pytest.mark.parametrize("client, expected", _STATIC_PROPERTIES_V2_PARAMS)
+def test_get_static_properties_v2(client, expected):
+    """Get to '/v2/static-properties' retrieves the current static properties of the backend in v2 form"""
+    # using context manager to ensure on_startup runs
+    with client as client:
+        response = client.get("/v2/static-properties")
+        got = response.json()
+        assert response.status_code == 200
+        assert got == expected
+
+
+@pytest.mark.parametrize("client, expected", _DYNAMIC_PROPERTIES_V2_PARAMS)
+def test_get_dynamic_properties_v2(client, expected):
+    """Get to '/v2/dynamic-properties' retrieves the calibrated device parameters in version 2 form"""
+    # using context manager to ensure on_startup runs
+    with client as client:
+        response = client.get("/v2/dynamic-properties")
+        got = response.json()
+        assert response.status_code == 200
+        assert _remove_dates(got) == expected
+
+
 @pytest.mark.parametrize("client", BLACKLISTED_FASTAPI_CLIENTS)
 def test_blacklisted_get_backend_properties(client):
     """Blacklisted Get to '/backend_properties' returns 404 with no content"""
     # using context manager to ensure on_startup runs
     with client as client:
         response = client.get("/backend_properties")
+        assert response.status_code == 404
+        assert response.content == b""
+
+
+@pytest.mark.parametrize("client", BLACKLISTED_FASTAPI_CLIENTS)
+def test_blacklisted_get_static_properties_v2(client):
+    """Blacklisted Get to '/v2/static-properties' returns 404 with no content"""
+    # using context manager to ensure on_startup runs
+    with client as client:
+        response = client.get("/v2/static-properties")
+        assert response.status_code == 404
+        assert response.content == b""
+
+
+@pytest.mark.parametrize("client", BLACKLISTED_FASTAPI_CLIENTS)
+def test_blacklisted_get_dynamic_properties_v2(client):
+    """Blacklisted Get to '/v2/dynamic-properties' returns 404 with no content"""
+    # using context manager to ensure on_startup runs
+    with client as client:
+        response = client.get("/v2/dynamic-properties")
         assert response.status_code == 404
         assert response.content == b""
 
@@ -886,3 +944,43 @@ def _job_results_match(results: List[str], expected_min_counts: Dict[str, int]):
         True if they match, False if they don't
     """
     return all([results.count(k) >= v for k, v in expected_min_counts.items()])
+
+
+def _remove_dates(dynamic_properties: Dict[str, Any]) -> Dict[str, Any]:
+    """A utility to do away with the dates in the dynamic properties
+
+    Args:
+        dynamic_properties: the properties to change
+
+    Returns:
+        the dynamic properties with "date" and "last_calibrated" replaced with "NOW-PLACEHOLDER"
+    """
+    now_placeholder = "NOW-PLACEHOLDER"
+    qubits = dynamic_properties.get("qubits", [])
+    couplers = dynamic_properties.get("couplers", [])
+    resonators = dynamic_properties.get("resonators", [])
+    return {
+        **dynamic_properties,
+        "last_calibrated": now_placeholder,
+        "qubits": [
+            {
+                k: v if not isinstance(v, dict) else {**v, "date": now_placeholder}
+                for k, v in qubit_conf.items()
+            }
+            for qubit_conf in qubits
+        ],
+        "couplers": [
+            {
+                k: v if not isinstance(v, dict) else {**v, "date": now_placeholder}
+                for k, v in coupler_conf.items()
+            }
+            for coupler_conf in couplers
+        ],
+        "resonators": [
+            {
+                k: v if not isinstance(v, dict) else {**v, "date": now_placeholder}
+                for k, v in resonator_conf.items()
+            }
+            for resonator_conf in resonators
+        ],
+    }

@@ -71,10 +71,11 @@ coupler_parameters = [
 ]
 
 [device_config.coupling_dict]
-u0 = ["q0", "q1"]
-u1 = ["q0", "q2"]
-u2 = ["q2", "q3"]
-u3 = ["q1", "q3"]
+# map of coupler channel to qubit pair
+u0 = ["q12", "q13"]
+u1 = ["q12", "q14"]
+u2 = ["q14", "q15"]
+u3 = ["q12", "q15"]
 
 [device_config.discriminator_parameters]
 lda = [
