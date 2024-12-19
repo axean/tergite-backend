@@ -24,7 +24,7 @@ from starlette.datastructures import URL
 
 # NOTE: shell env variables take precedence over the configuration file
 env_file = os.environ.get("ENV_FILE", default=".env")
-config = Config(Path(__file__).parent / env_file)
+config = Config(Path(__file__).parent / env_file, environ=os.environ)
 
 # Automatic root directory settings
 APP_ROOT_DIR = Path(__file__).parent / "app"
@@ -43,15 +43,26 @@ if not IS_AUTH_ENABLED and _is_production:
 # Storage settings
 
 DEFAULT_PREFIX = config("DEFAULT_PREFIX", cast=str)
-STORAGE_ROOT = config("STORAGE_ROOT", cast=str)
+STORAGE_ROOT = config("STORAGE_ROOT", cast=str, default="/tmp")
 STORAGE_PREFIX_DIRNAME = config(
     "STORAGE_PREFIX_DIRNAME", cast=str, default=DEFAULT_PREFIX
 )
-LOGFILE_DOWNLOAD_POOL_DIRNAME = config("LOGFILE_DOWNLOAD_POOL_DIRNAME", cast=str)
-LOGFILE_UPLOAD_POOL_DIRNAME = config("LOGFILE_UPLOAD_POOL_DIRNAME", cast=str)
-JOB_UPLOAD_POOL_DIRNAME = config("JOB_UPLOAD_POOL_DIRNAME", cast=str)
-JOB_PRE_PROC_POOL_DIRNAME = config("JOB_PRE_PROC_POOL_DIRNAME", cast=str)
-JOB_EXECUTION_POOL_DIRNAME = config("JOB_EXECUTION_POOL_DIRNAME", cast=str)
+
+LOGFILE_DOWNLOAD_POOL_DIRNAME = config(
+    "LOGFILE_DOWNLOAD_POOL_DIRNAME", cast=str, default="logfile_download_pool"
+)
+LOGFILE_UPLOAD_POOL_DIRNAME = config(
+    "LOGFILE_UPLOAD_POOL_DIRNAME", cast=str, default="logfile_upload_pool"
+)
+JOB_UPLOAD_POOL_DIRNAME = config(
+    "JOB_UPLOAD_POOL_DIRNAME", cast=str, default="job_upload_pool"
+)
+JOB_PRE_PROC_POOL_DIRNAME = config(
+    "JOB_PRE_PROC_POOL_DIRNAME", cast=str, default="job_preproc_pool"
+)
+JOB_EXECUTION_POOL_DIRNAME = config(
+    "JOB_EXECUTION_POOL_DIRNAME", cast=str, default="job_execution_pool"
+)
 JOB_SUPERVISOR_LOG = config(
     "JOB_SUPERVISOR_LOG", cast=str, default="job_supervisor.log"
 )
@@ -81,9 +92,13 @@ BACKEND_SETTINGS = config(
 )
 
 # Connectivity settings
-MSS_MACHINE_ROOT_URL = config("MSS_MACHINE_ROOT_URL", cast=URL)
-BCC_MACHINE_ROOT_URL = config("BCC_MACHINE_ROOT_URL", cast=URL)
-BCC_PORT = config("BCC_PORT", cast=int)
+MSS_MACHINE_ROOT_URL = config(
+    "MSS_MACHINE_ROOT_URL", cast=URL, default="http://localhost:8002"
+)
+BCC_MACHINE_ROOT_URL = config(
+    "BCC_MACHINE_ROOT_URL", cast=URL, default="http://localhost:8000"
+)
+BCC_PORT = config("BCC_PORT", cast=int, default=8000)
 
 # Authentication
 

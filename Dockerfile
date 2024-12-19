@@ -76,7 +76,31 @@ RUN chmod +x /code/start_bcc.sh
 LABEL org.opencontainers.image.licenses=APACHE-2.0
 LABEL org.opencontainers.image.description="The Backend in the Tergite software stack of the WACQT quantum computer."
 
+# Check the dot-env-template.txt for more information about the env variables
 ENV ENV_FILE=".env"
 ENV IS_SYSTEMD="false"
+ENV BACKEND_SETTINGS="backend_config.toml"
+ENV DEFAULT_PREFIX="qiskit_pulse_1q"
+ENV STORAGE_ROOT="/tmp"
+ENV LOGFILE_DOWNLOAD_POOL_DIRNAME="logfile_download_pool"
+ENV LOGFILE_UPLOAD_POOL_DIRNAME="logfile_upload_pool"
+ENV JOB_UPLOAD_POOL_DIRNAME="job_upload_pool"
+ENV JOB_PRE_PROC_POOL_DIRNAME="job_preproc_pool"
+ENV JOB_EXECUTION_POOL_DIRNAME="job_execution_pool"
+ENV EXECUTOR_DATA_DIRNAME="executor_data"
+ENV BCC_MACHINE_ROOT_URL="http://host.docker.internal:8000"
+ENV BCC_PORT=8000
+ENV MSS_MACHINE_ROOT_URL="http://host.docker.internal:8002"
+ENV MSS_PORT=8002
+ENV EXECUTOR_TYPE="qiskit_pulse_1q"
+ENV QUANTIFY_CONFIG_FILE="quantify-config.yml"
+ENV MSS_APP_TOKEN=""
+ENV IS_AUTH_ENABLED="True"
+ENV APP_SETTINGS="production"
+ENV IS_STANDALONE="False"
+ENV REDIS_HOST="host.docker.internal"
+ENV REDIS_PORT=6379
+ENV REDIS_USER=""
+ENV REDIS_PASSWORD=""
 
 ENTRYPOINT ["/code/start_bcc.sh"]

@@ -6,28 +6,87 @@
 # - run ./start_bcc.sh
 #
 
-# enable multiprocessing for python in macOS
-# See https://stackoverflow.com/questions/50168647/multiprocessing-causes-python-to-crash-and-gives-an-error-may-have-been-in-progr#answer-52230415
-[[ "$(uname -s)" = "Darwin" ]] && export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
-
-env_file=$([[ -z "$ENV_FILE" ]] && echo ".env" || echo "$ENV_FILE")
-
 exit_with_error () {
   echo "$1"
   exit 1
 }
 
-extract_env_var () {
-  local env_name="$1"
-  local res=$(grep "^[[:space:]]*${env_name}=" "$env_file" | grep -v '^[[:space:]]*#' | sed "s/^[[:space:]]*${env_name}=//" | head -n 1)
-  [[ -z "$res" ]]  &&  exit_with_error "Config Error: Use ${env_name}=<value> in the .env file."
-  echo $res
+var_or_default () {
+  local var="$1"
+  local default_val="$2"
+  if [ -z "$var" ]; then
+      echo "$default_val";
+  else
+    echo "$var";
+  fi
 }
 
-PORT_NUMBER=$(extract_env_var "BCC_PORT")
-[[ ! "$PORT_NUMBER" =~ ^[0-9]+$ ]]  &&  exit_with_error "Config Error. Use BCC_PORT=<int> in the .env file."
+should_be_int() {
+  local val="$1";
+  local msg="$2";
+  [[ ! "$val" =~ ^[0-9]+$ ]]  &&  exit_with_error "$msg";
+}
 
-DEFAULT_PREFIX=$(extract_env_var "DEFAULT_PREFIX")
+load_env() {
+  local env_file="$1";
+  if [ ! -f "$env_file" ]; then
+    echo "'$env_file' not found!. Defaulting to system environment variables";
+  else
+    . "$env_file";
+  fi
+}
+
+start_auto_env_export(){
+  set -o allexport;
+}
+
+stop_auto_env_export(){
+  set +o allexport;
+}
+
+printf "Starting Tergite Backend ....\n";
+
+# enable multiprocessing for python in macOS
+# See https://stackoverflow.com/questions/50168647/multiprocessing-causes-python-to-crash-and-gives-an-error-may-have-been-in-progr#answer-52230415
+[[ "$(uname -s)" = "Darwin" ]] && export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+
+#
+# Environment variables
+#
+start_auto_env_export;
+ENV_FILE=$(var_or_default "$ENV_FILE" ".env")
+load_env "$ENV_FILE";
+
+DEFAULT_PREFIX=$(var_or_default "$DEFAULT_PREFIX" "qiskit_pulse_1q")
+PORT_NUMBER=$(var_or_default "$BCC_PORT" "8000")
+should_be_int "$PORT_NUMBER" "Config Error. Use BCC_PORT=<int> in the .env file.";
+
+REDIS_HOST=$(var_or_default "$REDIS_HOST" "localhost")
+
+REDIS_PORT=$(var_or_default "$REDIS_PORT" "6379")
+should_be_int "$REDIS_PORT" "Config Error. Use REDIS_PORT=<int> in the .env file.";
+
+REDIS_USER=$(var_or_default "$REDIS_USER" "")
+
+REDIS_PASSWORD=$(var_or_default "$REDIS_PASSWORD" "")
+
+REDIS_DB=$(var_or_default "$REDIS_DB" "0")
+should_be_int "$REDIS_DB" "Config Error. Use REDIS_DB=<int> in the .env file.";
+
+REDIS_URL="redis://$REDIS_USER:$REDIS_PASSWORD@$REDIS_HOST:$REDIS_PORT/$REDIS_DB";
+
+BCC_MACHINE_ROOT_URL=$(var_or_default "$BCC_MACHINE_ROOT_URL" "http://localhost:8000")
+MSS_MACHINE_ROOT_URL=$(var_or_default "$MSS_MACHINE_ROOT_URL" "http://localhost:8002")
+STORAGE_ROOT=$(var_or_default "$STORAGE_ROOT" "/tmp")
+
+stop_auto_env_export
+
+# Just for information
+printf "\nBackend '$DEFAULT_PREFIX' starting on $BCC_MACHINE_ROOT_URL...\n";
+printf "Port: $PORT_NUMBER\n"
+printf "MSS: $MSS_MACHINE_ROOT_URL\n"
+printf "Storage: $STORAGE_ROOT\n"
+printf "Redis host: redis://******@$REDIS_HOST:$REDIS_PORT/$REDIS_DB\n\n\n"
 
 # activates the conda environment passed
 conda_activate(){
@@ -49,10 +108,10 @@ fi
 set -e # exit if any step fails
 
 # Clean start
-rq empty "${DEFAULT_PREFIX}_job_registration"
-rq empty "${DEFAULT_PREFIX}_job_preprocessing"
-rq empty "${DEFAULT_PREFIX}_job_execution"
-rq empty "${DEFAULT_PREFIX}_logfile_postprocessing"
+rq empty -u "$REDIS_URL" "${DEFAULT_PREFIX}_job_registration"
+rq empty -u "$REDIS_URL" "${DEFAULT_PREFIX}_job_preprocessing"
+rq empty -u "$REDIS_URL" "${DEFAULT_PREFIX}_job_execution"
+rq empty -u "$REDIS_URL" "${DEFAULT_PREFIX}_logfile_postprocessing"
 rm -fr "/tmp/${DEFAULT_PREFIX}"
 
 
@@ -65,18 +124,18 @@ prefixes="job_supervisor calibration_supervisor postprocessing:results: device:"
 for prefix in $prefixes
 do
     echo deleting "\"$prefix*\"" from Redis
-    for key in $(redis-cli --scan --pattern "$prefix*")
+    for key in $(redis-cli -u "$REDIS_URL" --scan --pattern "$prefix*")
     do
-        redis-cli del "$key" > /dev/null
+        redis-cli -u "$REDIS_URL" del "$key" > /dev/null
     done
 done
 
 
 # Worker processes
-rq worker "${DEFAULT_PREFIX}_job_registration" &
-rq worker "${DEFAULT_PREFIX}_job_preprocessing" &
-rq worker "${DEFAULT_PREFIX}_job_execution" &
-rq worker "${DEFAULT_PREFIX}_logfile_postprocessing" &
+rq worker -u "$REDIS_URL" "${DEFAULT_PREFIX}_job_registration" &
+rq worker -u "$REDIS_URL" "${DEFAULT_PREFIX}_job_preprocessing" &
+rq worker -u "$REDIS_URL" "${DEFAULT_PREFIX}_job_execution" &
+rq worker -u "$REDIS_URL" "${DEFAULT_PREFIX}_logfile_postprocessing" &
 
 # REST-API
 extra_params=$([[ "$IS_SYSTEMD" = "true" ]] && echo "--proxy-headers" || echo "--reload")
