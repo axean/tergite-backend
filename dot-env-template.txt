@@ -42,6 +42,7 @@ MSS_PORT=8002
 # Can take:
 # - quantify
 # - qiskit_pulse_1q
+# - qiskit_pulse_2q
 #
 # Default is "quantify".
 # Note: - 'quantify' can be the real instruments or dummy clusters

@@ -17,6 +17,7 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 - Qiskit dynamics simulator backend with two-qubit CZ gate ("qiskit_pulse_2q")
 - Added CouplerProps to Backend Configurations
 - Added the `coupling_dict` to the `backend_config.toml`
+- Added `Dockerfile` and `.dockerignore`
 
 ### Fixed
 
