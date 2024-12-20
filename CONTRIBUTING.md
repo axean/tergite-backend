@@ -195,6 +195,40 @@ sudo systemctl status bcc.service
 sudo systemctl enable bcc.service
 ```
 
+## How to Run with Docker
+
+- Ensure you have [Docker]() installed.
+- Create a `data` folder
+
+```shell
+mkdir data
+```
+
+- Create a proper `.env` file based on the `dot-env-template.txt` and put it in the `data` folder.
+
+```shell
+cp dot-env-template.txt data/.env
+```
+
+- Create a proper `quantify-config.yml` file if it is needed (i.e. if you don't want to run any of the simulators). 
+  Put it in the `data` folder.
+
+```shell
+cp quantify-config.example.yml data/quantify-config.yml
+```
+
+- Create a proper `backend_config.toml` file. Put it in the `data` folder.
+
+```shell
+cp backend_config.example.toml data/backend_config.toml
+```
+
+- Run the docker container with the `data` folder mounted as a volume.
+
+```shell
+docker run --name tg-backend -v ./data:/data -e ENV_FILE="/data/.env" -e BACKEND_SETTINGS="/data/backend_config.toml" tergite/tergite-backend:latest 
+```
+
 ## References
 
 This document was adapted from [a gist by Brian A. Danielak](https://gist.github.com/briandk/3d2e8b3ec8daf5a27a62) which
