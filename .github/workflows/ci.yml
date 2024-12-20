@@ -71,7 +71,6 @@ jobs:
 
       - name: Publish
         run: |
-          cd apps/tergite-mss
           docker buildx create --name multi-platform-builder --bootstrap --use
           docker buildx build --platform ${{ vars.DOCKER_IMAGE_PLATFORMS }} \
               -t ${{ secrets.STAGING_CONTAINER_REGISTRY }}/${{ github.event.repository.name }}:${{ github.ref_name }} \
@@ -98,7 +97,6 @@ jobs:
 
       - name: Publish
         run: |
-          cd apps/tergite-mss
           docker buildx create --name multi-platform-builder --bootstrap --use
           docker buildx build --platform ${{ vars.DOCKER_IMAGE_PLATFORMS }} \
               -t tergite/${{ github.event.repository.name }}:${{ github.ref_name }} \
