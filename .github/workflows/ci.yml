@@ -74,7 +74,9 @@ jobs:
           cd apps/tergite-mss
           docker buildx create --name multi-platform-builder --bootstrap --use
           docker buildx build --platform ${{ vars.DOCKER_IMAGE_PLATFORMS }} \
-              -t ${{ secrets.STAGING_CONTAINER_REGISTRY }}/${{ github.event.repository.name }}:${{ github.ref_name }} --push .
+              -t ${{ secrets.STAGING_CONTAINER_REGISTRY }}/${{ github.event.repository.name }}:${{ github.ref_name }} \
+              -t ${{ secrets.STAGING_CONTAINER_REGISTRY }}/${{ github.event.repository.name }}:latest \
+              --push .
 
   release-production:
     name: Release Production
@@ -99,7 +101,9 @@ jobs:
           cd apps/tergite-mss
           docker buildx create --name multi-platform-builder --bootstrap --use
           docker buildx build --platform ${{ vars.DOCKER_IMAGE_PLATFORMS }} \
-              -t tergite/${{ github.event.repository.name }}:${{ github.ref_name }} --push .
+              -t tergite/${{ github.event.repository.name }}:${{ github.ref_name }} \
+              -t tergite/${{ github.event.repository.name }}:latest \
+              --push .
 
   upstream:
     name: Update upstream
