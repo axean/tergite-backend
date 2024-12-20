@@ -7,6 +7,22 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ## [Unreleased]
 
+## [2024.12.1] - 2024-12-20
+
+### Added
+
+- Added Dockerfile.
+- Added instructions how to run with docker.
+- Added instructions how to run the qiskit_pulse_2q simulator in the configuration docs.
+
+### Changed
+
+- Changed `start_bcc.sh` script to use redis connection obtained from the environment.
+- Changed `start_bcc.sh` script to update the exported environment variables after reading from the `ENV_FILE`.
+- Updated Github action to deploy built multiplatform image to docker hub as something like `tergite/tergite-backend`
+- Removed some redundant libraries in the `requirements.txt` file.
+- Removed some outdated docs.
+
 ## [2024.12.0] - 2024-12-13
 
 ### Added

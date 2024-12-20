@@ -58,7 +58,7 @@ The calibration values are under the key `simulator_config`.
 _NOTE: You don't need to pass the `.env` file, the `backend_config.toml` file or the `quantify-config.yml` file to the 
 start script as these are automatically loaded for you._  
 
-#### Single-Qubit Qiskit Pulse Simulator
+#### Single-qubit-gate Qiskit Pulse Simulator
 
 You may wish to run a single-qubit simulator.  
 
@@ -72,6 +72,28 @@ Copy it to your root folder.
 ```shell
 # on the root of the project
 cp app/tests/fixtures/backend_config.simq1.toml backend_config.toml
+```
+
+And run the application.
+
+```shell
+./start_bcc.sh
+```
+
+#### Two-qubit-gate Qiskit Pulse Simulator
+
+You may wish to run a two-qubit-gate simulator.  
+
+First update the `.env` file to contain `EXECUTOR_TYPE=qiskit_pulse_2q`.  
+
+We already have a preconfigured [`backend_config.simq2.toml`](../app/tests/fixtures/backend_config.simq2.toml) for this in the 
+`app/tests/fixtures` folder.   
+
+Copy it to your root folder.
+
+```shell
+# on the root of the project
+cp app/tests/fixtures/backend_config.simq2.toml backend_config.toml
 ```
 
 And run the application.

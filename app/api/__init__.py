@@ -64,7 +64,7 @@ rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=get_redis_connection())
 app = FastAPI(
     title="Backend Control Computer",
     description="Interfaces Quantum processor via REST API",
-    version="2024.12.0",
+    version="2024.12.1",
 )
 
 
