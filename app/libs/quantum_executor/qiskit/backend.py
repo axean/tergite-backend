@@ -11,18 +11,15 @@
 # that they have been altered from the originals.
 
 import numpy as np
-import datetime
 
 import jax
 
 from qiskit.providers.models import PulseBackendConfiguration, GateConfig, PulseDefaults
 from qiskit.quantum_info import Statevector
 from qiskit_dynamics import DynamicsBackend, Solver
-from qiskit.transpiler import Target, InstructionProperties
+from qiskit.transpiler import Target
 from qiskit.providers import QubitProperties
 from qiskit.pulse import Acquire, AcquireChannel, MemorySlot, Schedule
-from qiskit.circuit import Delay, Reset, Parameter
-from qiskit.circuit.library import XGate, SXGate, RZGate
 
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 

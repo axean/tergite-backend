@@ -5,6 +5,7 @@ It manages the access to the instruments or sets up the simulator in case the ba
 Right now, we have implemented the following backends:
 - "quantify": This is interfacing to qblox quantify via quantify and the recommended option, because the WACQT quantum processor is running on that platform. It can be run in the dummy mode, check out the [configuration manual](./configuration.md) on how to do it.
 - "qiskit_pulse_1q": Single qubit simulator using qiskit-dynamics
+- "qiskit_pulse_2q": Two-qubit gate simulator using qiskit-dynamics
 
 If you want to implement a new executor, follow these steps below.
 
