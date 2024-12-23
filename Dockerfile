@@ -6,33 +6,33 @@ WORKDIR /code
 # for the pip install step
 COPY ./requirements.txt /code/requirements.txt
 
-# Extract the core requirements that have a dependency of PyQt5; a difficult package to install
-RUN grep -E '^(quantify-core|quantify-scheduler)' /code/requirements.txt >> core-requirements.txt; \
-    # show core-requirements for debugging
-    cat core-requirements.txt;
+# Install PyQt5
+RUN apt-get update -y; \
+    apt-get install -y --no-install-recommends python3-pyqt5;\
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*;
 
-# Clean up code/requirements.txt file
 RUN \
+    # Extract the core requirements that have a dependency of PyQt5; a difficult package to install
+    grep -E '^(quantify-core|quantify-scheduler)' /code/requirements.txt >> core-requirements.txt; \
+    # show core-requirements for debugging
+    cat core-requirements.txt; \
+    # Clean up code/requirements.txt file, remove the dev-dependencies
     sed -i '/^# dev-dependencies/q'  /code/requirements.txt; \
     # comment out the packages that may need PyQt5
     sed -i "s:quantify-core:# quantify-core:" /code/requirements.txt; \
-    sed -i "s:quantify-scheduler:# quantify-scheduler:" /code/requirements.txt;
-
-RUN apt update -y && apt install -y python3-pyqt5;
-RUN pip install --no-cache-dir pipdeptree~=2.24.0; \
-    pip install --upgrade --no-cache-dir -r /code/requirements.txt
-
-# Install quantify-core and quantify-scheduler without dependencies
-RUN pip install --upgrade --no-deps --no-cache-dir -r core-requirements.txt; \
-    rm core-requirements.txt;
-
-# Extract all the yet-to-be-installed required dependencies
-RUN  pipdeptree -w silence -p quantify-core >> pending-requirements.txt; \
+    sed -i "s:quantify-scheduler:# quantify-scheduler:" /code/requirements.txt; \
+    # Install the pip dependencies except the core ones
+    pip install --no-cache-dir pipdeptree~=2.24.0; \
+    pip install --no-cache-dir -r /code/requirements.txt; \
+    # Install quantify-core and quantify-scheduler without dependencies
+    pip install --no-deps --no-cache-dir -r core-requirements.txt; \
+    rm core-requirements.txt; \
+    # Extract all the yet-to-be-installed required dependencies
+    pipdeptree -w silence -p quantify-core >> pending-requirements.txt; \
     pipdeptree -w silence -p quantify-scheduler >> pending-requirements.txt; \
-    pip uninstall -y pipdeptree;
-
-# Cleaning up the pending-requirements.txt
-RUN \
+    pip uninstall -y pipdeptree; \
+    # Cleaning up the pending-requirements.txt
     # remove indirect dependencies of quantify-core and quantify-scheduler
     sed -i "s:^│[[:space:]]*├──.*::" pending-requirements.txt; \
     sed -i "s:^│[[:space:]]*└──.*::" pending-requirements.txt; \
@@ -54,20 +54,10 @@ RUN \
     # remove empty lines
     sed -i.bak "/^$/d" pending-requirements.txt; \
     # print the final output for debugging purposes
-    cat pending-requirements.txt;
-
-# Install all yet-to-be-installed dependencies except pyqt5
-RUN pip install --no-cache-dir --upgrade -r pending-requirements.txt; \
-    rm pending-requirements.txt
-
-# clear pip's cache
-RUN pip cache purge
-
-# clear the build dependencies
-RUN \
-    # apt remove -y --auto-remove gcc g++ gfortran libopenblas-dev liblapack-dev python3-dev python3-pip; \
-    apt autoremove; \
-    apt clean;
+    cat pending-requirements.txt; \
+    # Install all yet-to-be-installed dependencies except pyqt5
+    pip install --no-cache-dir -r pending-requirements.txt; \
+    rm pending-requirements.txt;
 
 COPY . /code/
 
