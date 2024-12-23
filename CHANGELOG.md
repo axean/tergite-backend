@@ -7,6 +7,12 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ## [Unreleased]
 
+## [2024.12.2] - 2024-12-23
+
+### Changed
+
+- Changed the apt installation step in Dockerfile to remove `/var/lib/apt/lists/*` after completion
+
 ## [2024.12.1] - 2024-12-20
 
 ### Added
