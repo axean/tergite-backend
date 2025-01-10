@@ -12,29 +12,30 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
-from typing import List, Dict, Type, Tuple, Optional
-
-from qiskit.qobj import PulseQobjExperiment, PulseQobjConfig, PulseQobjInstruction
-
-from app.libs.quantum_executor.base.experiment import NativeExperiment
+from typing import Dict, List, Optional, Tuple, Type
 
 from qiskit.pulse.schedule import Schedule
+from qiskit.qobj import PulseQobjConfig, PulseQobjExperiment, PulseQobjInstruction
 
-from app.libs.quantum_executor.base.experiment.utils import copy_header_with
+from app.libs.quantum_executor.base.experiment import (
+    NativeExperiment,
+    copy_expt_header_with,
+)
+
 from .instruction import (
+    Acquire,
+    Delay,
     GaussianPlay,
-    WacqtCZPlay,
     QiskitDynamicsInstruction,
     SetFrequency,
-    ShiftFrequency,
     SetPhase,
+    ShiftFrequency,
     ShiftPhase,
-    Delay,
-    Acquire,
+    WacqtCZPlay,
 )
 
 # Map (name, pulse_shape) => Instruction
@@ -78,7 +79,7 @@ class QiskitDynamicsExperiment(NativeExperiment):
         Returns:
             the QiskitDynamicsExperiment corresponding to the PulseQobj
         """
-        header = copy_header_with(expt.header, name=name)
+        header = copy_expt_header_with(expt.header, name=name)
         timestamp: str = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         raw_schedule = Schedule(name=f"open-pulse-generated-{timestamp}")
 
@@ -86,9 +87,13 @@ class QiskitDynamicsExperiment(NativeExperiment):
         qobj_instructions: List[PulseQobjInstruction] = expt.instructions
 
         for inst in qobj_instructions:
-            native_inst = _to_native_instruction(inst)
-            native_instructions.append(native_inst)
-            raw_schedule.insert(inst.t0, native_inst)
+            try:
+                native_inst = _to_native_instruction(inst)
+                native_instructions.append(native_inst)
+                raw_schedule = raw_schedule.insert(inst.t0, native_inst)
+            except NotImplementedError as exp:
+                # FIXME: For now ignore all missing pulse shapes
+                logging.error(f"NotImplementError for expt: {name}: {exp}")
 
         return cls(
             header=header,
@@ -111,10 +116,12 @@ def _to_native_instruction(
         the native qiskit instruction
     """
     name = qobj_inst.name
-    pulse_shape = qobj_inst.pulse_shape
+    pulse_shape = getattr(qobj_inst, "pulse_shape", None)
 
     try:
         native_inst_cls = _INSTRUCTION_PULSE_MAP[(name, pulse_shape)]
         return native_inst_cls.from_qobj(qobj_inst)
-    except IndexError as exp:
-        raise RuntimeError(f"No mapping for PulseQobjInstruction {qobj_inst}.\n {exp}")
+    except KeyError as exp:
+        raise NotImplementedError(
+            f"No mapping for PulseQobjInstruction {qobj_inst}.\n {exp}"
+        )

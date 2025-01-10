@@ -19,7 +19,7 @@ import copy
 import os
 import re
 from datetime import datetime
-from typing import Any, Dict, Optional, Union, List
+from typing import Any, Dict, List, Optional, Union
 
 import qblox_instruments
 import rich
@@ -40,13 +40,17 @@ from quantify_scheduler.instrument_coordinator.components.generic import (
 from quantify_scheduler.instrument_coordinator.components.qblox import ClusterComponent
 
 from app.libs.quantum_executor.base.executor import QuantumExecutor
+from app.libs.quantum_executor.base.quantum_job import get_experiment_name
+from app.libs.quantum_executor.base.quantum_job.dtos import NativeQobjConfig
+from app.libs.quantum_executor.base.quantum_job.typing import (
+    QDataset,
+    QExperimentResult,
+)
 from app.libs.quantum_executor.quantify.experiment import QuantifyExperiment
 from app.libs.quantum_executor.utils.config import (
     ClusterModuleType,
     QuantifyExecutorConfig,
 )
-from app.libs.quantum_executor.base.experiment import NativeQobjConfig
-from app.libs.quantum_executor.utils.general import get_experiment_name
 from app.libs.quantum_executor.utils.logger import ExperimentLogger
 
 _QBLOX_CLUSTER_TYPE_MAP: Dict[ClusterModuleType, qblox_instruments.ClusterType] = {
@@ -168,7 +172,7 @@ class QuantifyExecutor(QuantumExecutor):
         *,
         native_config: NativeQobjConfig,
         logger: ExperimentLogger,
-    ):
+    ) -> QExperimentResult:
         QuantifyExecutor._coordinator.stop()
 
         # compile to hardware
@@ -202,7 +206,7 @@ class QuantifyExecutor(QuantumExecutor):
         print(f"{results=}")
         t4 = datetime.now()
         print(t4 - t3, "DURATION OF MEASURING")
-        return results
+        return QExperimentResult.from_xarray(results)
 
     @classmethod
     def close(cls):

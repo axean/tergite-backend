@@ -1,20 +1,20 @@
 import redis
 
 from .utils.env import (
+    TEST_BACKEND_SETTINGS_FILE,
     TEST_DEFAULT_PREFIX,
     TEST_DEFAULT_PREFIX_SIM_1Q,
     TEST_DEFAULT_PREFIX_SIM_2Q,
     TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME,
     TEST_MSS_MACHINE_ROOT_URL,
+    TEST_REDIS_DB,
+    TEST_REDIS_HOST,
+    TEST_REDIS_PORT,
+    TEST_SIMQ1_BACKEND_SETTINGS_FILE,
+    TEST_SIMQ2_BACKEND_SETTINGS_FILE,
     TEST_STORAGE_PREFIX_DIRNAME,
     TEST_STORAGE_ROOT,
     setup_test_env,
-    TEST_SIMQ1_BACKEND_SETTINGS_FILE,
-    TEST_SIMQ2_BACKEND_SETTINGS_FILE,
-    TEST_BACKEND_SETTINGS_FILE,
-    TEST_REDIS_HOST,
-    TEST_REDIS_PORT,
-    TEST_REDIS_DB,
 )
 
 # set up the environment before any other import
@@ -26,8 +26,8 @@ import shutil
 from pathlib import Path
 from typing import Dict
 
-import pytest
 import numpy as np
+import pytest
 from fakeredis import FakeStrictRedis
 from fastapi.testclient import TestClient
 from freezegun import freeze_time
@@ -35,14 +35,13 @@ from pytest_lazyfixture import lazy_fixture
 from redis.client import Redis
 from rq import SimpleWorker
 
+from ..libs.properties import DeviceCalibrationV2
 from ..utils.queues import QueuePool
+from .utils.analysis import MockLinearDiscriminantAnalysis
 from .utils.fixtures import load_fixture
 from .utils.http import MockHttpResponse, MockHttpSession
-from .utils.analysis import MockLinearDiscriminantAnalysis
 from .utils.modules import remove_modules
 from .utils.rq import get_rq_worker
-from ..libs.properties import DeviceCalibrationV2
-
 
 _lda_parameters_fixture = load_fixture("lda_parameters.json")
 _test_backend_props_fixture = load_fixture("test_backend_props.json")

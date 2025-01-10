@@ -11,13 +11,13 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 import abc
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 from uuid import uuid4 as uuid
 
-from qiskit.qobj import PulseQobjInstruction, PulseQobjConfig
+from qiskit.qobj import PulseQobjConfig, PulseQobjInstruction
 from quantify_scheduler.enums import BinMode
 
-from app.libs.quantum_executor.base.utils import NativeQobjConfig
+from app.libs.quantum_executor.base.quantum_job.dtos import NativeQobjConfig
 
 
 class Instruction:

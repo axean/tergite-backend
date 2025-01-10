@@ -14,12 +14,12 @@
 # that they have been altered from the originals.
 import abc
 from abc import ABC
-from typing import Union, Optional, SupportsIndex
+from typing import Optional, SupportsIndex, Union
 
 import numpy as np
 from qiskit import pulse as qiskit_pulse
 from qiskit.circuit import ParameterExpression
-from qiskit.pulse.channels import PulseChannel, ControlChannel, DriveChannel
+from qiskit.pulse.channels import ControlChannel, DriveChannel, PulseChannel
 from qiskit.qobj import PulseQobjInstruction
 
 from app.libs.quantum_executor.qiskit.functions import omega_c
@@ -108,6 +108,7 @@ class WacqtCZPlay(qiskit_pulse.Play, QiskitDynamicsInstruction):
         t_p: float,
         delta_0: float,
         duration: SupportsIndex,
+        **kwargs
     ):
         """Creates a Play instruction to play the WACQT CZ gate custom pulse
 
@@ -163,7 +164,8 @@ class WacqtCZPlay(qiskit_pulse.Play, QiskitDynamicsInstruction):
     @classmethod
     def from_qobj(cls, qobj_inst: PulseQobjInstruction) -> "WacqtCZPlay":
         channel = _get_channel(qobj_inst)
-        return cls(channel=ControlChannel(channel), **qobj_inst.parameters)
+        normalized_params = {k.lower(): v for k, v in qobj_inst.parameters.items()}
+        return cls(channel=ControlChannel(channel), **normalized_params)
 
 
 class SetFrequency(qiskit_pulse.SetFrequency, QiskitDynamicsInstruction):

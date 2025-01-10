@@ -7,6 +7,16 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ## [Unreleased]
 
+### Changed
+
+- Removed the storage-file internal lib
+- Limited pyarrow to versions '18.0.0' and below for macOS
+- Decouple data from algorithms in storage file
+- Decouple native job run from executor instance
+- Remove debug prints of qobj when running jobs
+- Rename the `run_experiment` and `run` methods of the `QuantumEexcutor` class to `_run_native`, `run`
+- Clean up qobj-to-quantify compilation
+
 ## [2024.12.2] - 2024-12-23
 
 ### Changed

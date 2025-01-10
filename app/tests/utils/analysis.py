@@ -12,7 +12,7 @@
 
 """Utilities for analysis"""
 import copy
-from typing import Dict, Any
+from typing import Any, Dict
 
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 

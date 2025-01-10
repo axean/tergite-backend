@@ -15,22 +15,31 @@
 
 import json
 import sys
-from typing import List, TypeVar, Iterator, Union, Generator, Iterable
+from typing import Generator, Iterable, Iterator, List, TypeVar, Union
 
-from app.libs.quantum_executor.base.job import JOB_HDF5_FILE_DELIMITER
+import h5py
 
 _T = TypeVar("_T")
 
 
-def find(haystack, needle):
-    if not isinstance(haystack, dict):
+def search_nested(haystack: Union[h5py.Group, dict], needle: str):
+    """Searches a nested dict-like object for a given key
+
+    Args:
+        haystack: the nested dict-like object to search in
+        needle: the key to search for
+
+    Returns:
+        an iterator of the path segments from root to the given key e.g. ("foo", "bar", needle)
+    """
+    if not isinstance(haystack, h5py.Group) and not isinstance(haystack, dict):
         return
 
     if needle in haystack:
         yield (needle,)
 
     for key, val in haystack.items():
-        for sub_path in find(val, needle):
+        for sub_path in search_nested(val, needle):
             yield key, *sub_path
 
 
@@ -188,21 +197,6 @@ def get_duplicates(texts: List[str]) -> List[str]:
         else:
             seen.add(name)
     return duplicates
-
-
-def get_experiment_name(qobj_expt_name: str, expt_index: int):
-    """
-    Creates a cleaned version of a given experiment name
-
-    Args:
-        qobj_expt_name: the name as got from the qobject
-        expt_index: the index of the experiment in the list of experiments in the qobject
-
-    Returns:
-        a sanitized name to use internally
-    """
-    name = "".join(x for x in qobj_expt_name if x.isalnum() or x in " -_,.()")
-    return f"{name}{JOB_HDF5_FILE_DELIMITER}{expt_index}"
 
 
 def flatten_list(

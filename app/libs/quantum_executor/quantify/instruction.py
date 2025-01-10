@@ -10,12 +10,12 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
-from qiskit.qobj import PulseQobjInstruction, PulseQobjConfig
+from qiskit.qobj import PulseQobjConfig, PulseQobjInstruction
 
 from app.libs.quantum_executor.base.instruction import Instruction
-from app.libs.quantum_executor.base.utils import NativeQobjConfig
+from app.libs.quantum_executor.base.quantum_job.dtos import NativeQobjConfig
 from app.libs.quantum_executor.utils.general import ceil4
 
 

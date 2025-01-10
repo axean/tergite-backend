@@ -10,13 +10,13 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 import jax
 import numpy as np
 from qiskit.providers import QubitProperties
-from qiskit.providers.models import PulseDefaults, PulseBackendConfiguration, GateConfig
-from qiskit.pulse import Schedule, Acquire, AcquireChannel, MemorySlot
+from qiskit.providers.models import GateConfig, PulseBackendConfiguration, PulseDefaults
+from qiskit.pulse import Acquire, AcquireChannel, MemorySlot, Schedule
 from qiskit.quantum_info import Statevector
 from qiskit.transpiler import Target
 from qiskit_dynamics import Solver

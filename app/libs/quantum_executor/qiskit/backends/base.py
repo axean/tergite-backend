@@ -11,7 +11,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 import abc
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
 
 from qiskit.providers.models import PulseBackendConfiguration, PulseDefaults
 from qiskit.transpiler import Target
@@ -23,28 +23,54 @@ from app.libs.properties import BackendConfig
 class QiskitPulseBackend(DynamicsBackend):
     """Backend for running simulators on using QiskitDynamics"""
 
-    def __init__(self, backend_config: BackendConfig, **options):
+    def __init__(
+        self,
+        backend_config: BackendConfig,
+        alpha: float = -0.17e9,
+        r: float = 1e9,
+        atol: float = 1e-6,
+        rtol: float = 1e-6,
+        dim: int = 4,
+        noise: bool = True,
+        **options
+    ):
         self.backend_config = backend_config
         self.backend_name = backend_config.general_config.name
 
-        options["backend_config"] = backend_config
-
-        solver = self.generate_solver(**options)
-        target = self.generate_target(**options)
-        solver_options = self.generate_solver_options(**options)
-        configuration = self.generate_configuration(**options)
-        defaults = self.generate_pulse_defaults(**options)
-        subsystem_dims = self.generate_subsystem_dims(**options)
-
-        super().__init__(
-            solver=solver,
-            target=target,
-            solver_options=solver_options,
-            configuration=configuration,
-            defaults=defaults,
-            subsystem_dims=subsystem_dims,
-            **options,
+        kwargs = self.__get_dynamic_backend_kwargs(
+            alpha=alpha,
+            r=r,
+            atol=atol,
+            rtol=rtol,
+            dim=dim,
+            noise=noise,
+            backend_config=backend_config,
+            **options
         )
+
+        super().__init__(**kwargs, **options)
+
+    @classmethod
+    def __get_dynamic_backend_kwargs(cls, **kwargs):
+        """Generates the kwargs for initializing the parent DynamicBackend class
+
+        Args:
+            kwargs: the initial key-word arguments fed in during initialization
+
+        Returns:
+            a dictionary of options to pass to the dynamic backend on initialization
+        """
+        options = dict(
+            solver=cls.generate_solver(**kwargs),
+            target=cls.generate_target(**kwargs),
+            solver_options=cls.generate_solver_options(**kwargs),
+            configuration=cls.generate_configuration(**kwargs),
+            defaults=cls.generate_pulse_defaults(**kwargs),
+            subsystem_dims=cls.generate_subsystem_dims(**kwargs),
+        )
+
+        # clean out any None values
+        return {k: v for k, v in options.items() if v is not None}
 
     @classmethod
     @abc.abstractmethod

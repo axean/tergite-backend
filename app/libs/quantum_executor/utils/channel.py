@@ -14,7 +14,7 @@
 
 from dataclasses import dataclass
 
-from app.libs.quantum_executor.utils.general import find
+from app.libs.quantum_executor.utils.general import search_nested
 
 
 @dataclass(eq=True, frozen=False)
@@ -34,7 +34,7 @@ def default_frequency(clock: str, hw_config: dict) -> float:
     """
 
     # find all the complex output dictionaries
-    for path in find(hw_config, "portclock_configs"):
+    for path in search_nested(hw_config, "portclock_configs"):
         output = hw_config
         for k in path[:-1]:
             output = output[k]

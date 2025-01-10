@@ -15,12 +15,12 @@
 import dataclasses
 from datetime import datetime
 from os import PathLike
-from typing import Optional, Dict, Any, List, Tuple, Union, Literal
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import toml
 from pydantic import BaseModel, Extra, root_validator
 
-from app.libs.properties.utils.date_time import utc_to_iso, utc_now_iso
+from app.libs.properties.utils.date_time import utc_now_iso, utc_to_iso
 
 
 class QubitProps(BaseModel):

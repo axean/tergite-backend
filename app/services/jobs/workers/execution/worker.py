@@ -27,7 +27,6 @@ import settings
 from app.libs.quantum_executor.utils.connections import get_executor_lock
 from app.libs.quantum_executor.utils.serialization import iqx_rld
 from app.utils.queues import QueuePool
-from .utils import get_executor
 
 from ...service import Location, fetch_job, inform_failure, inform_location
 from ..postprocessing import (
@@ -35,6 +34,7 @@ from ..postprocessing import (
     postprocessing_failure_callback,
     postprocessing_success_callback,
 )
+from .utils import get_executor
 
 # Settings
 # --------
