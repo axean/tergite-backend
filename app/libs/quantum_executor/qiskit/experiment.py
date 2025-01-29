@@ -38,7 +38,7 @@ from .instruction import (
     WacqtCZPlay,
 )
 
-# Map (name, pulse_shape) => Instruction
+# Map (name, pulse_shape) => QiskitDynamicsInstruction
 _INSTRUCTION_PULSE_MAP: Dict[
     Tuple[str, Optional[str]], Type[QiskitDynamicsInstruction]
 ] = {
@@ -99,7 +99,6 @@ class QiskitDynamicsExperiment(NativeExperiment):
             header=header,
             instructions=native_instructions,
             config=qobj_config,
-            channels=frozenset(),
             raw_schedule=raw_schedule,
         )
 

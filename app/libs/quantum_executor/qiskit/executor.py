@@ -15,7 +15,6 @@ import enum
 from typing import List, Type
 
 import numpy as np
-import xarray
 from numpy import typing as npt
 from qiskit.qobj import PulseQobj
 from qiskit.result import Result as qiskitResult

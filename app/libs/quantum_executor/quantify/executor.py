@@ -42,10 +42,7 @@ from quantify_scheduler.instrument_coordinator.components.qblox import ClusterCo
 from app.libs.quantum_executor.base.executor import QuantumExecutor
 from app.libs.quantum_executor.base.quantum_job import get_experiment_name
 from app.libs.quantum_executor.base.quantum_job.dtos import NativeQobjConfig
-from app.libs.quantum_executor.base.quantum_job.typing import (
-    QDataset,
-    QExperimentResult,
-)
+from app.libs.quantum_executor.base.quantum_job.typing import QExperimentResult
 from app.libs.quantum_executor.quantify.experiment import QuantifyExperiment
 from app.libs.quantum_executor.utils.config import (
     ClusterModuleType,
@@ -178,11 +175,8 @@ class QuantifyExecutor(QuantumExecutor):
         # compile to hardware
         # TODO: Here, we can use the new @timer decorator in the benchmarking package
         t1 = datetime.now()
-        absolute_timed_schedule = determine_absolute_timing(
-            copy.deepcopy(experiment.schedule)
-        )
         compiled_schedule = hardware_compile(
-            schedule=absolute_timed_schedule, hardware_cfg=self.quantify_config
+            schedule=experiment.schedule, hardware_cfg=self.quantify_config
         )
 
         t2 = datetime.now()
@@ -233,7 +227,7 @@ def _add_component_if_not_exists(
 
     try:
         coordinator.add_component(component)
-        rich.print(
+        print(
             f"Added '{component.name}' to instrument coordinator '{coordinator.name}'"
         )
     except ValueError:
@@ -255,7 +249,7 @@ def _set_parameters(device: Instrument, parameters: Dict[str, Any]):
             # https://microsoft.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html#Example-of-setting-and-getting-parameters
             qcodes_command = getattr(device, command)
             qcodes_command(value)
-            rich.print(f"Set '{command}' to {value}")
+            print(f"Set '{command}' to {value}")
         except (AttributeError, TypeError):
             # ignore invalid parameters
             pass

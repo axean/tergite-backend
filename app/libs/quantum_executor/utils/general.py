@@ -56,12 +56,8 @@ def freeze(d: dict) -> frozenset:
     )
 
 
-def ceil4(n):
-    """FIXME: What exactly is this doing and why?"""
-    return n + (4 - n) % 4
-
-
 def rot_left(arr: iter, steps: int) -> iter:
+    # FIXME: make this more descriptive
     if type(arr) != list:
         if hasattr(arr, "tolist"):
             arr = arr.tolist()

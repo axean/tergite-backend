@@ -17,23 +17,18 @@ import abc
 import copy
 from dataclasses import dataclass
 from functools import cached_property
-from typing import FrozenSet, List
+from typing import Any, List
 
 import retworkx as rx
 from pandas import DataFrame
 from qiskit.qobj import PulseQobjConfig, QobjExperimentHeader
 
-from app.libs.quantum_executor.base.instruction import Instruction
-from app.libs.quantum_executor.utils.channel import Channel
-
 
 @dataclass(frozen=True)
 class NativeExperiment(abc.ABC):
     header: QobjExperimentHeader
-    instructions: List[Instruction]
+    instructions: List[Any]
     config: PulseQobjConfig
-    channels: FrozenSet[Channel]
-    buffer_time: float = 0.0
 
     @cached_property
     def dag(self: "NativeExperiment"):
