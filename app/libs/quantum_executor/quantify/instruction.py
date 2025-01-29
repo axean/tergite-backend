@@ -2,6 +2,7 @@
 #
 # (C) Axel Andersson (2022)
 # (C) Martin Ahindura (2025)
+# (C) Chalmers Next Labs (2025)
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -115,6 +116,11 @@ class BaseInstruction:
     @property
     def pretty_name(self) -> str:
         return self.name
+
+    @property
+    def final_timestamp(self) -> float:
+        """The final timestamp after the duration of this instruction"""
+        return self.t0 + self.duration
 
     def get_phase_delta(self, channel: QuantifyChannel) -> float:
         """A representation of the change in phase this instruction introduces to its channel"""

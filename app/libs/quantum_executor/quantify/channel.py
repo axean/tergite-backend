@@ -12,9 +12,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict, List
-
-from quantify_scheduler import Operation
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from app.libs.quantum_executor.quantify.instruction import BaseInstruction
@@ -54,6 +52,11 @@ class QuantifyChannel:
     _phase_playback: List[float] = field(default_factory=list)
     _frequency_playback: List[float] = field(default_factory=list)
     _acquisition_playback: List[int] = field(default_factory=list)
+
+    @property
+    def instructions(self) -> List["BaseInstruction"]:
+        """List of instructions attached to this channel"""
+        return self._instructions
 
     @property
     def final_phase(self) -> float:
