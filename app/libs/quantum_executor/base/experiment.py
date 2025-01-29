@@ -16,7 +16,6 @@
 import abc
 import copy
 from dataclasses import dataclass
-from typing import Any, List
 
 from qiskit.qobj import PulseQobjConfig, QobjExperimentHeader
 
@@ -24,7 +23,6 @@ from qiskit.qobj import PulseQobjConfig, QobjExperimentHeader
 @dataclass(frozen=True)
 class NativeExperiment(abc.ABC):
     header: QobjExperimentHeader
-    instructions: List[Any]
     config: PulseQobjConfig
 
     @property

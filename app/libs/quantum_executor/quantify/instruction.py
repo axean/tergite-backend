@@ -77,8 +77,6 @@ class BaseInstruction:
         self.label = str(uuid())
         for k, v in kwargs.items():
             setattr(self, k, v)
-        channel: QuantifyChannel = kwargs["channel"]
-        self.position = channel.register_instruction(self)
 
     def __eq__(self, other: object) -> bool:
         self_attrs = set(filter(lambda v: hasattr(self, v), BaseInstruction.__slots__))
@@ -133,6 +131,13 @@ class BaseInstruction:
     def get_acquisitions_delta(self, channel: QuantifyChannel) -> int:
         """A representation of the change in acquisitions this instruction introduces to its channel"""
         return 0
+
+    def register(self):
+        """Registers itself on its channel, updating its position.
+
+        Its position is its index in the list of instructions attached to the channel
+        """
+        self.position = self.channel.register_instruction(self)
 
     @abc.abstractmethod
     def to_operation(self, config: PulseQobjConfig) -> Operation:

@@ -133,44 +133,37 @@ class QuantifyExperiment(NativeExperiment):
         header = copy_expt_header_with(expt.header, name=name)
         channel_registry = QuantifyChannelRegistry()
 
-        inst_nested_list = (
-            _extract_instructions(
+        for inst in expt.instructions:
+            _add_instruction_to_channel_registry(
+                channel_registry=channel_registry,
                 qobj_inst=inst,
                 config=qobj_config,
                 native_config=native_config,
-                channel_registry=channel_registry,
                 hardware_map=hardware_map,
             )
-            for inst in expt.instructions
-        )
-        native_instructions = flatten_list(inst_nested_list)
 
         return cls(
             header=header,
-            instructions=native_instructions,
             config=qobj_config,
             channel_registry=channel_registry,
         )
 
 
-def _extract_instructions(
+def _add_instruction_to_channel_registry(
+    channel_registry: QuantifyChannelRegistry,
     qobj_inst: PulseQobjInstruction,
     config: PulseQobjConfig,
     native_config: NativeQobjConfig,
-    channel_registry: QuantifyChannelRegistry,
     hardware_map: Dict[str, str] = None,
-) -> List[BaseInstruction]:
-    """Extracts tergite-specific instructions from the PulseQobjInstruction
+):
+    """Extracts PulseQobjInstruction and attaches the extracted native instructions to channel_registry
 
     Args:
+        channel_registry: the registry of all the channels to which instructions are to be attached
         qobj_inst: the PulseQobjInstruction from which instructions are to be extracted
         config: config of the pulse qobject
         native_config: the native config for the qobj
-        channel_registry: the registry of all the channels for the given experiment
         hardware_map: the map describing the layout of the quantum device
-
-    Returns:
-        list of tergite-specific instructions
     """
     if hardware_map is None:
         hardware_map = {}
@@ -185,13 +178,14 @@ def _extract_instructions(
                 f"No mapping for PulseQobjInstruction {qobj_inst}.\n{exp}"
             )
 
-    return cls.list_from_qobj_inst(
+    for instruction in cls.list_from_qobj_inst(
         qobj_inst,
         config=config,
         native_config=native_config,
         hardware_map=hardware_map,
         channel_registry=channel_registry,
-    )
+    ):
+        instruction.register()
 
 
 def _get_absolute_timed_schedule(

@@ -55,8 +55,8 @@ _INSTRUCTION_PULSE_MAP: Dict[
 
 @dataclass(frozen=True)
 class QiskitDynamicsExperiment(NativeExperiment):
-    raw_schedule: Schedule = None
     instructions: List[QiskitDynamicsInstruction]
+    raw_schedule: Schedule = None
 
     @cached_property
     def schedule(self) -> "Schedule":
