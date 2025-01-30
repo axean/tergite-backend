@@ -72,21 +72,3 @@ def get_duplicates(texts: List[str]) -> List[str]:
         else:
             seen.add(name)
     return duplicates
-
-
-def flatten_list(
-    items: Union[
-        Iterator[Iterator[_T]],
-        Generator[Iterable[_T], None, None],
-        Iterable[Iterable[_T]],
-    ]
-) -> List[_T]:
-    """Flattens a list of lists
-
-    Args:
-        items: the nested list to flatten
-
-    Returns:
-        the list flattened list
-    """
-    return [item for sublist in items for item in sublist]

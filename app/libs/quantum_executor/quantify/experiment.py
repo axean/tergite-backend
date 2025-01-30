@@ -26,7 +26,6 @@ from app.libs.quantum_executor.base.experiment import (
     copy_expt_header_with,
 )
 from app.libs.quantum_executor.quantify.channel import QuantifyChannel
-from app.libs.quantum_executor.utils.general import flatten_list
 
 from ..base.quantum_job.dtos import NativeQobjConfig
 from .channel import QuantifyChannelRegistry
