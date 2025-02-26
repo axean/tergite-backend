@@ -115,21 +115,22 @@ rq empty -u "$REDIS_URL" "${DEFAULT_PREFIX}_logfile_postprocessing"
 rm -fr "/tmp/${DEFAULT_PREFIX}"
 
 
-# Remove old Redis keys, by their prefixes
+# Remove old Redis keys, by their prefixes, if redis-cli is installed
 # - job_supervisor
 # - calibration_supervisor
 # - device properties
 # - post-processing results
-prefixes="job_supervisor calibration_supervisor postprocessing:results: device:"
-for prefix in $prefixes
-do
-    echo deleting "\"$prefix*\"" from Redis
-    for key in $(redis-cli -u "$REDIS_URL" --scan --pattern "$prefix*")
-    do
-        redis-cli -u "$REDIS_URL" del "$key" > /dev/null
-    done
-done
-
+if command -v redis-cli &> /dev/null; then
+  prefixes="job_supervisor calibration_supervisor postprocessing:results: device:"
+  for prefix in $prefixes
+  do
+      echo deleting "\"$prefix*\"" from Redis
+      for key in $(redis-cli -u "$REDIS_URL" --scan --pattern "$prefix*")
+      do
+          redis-cli -u "$REDIS_URL" del "$key" > /dev/null
+      done
+  done
+fi
 
 # Worker processes
 rq worker -u "$REDIS_URL" "${DEFAULT_PREFIX}_job_registration" &
