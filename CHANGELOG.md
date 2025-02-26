@@ -12,6 +12,11 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 ### Changed
 
 - Changed the apt installation step in Dockerfile to remove `/var/lib/apt/lists/*` after completion
+- Made removal of keys in `start_bcc.sh` optional
+
+### Fixed
+
+- Fixed docker error ModuleNotFoundError: No module named 'setuptools.command.build'
 
 ## [2024.12.1] - 2024-12-20
 
