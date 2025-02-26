@@ -22,6 +22,8 @@ RUN \
     # comment out the packages that may need PyQt5
     sed -i "s:quantify-core:# quantify-core:" /code/requirements.txt; \
     sed -i "s:quantify-scheduler:# quantify-scheduler:" /code/requirements.txt; \
+    # update pip, setuptools, wheel
+    pip install --upgrade pip setuptools wheel; \
     # Install the pip dependencies except the core ones
     pip install --no-cache-dir pipdeptree~=2.24.0; \
     pip install --no-cache-dir -r /code/requirements.txt; \
