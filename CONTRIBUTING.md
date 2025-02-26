@@ -197,7 +197,7 @@ sudo systemctl enable bcc.service
 
 ## How to Run with Docker
 
-- Ensure you have [Docker]() installed.
+- Ensure you have [Docker](https://docs.docker.com/engine/install/) installed.
 - Create a `data` folder
 
 ```shell
