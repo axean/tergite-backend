@@ -21,36 +21,37 @@
 # Any change on this file should be done in both repositories until they are eventually merged!
 
 from datetime import datetime
-from typing import Optional, List, Dict, Union
+from typing import Dict, List, Optional, Union
 
 from requests import Session
 
 import settings
+
 from .dtos import (
     BackendConfig,
+    CouplerProps,
+    CouplersCalibration,
+    DeviceCalibrationV2,
+    DeviceProperties,
     DeviceV1,
     DeviceV2,
-    DeviceCalibrationV2,
     QubitCalibration,
-    ResonatorCalibration,
-    CouplersCalibration,
     QubitProps,
-    CouplerProps,
     ReadoutResonatorProps,
-    DeviceProperties,
+    ResonatorCalibration,
 )
 from .utils.data import (
-    read_qubit_calibration_data,
-    read_resonator_calibration_data,
+    attach_units,
+    attach_units_many,
+    get_inner_value,
     read_coupler_calibration_data,
     read_discriminator_data,
-    get_inner_value,
-    set_qubit_calibration_data,
-    set_resonator_calibration_data,
+    read_qubit_calibration_data,
+    read_resonator_calibration_data,
     set_coupler_calibration_data,
     set_discriminator_data,
-    attach_units_many,
-    attach_units,
+    set_qubit_calibration_data,
+    set_resonator_calibration_data,
 )
 
 _BACKEND_CONFIG: Optional[BackendConfig] = None

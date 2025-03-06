@@ -27,7 +27,6 @@ import settings
 from app.libs.quantum_executor.utils.connections import get_executor_lock
 from app.libs.quantum_executor.utils.serialization import iqx_rld
 from app.utils.queues import QueuePool
-from .utils import get_executor
 
 from ...service import Location, fetch_job, inform_failure, inform_location
 from ..postprocessing import (
@@ -35,6 +34,7 @@ from ..postprocessing import (
     postprocessing_failure_callback,
     postprocessing_success_callback,
 )
+from .utils import get_executor
 
 # Settings
 # --------
@@ -78,17 +78,13 @@ def job_execute(job_file: Path):
     # Just a locking mechanism to ensure jobs don't interfere with each other
     with get_executor_lock():
         try:
-            executor.register_job(qobj["header"].get("tag", ""))
-
             # --- In-place decode complex values
             # [[a,b],[c,d],...] -> [a + ib,c + id,...]
             json_decoder.decode_pulse_qobj(qobj)
 
             print(datetime.now(), "IN REST API CALLING RUN_EXPERIMENTS")
 
-            results_file = executor.run_experiments(
-                PulseQobj.from_dict(qobj), enable_traceback=True, job_id=job_id
-            )
+            results_file = executor.run(PulseQobj.from_dict(qobj), job_id=job_id)
         except Exception as exp:
             print("Job failed")
             print(f"Job execution failed. exp: {exp}")

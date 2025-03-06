@@ -1,6 +1,7 @@
 # This code is part of Tergite
 #
 # (C) Axel Andersson (2022)
+# (C) Martin Ahindura (2025)
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -13,6 +14,7 @@
 # Refactored by Martin Ahindura (2024)
 
 import abc
+import copy
 from dataclasses import dataclass
 from functools import cached_property
 from typing import FrozenSet, List
@@ -21,22 +23,20 @@ import retworkx as rx
 from pandas import DataFrame
 from qiskit.qobj import PulseQobjConfig, QobjExperimentHeader
 
+from app.libs.quantum_executor.base.instruction import Instruction
 from app.libs.quantum_executor.utils.channel import Channel
-from app.libs.quantum_executor.utils.instruction import Instruction
-from app.libs.quantum_executor.utils.logger import ExperimentLogger
 
 
 @dataclass(frozen=True)
-class BaseExperiment(abc.ABC):
+class NativeExperiment(abc.ABC):
     header: QobjExperimentHeader
     instructions: List[Instruction]
     config: PulseQobjConfig
     channels: FrozenSet[Channel]
-    logger: ExperimentLogger
     buffer_time: float = 0.0
 
     @cached_property
-    def dag(self: "BaseExperiment"):
+    def dag(self: "NativeExperiment"):
         dag = rx.PyDiGraph(check_cycle=True, multigraph=False)
 
         prev_index = dict()
@@ -61,7 +61,24 @@ class BaseExperiment(abc.ABC):
         pass
 
     @property
-    def timing_table(self: "BaseExperiment") -> DataFrame:
+    def timing_table(self: "NativeExperiment") -> DataFrame:
         df = self.schedule.timing_table.data
         df.sort_values("abs_time", inplace=True)
         return df
+
+
+def copy_expt_header_with(header: QobjExperimentHeader, **kwargs):
+    """Copies a new header from the old header with new kwargs set
+
+    Args:
+        header: the original QobjExperimentHeader header
+        kwargs: the extra key-word args to set on the header
+
+    Returns:
+        a copy QobjExperimentHeader instance
+    """
+    new_header = copy.deepcopy(header)
+    for k, v in kwargs.items():
+        setattr(new_header, k, v)
+
+    return new_header

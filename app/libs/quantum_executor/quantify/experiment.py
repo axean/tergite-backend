@@ -12,27 +12,56 @@
 #
 # Refactored by Martin Ahindura (2024)
 # Refactored by Stefan Hill (2024)
+import copy
 from dataclasses import dataclass
+from typing import Dict, List, Optional, Type
 
 import retworkx as rx
+from qiskit.qobj import PulseQobjConfig, PulseQobjExperiment, PulseQobjInstruction
 from quantify_scheduler import Schedule
 
-from app.libs.quantum_executor.base.experiment import BaseExperiment
-from app.libs.quantum_executor.quantify.program import QuantifyProgram
-from app.libs.quantum_executor.utils.general import rot_left
-from app.libs.quantum_executor.utils.instruction import initial_object
+from app.libs.quantum_executor.base.experiment import (
+    NativeExperiment,
+    copy_expt_header_with,
+)
+from app.libs.quantum_executor.base.instruction import Instruction
+from app.libs.quantum_executor.utils.channel import Channel
+from app.libs.quantum_executor.utils.general import ceil4, flatten_list, rot_left
+
+from ..base.quantum_job.dtos import NativeQobjConfig
+from .instruction import (
+    AcquireInstruction,
+    DelayInstruction,
+    FreqInstruction,
+    InitialObjectInstruction,
+    ParamPulseInstruction,
+    PhaseInstruction,
+    PulseLibInstruction,
+)
+from .program import QuantifyProgram
+
+# FIXME: Why is this initial object hard coded here?
+initial_object = InitialObjectInstruction()
+
+# Map name => Instruction
+_INSTRUCTION_MAP: Dict[str, Type[Instruction]] = {
+    "setf": FreqInstruction,
+    "setp": PhaseInstruction,
+    "fc": PhaseInstruction,
+    "delay": DelayInstruction,
+    "acquire": AcquireInstruction,
+    "parametric_pulse": ParamPulseInstruction,
+}
 
 
 @dataclass(frozen=True)
-class QuantifyExperiment(BaseExperiment):
+class QuantifyExperiment(NativeExperiment):
     @property
     def schedule(self: "QuantifyExperiment") -> Schedule:
-        self.logger.info(f"Compiling {self.header.name}")
         prog = QuantifyProgram(
             name=self.header.name,
             channels=self.channels,
             config=self.config,
-            logger=self.logger,
         )
         prog.schedule_operation(initial_object, ref_op=None, rel_time=0.0)
 
@@ -67,3 +96,84 @@ class QuantifyExperiment(BaseExperiment):
                 )
 
         return prog.compiled_schedule
+
+    @classmethod
+    def from_qobj_expt(
+        cls,
+        expt: PulseQobjExperiment,
+        name: str,
+        qobj_config: PulseQobjConfig,
+        native_config: NativeQobjConfig,
+        hardware_map: Optional[Dict[str, str]],
+    ) -> "QuantifyExperiment":
+        """Converts PulseQobjExperiment to native experiment
+
+        Args:
+            expt: the pulse qobject experiment to translate
+            name: the name of the experiment
+            qobj_config: the pulse qobject config
+            native_config: the native config for the qobj
+            hardware_map: the map of the real/simulated device to the logical definitions
+
+        Returns:
+            the QiskitDynamicsExperiment corresponding to the PulseQobj
+        """
+        header = copy_expt_header_with(expt.header, name=name)
+        inst_nested_list = (
+            _extract_instructions(
+                qobj_inst=inst,
+                config=qobj_config,
+                native_config=native_config,
+                hardware_map=hardware_map,
+            )
+            for inst in expt.instructions
+        )
+        native_instructions = flatten_list(inst_nested_list)
+
+        return cls(
+            header=header,
+            instructions=native_instructions,
+            config=qobj_config,
+            channels=frozenset(
+                Channel(
+                    clock=i.channel,
+                    frequency=0.0,
+                )
+                for i in native_instructions
+            ),
+        )
+
+
+def _extract_instructions(
+    qobj_inst: PulseQobjInstruction,
+    config: PulseQobjConfig,
+    native_config: NativeQobjConfig,
+    hardware_map: Dict[str, str] = None,
+) -> List[Instruction]:
+    """Extracts tergite-specific instructions from the PulseQobjInstruction
+
+    Args:
+        qobj_inst: the PulseQobjInstruction from which instructions are to be extracted
+        config: config of the pulse qobject
+        native_config: the native config for the qobj
+        hardware_map: the map describing the layout of the quantum device
+
+    Returns:
+        list of tergite-specific instructions
+    """
+    if hardware_map is None:
+        hardware_map = {}
+
+    try:
+        cls = _INSTRUCTION_MAP[qobj_inst.name]
+    except KeyError as exp:
+        if qobj_inst.name in config.pulse_library:
+            cls = PulseLibInstruction
+        else:
+            raise RuntimeError(
+                f"No mapping for PulseQobjInstruction {qobj_inst}.\n{exp}"
+            )
+
+    return cls.list_from_qobj_inst(
+        qobj_inst, config=config, native_config=native_config, hardware_map=hardware_map
+    )

@@ -23,7 +23,7 @@ import tabulate
 from quantify_core.data.types import TUID
 from quantify_scheduler import CompiledSchedule, Schedule
 
-from .general import find, load_config
+from .general import load_config, search_nested
 
 
 class Line:
@@ -168,7 +168,7 @@ class ExperimentLogger:
         programs = dict()
 
         # extract sequencer programs
-        for path in find(compiled_schedule.compiled_instructions, "seq_fn"):
+        for path in search_nested(compiled_schedule.compiled_instructions, "seq_fn"):
             ref = compiled_schedule.compiled_instructions
             for k in path:
                 ref = ref[k]

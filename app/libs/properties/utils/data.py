@@ -11,7 +11,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-from typing import List, Dict, Optional, Literal, Union
+from typing import Dict, List, Literal, Optional, Union
 
 from ..dtos import CalibrationValue
 from .storage import get_component_property, set_component_property

@@ -23,7 +23,6 @@ from app.tests.utils.fixtures import load_fixture
 from app.tests.utils.http import get_headers
 from app.tests.utils.redis import insert_in_hash, register_app_token_job_id
 
-
 _PARENT_FOLDER = path.dirname(path.abspath(__file__))
 _JOBS_LIST = load_fixture("job_list.json")
 _BACKEND_PROPERTIES = [

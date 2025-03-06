@@ -1,6 +1,7 @@
 # This code is part of Tergite
 #
 # (C) Copyright Martin Ahindura 2024
+# (C) Copyright Chalmers Next Labs 2025
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -11,14 +12,12 @@
 # that they have been altered from the originals.
 
 """Simple utility functions for the execution worker"""
+from typing import Optional
+
 import settings
-from app.libs.properties import initialize_backend, get_backend_config
+from app.libs.properties import get_backend_config, initialize_backend
 from app.libs.quantum_executor.base.executor import QuantumExecutor
-from app.libs.quantum_executor.qiskit.executor import (
-    QiskitPulse1QExecutor,
-    QiskitPulse2QExecutor,
-    QiskitDynamicsExecutor,
-)
+from app.libs.quantum_executor.qiskit.executor import QiskitDynamicsExecutor
 from app.libs.quantum_executor.quantify.executor import QuantifyExecutor
 from app.utils.http import get_mss_client
 
@@ -40,7 +39,7 @@ def get_executor(
     Returns:
         An initialized quantum executor
     """
-    executor = None  # type: QuantumExecutor
+    executor: Optional[QuantumExecutor] = None
     backend_config = get_backend_config()
     qubit_config = None
     resonator_config = None
@@ -51,19 +50,13 @@ def get_executor(
         executor = QuantifyExecutor(config_file=config_file)
 
     if executor_type == "qiskit_pulse_1q":
-        executor: QiskitPulse1QExecutor = QiskitPulse1QExecutor(
+        executor: QiskitDynamicsExecutor = QiskitDynamicsExecutor.new_one_qubit(
             backend_config=backend_config
         )
         discriminator_config = executor.backend.train_discriminator()
 
     if executor_type == "qiskit_pulse_2q":
-        executor: QiskitPulse2QExecutor = QiskitPulse2QExecutor(
-            backend_config=backend_config
-        )
-        discriminator_config = executor.backend.train_discriminator()
-
-    if executor_type == "qiskit":
-        executor: QiskitDynamicsExecutor = QiskitDynamicsExecutor(
+        executor: QiskitDynamicsExecutor = QiskitDynamicsExecutor.new_two_qubit(
             backend_config=backend_config
         )
         discriminator_config = executor.backend.train_discriminator()

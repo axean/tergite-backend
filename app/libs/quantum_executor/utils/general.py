@@ -1,6 +1,7 @@
 # This code is part of Tergite
 #
 # (C) Axel Andersson (2022)
+# (C) Martin Ahindura (2025)
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -14,18 +15,31 @@
 
 import json
 import sys
-from typing import List
+from typing import Generator, Iterable, Iterator, List, TypeVar, Union
+
+import h5py
+
+_T = TypeVar("_T")
 
 
-def find(haystack, needle):
-    if not isinstance(haystack, dict):
+def search_nested(haystack: Union[h5py.Group, dict], needle: str):
+    """Searches a nested dict-like object for a given key
+
+    Args:
+        haystack: the nested dict-like object to search in
+        needle: the key to search for
+
+    Returns:
+        an iterator of the path segments from root to the given key e.g. ("foo", "bar", needle)
+    """
+    if not isinstance(haystack, h5py.Group) and not isinstance(haystack, dict):
         return
 
     if needle in haystack:
         yield (needle,)
 
     for key, val in haystack.items():
-        for sub_path in find(val, needle):
+        for sub_path in search_nested(val, needle):
             yield key, *sub_path
 
 
@@ -43,6 +57,7 @@ def freeze(d: dict) -> frozenset:
 
 
 def ceil4(n):
+    """FIXME: What exactly is this doing and why?"""
     return n + (4 - n) % 4
 
 
@@ -182,3 +197,21 @@ def get_duplicates(texts: List[str]) -> List[str]:
         else:
             seen.add(name)
     return duplicates
+
+
+def flatten_list(
+    items: Union[
+        Iterator[Iterator[_T]],
+        Generator[Iterable[_T], None, None],
+        Iterable[Iterable[_T]],
+    ]
+) -> List[_T]:
+    """Flattens a list of lists
+
+    Args:
+        items: the nested list to flatten
+
+    Returns:
+        the list flattened list
+    """
+    return [item for sublist in items for item in sublist]

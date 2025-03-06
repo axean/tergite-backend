@@ -31,10 +31,10 @@ from typing_extensions import Annotated
 
 import settings
 
+from ..libs import properties as props_lib
 from ..services.auth import service as auth_service
 from ..services.jobs import service as jobs_service
 from ..services.jobs.workers.registration import job_register
-from ..libs import properties as props_lib
 from ..utils.queues import QueuePool
 from .dependencies import (
     get_bearer_token,

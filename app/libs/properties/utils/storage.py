@@ -11,17 +11,17 @@
 # that they have been altered from the originals.
 
 import ast
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from enum import Enum, unique
 from typing import Any, List, Optional, Tuple, TypeVar, Union
 
 import redis
 
 import settings
-from .representation import to_string
 
 from .date_time import utc_now_iso
 from .logging import get_logger
+from .representation import to_string
 
 # ============================================================================
 # Types

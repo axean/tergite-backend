@@ -30,9 +30,14 @@ from requests import Response
 from sklearn.utils.extmath import safe_sparse_dot
 
 import settings
-from app.libs.storage_file import MeasLvl, StorageFile
-from app.services.jobs.workers.postprocessing.exc import PostProcessingError
 from app.libs.properties.utils import date_time
+from app.libs.quantum_executor.base.quantum_job import (
+    MeasLvl,
+    QuantumJob,
+    discriminate_results,
+    read_job_from_hdf5,
+)
+from app.services.jobs.workers.postprocessing.exc import PostProcessingError
 from app.utils.http import get_mss_client
 
 from ...service import (
@@ -98,8 +103,8 @@ def logfile_postprocess(logfile: Path) -> JobID:
 
     # The return value will be passed to postprocessing_success_callback
     print("Identified TQC storage file, reading file using storage file")
-    sf = StorageFile(new_file, mode="r")
-    return postprocess_storage_file(sf)
+    job = read_job_from_hdf5(new_file)
+    return postprocess_storage_file(job)
 
 
 # =========================================================================
@@ -133,21 +138,21 @@ def _apply_linear_discriminator(
     )
     intercept = np.array(discriminator_[qubit_id_]["intercept"])
 
-    X = np.zeros((iq_points.shape[0], 2))
-    X[:, 0] = iq_points.real
-    X[:, 1] = iq_points.imag
+    data = np.zeros((iq_points.shape[0], 2))
+    data[:, 0] = iq_points.real
+    data[:, 1] = iq_points.imag
 
-    scores = safe_sparse_dot(X, coefficients.T, dense_output=True) + intercept
+    scores = safe_sparse_dot(data, coefficients.T, dense_output=True) + intercept
 
     return (scores.ravel() > 0).astype(np.int_)
 
 
 def postprocess_storage_file(
-    sf: StorageFile, backend_name: str = settings.DEFAULT_PREFIX
+    job: QuantumJob, backend_name: str = settings.DEFAULT_PREFIX
 ) -> JobID:
     try:
         with get_mss_client() as mss_client:
-            if sf.meas_level == MeasLvl.DISCRIMINATED:
+            if job.meas_level == MeasLvl.DISCRIMINATED:
                 # This would fetch the discriminator from the MSS
                 backend_definition: str = f'{str(MSS_MACHINE_ROOT_URL)}{REST_API_MAP["backends"]}/{backend_name}'
                 response = mss_client.get(backend_definition)
@@ -160,41 +165,30 @@ def postprocess_storage_file(
                     print(f"Response error {response}")
 
                 try:
-                    memory = sf.as_readout(discriminator=discriminator_fn)
+                    memory = discriminate_results(job, discriminator=discriminator_fn)
+
                     save_result_in_mss_and_bcc(
-                        mss_client=mss_client, memory=memory, job_id=sf.job_id
+                        mss_client=mss_client, memory=memory, job_id=job.job_id
                     )
                 except Exception as exp:
                     logging.error(exp)
-                    response = _update_job_in_mss(
+                    _update_job_in_mss(
                         mss_client=mss_client,
-                        job_id=sf.job_id,
+                        job_id=job.job_id,
                         payload={"status": "ERROR"},
                     )
                     raise exp
 
-            elif sf.meas_level == MeasLvl.INTEGRATED:
-                memory = sf.as_xarray()
-
-                save_result_in_mss_and_bcc(
-                    mss_client=mss_client, memory=memory, job_id=sf.job_id
-                )
-
-            elif sf.meas_level == MeasLvl.RAW:
-                # TODO: Not implemented, expects to pass full trace
-                # with hardcoded 16K values length array
-                save_result_in_mss_and_bcc(
-                    mss_client=mss_client, memory=[], job_id=sf.job_id
-                )
-
             else:
-                print("Warning: cannot postprocess invalid StorageFile.")
+                raise NotImplementedError(
+                    f"meas_level {job.meas_level} is not supported"
+                )
 
             # job["name"] was set to "pulse_schedule" when registered
 
-        return sf.job_id
+        return job.job_id
     except Exception as exp:
-        raise PostProcessingError(exp=exp, job_id=sf.job_id)
+        raise PostProcessingError(exp=exp, job_id=job.job_id)
 
 
 # =========================================================================

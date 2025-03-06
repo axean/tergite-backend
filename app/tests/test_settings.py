@@ -6,7 +6,7 @@ import requests
 
 from app.libs.quantum_executor.utils.config import QuantifyExecutorConfig
 from app.tests.conftest import FASTAPI_CLIENTS
-from app.tests.utils.env import TEST_MSS_APP_TOKEN, TEST_BACKEND_SETTINGS_FILE
+from app.tests.utils.env import TEST_BACKEND_SETTINGS_FILE, TEST_MSS_APP_TOKEN
 from app.tests.utils.fixtures import get_fixture_path, load_fixture
 from app.tests.utils.modules import remove_modules
 
