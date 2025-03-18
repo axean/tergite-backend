@@ -28,6 +28,7 @@ config = Config(Path(__file__).parent / env_file, environ=os.environ)
 
 # Automatic root directory settings
 APP_ROOT_DIR = Path(__file__).parent / "app"
+FIXTURES_DIR = Path(__file__).parent / "app" / "tests" / "fixtures"
 
 # Misc settings
 APP_SETTINGS = config("APP_SETTINGS", cast=str, default="production")
@@ -41,7 +42,6 @@ if not IS_AUTH_ENABLED and _is_production:
     )
 
 # Storage settings
-
 DEFAULT_PREFIX = config("DEFAULT_PREFIX", cast=str)
 STORAGE_ROOT = config("STORAGE_ROOT", cast=str, default="/tmp")
 STORAGE_PREFIX_DIRNAME = config(
@@ -77,19 +77,14 @@ if not os.path.exists(_executor_data_dir_path):
     os.makedirs(_executor_data_dir_path)
 EXECUTOR_DATA_DIR = _executor_data_dir_path
 
-# Measurement default file mapping
-MEASUREMENT_DEFAULT_FILES = config(
-    "MEASUREMENT_DEFAULT_FILES",
-    cast=str,
-    default="measurement_jobs/parameter_defaults/default_files.toml",
-)
-
 # Definition of backend property names
 BACKEND_SETTINGS = config(
     "BACKEND_SETTINGS",
     cast=str,
     default=Path(__file__).parent / "backend_config.toml",
 )
+
+CALIBRATION_SEED = config("CALIBRATION_SEED", cast=str, default=Path(__file__).parent / "calibration.seed.toml")
 
 # Connectivity settings
 MSS_MACHINE_ROOT_URL = config(
@@ -127,7 +122,10 @@ EXECUTOR_TYPE = config("EXECUTOR_TYPE", default="quantify")
 # This will load the hardware configuration from a yaml file, which contains the properties for the
 # cluster or other instrument setup. For more information check:
 # - quantify-config.example.yml
-QUANTIFY_CONFIG_FILE = config("QUANTIFY_CONFIG_FILE", default="quantify-config.yml")
+QUANTIFY_CONFIG_FILE = config("QUANTIFY_CONFIG_FILE", default="quantify-config.json")
+QUANTIFY_METADATA_FILE = config(
+    "QUANTIFY_METADATA_FILE", default="quantify-metadata.yml"
+)
 
 # -------------
 # Redis config

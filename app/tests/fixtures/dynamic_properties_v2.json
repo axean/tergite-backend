@@ -356,7 +356,7 @@
         "unit": "Hz",
         "value": 4511480043.556283
       },
-      "id": 0,
+      "id": 12,
       "index": null,
       "pi_pulse_amplitude": {
         "component": "qubit",
@@ -457,7 +457,7 @@
         "unit": "Hz",
         "value": 4677112343.360253
       },
-      "id": 1,
+      "id": 13,
       "index": null,
       "pi_pulse_amplitude": {
         "component": "qubit",
@@ -558,7 +558,7 @@
         "unit": "Hz",
         "value": 5770226599.80365
       },
-      "id": 2,
+      "id": 14,
       "index": null,
       "pi_pulse_amplitude": {
         "component": "qubit",
@@ -686,7 +686,7 @@
         "unit": "Hz",
         "value": 7260080000.0
       },
-      "id": 0,
+      "id": 12,
       "index": null,
       "pulse_amplitude": {
         "component": "readout_resonator",
@@ -784,7 +784,7 @@
         "unit": "Hz",
         "value": 7380000000.0
       },
-      "id": 1,
+      "id": 13,
       "index": null,
       "pulse_amplitude": {
         "component": "readout_resonator",
@@ -882,7 +882,7 @@
         "unit": "Hz",
         "value": 7502000000.0
       },
-      "id": 2,
+      "id": 14,
       "index": null,
       "pulse_amplitude": {
         "component": "readout_resonator",

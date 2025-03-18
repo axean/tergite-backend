@@ -1,0 +1,21 @@
+# This configuration file is needed to provide metadata for the instruments/Clusters that are needed for instrument coordinator setup
+# This allows to copy external QBLOX cluster configuration file without additional changes, while still providing Cluster data in structured format
+
+# instrument name 
+cluster0:
+  # instrument type
+  # Cluster or SPI-Rack 
+  instrument_type: Cluster
+
+  # Ip address of the cluster
+  ip_address: 192.168.78.101
+
+  # whether to attempt connecting to the real cluster or to return dummy result for test purposes
+  is_dummy: true
+
+  # this would only be used to set up dummy cluster modules
+  modules:
+    "2":
+      instrument_type: QCM_RF
+    "16":
+      instrument_type: QRM_RF

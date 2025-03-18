@@ -13,8 +13,10 @@
 #
 # Refactored by Martin Ahindura (2024)
 # Refactored by Stefan Hill (2024)
+# Refactored by Chalmers Next Labs 2025
+
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Type
+from typing import Dict, List, Optional, Tuple, Type
 
 from qiskit.qobj import PulseQobjConfig, PulseQobjExperiment, PulseQobjInstruction
 from quantify_scheduler import Schedule
@@ -34,6 +36,7 @@ from .instruction import (
     AcquireInstruction,
     BaseInstruction,
     DelayInstruction,
+    GaussPulseInstruction,
     InitialObjectInstruction,
     ParamPulseInstruction,
     PulseLibInstruction,
@@ -41,17 +44,19 @@ from .instruction import (
     SetPhaseInstruction,
     ShiftFreqInstruction,
     ShiftPhaseInstruction,
+    SquarePulseInstruction,
 )
 
-# Map name => BaseInstruction
-_INSTRUCTION_MAP: Dict[str, Type[BaseInstruction]] = {
-    "setf": SetFreqInstruction,
-    "shiftf": ShiftFreqInstruction,
-    "setp": SetPhaseInstruction,
-    "fc": ShiftPhaseInstruction,
-    "delay": DelayInstruction,
-    "acquire": AcquireInstruction,
-    "parametric_pulse": ParamPulseInstruction,
+# Map (name, pulse_shape) => Quantify Instruction class
+_INSTRUCTION_PULSE_MAP: Dict[Tuple[str, Optional[str]], Type[BaseInstruction]] = {
+    ("setf", None): SetFreqInstruction,
+    ("shiftf", None): ShiftFreqInstruction,
+    ("setp", None): SetPhaseInstruction,
+    ("fc", None): ShiftPhaseInstruction,
+    ("delay", None): DelayInstruction,
+    ("acquire", None): AcquireInstruction,
+    ("parametric_pulse", "gaussian"): GaussPulseInstruction,
+    ("parametric_pulse", "constant"): SquarePulseInstruction,
 }
 
 
@@ -153,36 +158,27 @@ def _add_instruction_to_channel_registry(
     qobj_inst: PulseQobjInstruction,
     config: PulseQobjConfig,
     native_config: NativeQobjConfig,
-    hardware_map: Dict[str, str] = None,
+    hardware_map: Optional[Dict[str, str]] = None,
 ):
-    """Extracts PulseQobjInstruction and attaches the extracted native instructions to channel_registry
-
-    Args:
-        channel_registry: the registry of all the channels to which instructions are to be attached
-        qobj_inst: the PulseQobjInstruction from which instructions are to be extracted
-        config: config of the pulse qobject
-        native_config: the native config for the qobj
-        hardware_map: the map describing the layout of the quantum device
-    """
     if hardware_map is None:
         hardware_map = {}
 
+    key = (qobj_inst.name, getattr(qobj_inst, "pulse_shape", None))
     try:
-        cls = _INSTRUCTION_MAP[qobj_inst.name]
+        cls_instr = _INSTRUCTION_PULSE_MAP[key]
     except KeyError as exp:
         if qobj_inst.name in config.pulse_library:
-            cls = PulseLibInstruction
+            cls_instr = PulseLibInstruction  # fallback if defined in pulse library
         else:
             raise RuntimeError(
                 f"No mapping for PulseQobjInstruction {qobj_inst}.\n{exp}"
             )
-
-    for instruction in cls.list_from_qobj_inst(
+    for instruction in cls_instr.list_from_qobj_inst(
         qobj_inst,
         config=config,
         native_config=native_config,
-        hardware_map=hardware_map,
         channel_registry=channel_registry,
+        hardware_map=hardware_map,
     ):
         instruction.register()
 
@@ -204,4 +200,4 @@ def _get_absolute_timed_schedule(
         clock = ClockResource(name=channel.clock, freq=channel.final_frequency)
         schedule.add_resource(clock)
 
-    return determine_absolute_timing(schedule)
+    return schedule
