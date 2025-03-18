@@ -18,7 +18,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 from qiskit.qobj import PulseQobj
 from qiskit_ibm_provider.utils import json_decoder

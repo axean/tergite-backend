@@ -31,6 +31,11 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 - Added the `channel_registry` property on the `QauntifyExperiment` class
 - Moved the `Channel` definition from `utils` to the `quantum_executor/quantify` folder
 - Removed `retworkx` from the requirements.txt
+- Updated quantify-scheduler, quantify-core and qblox-instruments and pydantic versions
+- BREAKING CHANGE: Split cluster configurations into `quantify-config.json` and `quantify-metadata.json`
+- BREAKING CHANGE: Added a new configuration file `calibration.seed.toml` for seeding the database with calibration data
+- Enhanced the `QuantifySchedule` conversion to use parametric schedules and new portclock convention
+
 
 ## [2024.12.2] - 2024-12-23
 

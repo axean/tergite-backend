@@ -11,6 +11,7 @@
 # that they have been altered from the originals.
 #
 # Refactored by Martin Ahindura (2024)
+# Refactored by Chalmers Next Labs 2025
 
 import logging
 import logging.handlers
@@ -165,20 +166,47 @@ class ExperimentLogger:
         is saved in the log. When a sequencer has updated programming, both the previous and
         the current Q1ASM programming for that sequencer is printed (symmetric difference).
         """
+
         programs = dict()
-
-        # extract sequencer programs
+        # extract sequencer programs by searching for "seq_fn"
         for path in search_nested(compiled_schedule.compiled_instructions, "seq_fn"):
-            ref = compiled_schedule.compiled_instructions
-            for k in path:
-                ref = ref[k]
+            # Get the parent dictionary that contains both "seq_fn" and "sequence"
+            parent = compiled_schedule.compiled_instructions
+            for key in path[:-1]:
+                parent = parent[key]
+            seq_fn_value = parent.get("seq_fn")
+            if seq_fn_value is None:
+                # If no file path is provided, try to use the embedded sequence
+                sequence_dict = parent.get("sequence")
+                if sequence_dict and "program" in sequence_dict:
+                    program = sequence_dict["program"]
+                else:
+                    self.info(
+                        f"Skipping path {path} because neither 'seq_fn' nor a valid 'sequence' is provided."
+                    )
+                    continue
+            else:
+                # Old behavior: load the configuration file using seq_fn_value
+                try:
+                    config = load_config(seq_fn_value)
+                except Exception as e:
+                    self.error(
+                        f"Error loading config from {seq_fn_value} for path {path}: {e}"
+                    )
+                    continue
+                if "program" not in config:
+                    self.warning(
+                        f"Config file {seq_fn_value} for path {path} does not contain a 'program'."
+                    )
+                    continue
+                program = config["program"]
 
-            program = load_config(ref)["program"]
+            # Process the program lines and clean them up
             program_lines = program.split("\n")
             program_set = self.clean_Q1ASM_program(program_lines)
             programs[path] = program_set
 
-        # compute delta with last compiled schedule
+        # Compute delta with last compiled schedule and log changes
         for sequencer, program in programs.items():
             if sequencer not in self.last_programs:
                 self.info(
@@ -190,11 +218,11 @@ class ExperimentLogger:
                     filter(lambda line: line in self.last_programs[sequencer], delta)
                 )
                 added_loc = set(filter(lambda line: line in programs[sequencer], delta))
-                if len(removed_loc):
+                if removed_loc:
                     self.info(
                         f"-{len(removed_loc)} lines. Q1ASM:\n--- {self.format_Q1ASM(sequencer, removed_loc)}"
                     )
-                if len(added_loc):
+                if added_loc:
                     self.info(
                         f"+{len(added_loc)} lines. Q1ASM:\n+++ {self.format_Q1ASM(sequencer, added_loc)}"
                     )

@@ -14,7 +14,7 @@ from os import environ
 
 from app.tests.utils.fixtures import get_fixture_path
 
-TEST_DEFAULT_PREFIX = "test"
+TEST_DEFAULT_PREFIX = "system_test"
 TEST_STORAGE_ROOT = "/tmp/jobs"
 
 TEST_DEFAULT_PREFIX_SIM_1Q = "qiskit_pulse_1q"
@@ -35,10 +35,19 @@ TEST_BCC_PORT = 8000
 
 TEST_MSS_APP_TOKEN = "some-mss-app-token-for-testing"
 
-TEST_QUANTIFY_CONFIG_FILE = get_fixture_path("dummy-quantify-config.yml")
+TEST_QUANTIFY_CONFIG_FILE = get_fixture_path("dummy-quantify-config.json")
+TEST_QUANTIFY_METADATA_FILE = get_fixture_path("dummy-quantify-metadata.yml")
+TEST_BROKEN_QUANTIFY_METADATA_FILE = get_fixture_path("broken-quantify-config.yml")
+TEST_BROKEN_QUANTIFY_CONFIG_FILE = get_fixture_path("broken-quantify-config.json")
+
 TEST_BACKEND_SETTINGS_FILE = get_fixture_path("backend_config.toml")
 TEST_SIMQ1_BACKEND_SETTINGS_FILE = get_fixture_path("backend_config.simq1.toml")
 TEST_SIMQ2_BACKEND_SETTINGS_FILE = get_fixture_path("backend_config.simq2.toml")
+
+TEST_QUANTIFY_SEED_FILE = get_fixture_path("dummy_quantify.seed.toml")
+
+TEST_QISKIT_1Q_SEED_FILE = get_fixture_path("qiskit_pulse_1q.seed.toml")
+TEST_QISKIT_2Q_SEED_FILE = get_fixture_path("qiskit_pulse_2q.seed.toml")
 
 TEST_REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 TEST_REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
@@ -54,6 +63,9 @@ def setup_test_env():
     environ["DEFAULT_PREFIX"] = TEST_DEFAULT_PREFIX
     environ["STORAGE_ROOT"] = TEST_STORAGE_ROOT
     environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
+
+    environ["QUANTIFY_CONFIG_FILE"] = TEST_QUANTIFY_CONFIG_FILE
+    environ["QUANTIFY_METADATA_FILE"] = TEST_QUANTIFY_METADATA_FILE
 
     environ["LOGFILE_DOWNLOAD_POOL_DIRNAME"] = TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME
     environ["LOGFILE_UPLOAD_POOL_DIRNAME"] = TEST_LOGFILE_UPLOAD_POOL_DIRNAME

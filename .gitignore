@@ -163,6 +163,9 @@ quantify-config.yml
 !**/fixtures/quantify-config.yml
 quantify-config.**.yml
 !quantify-config.example.yml
+quantify-config.json
+quantify-metadata.yml
+calibration.seed.toml
 
 # backend configs
 backend_config.toml

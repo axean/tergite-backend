@@ -16,11 +16,10 @@
 #
 # - Martin Ahindura, 2023
 # - Stefan Hill, 2024
+# - Adilet Tuleuov, 2025
 #
 # CAUTION: This updater is currently also used in the tergite-autocalibration-lite repository!
 # Any change on this file should be done in both repositories until they are eventually merged!
-
-from datetime import datetime
 from typing import Dict, List, Optional, Union
 
 from requests import Session
@@ -58,11 +57,18 @@ _BACKEND_CONFIG: Optional[BackendConfig] = None
 
 
 def get_backend_config() -> BackendConfig:
-    """Returns the current system's backend configuration"""
+    """Returns the current system's backend configuration.
+
+    Loads the static configuration from the backend_config.toml file and
+    merges it with seed data (from either qiskit_pulse or quantify seed file)
+    validated via Pydantic.
+    """
     global _BACKEND_CONFIG
     if _BACKEND_CONFIG is None:
-        _BACKEND_CONFIG = BackendConfig.from_toml(settings.BACKEND_SETTINGS)
-
+        # Load static configuration from the main backend_config.toml
+        _BACKEND_CONFIG = BackendConfig.from_toml(
+            settings.BACKEND_SETTINGS, seed_file=settings.CALIBRATION_SEED
+        )
     return _BACKEND_CONFIG
 
 
@@ -96,28 +102,28 @@ def initialize_backend(
         ValueError: error message from MSS when it attempts to update mss
     """
     # if it is a simulator, set its simulated calibration values in redis
-    if backend_config.general_config.simulator:
-        simulator_config = backend_config.simulator_config
+    if backend_config.calibration_config is not None:
+        calibration_config = backend_config.calibration_config
 
         # set qubit calibration data
-        qubit_units = simulator_config.units.get("qubit", {})
-        qubit_data = simulator_config.qubit if qubit_config is None else qubit_config
+        qubit_units = calibration_config.units.get("qubit", {})
+        qubit_data = calibration_config.qubit if qubit_config is None else qubit_config
         qubit_data = attach_units_many(qubit_data, qubit_units)
         set_qubit_calibration_data(qubit_data)
 
         # set readout_resonator calibration data
-        resonator_units = simulator_config.units.get("readout_resonator", {})
+        resonator_units = calibration_config.units.get("readout_resonator", {})
         resonator_data = resonator_config
         if resonator_config is None:
-            resonator_data = simulator_config.readout_resonator
+            resonator_data = calibration_config.readout_resonator
         resonator_data = attach_units_many(resonator_data, resonator_units)
         set_resonator_calibration_data(resonator_data)
 
         # set discriminator data
-        disc_units = backend_config.simulator_config.units.get("discriminators", {})
+        disc_units = calibration_config.units.get("discriminators", {})
         discriminator_data = discriminator_config
         if discriminator_config is None:
-            discriminator_data = simulator_config.discriminators
+            discriminator_data = calibration_config.discriminators
 
         for disc_conf in discriminator_data.values():
             disc_data = {
@@ -126,10 +132,11 @@ def initialize_backend(
             set_discriminator_data(disc_data)
 
         # set coupler calibration data
-        coupler_units = simulator_config.units.get("coupler", {})
+        coupler_units = calibration_config.units.get("coupler", {})
         coupler_data = coupler_config
         if coupler_config is None:
-            coupler_data = simulator_config.coupler  # Fetch from simulator_config
+            coupler_data = calibration_config.coupler  # Fetch from simulator_config
+
         coupler_data = attach_units_many(coupler_data, coupler_units)
         set_coupler_calibration_data(coupler_data)
 
@@ -143,7 +150,7 @@ def initialize_backend(
 
 
 def get_device_v1_info(
-    backend_config: BackendConfig = get_backend_config(),
+    backend_config: Optional[BackendConfig] = None,
 ) -> DeviceV1:
     """Retrieves this device's info in DeviceV1 format
 
@@ -153,6 +160,9 @@ def get_device_v1_info(
     Returns:
         the deviceV1 info of the device
     """
+    if backend_config is None:
+        backend_config = get_backend_config()
+
     qubit_ids = backend_config.device_config.qubit_ids
     discriminator_params = backend_config.device_config.discriminator_parameters
     discriminators = backend_config.device_config.discriminators
@@ -178,9 +188,8 @@ def get_device_v1_info(
         )
         for item in discriminators
     }
-
     return DeviceV1(
-        **backend_config.general_config.dict(),
+        **backend_config.general_config.model_dump(),
         meas_map=backend_config.device_config.meas_map,
         coupling_map=backend_config.device_config.coupling_map,
         qubit_ids=qubit_ids,
@@ -212,7 +221,7 @@ def get_device_v1_info(
 
 
 def get_device_v2_info(
-    backend_config: BackendConfig = get_backend_config(),
+    backend_config: Optional[BackendConfig] = None,
 ) -> DeviceV2:
     """Retrieves this device's info in DeviceV2 format
 
@@ -222,9 +231,11 @@ def get_device_v2_info(
     Returns:
         the deviceV2 info of the device
     """
+    if backend_config is None:
+        backend_config = get_backend_config()
     qubit_ids = backend_config.device_config.qubit_ids
     return DeviceV2(
-        **backend_config.general_config.dict(),
+        **backend_config.general_config.model_dump(),
         meas_map=backend_config.device_config.meas_map,
         qubit_ids=qubit_ids,
         gates=backend_config.gates,
@@ -240,7 +251,7 @@ def get_device_v2_info(
 
 
 def get_device_calibration_v2_info(
-    backend_config: BackendConfig = get_backend_config(),
+    backend_config: Optional[BackendConfig] = None,
 ) -> DeviceCalibrationV2:
     """Retrieves this device's calibration info in DeviceCalibrationV2 format
 
@@ -250,6 +261,9 @@ def get_device_calibration_v2_info(
     Returns:
         the DeviceCalibrationV2 info of the device
     """
+    if backend_config is None:
+        backend_config = get_backend_config()
+
     qubit_ids = backend_config.device_config.qubit_ids
     discriminator_params = backend_config.device_config.discriminator_parameters
     discriminators = backend_config.device_config.discriminators
@@ -305,7 +319,7 @@ def send_backend_info_to_mss(
     mss_client: Session,
     mss_url: str = settings.MSS_MACHINE_ROOT_URL,
     collection: str = None,
-    backend_config: BackendConfig = get_backend_config(),
+    backend_config: Optional[BackendConfig] = None,
 ):
     """
     Sends this backend's information to MSS
@@ -319,11 +333,14 @@ def send_backend_info_to_mss(
     Raises:
         ValueError: error message from MSS
     """
-    device_v1_info = get_device_v1_info(backend_config=backend_config).dict()
-    device_v2_info = get_device_v2_info(backend_config=backend_config).dict()
+    if backend_config is None:
+        backend_config = get_backend_config()
+
+    device_v1_info = get_device_v1_info(backend_config=backend_config).model_dump()
+    device_v2_info = get_device_v2_info(backend_config=backend_config).model_dump()
     calibration_v2_info = get_device_calibration_v2_info(
         backend_config=backend_config
-    ).dict()
+    ).model_dump()
 
     collection_query = "" if collection is None else f"?collection={collection}"
 

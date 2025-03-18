@@ -96,6 +96,9 @@ class BackendProperty:
         """Returns the dict representation of this data class"""
         return asdict(self)
 
+    def model_dump(self, *args, **kwargs):
+        return self.dict()
+
     def write_value(self) -> bool:
         """Write the "value" field to Redis. Set the timestamp, and
         increase the counter. Return True if write succeeded, and
