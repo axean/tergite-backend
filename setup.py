@@ -34,7 +34,7 @@ _README = (_ROOT_DIRECTORY / "README.md").read_text()
 
 setuptools.setup(
     name="tergite-backend",
-    version="2025.03.0",
+    version="2025.03.1",
     author="Miroslav Dobsicek",
     maintainer="Chalmers Next Labs AB",
     maintainer_email="quantum-nextlabs@chalmers.se",
