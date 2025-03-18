@@ -9,6 +9,10 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ### Changed
 
+## [2025.03.0] - 2025-03-18
+
+### Changed
+
 - Removed the storage-file internal lib
 - Limited pyarrow to versions '18.0.0' and below for macOS
 - Decouple data from algorithms in storage file
