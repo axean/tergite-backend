@@ -9,6 +9,10 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ### Changed
 
+## [2025.03.1] - 2025-03-18
+
+No change
+
 ## [2025.03.0] - 2025-03-18
 
 ### Changed
