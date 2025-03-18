@@ -51,18 +51,20 @@ cp dot-env-template.txt .env
 _Note: If you want to run without a running MSS, set the variable `IS_STANDALONE=True` in the `.env`_  
 _Note: If you don't want to use the simulator, set the variable `EXECUTOR_TYPE=quantify` in the `.env`_  
 
-- **If you have `EXECUTOR_TYPE=quantify`**, copy the quantify example config file `quantify-config.example.yml` into 
- the `quantify-config.yml` file and update the variables there in.    
+- **If you have `EXECUTOR_TYPE=quantify`**, copy the quantify example config file `quantify-config.example.json` and `quantify-metadata.example.yml` into 
+ the `quantify-config.json` and `quantify-metadata.yml` file and update the variables there in.    
  **Ignore this if you are using the qiskit pulse simulator**
 
 ```shell
-cp quantify-config.example.yml quantify-config.yml
+cp quantify-config.example.json quantify-config.json
+cp quantify-metadata.example.yml quantify-metadata.yml 
 ```
 
 _Note: If you want to just run a dummy cluster, you can copy the one in the test fixtures_
 
 ```shell
-cp app/tests/fixtures/dummy-quantify-config.yml quantify-config.yml
+cp app/tests/fixtures/generic-quantify-config.yml quantify-config.json
+cp app/tests/fixtures/generic-quantify-config.json quantify-metadata.yml
 ```
 
 - Copy the backend example config file `backend_config.example.toml` into the `backend_config.toml` file and update the variables there in.
@@ -75,6 +77,12 @@ _Note: If you are running the simulator, you can copy the one in the test fixtur
 
 ```shell
 cp app/tests/fixtures/backend_config.simq1.toml backend_config.toml
+```
+
+- Copy the example file for initial device calibrations `calibration.seed.example.toml` into the `calibration.seed.toml` file and update the variables accordingly. 
+
+```shell
+cp calibration.seed.example.toml calibration.seed.toml
 ```
 
 - Run start script

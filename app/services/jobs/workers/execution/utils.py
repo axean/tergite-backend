@@ -24,7 +24,8 @@ from app.utils.http import get_mss_client
 
 def get_executor(
     executor_type: str = settings.EXECUTOR_TYPE,
-    config_file: str = settings.QUANTIFY_CONFIG_FILE,
+    quantify_config_file: str = settings.QUANTIFY_CONFIG_FILE,
+    quantify_metadata_file: str = settings.QUANTIFY_METADATA_FILE,
     mss_url: str = settings.MSS_MACHINE_ROOT_URL,
 ) -> QuantumExecutor:
     """Gets the executor for running jobs
@@ -46,8 +47,16 @@ def get_executor(
     discriminator_config = None
     coupler_config = None
 
+    # to keep track of real qubit ids that correspond to cluster configurations
+    # we need to pass backend_config to the quantify executor for index mapping when we convert qobj instructions
+    # to quantify schedules
+
     if executor_type == "quantify":
-        executor = QuantifyExecutor(config_file=config_file)
+        executor = QuantifyExecutor(
+            quantify_config_file=quantify_config_file,
+            quantify_metadata_file=quantify_metadata_file,
+            backend_config=backend_config,
+        )
 
     if executor_type == "qiskit_pulse_1q":
         executor: QiskitDynamicsExecutor = QiskitDynamicsExecutor.new_one_qubit(

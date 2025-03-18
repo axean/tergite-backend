@@ -7,6 +7,9 @@ from .utils.env import (
     TEST_DEFAULT_PREFIX_SIM_2Q,
     TEST_LOGFILE_DOWNLOAD_POOL_DIRNAME,
     TEST_MSS_MACHINE_ROOT_URL,
+    TEST_QISKIT_1Q_SEED_FILE,
+    TEST_QISKIT_2Q_SEED_FILE,
+    TEST_QUANTIFY_SEED_FILE,
     TEST_REDIS_DB,
     TEST_REDIS_HOST,
     TEST_REDIS_PORT,
@@ -267,7 +270,9 @@ def async_fastapi_client(mocker) -> TestClient:
     remove_modules(["app", "settings"])
     _patch_async_client(mocker)
     os.environ["EXECUTOR_TYPE"] = "quantify"
+    os.environ["DEFAULT_PREFIX"] = TEST_DEFAULT_PREFIX
     os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
+    os.environ["CALIBRATION_SEED"] = TEST_QUANTIFY_SEED_FILE
 
     from app.api import app
 
@@ -281,8 +286,9 @@ def async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient:
     remove_modules(["app", "settings"])
     _patch_async_client(mocker)
     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
-    os.environ["DEFAULT_PREFIX"] = "qiskit_pulse_1q"
+    os.environ["DEFAULT_PREFIX"] = TEST_DEFAULT_PREFIX_SIM_1Q
     os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
+    os.environ["CALIBRATION_SEED"] = TEST_QISKIT_1Q_SEED_FILE
 
     from app.api import app
 
@@ -296,8 +302,9 @@ def async_fastapi_client_with_qiskit_simulator_2_qubit(mocker) -> TestClient:
     remove_modules(["app", "settings"])
     _patch_async_client_sim2q(mocker)
     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_2q"
-    os.environ["DEFAULT_PREFIX"] = "qiskit_pulse_2q"
+    os.environ["DEFAULT_PREFIX"] = TEST_DEFAULT_PREFIX_SIM_2Q
     os.environ["BACKEND_SETTINGS"] = TEST_SIMQ2_BACKEND_SETTINGS_FILE
+    os.environ["CALIBRATION_SEED"] = TEST_QISKIT_2Q_SEED_FILE
 
     from app.api import app
 
@@ -316,6 +323,7 @@ def async_standalone_backend_client(mocker) -> TestClient:
     os.environ["EXECUTOR_TYPE"] = "quantify"
     os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
     os.environ["IS_STANDALONE"] = "True"
+    os.environ["CALIBRATION_SEED"] = TEST_QUANTIFY_SEED_FILE
 
     from app.api import app
 
@@ -358,6 +366,7 @@ def blacklisted_async_fastapi_client(mocker) -> TestClient:
     os.environ["BLACKLISTED"] = "True"
     os.environ["EXECUTOR_TYPE"] = "quantify"
     os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
+    os.environ["CALIBRATION_SEED"] = TEST_QUANTIFY_SEED_FILE
 
     from app.api import app
 
@@ -374,6 +383,7 @@ def blacklisted_async_fastapi_client_with_qiskit_simulator(mocker) -> TestClient
     os.environ["BLACKLISTED"] = "True"
     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
     os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
+    os.environ["CALIBRATION_SEED"] = TEST_QISKIT_1Q_SEED_FILE
 
     from app.api import app
 
@@ -392,6 +402,7 @@ def blacklisted_async_fastapi_client_with_qiskit_simulator_2_qubit(
     os.environ["BLACKLISTED"] = "True"
     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_2q"
     os.environ["BACKEND_SETTINGS"] = TEST_SIMQ2_BACKEND_SETTINGS_FILE
+    os.environ["CALIBRATION_SEED"] = TEST_QISKIT_2Q_SEED_FILE
 
     from app.api import app
 

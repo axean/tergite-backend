@@ -3,23 +3,36 @@ import os
 
 import pytest
 import requests
+from pydantic import ValidationError
 
 from app.libs.quantum_executor.utils.config import QuantifyExecutorConfig
 from app.tests.conftest import FASTAPI_CLIENTS
-from app.tests.utils.env import TEST_BACKEND_SETTINGS_FILE, TEST_MSS_APP_TOKEN
+from app.tests.utils.env import (
+    TEST_BACKEND_SETTINGS_FILE,
+    TEST_DEFAULT_PREFIX_SIM_1Q,
+    TEST_MSS_APP_TOKEN,
+    TEST_SIMQ1_BACKEND_SETTINGS_FILE,
+    TEST_QUANTIFY_SEED_FILE,
+    TEST_BROKEN_QUANTIFY_METADATA_FILE,
+    TEST_QUANTIFY_CONFIG_FILE,
+    TEST_QUANTIFY_METADATA_FILE,
+    TEST_BROKEN_QUANTIFY_CONFIG_FILE,
+)
 from app.tests.utils.fixtures import get_fixture_path, load_fixture
 from app.tests.utils.modules import remove_modules
 
-_QUANTIFY_CONFIG_JSON = load_fixture("generic-quantify-config.json")
-_YAML_QUANTIFY_CONFIG_PATH = get_fixture_path("generic-quantify-config.yml")
+_QUANTIFY_CONFIG_FILE = get_fixture_path("generic-quantify-config.json")
+_QUANTIFY_METADATA_FILE = get_fixture_path("generic-quantify-config.yml")
 
 
-def test_load_hardware_yaml_config():
-    """ExecutorConfig can load YAML into hardware config JSON"""
-    conf = QuantifyExecutorConfig.from_yaml(_YAML_QUANTIFY_CONFIG_PATH)
-    expected = _QUANTIFY_CONFIG_JSON
-    got = conf.to_quantify()
-    assert got == expected
+def test_load_quantify_config_files():
+    """ExecutorConfig can load YAML Quantify Metadata File and Quantify Config File"""
+    conf_metadata = QuantifyExecutorConfig.from_yaml(_QUANTIFY_METADATA_FILE)
+    conf = QuantifyExecutorConfig.from_json(_QUANTIFY_CONFIG_FILE)
+
+    # Both configuration files are validated in QuantifyExecutorConfig
+    assert conf_metadata
+    assert conf
 
 
 @pytest.mark.parametrize("client", FASTAPI_CLIENTS)
@@ -61,4 +74,62 @@ def test_no_mss_connected():
     os.environ["IS_STANDALONE"] = "False"
 
     with pytest.raises(requests.exceptions.ConnectionError):
+        from app.api import app
+
+
+def test_calibration_seed_required_for_simulator():
+    """Raises validation errors if calibration seed is not set for simulator."""
+    remove_modules(["os", "app", "settings"])
+
+    os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
+    os.environ["DEFAULT_PREFIX"] = TEST_DEFAULT_PREFIX_SIM_1Q
+    os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
+    os.environ["CALIBRATION_SEED"] = get_fixture_path("non-existent.toml")
+
+    with pytest.raises(
+        ValidationError, match="Calibration config is required for simulators."
+    ):
+        from app.api import app
+
+
+def test_calibration_seed_broken_for_simulator():
+    """Raises validation errors if calibration seed provided is broken for simulator only."""
+    remove_modules(["os", "app", "settings"])
+
+    os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
+    os.environ["DEFAULT_PREFIX"] = TEST_DEFAULT_PREFIX_SIM_1Q
+    os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
+    os.environ["CALIBRATION_SEED"] = get_fixture_path("broken.seed.toml")
+
+    with pytest.raises(
+        ValidationError, match="Calibration config is required for simulators."
+    ):
+        from app.api import app
+
+
+def test_quantify_metadata_is_broken():
+    """Raises validation errors if quantify metadata conf file is broken"""
+    remove_modules(["os", "app", "settings"])
+
+    os.environ["EXECUTOR_TYPE"] = "quantify"
+    os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
+    os.environ["CALIBRATION_SEED"] = TEST_QUANTIFY_SEED_FILE
+    os.environ["QUANTIFY_CONFIG_FILE"] = TEST_QUANTIFY_CONFIG_FILE
+    os.environ["QUANTIFY_METADATA_FILE"] = TEST_BROKEN_QUANTIFY_METADATA_FILE
+
+    with pytest.raises(ValidationError):
+        from app.api import app
+
+
+def test_quantify_config_is_broken():
+    """Raises validation errors if quantify config file is broken"""
+    remove_modules(["os", "app", "settings"])
+
+    os.environ["EXECUTOR_TYPE"] = "quantify"
+    os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
+    os.environ["CALIBRATION_SEED"] = TEST_QUANTIFY_SEED_FILE
+    os.environ["QUANTIFY_CONFIG_FILE"] = TEST_BROKEN_QUANTIFY_CONFIG_FILE
+    os.environ["QUANTIFY_METADATA_FILE"] = TEST_QUANTIFY_METADATA_FILE
+
+    with pytest.raises(ValidationError):
         from app.api import app

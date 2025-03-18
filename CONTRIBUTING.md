@@ -135,11 +135,22 @@ cd tergite-backend
 cp dot-env-template.txt .env
 ```
 
-- Copy the quantify example config file `quantify-config.example.yml` into the `quantify-config.yml` file and update the variables there in. Contact your teammates for
- the variables you are not sure of.
+- Copy the `quantify-config.example.json` into `quantify-config.json` and update the variables there in.
 
 ```shell
-cp quantify-config.example.yml quantify-config.yml
+cp quantify-config.example.json quantify-config.json
+```
+
+- Copy the `quantify-metadata.example.yml` into `quantify-metadata.yml` and update the variables there in.
+
+```shell
+cp quantify-metadata.example.yml quantify-metadata.yml 
+```
+
+- If you need some seed data (mandatory if you are to use a simulator), copy the `calibration.seed.example.toml` into `calibration.seed.toml` and update the variables there in.
+
+```shell
+cp calibration.seed.example.toml calibration.seed.toml
 ```
 
 - Copy `bcc.service` to the systemd services folder
@@ -197,7 +208,7 @@ sudo systemctl enable bcc.service
 
 ## How to Run with Docker
 
-- Ensure you have [Docker]() installed.
+- Ensure you have [Docker](https://docs.docker.com/engine/install/) installed.
 - Create a `data` folder
 
 ```shell
@@ -215,6 +226,20 @@ cp dot-env-template.txt data/.env
 
 ```shell
 cp quantify-config.example.yml data/quantify-config.yml
+```
+
+- Create a proper `quantify-metadata.yml` if it is needed (i.e. if you don't want to run any of the simulators).
+  Put it in the `data` folder.
+
+```shell
+cp quantify-metadata.example.yml quantify-metadata.yml 
+```
+
+- If you need some seed data (mandatory if you are to use a simulator), create the `calibration.seed.toml` file.
+  Put it in the `data` folder.
+
+```shell
+cp calibration.seed.example.toml calibration.seed.toml
 ```
 
 - Create a proper `backend_config.toml` file. Put it in the `data` folder.

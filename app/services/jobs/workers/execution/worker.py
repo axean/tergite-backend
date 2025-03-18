@@ -18,6 +18,7 @@
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict
 
 from qiskit.qobj import PulseQobj
 from qiskit_ibm_provider.utils import json_decoder
@@ -61,13 +62,7 @@ def job_execute(job_file: Path):
 
         # Inform supervisor
         inform_location(job_id, Location.EXEC_W)
-
-        qobj = job_dict["params"]["qobj"]
-
-        # --- RLD pulse library
-        # [([a,b], 2),...] -> [[a,b],[a,b],...]
-        for pulse in qobj["config"]["pulse_library"]:
-            pulse["samples"] = iqx_rld(pulse["samples"])
+        qobj = _decompress_qobj(job_dict["params"]["qobj"])
 
     except KeyError as exp:
         print("Invalid job")
@@ -114,3 +109,25 @@ def job_execute(job_file: Path):
     job_file.unlink(missing_ok=True)
     print("Job executed successfully")
     return {"message": "ok"}
+
+
+def _decompress_qobj(qobj_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Reverses the compression done on the qobj at the SDK level
+
+    Before submission, the qobj dict was compressed to ease
+    transportation. This compression is reversed here.
+
+    Note that this decompression is done in-place
+
+    Args:
+        qobj_dict: the dict of the PulseQobj to decompress
+
+    Returns:
+        A QObject dict that is decompressed
+    """
+    # --- In-place RLD pulse library
+    # [([a,b], 2),...] -> [[a,b],[a,b],...]
+    for pulse in qobj_dict["config"]["pulse_library"]:
+        pulse["samples"] = iqx_rld(pulse["samples"])
+
+    return qobj_dict

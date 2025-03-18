@@ -24,9 +24,8 @@ RUN \
     sed -i "s:quantify-scheduler:# quantify-scheduler:" /code/requirements.txt; \
     # update pip, setuptools, wheel
     pip install --upgrade pip setuptools wheel; \
-    # Install the pip dependencies except the core ones
+    # Install the pipdeptree
     pip install --no-cache-dir pipdeptree~=2.24.0; \
-    pip install --no-cache-dir -r /code/requirements.txt; \
     # Install quantify-core and quantify-scheduler without dependencies
     pip install --no-deps --no-cache-dir -r core-requirements.txt; \
     rm core-requirements.txt; \
@@ -59,7 +58,11 @@ RUN \
     cat pending-requirements.txt; \
     # Install all yet-to-be-installed dependencies except pyqt5
     pip install --no-cache-dir -r pending-requirements.txt; \
-    rm pending-requirements.txt;
+    rm pending-requirements.txt; \
+    # Install the pip dependencies except the core ones \
+    # This will ensure the dependencies that have strict versions restrictions are installed \
+    # appropriately \
+    pip install --no-cache-dir -r /code/requirements.txt;
 
 COPY . /code/
 
@@ -85,7 +88,10 @@ ENV BCC_PORT=8000
 ENV MSS_MACHINE_ROOT_URL="http://host.docker.internal:8002"
 ENV MSS_PORT=8002
 ENV EXECUTOR_TYPE="qiskit_pulse_1q"
-ENV QUANTIFY_CONFIG_FILE="quantify-config.yml"
+ENV CALIBRATION_SEED="calibration.seed.toml"
+ENV QUANTIFY_CONFIG_FILE="quantify-config.json"
+ENV QUANTIFY_METADATA_FILE="quantify-metadata.yml"
+
 #ENV MSS_APP_TOKEN=""
 #ENV IS_AUTH_ENABLED="True"
 ENV APP_SETTINGS="production"

@@ -94,8 +94,8 @@ class QiskitPulse2Q(QiskitPulseBackend):
         if num_qubits < 2:
             raise ValueError("The backend configuration must have at least two qubits.")
 
-        qubit_confs = backend_config.simulator_config.qubit
-        coupler_confs = backend_config.simulator_config.coupler
+        qubit_confs = backend_config.calibration_config.qubit
+        coupler_confs = backend_config.calibration_config.coupler
 
         # For qubit 0
         qubit0_conf = qubit_confs[0]
@@ -187,8 +187,8 @@ class QiskitPulse2Q(QiskitPulseBackend):
     ) -> Solver:
         dt = backend_config.general_config.dt
 
-        qubit_confs = backend_config.simulator_config.qubit
-        coupler_confs = backend_config.simulator_config.coupler
+        qubit_confs = backend_config.calibration_config.qubit
+        coupler_confs = backend_config.calibration_config.coupler
 
         # For qubit 0
         qubit0_conf = qubit_confs[0]

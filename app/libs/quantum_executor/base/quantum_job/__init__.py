@@ -10,6 +10,9 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+#
+# Refactored by Chalmers Next Labs 2025
+
 import re
 from pathlib import Path
 from typing import Any, Callable, List, Literal, Match, Type, TypeVar, Union
@@ -135,6 +138,7 @@ def discriminate_results(
     *,
     num_of_states: Union[Literal[2], Literal[3]] = 2,
     byteorder: ByteOrder = ByteOrder.LITTLE_ENDIAN,
+    full_register: bool = False,
     **kwargs,
 ) -> List[List[str]]:
     """
@@ -160,10 +164,13 @@ def discriminate_results(
     discriminated_results_in_hex: List[List[str]] = []
 
     for expt_dataset in job.raw_results.values():
-        no_of_acquisition_channels = len(expt_dataset.data_vars)
+        # Get all channel indices from the dataset keys
+        channel_indices = [int(ch) for ch in expt_dataset.keys()]
+        max_channel = max(channel_indices) if channel_indices else 0
         no_of_repetitions = expt_dataset.sizes["repetition"]
-        expt_discriminated_results = np.empty(
-            (no_of_acquisition_channels, no_of_repetitions), dtype=np.int8
+        # Create an array large enough to index by the maximum channel number.
+        expt_discriminated_results = np.zeros(
+            (max_channel + 1, no_of_repetitions), dtype=np.int8
         )
 
         for acquisition_channel, acquisitions in expt_dataset.items():
@@ -171,7 +178,6 @@ def discriminate_results(
             assert (
                 no_of_acquisitions == 1
             ), "Max one acquisition per channel for word readout."
-
             idx = int(acquisition_channel)
             acquisition_data = acquisitions.data[:, 0]
             expt_discriminated_results[idx] = discriminator(idx, acquisition_data)
@@ -261,7 +267,7 @@ def _save_qobj_header_to_hdf5(file: h5py.File, header_dict: dict):
         header_dict: the dict from QobjHeader
     """
     # save header backend metadata
-    backend_metadata = QobjHeaderMetadata.from_qobj_header(header_dict).dict()
+    backend_metadata = QobjHeaderMetadata.from_qobj_header(header_dict).model_dump()
     _save_hdf5_attributes(
         file, path=_HDF5_HEADER_METADATA_PATH, source=backend_metadata
     )
@@ -304,7 +310,7 @@ def _save_sweep_data_to_hdf5(file: h5py.File, header_dict: dict):
     _save_hdf5_attributes(file, path=_HDF5_SWEEP_DATA_PATH, source=sweep_data.metadata)
 
     # save the raw sweep data
-    sweep_data_dict = sweep_data.dict()
+    sweep_data_dict = sweep_data.model_dump()
     for path_segments in search_nested(sweep_data_dict, "slots"):
         sweep_group = file.require_group(_HDF5_SWEEP_DATA_PATH)
         slots_path = "/".join(path_segments)
@@ -316,7 +322,7 @@ def _save_sweep_data_to_hdf5(file: h5py.File, header_dict: dict):
         param_group_path = f"{_HDF5_SWEEP_DATA_PATH}/parameters/{param}"
         param_metadata = SweepParamMetadata(
             **sweep_data_dict["parameters"][param]
-        ).dict()
+        ).model_dump()
         _save_hdf5_attributes(file, path=param_group_path, source=param_metadata)
 
         slots_dict = _get_value_at_path(sweep_data_dict, path_segments)

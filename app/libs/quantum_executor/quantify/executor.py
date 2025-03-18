@@ -13,7 +13,18 @@
 #
 # Refactored by Martin Ahindura (2024)
 # Refactored by Stefan Hill (2024)
+# Refactored by Chalmers Next Labs 2025
 
+"""
+This module implements the executor.
+It loads the configuration file (YAML or JSON), detects whether it is legacy or new style,
+and then builds the hardware clusters accordingly.
+"""
+"""
+This module implements the executor.
+It loads the configuration file (YAML or JSON), detects whether it is legacy or new style,
+and then builds the hardware clusters accordingly.
+"""
 
 import copy
 import os
@@ -21,37 +32,25 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
-import qblox_instruments
+import qblox_instruments  # for ClusterType
 import rich
-from qcodes import Instrument, find_or_create_instrument
 from qiskit.qobj import PulseQobj
-from quantify_scheduler.backends.qblox.helpers import generate_port_clock_to_device_map
-from quantify_scheduler.backends.qblox_backend import hardware_compile
-from quantify_scheduler.compilation import determine_absolute_timing
-from quantify_scheduler.helpers.importers import import_python_object_from_string
+from quantify_scheduler.backends.graph_compilation import SerialCompiler
+from quantify_scheduler.device_under_test.quantum_device import QuantumDevice
 from quantify_scheduler.instrument_coordinator import InstrumentCoordinator
-from quantify_scheduler.instrument_coordinator.components import (
-    InstrumentCoordinatorComponentBase,
-    generic,
-)
-from quantify_scheduler.instrument_coordinator.components.generic import (
-    GenericInstrumentCoordinatorComponent,
-)
 from quantify_scheduler.instrument_coordinator.components.qblox import ClusterComponent
 
 from app.libs.quantum_executor.base.executor import QuantumExecutor
 from app.libs.quantum_executor.base.quantum_job import get_experiment_name
 from app.libs.quantum_executor.base.quantum_job.dtos import NativeQobjConfig
-from app.libs.quantum_executor.base.quantum_job.typing import (
-    QDataset,
-    QExperimentResult,
-)
+from app.libs.quantum_executor.base.quantum_job.typing import QExperimentResult
 from app.libs.quantum_executor.quantify.experiment import QuantifyExperiment
-from app.libs.quantum_executor.utils.config import (
-    ClusterModuleType,
-    QuantifyExecutorConfig,
-)
+
+# Import our new and legacy config models.
+from app.libs.quantum_executor.utils.config import ClusterModuleType
+from app.libs.quantum_executor.utils.config import QuantifyExecutorConfig as Config
 from app.libs.quantum_executor.utils.logger import ExperimentLogger
+from app.libs.quantum_executor.utils.portclock import generate_hardware_map
 
 _QBLOX_CLUSTER_TYPE_MAP: Dict[ClusterModuleType, qblox_instruments.ClusterType] = {
     ClusterModuleType.QCM: qblox_instruments.ClusterType.CLUSTER_QCM,
@@ -59,100 +58,105 @@ _QBLOX_CLUSTER_TYPE_MAP: Dict[ClusterModuleType, qblox_instruments.ClusterType] 
     ClusterModuleType.QCM_RF: qblox_instruments.ClusterType.CLUSTER_QCM_RF,
     ClusterModuleType.QRM_RF: qblox_instruments.ClusterType.CLUSTER_QRM_RF,
 }
-
-_MODULE_NAME_REGEX = re.compile(r".*_module(\d+)$")
+from app.libs.properties.dtos import BackendConfig
 
 
 class QuantifyExecutor(QuantumExecutor):
     """The controller of the hardware that executes the quantum jobs"""
 
-    _coordinator = find_or_create_instrument(
-        InstrumentCoordinator,
-        "tergite_quantum_executor",
-        # the default generic icc is important for QCoDeS commands that are run generically
-        # when creating a generic QCoDeS instrument
-        add_default_generic_icc=True,
-    )
+    _coordinator: Optional[InstrumentCoordinator] = None
 
-    # heap memory, so that instrument drivers do not get garbage collected
-    shared_mem = dict()
+    def __init__(
+        self,
+        quantify_config_file: Union[str, bytes, os.PathLike],
+        quantify_metadata_file: Union[str, bytes, os.PathLike],
+        backend_config: BackendConfig,
+    ):
+        self.quantify_config = Config.from_json(quantify_config_file)
 
-    def __init__(self, config_file: Union[str, bytes, os.PathLike]):
-        conf = QuantifyExecutorConfig.from_yaml(config_file)
-        self.quantify_config = conf.to_quantify()
-        self.hardware_map = {
-            clock: port
-            for (port, clock), instrument in generate_port_clock_to_device_map(
-                self.quantify_config
-            ).items()
-        }
+        qubit_ids = backend_config.device_config.qubit_ids
+        coupling_dict = backend_config.device_config.coupling_dict
+
+        # --- Initialize executor and hardware ---
+        self.hardware_map = generate_hardware_map(
+            qubit_ids=qubit_ids,
+            coupling_dict=coupling_dict,
+            quantify_config=self.quantify_config,
+        )
         super().__init__(hardware_map=self.hardware_map)
 
-        # load clusters
-        for cluster in conf.clusters:
-            dummy_cfg: Optional[Dict[int, qblox_instruments.ClusterType]] = None
-            if cluster.is_dummy:
-                dummy_cfg = {
-                    # No checks or try catches because the config is expected to be in the right format
-                    int(
-                        _MODULE_NAME_REGEX.match(module.name).group(1)
-                    ): _QBLOX_CLUSTER_TYPE_MAP[module.instrument_type]
-                    for module in cluster.modules
-                }
-            # We only support qblox_instruments.Cluster for now. Pulsar and any other native interfaces were dropped
-            # because they cause a chaotic configuration.
-            # The Cluster was also the only one documented on quantify-scheduler docs at the time of the refactor
-            # https://quantify-os.org/docs/quantify-scheduler/dev/reference/qblox/Cluster.html
-            device = find_or_create_instrument(
-                qblox_instruments.Cluster,
-                name=cluster.name,
-                identifier=cluster.instrument_address,
+        # make sure all previous connections are closed
+        qblox_instruments.Cluster.close_all()
+
+        # Initialize a (singleton) instrument coordinator if not already set.
+        if QuantifyExecutor._coordinator is None:
+            QuantifyExecutor._coordinator = InstrumentCoordinator(
+                "tergite_quantum_executor"
+            )
+
+        # --- Build clusters from configuration using the new helper methods ---
+        clusters_config = Config.from_yaml(quantify_metadata_file).root.items()
+        clusters = []
+        for cluster_name, cluster_cfg in clusters_config:
+            if not cluster_cfg.ip_address:
+                raise ValueError(
+                    f"Cluster '{cluster_name}' must specify an instrument_address."
+                )
+            # Create cluster using the adapted method.
+            cluster = self._create_cluster(cluster_name, cluster_cfg)
+            clusters.append(cluster)
+
+        # Add each cluster to the coordinator.
+        for cluster in clusters:
+            self._add_cluster_to_coordinator(cluster)
+
+    def _create_cluster(
+        self, cluster_name: str, cluster_cfg: Any
+    ) -> qblox_instruments.Cluster:
+        """
+        Creates and initializes a Cluster object.
+        If the configuration indicates a dummy cluster, a dummy configuration is built.
+        Otherwise, a real cluster is instantiated and reset.
+        """
+        if getattr(cluster_cfg, "is_dummy", False):
+            dummy_cfg: Dict[int, qblox_instruments.ClusterType] = {}
+            for module, module_cfg in cluster_cfg.modules.items():
+                # Convert module key to int and map instrument type.
+                module_num = int(module)
+                dummy_cfg[module_num] = _QBLOX_CLUSTER_TYPE_MAP[
+                    module_cfg.instrument_type
+                ]
+            cluster = qblox_instruments.Cluster(
+                name=cluster_name,
+                identifier=cluster_cfg.ip_address,
                 dummy_cfg=dummy_cfg,
             )
-            QuantifyExecutor.shared_mem[device.name] = device
-            rich.print(f"Instantiated Cluster driver for '{cluster.name}'")
-            _add_component_if_not_exists(
-                coordinator=QuantifyExecutor._coordinator,
-                component_type=ClusterComponent,
-                device=device,
-            )
-
-        # load generic QCoDes instruments
-        for instrument in conf.generic_qcodes_instruments:
-            # instantiate the device
-            driver = import_python_object_from_string(
-                instrument.instrument_driver.import_path
-            )
-            device_name = instrument.instrument_driver.kwargs.pop(
-                "name", generic.DEFAULT_NAME
-            )
-            device = find_or_create_instrument(
-                driver, device_name, **instrument.instrument_driver.kwargs
-            )
-            _set_parameters(device, instrument.parameters)
-            QuantifyExecutor.shared_mem[device.name] = device
             rich.print(
-                f"Instantiated {instrument.instrument_driver.import_path.split('.')[-1]} driver for '{instrument.name}'"
+                f"Instantiated dummy Cluster for '{cluster_name}' (address: {cluster_cfg.ip_address})"
             )
+        else:
+            qblox_instruments.Cluster.close_all()  # ensure previous connections are closed
+            cluster = qblox_instruments.Cluster(
+                name=cluster_name, identifier=cluster_cfg.ip_address
+            )
+            rich.print(
+                f"Instantiated Cluster for '{cluster_name}' (address: {cluster_cfg.ip_address})"
+            )
+            cluster.reset()  # Reset to a default state for consistency
+        return cluster
 
-            _add_component_if_not_exists(
-                coordinator=QuantifyExecutor._coordinator,
-                component_type=GenericInstrumentCoordinatorComponent,
-                device=device,
-            )
+    def _add_cluster_to_coordinator(self, cluster: qblox_instruments.Cluster):
+        """
+        Adds the given cluster to the instrument coordinator wrapped as a ClusterComponent.
+        """
+        try:
+            self._coordinator.add_component(ClusterComponent(cluster))
+        except Exception as e:
+            rich.print(f"Failed to add cluster {cluster.name} to coordinator: {e}")
 
     def _to_native_experiments(
         self, qobj: PulseQobj, native_config: NativeQobjConfig, /
     ) -> List[QuantifyExperiment]:
-        """Constructs quantify experiments from the PulseQobj instance
-
-        Args:
-            qobj: the Pulse qobject containing the experiments
-            native_config: the native config for the qobj
-
-        Returns:
-            list of QuantifyExperiment's
-        """
         native_experiments = [
             QuantifyExperiment.from_qobj_expt(
                 name=get_experiment_name(expt.header.name, idx + 1),
@@ -168,40 +172,34 @@ class QuantifyExecutor(QuantumExecutor):
     def _run_native(
         self,
         experiment: QuantifyExperiment,
-        /,
         *,
         native_config: NativeQobjConfig,
         logger: ExperimentLogger,
     ) -> QExperimentResult:
-        QuantifyExecutor._coordinator.stop()
-
-        # compile to hardware
-        # TODO: Here, we can use the new @timer decorator in the benchmarking package
+        # Stop any running sequences.
+        self._coordinator.stop()
         t1 = datetime.now()
-        absolute_timed_schedule = determine_absolute_timing(
-            copy.deepcopy(experiment.schedule)
-        )
-        compiled_schedule = hardware_compile(
-            schedule=absolute_timed_schedule, hardware_cfg=self.quantify_config
-        )
+        schedule_to_compile = copy.deepcopy(experiment.schedule)
 
+        quantum_device = QuantumDevice("DUT")
+        clean_config = self.quantify_config
+        quantum_device.hardware_config(clean_config)
+
+        compiler = SerialCompiler(name="compiler")
+        compiled_schedule = compiler.compile(
+            schedule=schedule_to_compile,
+            config=quantum_device.generate_compilation_config(),
+        )
         t2 = datetime.now()
         print(t2 - t1, "DURATION OF COMPILING")
 
-        # log the sequencer assembler programs and the schedule timing table
         logger.log_Q1ASM_programs(compiled_schedule)
         logger.log_schedule(compiled_schedule)
 
-        # upload schedule to instruments & arm sequencers
         self._coordinator.prepare(compiled_schedule)
-
-        # start experiment
-        # TODO: Here, we can use the new @timer decorator from the benchmarking package
         t3 = datetime.now()
-        QuantifyExecutor._coordinator.start()
-
-        # wait for program to finish and return acquisition
-        # TODO: What is the return type of retrieve_acquisition()?
+        self._coordinator.start()
+        self._coordinator.wait_done(timeout_sec=10)
         results = self._coordinator.retrieve_acquisition()
         print(f"{results=}")
         t4 = datetime.now()
@@ -210,52 +208,6 @@ class QuantifyExecutor(QuantumExecutor):
 
     @classmethod
     def close(cls):
-        """Closes the QuantumExecutor associated with this name"""
-        cls._coordinator.close_all()
-
-
-def _add_component_if_not_exists(
-    coordinator: InstrumentCoordinator,
-    component_type: type[InstrumentCoordinatorComponentBase],
-    device: Instrument,
-):
-    """Adds a component for the given device to the coordinator
-
-    Args:
-        coordinator: the instrument coordinator to add component to
-        component_type: the type of component
-        device: the instrument for the given component
-    """
-    try:
-        component = coordinator.get_component(f"ic_{device.name}")
-    except KeyError:
-        component = component_type(device)
-
-    try:
-        coordinator.add_component(component)
-        rich.print(
-            f"Added '{component.name}' to instrument coordinator '{coordinator.name}'"
-        )
-    except ValueError:
-        # ignore if component is already added
-        pass
-
-
-def _set_parameters(device: Instrument, parameters: Dict[str, Any]):
-    """Set the parameters of a QCoDeS device
-
-    Args:
-        device: the QCoDeS device whose parameters are to be set
-        parameters: the dictionary of parameter names and values
-    """
-
-    for command, value in parameters.items():
-        try:
-            # Setting parameters is done by calling them as commands
-            # https://microsoft.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html#Example-of-setting-and-getting-parameters
-            qcodes_command = getattr(device, command)
-            qcodes_command(value)
-            rich.print(f"Set '{command}' to {value}")
-        except (AttributeError, TypeError):
-            # ignore invalid parameters
-            pass
+        if cls._coordinator is not None:
+            cls._coordinator.close_all()
+            cls._coordinator = None

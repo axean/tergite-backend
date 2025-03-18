@@ -8,7 +8,8 @@ scipy==1.9.0
 networkx>=2.5.1
 toml>=0.10.2
 scikit-learn~=1.2.2
-pydantic>=1.10.18,<2.0
+# other pydantic version with combination of quantify_scheduler==0.20.1 break SerialCompiler 
+pydantic==2.1
 # unfortunately, there are no wheels for darwin <12 for pyarrow >18.0.0
 pyarrow<18.0.0; sys_platform == 'darwin'
 # from quantify backend
@@ -18,11 +19,10 @@ python_multipart==0.0.6
 qcodes>=0.42.1
 qiskit==0.45.0
 qiskit-ibm-provider==0.7.2
-quantify-core==0.7.3
-quantify-scheduler~=0.16.1
-qblox-instruments==0.11.2
+quantify-core==0.7.9
+quantify-scheduler~=0.20.1
+qblox-instruments==0.12.0
 requests>=2.31.0
-retworkx==0.13.2
 rich==13.7.0
 tabulate==0.9.0
 tqdm>=4.66.1

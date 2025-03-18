@@ -47,7 +47,7 @@ def read_qubit_calibration_data(
     """
     return [
         {
-            param: idx
+            param: int(qubit_id.strip("q"))
             if param == "id"
             else _read_calibration_value(
                 component_type="qubit",
@@ -56,7 +56,7 @@ def read_qubit_calibration_data(
             )
             for param in qubit_params
         }
-        for idx, qubit_id in enumerate(qubit_ids)
+        for qubit_id in qubit_ids
     ]
 
 
@@ -74,7 +74,7 @@ def read_resonator_calibration_data(
     """
     return [
         {
-            param: idx
+            param: int(qubit_id.strip("q"))
             if param == "id"
             else _read_calibration_value(
                 component_type="readout_resonator",
@@ -83,7 +83,7 @@ def read_resonator_calibration_data(
             )
             for param in resonator_params
         }
-        for idx, qubit_id in enumerate(qubit_ids)
+        for qubit_id in qubit_ids
     ]
 
 
@@ -101,7 +101,7 @@ def read_coupler_calibration_data(
     """
     return [
         {
-            param: idx
+            param: int(coupler_id.strip("u"))
             if param == "id"
             else _read_calibration_value(
                 component_type="coupler",
@@ -110,7 +110,7 @@ def read_coupler_calibration_data(
             )
             for param in coupler_params
         }
-        for idx, coupler_id in enumerate(coupler_ids)
+        for coupler_id in coupler_ids
     ]
 
 
@@ -159,7 +159,7 @@ def _read_calibration_value(
         component=component_type, name=prop_name, component_id=component_id
     )
     if result is not None:
-        return CalibrationValue(date=result[1], **result[0].dict())
+        return CalibrationValue(date=result[1], **result[0].model_dump())
 
 
 def set_qubit_calibration_data(data: List[Dict[str, Optional[Dict]]]):

@@ -1,58 +1,5 @@
 {
     "config_type": "quantify_scheduler.backends.qblox_backend.QbloxHardwareCompilationConfig",
-    "hardware_description": {
-      "clusterA": {
-        "instrument_type": "Cluster",
-        "ref": "internal",
-        "modules": {
-          "1": {
-            "instrument_type": "QCM_RF"
-          },
-          "2": {
-            "instrument_type": "QCM_RF"
-          },
-          "3": {
-            "instrument_type": "QCM_RF"
-          },
-          "4": {
-            "instrument_type": "QCM_RF"
-          },
-          "5": {
-            "instrument_type": "QCM_RF"
-          },
-          "6": {
-            "instrument_type": "QCM_RF"
-          },
-          "7": {
-            "instrument_type": "QCM_RF"
-          },
-          "8": {
-            "instrument_type": "QCM_RF"
-          },
-          "9": {
-            "instrument_type": "QCM_RF"
-          },
-          "10": {
-            "instrument_type": "QCM_RF"
-          },
-          "11": {
-            "instrument_type": "QCM_RF"
-          },
-          "12": {
-            "instrument_type": "QCM_RF"
-          },
-          "13": {
-            "instrument_type": "QCM_RF"
-          },
-          "16": {
-            "instrument_type": "QRM_RF"
-          },
-          "17": {
-            "instrument_type": "QRM_RF"
-          }
-        }
-      }
-    },
     "hardware_options": {
       "modulation_frequencies": {
         "q06:mw-q06.01": {

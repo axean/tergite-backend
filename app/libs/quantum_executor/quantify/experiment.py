@@ -1,6 +1,7 @@
 # This code is part of Tergite
 #
 # (C) Axel Andersson (2022)
+# (C) Chalmers Next Labs (2025)
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -12,90 +13,105 @@
 #
 # Refactored by Martin Ahindura (2024)
 # Refactored by Stefan Hill (2024)
-import copy
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Type
+# Refactored by Chalmers Next Labs 2025
 
-import retworkx as rx
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple, Type
+
 from qiskit.qobj import PulseQobjConfig, PulseQobjExperiment, PulseQobjInstruction
 from quantify_scheduler import Schedule
+from quantify_scheduler.compilation import determine_absolute_timing
+from quantify_scheduler.resources import ClockResource
 
 from app.libs.quantum_executor.base.experiment import (
     NativeExperiment,
     copy_expt_header_with,
 )
-from app.libs.quantum_executor.base.instruction import Instruction
-from app.libs.quantum_executor.utils.channel import Channel
-from app.libs.quantum_executor.utils.general import ceil4, flatten_list, rot_left
+from app.libs.quantum_executor.quantify.channel import QuantifyChannel
 
 from ..base.quantum_job.dtos import NativeQobjConfig
+from .channel import QuantifyChannelRegistry
 from .instruction import (
+    QBLOX_TIMEGRID_INTERVAL,
     AcquireInstruction,
+    BaseInstruction,
     DelayInstruction,
-    FreqInstruction,
+    GaussPulseInstruction,
     InitialObjectInstruction,
     ParamPulseInstruction,
-    PhaseInstruction,
     PulseLibInstruction,
+    SetFreqInstruction,
+    SetPhaseInstruction,
+    ShiftFreqInstruction,
+    ShiftPhaseInstruction,
+    SquarePulseInstruction,
 )
-from .program import QuantifyProgram
 
-# FIXME: Why is this initial object hard coded here?
-initial_object = InitialObjectInstruction()
-
-# Map name => Instruction
-_INSTRUCTION_MAP: Dict[str, Type[Instruction]] = {
-    "setf": FreqInstruction,
-    "setp": PhaseInstruction,
-    "fc": PhaseInstruction,
-    "delay": DelayInstruction,
-    "acquire": AcquireInstruction,
-    "parametric_pulse": ParamPulseInstruction,
+# Map (name, pulse_shape) => Quantify Instruction class
+_INSTRUCTION_PULSE_MAP: Dict[Tuple[str, Optional[str]], Type[BaseInstruction]] = {
+    ("setf", None): SetFreqInstruction,
+    ("shiftf", None): ShiftFreqInstruction,
+    ("setp", None): SetPhaseInstruction,
+    ("fc", None): ShiftPhaseInstruction,
+    ("delay", None): DelayInstruction,
+    ("acquire", None): AcquireInstruction,
+    ("parametric_pulse", "gaussian"): GaussPulseInstruction,
+    ("parametric_pulse", "constant"): SquarePulseInstruction,
 }
 
 
 @dataclass(frozen=True)
 class QuantifyExperiment(NativeExperiment):
+    channel_registry: QuantifyChannelRegistry
+    buffer_time: float = 0.0
+
+    # the interval between grid lines in the time grid used by Q1ASM
+    timegrid_interval: float = QBLOX_TIMEGRID_INTERVAL
+
     @property
     def schedule(self: "QuantifyExperiment") -> Schedule:
-        prog = QuantifyProgram(
-            name=self.header.name,
-            channels=self.channels,
-            config=self.config,
+        raw_schedule = Schedule(name=self.header.name, repetitions=self.config.shots)
+
+        root_instruction = InitialObjectInstruction()
+        raw_schedule.add(
+            ref_op=None,
+            ref_pt="end",
+            ref_pt_new="start",
+            rel_time=0.0,
+            label=root_instruction.label,
+            operation=root_instruction.to_operation(config=self.config),
         )
-        prog.schedule_operation(initial_object, ref_op=None, rel_time=0.0)
 
-        wccs = rx.weakly_connected_components(self.dag)
+        for channel in self.channel_registry.values():  # type: QuantifyChannel
+            if (
+                len(channel.instructions) == 1
+                and channel.instructions[0].name == "delay"
+            ):
+                # if the channel contains a single instruction and that instruction is a delay,
+                # then do not schedule any operations on that channel
+                print("\nNO DELAY\n")
+                continue
 
-        for wcc in wccs:
-            wcc_nodes = list(sorted(list(wcc)))
+            prev = root_instruction
+            for curr in channel.instructions:
+                rel_time = curr.t0 - prev.final_timestamp + self.timegrid_interval
+                ref_op = prev.label
 
-            # if the channel contains a single instruction and that instruction is a delay,
-            # then do not schedule any operations on that channel
-            if len(wcc_nodes) == 1:
-                if self.dag[wcc_nodes[0]].name == "delay":
-                    print()
-                    print("NO DELAY")
-                    print()
-                    continue
-
-            # else, schedudle the instructions on the channels
-            for n, idx in enumerate(wcc_nodes):
-                ref_idx = next(iter(rot_left(reversed(wcc_nodes[: n + 1]), 1)))
-                if ref_idx == idx:
-                    ref_op = initial_object.label
-                    rel_time = self.buffer_time
-                else:
-                    ref_op = self.dag[ref_idx].label
-                    rel_time = self.dag.get_edge_data(ref_idx, idx) + 4e-9
-
-                prog.schedule_operation(
-                    self.dag[idx],
-                    rel_time=rel_time,
+                raw_schedule.add(
                     ref_op=ref_op,
+                    ref_pt="end",
+                    ref_pt_new="start",
+                    rel_time=rel_time,
+                    label=curr.label,
+                    operation=curr.to_operation(config=self.config),
                 )
 
-        return prog.compiled_schedule
+                # set the previous to the current
+                prev = curr
+
+        return _get_absolute_timed_schedule(
+            schedule=raw_schedule, channel_registry=self.channel_registry
+        )
 
     @classmethod
     def from_qobj_expt(
@@ -119,61 +135,69 @@ class QuantifyExperiment(NativeExperiment):
             the QiskitDynamicsExperiment corresponding to the PulseQobj
         """
         header = copy_expt_header_with(expt.header, name=name)
-        inst_nested_list = (
-            _extract_instructions(
+        channel_registry = QuantifyChannelRegistry()
+
+        for inst in expt.instructions:
+            _add_instruction_to_channel_registry(
+                channel_registry=channel_registry,
                 qobj_inst=inst,
                 config=qobj_config,
                 native_config=native_config,
                 hardware_map=hardware_map,
             )
-            for inst in expt.instructions
-        )
-        native_instructions = flatten_list(inst_nested_list)
 
         return cls(
             header=header,
-            instructions=native_instructions,
             config=qobj_config,
-            channels=frozenset(
-                Channel(
-                    clock=i.channel,
-                    frequency=0.0,
-                )
-                for i in native_instructions
-            ),
+            channel_registry=channel_registry,
         )
 
 
-def _extract_instructions(
+def _add_instruction_to_channel_registry(
+    channel_registry: QuantifyChannelRegistry,
     qobj_inst: PulseQobjInstruction,
     config: PulseQobjConfig,
     native_config: NativeQobjConfig,
-    hardware_map: Dict[str, str] = None,
-) -> List[Instruction]:
-    """Extracts tergite-specific instructions from the PulseQobjInstruction
-
-    Args:
-        qobj_inst: the PulseQobjInstruction from which instructions are to be extracted
-        config: config of the pulse qobject
-        native_config: the native config for the qobj
-        hardware_map: the map describing the layout of the quantum device
-
-    Returns:
-        list of tergite-specific instructions
-    """
+    hardware_map: Optional[Dict[str, str]] = None,
+):
     if hardware_map is None:
         hardware_map = {}
 
+    key = (qobj_inst.name, getattr(qobj_inst, "pulse_shape", None))
     try:
-        cls = _INSTRUCTION_MAP[qobj_inst.name]
+        cls_instr = _INSTRUCTION_PULSE_MAP[key]
     except KeyError as exp:
         if qobj_inst.name in config.pulse_library:
-            cls = PulseLibInstruction
+            cls_instr = PulseLibInstruction  # fallback if defined in pulse library
         else:
             raise RuntimeError(
                 f"No mapping for PulseQobjInstruction {qobj_inst}.\n{exp}"
             )
+    for instruction in cls_instr.list_from_qobj_inst(
+        qobj_inst,
+        config=config,
+        native_config=native_config,
+        channel_registry=channel_registry,
+        hardware_map=hardware_map,
+    ):
+        instruction.register()
 
-    return cls.list_from_qobj_inst(
-        qobj_inst, config=config, native_config=native_config, hardware_map=hardware_map
-    )
+
+def _get_absolute_timed_schedule(
+    schedule: Schedule, channel_registry: QuantifyChannelRegistry
+) -> Schedule:
+    """Returns a new schedule with absolute timing
+
+    Args:
+        schedule: the raw schedule to compile
+        channel_registry: the iterable of QuantifyChannel's to which are attached ClockResource's
+
+    Returns:
+        the schedule with absolute time for each operation has been
+        determined.
+    """
+    for channel in channel_registry.values():
+        clock = ClockResource(name=channel.clock, freq=channel.final_frequency)
+        schedule.add_resource(clock)
+
+    return schedule

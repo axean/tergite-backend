@@ -99,7 +99,7 @@ class QiskitPulse1Q(QiskitPulseBackend):
         backend_config: BackendConfig,
         **kwargs,
     ) -> PulseDefaults:
-        first_qubit_conf = backend_config.simulator_config.qubit[0]
+        first_qubit_conf = backend_config.calibration_config.qubit[0]
         freq = first_qubit_conf["frequency"]
 
         return PulseDefaults(
@@ -119,7 +119,7 @@ class QiskitPulse1Q(QiskitPulseBackend):
         **kwargs,
     ) -> Optional[Target]:
         dt = backend_config.general_config.dt
-        first_qubit_conf = backend_config.simulator_config.qubit[0]
+        first_qubit_conf = backend_config.calibration_config.qubit[0]
         freq = first_qubit_conf["frequency"]
         t1 = first_qubit_conf["t1_decoherence"]
         t2 = first_qubit_conf["t2_decoherence"]
@@ -145,7 +145,7 @@ class QiskitPulse1Q(QiskitPulseBackend):
             GateConfig(name=k, **v) for k, v in backend_config.gates.items()
         ]
         dt = backend_config.general_config.dt
-        first_qubit_conf = backend_config.simulator_config.qubit[0]
+        first_qubit_conf = backend_config.calibration_config.qubit[0]
         freq = first_qubit_conf["frequency"]
 
         return PulseBackendConfiguration(
@@ -202,7 +202,7 @@ class QiskitPulse1Q(QiskitPulseBackend):
         dt = backend_config.general_config.dt
 
         # This is for a single qubit backend
-        first_qubit_conf = backend_config.simulator_config.qubit[0]
+        first_qubit_conf = backend_config.calibration_config.qubit[0]
         freq = first_qubit_conf["frequency"]
         t1 = first_qubit_conf["t1_decoherence"]
         t2 = first_qubit_conf["t2_decoherence"]

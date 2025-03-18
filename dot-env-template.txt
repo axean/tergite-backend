@@ -48,8 +48,22 @@ MSS_PORT=8002
 # Note: - 'quantify' can be the real instruments or dummy clusters
 #       - 'qiskit_pulse_1q' is a one-qubit simulator based on qiskit-dynamics library
 EXECUTOR_TYPE=qiskit_pulse_1q
-# The path to the configuration file for quantify. Default is "quantify-config.yml" in project directory.
-QUANTIFY_CONFIG_FILE=quantify-config.yml
+# Sometimes we may need to seed the database with some calibration data.
+# It is actually optional for real devices but for simulators, it is a hard requirement
+# We use a seed file.
+#
+# Default: "calibration.seed.toml"
+CALIBRATION_SEED="calibration.seed.toml"
+# For real devices running on quantify scheduler, we need a configuration file
+# of the exact same format as that expected by quantify-scheduler
+#
+# Default: "quantify-config.json"
+QUANTIFY_CONFIG_FILE="quantify-config.json"
+# For real devices running on quantify scheduler, we need a metadata file
+# to specify such things as IP addresses of different clusters etc.
+#
+# Default: "quantify-metadata.yml"
+QUANTIFY_METADATA_FILE="quantify-metadata.yml"
 
 # (6) Authentication
 # The app token used to authenticate this BCC with MSS.
@@ -89,3 +103,4 @@ REDIS_PORT=6379
 # REDIS_USER=""
 # Set the password, which to use when connecting to redis
 # REDIS_PASSWORD=""
+

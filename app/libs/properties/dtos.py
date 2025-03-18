@@ -12,21 +12,20 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-import dataclasses
-from datetime import datetime
+
 from os import PathLike
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import toml
-from pydantic import BaseModel, Extra, root_validator
+from pydantic import BaseModel, Extra, ValidationError, model_validator
 
-from app.libs.properties.utils.date_time import utc_now_iso, utc_to_iso
+from app.libs.properties.utils.date_time import utc_now_iso
 
 
 class QubitProps(BaseModel):
     """Qubit Device configuration"""
 
-    frequency: int
+    frequency: float
     pi_pulse_amplitude: float
     pi_pulse_duration: float
     pulse_type: str
@@ -46,7 +45,7 @@ class ReadoutResonatorProps(BaseModel):
 
     acq_delay: float
     acq_integration_time: float
-    frequency: int
+    frequency: float
     pulse_amplitude: float
     pulse_delay: float
     pulse_duration: float
@@ -63,7 +62,7 @@ class ReadoutResonatorProps(BaseModel):
 class CouplerProps(BaseModel):
     """Coupler Device configuration"""
 
-    frequency: int
+    frequency: float
     frequency_detuning: int
     anharmonicity: int
     coupling_strength_02: int
@@ -276,15 +275,15 @@ class _BackendDeviceConfig(BaseModel):
     coupler_parameters: List[str] = []
     discriminator_parameters: Dict[str, List[str]] = {}
 
-    @root_validator(allow_reuse=True)
-    def set_coupling_map(cls, values):
-        coupling_dict = values.get("coupling_dict", {})
-        qubit_ids: List[str] = values.get("qubit_ids", [])
+    @model_validator(mode="after")
+    def set_coupling_map(self):
+        coupling_dict = self.coupling_dict
+        qubit_ids: List[str] = self.qubit_ids
 
         if len(coupling_dict) == 0:
             # special case when technically there is no coupler but there might be some qubits,
             # let each qubit be seen to couple with itself
-            values["coupling_map"] = [(idx, idx) for idx, _ in enumerate(qubit_ids)]
+            self.coupling_map = [(idx, idx) for idx, _ in enumerate(qubit_ids)]
         else:
             qubit_index = {_id: psn for psn, _id in enumerate(qubit_ids)}
 
@@ -300,7 +299,7 @@ class _BackendDeviceConfig(BaseModel):
                 (get_index(q1), get_index(q2)) for q1, q2 in coupling_dict.values()
             ]
             reverse_index_couplings = [(q2, q1) for q1, q2 in index_couplings]
-            values["coupling_map"] = index_couplings + reverse_index_couplings
+            self.coupling_map = index_couplings + reverse_index_couplings
 
             # qubit_ids_coupler_map is a list of tuples of qubit couplings and their respective
             # couplers, with the qubits represented by their ids in integer form
@@ -311,14 +310,12 @@ class _BackendDeviceConfig(BaseModel):
             reverse_id_coupling_items = [
                 ((q2, q1), c) for (q1, q2), c in id_coupling_items
             ]
-            values["qubit_ids_coupler_map"] = (
-                id_coupling_items + reverse_id_coupling_items
-            )
+            self.qubit_ids_coupler_map = id_coupling_items + reverse_id_coupling_items
 
-        return values
+        return self
 
 
-class _BackendSimulatorConfig(BaseModel):
+class _BackendCalibrationConfig(BaseModel):
     """The device config for the simulated or dummy backends"""
 
     # Adjusted the type hint for units to support nested structure within discriminators
@@ -338,16 +335,32 @@ class BackendConfig(BaseModel):
     general_config: _BackendGeneralConfig
     device_config: _BackendDeviceConfig
     gates: Dict[str, Dict[str, Any]] = {}
-    simulator_config: _BackendSimulatorConfig = _BackendSimulatorConfig()
+    calibration_config: Optional[_BackendCalibrationConfig] = None
 
     @classmethod
-    def from_toml(cls, file: PathLike):
+    def from_toml(cls, file: PathLike, seed_file: PathLike):
         """Creates a BackendConfig instance from a TOML file"""
-        with open(file, "r") as f:
-            data = toml.load(f)
+        data = toml.load(file)
+
+        calibration_config = None
+        try:
+            seed_data = toml.load(seed_file)
+            calibration_config = _BackendCalibrationConfig(
+                **seed_data["calibration_config"]
+            )
+        except (FileNotFoundError, KeyError):
+            pass
+
         return cls(
-            general_config=_BackendGeneralConfig(**data["general_config"]),
-            device_config=_BackendDeviceConfig(**data["device_config"]),
-            gates={k: {**v} for k, v in data["gates"].items()},
-            simulator_config=_BackendSimulatorConfig(**data["simulator_config"]),
+            general_config=_BackendGeneralConfig(**data.get("general_config", {})),
+            device_config=_BackendDeviceConfig(**data.get("device_config", {})),
+            gates={k: {**v} for k, v in data.get("gates", {}).items()},
+            calibration_config=calibration_config,
         )
+
+    @model_validator(mode="after")
+    def check_simulator_config(self):
+        if self.general_config.simulator and self.calibration_config is None:
+            raise ValueError("Calibration config is required for simulators.")
+
+        return self
