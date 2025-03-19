@@ -39,15 +39,6 @@ _QBLOX_CLUSTER_TYPE_MAP: Dict[str, qblox_instruments.ClusterType] = {
 CLUSTER_NAME_REGEX = re.compile(r"^cluster[A-Za-z0-9]+$", re.IGNORECASE)
 
 
-class ClusterModuleType(str, enum.Enum):
-    """Types of cluster modules"""
-
-    QCM = "QCM"
-    QRM = "QRM"
-    QCM_RF = "QCM_RF"
-    QRM_RF = "QRM_RF"
-
-
 class ModuleConfig(BaseModel):
     instrument_type: str = Field(..., description="Module instrument type.")
     # Additional module-specific fields can be provided.
