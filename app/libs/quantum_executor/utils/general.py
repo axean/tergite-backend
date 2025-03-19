@@ -15,7 +15,7 @@
 
 import json
 import sys
-from typing import Generator, Iterable, Iterator, List, TypeVar, Union
+from typing import List, TypeVar, Union
 
 import h5py
 

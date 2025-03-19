@@ -15,7 +15,7 @@ import abc
 from datetime import datetime
 from pathlib import Path
 from traceback import format_exc
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from qiskit.qobj import PulseQobj
@@ -36,7 +36,7 @@ from app.libs.quantum_executor.utils.logger import ExperimentLogger
 class QuantumExecutor(abc.ABC):
     def __init__(
         self,
-        hardware_map: Optional[Dict[str, str]] = None,
+        hardware_map: Optional[Dict[str, Tuple[str, str]]] = None,
     ):
         dh.set_datadir(settings.EXECUTOR_DATA_DIR)
         self.hardware_map = hardware_map

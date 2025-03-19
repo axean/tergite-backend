@@ -19,7 +19,6 @@ from enum import Enum, unique
 from pathlib import Path
 from typing import Any, Dict, Literal, Optional, Tuple, Union
 
-import redis
 from rq.command import send_stop_job_command
 from rq.job import Job
 

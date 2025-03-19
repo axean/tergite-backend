@@ -84,7 +84,11 @@ BACKEND_SETTINGS = config(
     default=Path(__file__).parent / "backend_config.toml",
 )
 
-CALIBRATION_SEED = config("CALIBRATION_SEED", cast=str, default=Path(__file__).parent / "calibration.seed.toml")
+CALIBRATION_SEED = config(
+    "CALIBRATION_SEED",
+    cast=str,
+    default=Path(__file__).parent / "calibration.seed.toml",
+)
 
 # Connectivity settings
 MSS_MACHINE_ROOT_URL = config(
@@ -122,9 +126,12 @@ EXECUTOR_TYPE = config("EXECUTOR_TYPE", default="quantify")
 # This will load the hardware configuration from a yaml file, which contains the properties for the
 # cluster or other instrument setup. For more information check:
 # - quantify-config.example.yml
-QUANTIFY_CONFIG_FILE = config("QUANTIFY_CONFIG_FILE", default="quantify-config.json")
+# - quantify-metadata.example.yml
+QUANTIFY_CONFIG_FILE = config(
+    "QUANTIFY_CONFIG_FILE", default=Path(__file__).parent / "quantify-config.json"
+)
 QUANTIFY_METADATA_FILE = config(
-    "QUANTIFY_METADATA_FILE", default="quantify-metadata.yml"
+    "QUANTIFY_METADATA_FILE", default=Path(__file__).parent / "quantify-metadata.yml"
 )
 
 # -------------

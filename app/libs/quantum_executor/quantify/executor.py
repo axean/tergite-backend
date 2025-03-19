@@ -17,48 +17,32 @@
 
 """
 This module implements the executor.
-It loads the configuration file (YAML or JSON), detects whether it is legacy or new style,
-and then builds the hardware clusters accordingly.
-"""
-"""
-This module implements the executor.
-It loads the configuration file (YAML or JSON), detects whether it is legacy or new style,
-and then builds the hardware clusters accordingly.
 """
 
 import copy
 import os
-import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import List, Optional, Union
 
-import qblox_instruments  # for ClusterType
-import rich
+import qblox_instruments
 from qiskit.qobj import PulseQobj
 from quantify_scheduler.backends.graph_compilation import SerialCompiler
 from quantify_scheduler.device_under_test.quantum_device import QuantumDevice
 from quantify_scheduler.instrument_coordinator import InstrumentCoordinator
 from quantify_scheduler.instrument_coordinator.components.qblox import ClusterComponent
 
+from app.libs.properties.dtos import BackendConfig
 from app.libs.quantum_executor.base.executor import QuantumExecutor
 from app.libs.quantum_executor.base.quantum_job import get_experiment_name
 from app.libs.quantum_executor.base.quantum_job.dtos import NativeQobjConfig
 from app.libs.quantum_executor.base.quantum_job.typing import QExperimentResult
 from app.libs.quantum_executor.quantify.experiment import QuantifyExperiment
-
-# Import our new and legacy config models.
-from app.libs.quantum_executor.utils.config import ClusterModuleType
-from app.libs.quantum_executor.utils.config import QuantifyExecutorConfig as Config
+from app.libs.quantum_executor.utils.config import (
+    QuantifyMetadata,
+    load_quantify_config,
+)
 from app.libs.quantum_executor.utils.logger import ExperimentLogger
 from app.libs.quantum_executor.utils.portclock import generate_hardware_map
-
-_QBLOX_CLUSTER_TYPE_MAP: Dict[ClusterModuleType, qblox_instruments.ClusterType] = {
-    ClusterModuleType.QCM: qblox_instruments.ClusterType.CLUSTER_QCM,
-    ClusterModuleType.QRM: qblox_instruments.ClusterType.CLUSTER_QRM,
-    ClusterModuleType.QCM_RF: qblox_instruments.ClusterType.CLUSTER_QCM_RF,
-    ClusterModuleType.QRM_RF: qblox_instruments.ClusterType.CLUSTER_QRM_RF,
-}
-from app.libs.properties.dtos import BackendConfig
 
 
 class QuantifyExecutor(QuantumExecutor):
@@ -72,7 +56,7 @@ class QuantifyExecutor(QuantumExecutor):
         quantify_metadata_file: Union[str, bytes, os.PathLike],
         backend_config: BackendConfig,
     ):
-        self.quantify_config = Config.from_json(quantify_config_file)
+        self.quantify_config = load_quantify_config(quantify_config_file)
 
         qubit_ids = backend_config.device_config.qubit_ids
         coupling_dict = backend_config.device_config.coupling_dict
@@ -94,65 +78,10 @@ class QuantifyExecutor(QuantumExecutor):
                 "tergite_quantum_executor"
             )
 
-        # --- Build clusters from configuration using the new helper methods ---
-        clusters_config = Config.from_yaml(quantify_metadata_file).root.items()
-        clusters = []
-        for cluster_name, cluster_cfg in clusters_config:
-            if not cluster_cfg.ip_address:
-                raise ValueError(
-                    f"Cluster '{cluster_name}' must specify an instrument_address."
-                )
-            # Create cluster using the adapted method.
-            cluster = self._create_cluster(cluster_name, cluster_cfg)
-            clusters.append(cluster)
-
-        # Add each cluster to the coordinator.
+        clusters = QuantifyMetadata.from_yaml(quantify_metadata_file).get_clusters()
         for cluster in clusters:
-            self._add_cluster_to_coordinator(cluster)
-
-    def _create_cluster(
-        self, cluster_name: str, cluster_cfg: Any
-    ) -> qblox_instruments.Cluster:
-        """
-        Creates and initializes a Cluster object.
-        If the configuration indicates a dummy cluster, a dummy configuration is built.
-        Otherwise, a real cluster is instantiated and reset.
-        """
-        if getattr(cluster_cfg, "is_dummy", False):
-            dummy_cfg: Dict[int, qblox_instruments.ClusterType] = {}
-            for module, module_cfg in cluster_cfg.modules.items():
-                # Convert module key to int and map instrument type.
-                module_num = int(module)
-                dummy_cfg[module_num] = _QBLOX_CLUSTER_TYPE_MAP[
-                    module_cfg.instrument_type
-                ]
-            cluster = qblox_instruments.Cluster(
-                name=cluster_name,
-                identifier=cluster_cfg.ip_address,
-                dummy_cfg=dummy_cfg,
-            )
-            rich.print(
-                f"Instantiated dummy Cluster for '{cluster_name}' (address: {cluster_cfg.ip_address})"
-            )
-        else:
-            qblox_instruments.Cluster.close_all()  # ensure previous connections are closed
-            cluster = qblox_instruments.Cluster(
-                name=cluster_name, identifier=cluster_cfg.ip_address
-            )
-            rich.print(
-                f"Instantiated Cluster for '{cluster_name}' (address: {cluster_cfg.ip_address})"
-            )
-            cluster.reset()  # Reset to a default state for consistency
-        return cluster
-
-    def _add_cluster_to_coordinator(self, cluster: qblox_instruments.Cluster):
-        """
-        Adds the given cluster to the instrument coordinator wrapped as a ClusterComponent.
-        """
-        try:
+            cluster.reset()  # resets cluster for consistency
             self._coordinator.add_component(ClusterComponent(cluster))
-        except Exception as e:
-            rich.print(f"Failed to add cluster {cluster.name} to coordinator: {e}")
 
     def _to_native_experiments(
         self, qobj: PulseQobj, native_config: NativeQobjConfig, /

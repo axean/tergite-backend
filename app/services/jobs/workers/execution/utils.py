@@ -34,7 +34,8 @@ def get_executor(
 
     Args:
         executor_type: the executor type to return
-        config_file: the path to the configuration file of the executor
+        quantify_config_file: the path to the configuration file of the executor
+        quantify_metadata_file: the path to the metadata file of the executor
         mss_url: the URL to MSS
 
     Returns:
@@ -46,10 +47,6 @@ def get_executor(
     resonator_config = None
     discriminator_config = None
     coupler_config = None
-
-    # to keep track of real qubit ids that correspond to cluster configurations
-    # we need to pass backend_config to the quantify executor for index mapping when we convert qobj instructions
-    # to quantify schedules
 
     if executor_type == "quantify":
         executor = QuantifyExecutor(

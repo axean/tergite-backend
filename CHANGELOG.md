@@ -7,9 +7,14 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ## [Unreleased]
 
-### Changed
+### Fixed
+
+- Fixed JSONDecodeError when application is run in systemd
+
 
 ## [2025.03.1] - 2025-03-18
+
+### Changed
 
 No change
 
