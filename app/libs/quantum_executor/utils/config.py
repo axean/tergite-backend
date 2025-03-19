@@ -91,9 +91,6 @@ class InstrumentConfig(BaseModel):
         return v
 
 
-# --- Main Configuration Model using RootModel ---
-
-
 class QuantifyExecutorConfig(RootModel[Dict[str, InstrumentConfig]]):
     """
     Represents the entire configuration file, which is now a mapping of instrument names
@@ -106,11 +103,12 @@ class QuantifyExecutorConfig(RootModel[Dict[str, InstrumentConfig]]):
     ) -> Dict[str, InstrumentConfig]:
         # Validate that for each Cluster instrument the name matches the expected pattern.
         for name, instr in v.items():
-            if instr.instrument_type == "Cluster":
-                if not CLUSTER_NAME_REGEX.match(name):
-                    raise ValueError(
-                        f"Cluster name '{name}' does not match expected pattern 'cluster<number>'."
-                    )
+            if instr.instrument_type == "Cluster" and not CLUSTER_NAME_REGEX.match(
+                name
+            ):
+                raise ValueError(
+                    f"Cluster name '{name}' does not match expected pattern 'cluster<number>'."
+                )
         return v
 
     @classmethod
@@ -126,7 +124,7 @@ class QuantifyExecutorConfig(RootModel[Dict[str, InstrumentConfig]]):
     @classmethod
     def from_json(
         cls, json_file: Union[str, bytes, os.PathLike]
-    ) -> "QuantifyExecutorConfig":
+    ) -> "QbloxHardwareCompilationConfig":
         with open(json_file, "r") as f:
             data = json.load(f)
 
