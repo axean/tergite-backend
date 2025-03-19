@@ -12,8 +12,6 @@
 # that they have been altered from the originals.
 from pathlib import Path
 
-from redis import Redis
-
 import settings
 
 from ....utils.json import get_items_from_json

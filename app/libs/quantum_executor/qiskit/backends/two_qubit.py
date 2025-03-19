@@ -305,14 +305,14 @@ class QiskitPulse2Q(QiskitPulseBackend):
 
             # Process the solution to extract populations of interest
             # Map basis states to indices in the state vector
-            def basis_state_index(n_tuple, dim):
+            def basis_state_index(n_tuple, dim__):
                 n0, n1, n2 = n_tuple
-                return n2 * dim**2 + n1 * dim + n0
+                return n2 * dim__**2 + n1 * dim__ + n0
 
-            def get_index(qubit_id, mode, dim):
-                state_ind = [0] * dim
-                state_ind[qubit_id] = mode
-                return basis_state_index(tuple(state_ind), dim)
+            def get_index(qubit_id__, mode, dim__):
+                state_ind = [0] * dim__
+                state_ind[qubit_id__] = mode
+                return basis_state_index(tuple(state_ind), dim__)
 
             def get_statevector(mode):
                 sv = np.zeros(dim**3, dtype=complex)

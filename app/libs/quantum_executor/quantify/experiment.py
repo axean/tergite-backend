@@ -16,11 +16,10 @@
 # Refactored by Chalmers Next Labs 2025
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Dict, Optional, Tuple, Type
 
 from qiskit.qobj import PulseQobjConfig, PulseQobjExperiment, PulseQobjInstruction
 from quantify_scheduler import Schedule
-from quantify_scheduler.compilation import determine_absolute_timing
 from quantify_scheduler.resources import ClockResource
 
 from app.libs.quantum_executor.base.experiment import (
@@ -38,7 +37,6 @@ from .instruction import (
     DelayInstruction,
     GaussPulseInstruction,
     InitialObjectInstruction,
-    ParamPulseInstruction,
     PulseLibInstruction,
     SetFreqInstruction,
     SetPhaseInstruction,
@@ -120,7 +118,7 @@ class QuantifyExperiment(NativeExperiment):
         name: str,
         qobj_config: PulseQobjConfig,
         native_config: NativeQobjConfig,
-        hardware_map: Optional[Dict[str, str]],
+        hardware_map: Optional[Dict[str, Tuple[str, str]]],
     ) -> "QuantifyExperiment":
         """Converts PulseQobjExperiment to native experiment
 

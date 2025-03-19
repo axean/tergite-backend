@@ -11,7 +11,6 @@
 # that they have been altered from the originals.
 
 import pytest
-import redis
 
 import settings
 from app.libs.properties.utils.logging import get_logger

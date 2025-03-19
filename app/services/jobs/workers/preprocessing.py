@@ -11,8 +11,6 @@
 # that they have been altered from the originals.
 from pathlib import Path
 
-from redis import Redis
-
 import settings
 from app.utils.queues import QueuePool
 

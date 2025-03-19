@@ -5,20 +5,23 @@ import pytest
 import requests
 from pydantic import ValidationError
 
-from app.libs.quantum_executor.utils.config import QuantifyExecutorConfig
+from app.libs.quantum_executor.utils.config import (
+    QuantifyMetadata,
+    load_quantify_config,
+)
 from app.tests.conftest import FASTAPI_CLIENTS
 from app.tests.utils.env import (
     TEST_BACKEND_SETTINGS_FILE,
+    TEST_BROKEN_QUANTIFY_CONFIG_FILE,
+    TEST_BROKEN_QUANTIFY_METADATA_FILE,
     TEST_DEFAULT_PREFIX_SIM_1Q,
     TEST_MSS_APP_TOKEN,
-    TEST_SIMQ1_BACKEND_SETTINGS_FILE,
-    TEST_QUANTIFY_SEED_FILE,
-    TEST_BROKEN_QUANTIFY_METADATA_FILE,
     TEST_QUANTIFY_CONFIG_FILE,
     TEST_QUANTIFY_METADATA_FILE,
-    TEST_BROKEN_QUANTIFY_CONFIG_FILE,
+    TEST_QUANTIFY_SEED_FILE,
+    TEST_SIMQ1_BACKEND_SETTINGS_FILE,
 )
-from app.tests.utils.fixtures import get_fixture_path, load_fixture
+from app.tests.utils.fixtures import get_fixture_path
 from app.tests.utils.modules import remove_modules
 
 _QUANTIFY_CONFIG_FILE = get_fixture_path("generic-quantify-config.json")
@@ -27,10 +30,10 @@ _QUANTIFY_METADATA_FILE = get_fixture_path("generic-quantify-config.yml")
 
 def test_load_quantify_config_files():
     """ExecutorConfig can load YAML Quantify Metadata File and Quantify Config File"""
-    conf_metadata = QuantifyExecutorConfig.from_yaml(_QUANTIFY_METADATA_FILE)
-    conf = QuantifyExecutorConfig.from_json(_QUANTIFY_CONFIG_FILE)
+    conf_metadata = QuantifyMetadata.from_yaml(_QUANTIFY_METADATA_FILE)
+    conf = load_quantify_config(_QUANTIFY_CONFIG_FILE)
 
-    # Both configuration files are validated in QuantifyExecutorConfig
+    # Both configuration files are validated in QuantifyMetadata
     assert conf_metadata
     assert conf
 

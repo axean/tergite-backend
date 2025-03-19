@@ -12,14 +12,14 @@
 
 import enum
 import json
-import os
 import re
-from typing import Dict, Optional, Union
+from os import PathLike
+from typing import Dict, List, Optional, Union
 
+import qblox_instruments
+import yaml
 from pydantic import BaseModel, Field, RootModel, field_validator
 from quantify_scheduler.backends.qblox_backend import QbloxHardwareCompilationConfig
-
-# --- Constants and Allowed Types ---
 
 ALLOWED_TOP_LEVEL_INSTRUMENTS = {
     "Cluster",
@@ -28,11 +28,15 @@ ALLOWED_TOP_LEVEL_INSTRUMENTS = {
     "OpticalModulator",
 }
 ALLOWED_MODULE_TYPES = {"QCM", "QRM", "QCM_RF", "QRM_RF", "QTM"}
+_QBLOX_CLUSTER_TYPE_MAP: Dict[str, qblox_instruments.ClusterType] = {
+    "QCM": qblox_instruments.ClusterType.CLUSTER_QCM,
+    "QRM": qblox_instruments.ClusterType.CLUSTER_QRM,
+    "QCM_RF": qblox_instruments.ClusterType.CLUSTER_QCM_RF,
+    "QRM_RF": qblox_instruments.ClusterType.CLUSTER_QRM_RF,
+}
 
 # Regex pattern for cluster names
 CLUSTER_NAME_REGEX = re.compile(r"^cluster[A-Za-z0-9]+$", re.IGNORECASE)
-
-# --- Module and Instrument Models ---
 
 
 class ClusterModuleType(str, enum.Enum):
@@ -91,42 +95,95 @@ class InstrumentConfig(BaseModel):
         return v
 
 
-class QuantifyExecutorConfig(RootModel[Dict[str, InstrumentConfig]]):
+class QuantifyMetadata(RootModel[Dict[str, InstrumentConfig]]):
     """
-    Represents the entire configuration file, which is now a mapping of instrument names
-    (e.g., "cluster0") to their respective configurations.
+    Quantify-specific metadata got from quantify-metadata.yml
     """
 
     @field_validator("root")
     def validate_hardware_description(
         cls, v: Dict[str, InstrumentConfig]
     ) -> Dict[str, InstrumentConfig]:
-        # Validate that for each Cluster instrument the name matches the expected pattern.
         for name, instr in v.items():
+            # Validate that for each Cluster instrument the name matches the expected pattern.
             if instr.instrument_type == "Cluster" and not CLUSTER_NAME_REGEX.match(
                 name
             ):
                 raise ValueError(
                     f"Cluster name '{name}' does not match expected pattern 'cluster<number>'."
                 )
+
+            # Validate that for each Cluster instrument has an ip address.
+            if not instr.ip_address:
+                raise ValueError(
+                    f"Cluster '{name}' must specify an instrument_address."
+                )
         return v
 
     @classmethod
-    def from_yaml(
-        cls, yaml_file: Union[str, bytes, os.PathLike]
-    ) -> "QuantifyExecutorConfig":
-        import yaml
+    def from_yaml(cls, file_path: Union[PathLike, str]) -> "QuantifyMetadata":
+        """Loads the metadata from a YAML file
 
-        with open(yaml_file, "r") as f:
-            data = yaml.safe_load(f)
+        Args:
+            file_path: the path to the YAML file
+
+        Returns:
+            the QuantifyMetadata represented in the YAML file
+        """
+        with open(file_path, "r") as file:
+            data = yaml.safe_load(file)
+
         return cls.model_validate(data)
 
-    @classmethod
-    def from_json(
-        cls, json_file: Union[str, bytes, os.PathLike]
-    ) -> "QbloxHardwareCompilationConfig":
-        with open(json_file, "r") as f:
-            data = json.load(f)
+    def get_clusters(self) -> List[qblox_instruments.Cluster]:
+        """Get the clusters corresponding to the metadata
 
-        hardware_config = QbloxHardwareCompilationConfig.model_validate(data)
-        return hardware_config
+        Returns:
+            the list of clusters got from this metadata
+        """
+        return [_create_cluster(name, conf) for name, conf in self.root.items()]
+
+
+def load_quantify_config(
+    file_path: Union[PathLike, str]
+) -> QbloxHardwareCompilationConfig:
+    """Loads the quantify config json file to QbloxHardwareCompilationConfig
+
+    Args:
+        file_path: path to the quantify config json file
+
+    Returns:
+        the QbloxHardwareCompilationConfig got from the quantify json file
+    """
+    with open(file_path) as file:
+        data = json.load(file)
+
+    return QbloxHardwareCompilationConfig.model_validate(data)
+
+
+def _create_cluster(name: str, conf: InstrumentConfig) -> qblox_instruments.Cluster:
+    """
+    Creates and initializes a Cluster object.
+
+    If the configuration indicates a dummy cluster, a dummy configuration is built.
+    Otherwise, a real cluster is instantiated and reset.
+
+    Args:
+        name: the name of the cluster
+        conf: the configuration of the cluster
+
+    Returns:
+        qblox_instruments.Cluster for given name and config
+    """
+    dummy_cfg = None
+    if getattr(conf, "is_dummy", False):
+        dummy_cfg = {
+            int(idx): _QBLOX_CLUSTER_TYPE_MAP[conf.instrument_type]
+            for idx, conf in conf.modules.items()
+        }
+
+    return qblox_instruments.Cluster(
+        name=name,
+        identifier=conf.ip_address,
+        dummy_cfg=dummy_cfg,
+    )

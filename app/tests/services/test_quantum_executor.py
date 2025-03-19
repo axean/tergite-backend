@@ -17,7 +17,7 @@ import pytest
 
 from ...libs.properties.dtos import BackendConfig
 from ...libs.quantum_executor.quantify.executor import QuantifyExecutor
-from ..utils.fixtures import get_fixture_path, load_fixture
+from ..utils.fixtures import get_fixture_path
 
 _REAL_HARDWARE_QUANTIFY_CONFIG_FILE = get_fixture_path("generic-quantify-config.json")
 _REAL_HARDWARE_QUANTIFY_METADATA_FILE = get_fixture_path("real-quantify-config.yml")

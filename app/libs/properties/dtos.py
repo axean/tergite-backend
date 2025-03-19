@@ -17,7 +17,7 @@ from os import PathLike
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import toml
-from pydantic import BaseModel, Extra, ValidationError, model_validator
+from pydantic import BaseModel, Extra, model_validator
 
 from app.libs.properties.utils.date_time import utc_now_iso
 

@@ -22,7 +22,6 @@ from typing import Any, Dict
 
 from qiskit.qobj import PulseQobj
 from qiskit_ibm_provider.utils import json_decoder
-from redis import Redis
 
 import settings
 from app.libs.quantum_executor.utils.connections import get_executor_lock

@@ -138,7 +138,6 @@ def discriminate_results(
     *,
     num_of_states: Union[Literal[2], Literal[3]] = 2,
     byteorder: ByteOrder = ByteOrder.LITTLE_ENDIAN,
-    full_register: bool = False,
     **kwargs,
 ) -> List[List[str]]:
     """

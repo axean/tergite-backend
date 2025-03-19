@@ -51,9 +51,9 @@ def generate_hardware_map(
       }
     """
 
-    def pad_qubit(qubit: str) -> str:
+    def pad_qubit(q: str) -> str:
         # Remove the 'q' prefix and pad if necessary.
-        num = qubit.lstrip("q")
+        num = q.lstrip("q")
         return num if len(num) > 1 else f"0{num}"
 
     hardware_map: Dict[str, Tuple[str, str]] = {}

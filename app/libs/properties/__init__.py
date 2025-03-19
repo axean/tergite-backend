@@ -91,11 +91,13 @@ def initialize_backend(
         mss_client: the requests Session to make requests to MSS with
         mss_url: the URL to MSS
         qubit_config: the qubit calibration data to initialize the backend with;
-                defaults to what is in the backend_config.toml
+                defaults to what is in the calibration.seed.toml
         resonator_config: the resonator calibration data to initialize the backend with;
-                defaults to what is in the backend_config.toml
+                defaults to what is in the calibration.seed.toml
         discriminator_config: the discriminator calibration data to initialize the backend with;
-                defaults to what is in the backend_config.toml
+                defaults to what is in the calibration.seed.toml
+        coupler_config: the coupler calibration data to initialize the backend with;
+                defaults to what is in the calibration.seed.toml
         is_standalone: whether this backend is standalone or is connected to an MSS
 
     Raises:
