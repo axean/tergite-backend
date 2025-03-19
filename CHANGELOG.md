@@ -9,6 +9,10 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ### Changed
 
+## [2025.03.2] - 2025-03-19
+
+### Changed
+
 - Remove stale fixtures 
 
 ### Fixed
