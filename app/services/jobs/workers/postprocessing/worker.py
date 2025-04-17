@@ -30,6 +30,11 @@ from requests import Response
 from sklearn.utils.extmath import safe_sparse_dot
 
 import settings
+from app.libs.properties import (
+    DeviceCalibrationV2,
+    get_backend_config,
+    get_device_calibration_v2_info,
+)
 from app.libs.properties.utils import date_time
 from app.libs.quantum_executor.base.quantum_job import (
     MeasLvl,
@@ -113,13 +118,15 @@ def logfile_postprocess(logfile: Path) -> JobID:
 
 
 def _apply_linear_discriminator(
-    backend: dict, qubit_idx: int, iq_points: npt.NDArray[np.complex128]
+    device_calibration: DeviceCalibrationV2,
+    qubit_idx: int,
+    iq_points: npt.NDArray[np.complex128],
 ) -> npt.NDArray[np.int_]:
     """
     Fetches the linear discriminator from the backend definition
 
     Args:
-        backend: Backend definition as dictionary
+        device_calibration: calibration data of the device
         qubit_idx: ID of the qubit to discriminate
         iq_points: IQ points from the measurement
 
@@ -127,7 +134,7 @@ def _apply_linear_discriminator(
         Discriminated 0 and 1 states as numpy array
 
     """
-    discriminator_ = backend["discriminators"]["lda"]
+    discriminator_ = device_calibration.discriminators["lda"]
     # TODO: We are having two "qubit_id" (e.g. q12 = 0, q13 = 1) and we should have some more meaningful representation
     qubit_id_ = f"q{qubit_idx}"
 
@@ -154,16 +161,13 @@ def postprocess_storage_file(
     try:
         with get_mss_client() as mss_client:
             if job.meas_level == MeasLvl.DISCRIMINATED:
-                # This would fetch the discriminator from the MSS
-                backend_definition: str = f'{str(MSS_MACHINE_ROOT_URL)}{REST_API_MAP["backends"]}/{backend_name}'
-                response = mss_client.get(backend_definition)
-
-                if response.status_code == 200:
-                    discriminator_fn = functools.partial(
-                        _apply_linear_discriminator, response.json()
-                    )
-                else:
-                    print(f"Response error {response}")
+                backend_config = get_backend_config()
+                device_calibration = get_device_calibration_v2_info(
+                    backend_config=backend_config
+                )
+                discriminator_fn = functools.partial(
+                    _apply_linear_discriminator, device_calibration
+                )
 
                 try:
                     memory = discriminate_results(job, discriminator=discriminator_fn)

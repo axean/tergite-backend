@@ -9,6 +9,8 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ### Changed
 
+- Changed source of lda parameters to backend's redis store. Originally they were retrieved from MSS.
+
 ## [2025.03.2] - 2025-03-19
 
 ### Changed

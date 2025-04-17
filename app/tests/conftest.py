@@ -46,7 +46,6 @@ from .utils.http import MockHttpResponse, MockHttpSession
 from .utils.modules import remove_modules
 from .utils.rq import get_rq_worker
 
-_lda_parameters_fixture = load_fixture("lda_parameters.json")
 _test_backend_props_fixture = load_fixture("test_backend_props.json")
 _test_backend_sim1q_props_fixture = load_fixture("test_backend_sim1q_props.json")
 _test_backend_sim2q_props_fixture = load_fixture("test_backend_sim2q_props.json")
@@ -194,18 +193,6 @@ def mock_post_requests(url: str, **kwargs):
     """Mock POST requests for testing"""
     if url == f"{TEST_MSS_MACHINE_ROOT_URL}/timelog":
         return MockHttpResponse(status_code=200)
-
-
-def mock_mss_get_requests(url: str, **kwargs):
-    """Mock GET requests sent to MSS for testing"""
-    if url.endswith("properties/lda_parameters"):
-        return MockHttpResponse(status_code=200, json=_lda_parameters_fixture)
-    if url.endswith(f"backends/{TEST_DEFAULT_PREFIX}"):
-        return MockHttpResponse(status_code=200, json=_test_backend_props_fixture)
-    if url.endswith(f"backends/{TEST_DEFAULT_PREFIX_SIM_1Q}"):
-        return MockHttpResponse(status_code=200, json=_test_backend_sim1q_props_fixture)
-    if url.endswith(f"backends/{TEST_DEFAULT_PREFIX_SIM_2Q}"):
-        return MockHttpResponse(status_code=200, json=_test_backend_sim2q_props_fixture)
 
 
 def mock_mss_put_requests(url: str, **kwargs):
@@ -484,7 +471,6 @@ def _patch_async_client(mocker):
     """Patches the async client"""
     mss_client = MockHttpSession(
         put=mock_mss_put_requests,
-        get=mock_mss_get_requests,
         post=mock_mss_post_requests,
     )
 
@@ -503,7 +489,6 @@ def _patch_async_client_sim2q(mocker):
     """Patches the async client"""
     mss_client = MockHttpSession(
         put=mock_mss_put_requests,
-        get=mock_mss_get_requests,
         post=mock_mss_post_requests,
     )
 
@@ -522,7 +507,6 @@ def _patch_sync_client(mocker):
     """Patches the sync client"""
     mss_client = MockHttpSession(
         put=mock_mss_put_requests,
-        get=mock_mss_get_requests,
         post=mock_mss_post_requests,
     )
 
