@@ -25,11 +25,6 @@ from app.tests.utils.redis import insert_in_hash, register_app_token_job_id
 
 _PARENT_FOLDER = path.dirname(path.abspath(__file__))
 _JOBS_LIST = load_fixture("job_list.json")
-_BACKEND_PROPERTIES = [
-    load_fixture("backend_properties.json"),
-    load_fixture("backend_properties.simq1.json"),
-    load_fixture("backend_properties.simq2.json"),
-]
 _STATIC_PROPERTIES_V2 = [
     load_fixture("static_properties_v2.json"),
     load_fixture("static_properties_v2.simq1.json"),
@@ -106,9 +101,6 @@ _BLACKLISTED_UPLOAD_JOB_PARAMS = [
     (client, redis_client, rq_worker, job)
     for job in _JOBS_FOR_UPLOAD
     for client, redis_client, rq_worker in BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES
-]
-_BACKEND_PROPERTIES_PARAMS = [
-    (client, resp) for client, resp in zip(FASTAPI_CLIENTS, _BACKEND_PROPERTIES)
 ]
 _STATIC_PROPERTIES_V2_PARAMS = [
     (client, resp) for client, resp in zip(FASTAPI_CLIENTS, _STATIC_PROPERTIES_V2)
@@ -773,47 +765,6 @@ def test_unauthenticated_download_logfile(
         assert got == expected
 
 
-@pytest.mark.parametrize("client, redis_client, rq_worker", CLIENT_AND_RQ_WORKER_TUPLES)
-def test_get_rq_info(client, redis_client, rq_worker):
-    """GET to '/rq-info' retrieves information about the running rq workers"""
-    # using context manager to ensure on_startup runs
-    with client as client:
-        rq_worker.register_birth()
-        response = client.get("/rq-info")
-        got = response.json()
-        workers = Worker.all(connection=redis_client)
-        worker_info_list = [
-            f"hostname: {worker.hostname},pid: {worker.pid}" for worker in workers
-        ]
-        expected = {"message": f"{{{''.join(worker_info_list)}}}"}
-        assert response.status_code == 200
-        assert got == expected
-
-
-@pytest.mark.parametrize(
-    "client, redis_client, rq_worker", BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES
-)
-def test_blacklisted_get_rq_info(client, redis_client, rq_worker):
-    """Blacklisted IP GET to '/rq-info' returns 404 and no content"""
-    # using context manager to ensure on_startup runs
-    with client as client:
-        rq_worker.register_birth()
-        response = client.get("/rq-info")
-        assert response.status_code == 404
-        assert response.content == b""
-
-
-@pytest.mark.parametrize("client, expected", _BACKEND_PROPERTIES_PARAMS)
-def test_get_backend_properties(client, expected):
-    """Get to '/backend_properties' retrieves the current snapshot of the backend properties"""
-    # using context manager to ensure on_startup runs
-    with client as client:
-        response = client.get("/backend_properties")
-        got = response.json()
-        assert response.status_code == 200
-        assert got == expected
-
-
 @pytest.mark.parametrize("client, expected", _STATIC_PROPERTIES_V2_PARAMS)
 def test_get_static_properties_v2(client, expected):
     """Get to '/v2/static-properties' retrieves the current static properties of the backend in v2 form"""
@@ -837,16 +788,6 @@ def test_get_dynamic_properties_v2(client, expected):
 
 
 @pytest.mark.parametrize("client", BLACKLISTED_FASTAPI_CLIENTS)
-def test_blacklisted_get_backend_properties(client):
-    """Blacklisted Get to '/backend_properties' returns 404 with no content"""
-    # using context manager to ensure on_startup runs
-    with client as client:
-        response = client.get("/backend_properties")
-        assert response.status_code == 404
-        assert response.content == b""
-
-
-@pytest.mark.parametrize("client", BLACKLISTED_FASTAPI_CLIENTS)
 def test_blacklisted_get_static_properties_v2(client):
     """Blacklisted Get to '/v2/static-properties' returns 404 with no content"""
     # using context manager to ensure on_startup runs
@@ -862,50 +803,6 @@ def test_blacklisted_get_dynamic_properties_v2(client):
     # using context manager to ensure on_startup runs
     with client as client:
         response = client.get("/v2/dynamic-properties")
-        assert response.status_code == 404
-        assert response.content == b""
-
-
-@pytest.mark.parametrize("client, redis_client", CLIENTS)
-def test_get_snapshot(client, redis_client: redis.Redis):
-    """Get to '/web-gui' retrieves the current snapshot of the backend properties"""
-    redis_client.set("current_snapshot", json.dumps(_DUMMY_JSON))
-    # using context manager to ensure on_startup runs
-    with client as client:
-        response = client.get("/web-gui")
-        assert response.status_code == 200
-        assert response.json() == _DUMMY_JSON
-
-
-@pytest.mark.parametrize("client, redis_client", BLACKLISTED_CLIENTS)
-def test_blacklisted_get_snapshot(client, redis_client: redis.Redis):
-    """Blacklisted Get to '/web-gui' returns 404 and no content"""
-    redis_client.set("current_snapshot", json.dumps(_DUMMY_JSON))
-    # using context manager to ensure on_startup runs
-    with client as client:
-        response = client.get("/web-gui")
-        assert response.status_code == 404
-        assert response.content == b""
-
-
-@pytest.mark.parametrize("client, redis_client", CLIENTS)
-def test_web_config(client, redis_client: redis.Redis):
-    """Get to '/web-gui/config' retrieves the config of this backend"""
-    redis_client.set("config", json.dumps(_DUMMY_JSON))
-    # using context manager to ensure on_startup runs
-    with client as client:
-        response = client.get("/web-gui/config")
-        assert response.status_code == 200
-        assert response.json() == _DUMMY_JSON
-
-
-@pytest.mark.parametrize("client, redis_client", BLACKLISTED_CLIENTS)
-def test_blacklisted_web_config(client, redis_client: redis.Redis):
-    """Blacklisted Get to '/web-gui/config' returns 404 and no content"""
-    redis_client.set("config", json.dumps(_DUMMY_JSON))
-    # using context manager to ensure on_startup runs
-    with client as client:
-        response = client.get("/web-gui/config")
         assert response.status_code == 404
         assert response.content == b""
 

@@ -151,77 +151,6 @@ def initialize_backend(
         )
 
 
-def get_device_v1_info(
-    backend_config: Optional[BackendConfig] = None,
-) -> DeviceV1:
-    """Retrieves this device's info in DeviceV1 format
-
-    Args:
-        backend_config: the BackendConfig instance for this device
-
-    Returns:
-        the deviceV1 info of the device
-    """
-    if backend_config is None:
-        backend_config = get_backend_config()
-
-    qubit_ids = backend_config.device_config.qubit_ids
-    discriminator_params = backend_config.device_config.discriminator_parameters
-    discriminators = backend_config.device_config.discriminators
-
-    # Couplng dicts is a dictionary of id as a keys and qubits list for each couplers
-    coupler_ids = backend_config.device_config.coupling_dict.keys()
-
-    qubit_conf = read_qubit_calibration_data(
-        qubit_ids=qubit_ids,
-        qubit_params=backend_config.device_config.qubit_parameters,
-    )
-    resonator_conf = read_resonator_calibration_data(
-        qubit_ids=qubit_ids,
-        resonator_params=backend_config.device_config.resonator_parameters,
-    )
-    coupler_conf = read_coupler_calibration_data(
-        coupler_ids=coupler_ids,
-        coupler_params=backend_config.device_config.coupler_parameters,
-    )
-    raw_discriminator_conf = {
-        item: read_discriminator_data(
-            qubit_ids=qubit_ids, params=discriminator_params[item]
-        )
-        for item in discriminators
-    }
-    return DeviceV1(
-        **backend_config.general_config.model_dump(),
-        meas_map=backend_config.device_config.meas_map,
-        coupling_map=backend_config.device_config.coupling_map,
-        qubit_ids=qubit_ids,
-        gates=backend_config.gates,
-        device_properties=DeviceProperties(
-            qubit=[
-                QubitProps(**{k: get_inner_value(v) for k, v in item.items()})
-                for item in qubit_conf
-            ],
-            readout_resonator=[
-                ReadoutResonatorProps(
-                    **{k: get_inner_value(v) for k, v in item.items()}
-                )
-                for item in resonator_conf
-            ],
-            coupler=[
-                CouplerProps(**{k: get_inner_value(v) for k, v in item.items()})
-                for item in coupler_conf
-            ],
-        ),
-        discriminators={
-            discriminator: {
-                qubit_id: {k: get_inner_value(v) for k, v in conf.items()}
-                for qubit_id, conf in discriminator_conf.items()
-            }
-            for discriminator, discriminator_conf in raw_discriminator_conf.items()
-        },
-    )
-
-
 def get_device_v2_info(
     backend_config: Optional[BackendConfig] = None,
 ) -> DeviceV2:
@@ -338,16 +267,12 @@ def send_backend_info_to_mss(
     if backend_config is None:
         backend_config = get_backend_config()
 
-    device_v1_info = get_device_v1_info(backend_config=backend_config).model_dump()
     device_v2_info = get_device_v2_info(backend_config=backend_config).model_dump()
     calibration_v2_info = get_device_calibration_v2_info(
         backend_config=backend_config
     ).model_dump()
 
-    collection_query = "" if collection is None else f"?collection={collection}"
-
     responses = [
-        mss_client.put(f"{mss_url}/backends{collection_query}", json=device_v1_info),
         mss_client.put(f"{mss_url}/v2/devices", json=device_v2_info),
         mss_client.post(f"{mss_url}/v2/calibrations", json=[calibration_v2_info]),
     ]
@@ -355,5 +280,3 @@ def send_backend_info_to_mss(
     error_message = ",".join([v.text for v in responses if not v.ok])
     if error_message != "":
         raise ValueError(error_message)
-
-    print(f"'{device_v1_info['name']}' backend v1 configuration is sent to MSS")

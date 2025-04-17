@@ -41,14 +41,10 @@ from rq import SimpleWorker
 from ..libs.properties import DeviceCalibrationV2
 from ..utils.queues import QueuePool
 from .utils.analysis import MockLinearDiscriminantAnalysis
-from .utils.fixtures import load_fixture
 from .utils.http import MockHttpResponse, MockHttpSession
 from .utils.modules import remove_modules
 from .utils.rq import get_rq_worker
 
-_test_backend_props_fixture = load_fixture("test_backend_props.json")
-_test_backend_sim1q_props_fixture = load_fixture("test_backend_sim1q_props.json")
-_test_backend_sim2q_props_fixture = load_fixture("test_backend_sim2q_props.json")
 _real_redis = redis.Redis(
     host=TEST_REDIS_HOST,
     port=TEST_REDIS_PORT,

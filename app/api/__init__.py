@@ -223,47 +223,11 @@ async def download_logfile(logfile_id: UUID):
         return {"message": "logfile not found"}
 
 
-# FIXME: this endpoint might be unnecessary going forward or might need to return proper JSON data
-@app.get("/rq-info", dependencies=[Depends(get_whitelisted_ip)])
-async def get_rq_info(redis_connection: RedisDep):
-    workers = Worker.all(connection=redis_connection)
-    print(str(workers))
-    if len(workers) == 0:
-        return {"message": "No worker registered"}
-
-    msg = "{"
-    for worker in workers:
-        msg += "hostname: " + str(worker.hostname) + ","
-        msg += "pid: " + str(worker.pid)
-    msg += "}"
-
-    return {"message": msg}
-
-
-@app.get("/backend_properties", dependencies=[Depends(get_whitelisted_ip)])
-async def create_current_snapshot():
-    return props_lib.get_device_v1_info()
-
-
 @app.get("/v2/static-properties", dependencies=[Depends(get_whitelisted_ip)])
-async def create_current_snapshot():
+async def get_static_properties():
     return props_lib.get_device_v2_info()
 
 
 @app.get("/v2/dynamic-properties", dependencies=[Depends(get_whitelisted_ip)])
-async def create_current_snapshot():
+async def get_dynamic_properties():
     return props_lib.get_device_calibration_v2_info()
-
-
-# FIXME: this endpoint might be unnecessary
-@app.get("/web-gui", dependencies=[Depends(get_whitelisted_ip)])
-async def get_snapshot(redis_connection: RedisDep):
-    snapshot = redis_connection.get("current_snapshot")
-    return json.loads(snapshot)
-
-
-# FIXME: this endpoint might be unnecessary
-@app.get("/web-gui/config", dependencies=[Depends(get_whitelisted_ip)])
-async def web_config(redis_connection: RedisDep):
-    snapshot = redis_connection.get("config")
-    return json.loads(snapshot)
