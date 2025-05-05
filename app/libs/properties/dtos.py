@@ -17,7 +17,7 @@ from os import PathLike
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import toml
-from pydantic import BaseModel, Extra, model_validator
+from pydantic import BaseModel, Extra, Field, model_validator
 
 from app.libs.properties.utils.date_time import utc_now_iso
 
@@ -85,41 +85,7 @@ class DeviceProperties(BaseModel):
     coupler: Optional[List[CouplerProps]] = None
 
 
-class DeviceV1(BaseModel):
-    """Basic structure of the config of a device"""
-
-    name: str
-    characterized: bool
-    open_pulse: bool
-    version: str
-    meas_map: List[List[int]]
-    coupling_map: List[Tuple[int, int]]
-    description: str = None
-    simulator: bool = False
-    num_qubits: int = 0
-    num_couplers: int = 0
-    num_resonators: int = 0
-    online_date: Optional[str] = None
-    dt: Optional[float] = None
-    dtm: Optional[float] = None
-    timelog: Dict[str, Any] = {}
-    qubit_ids: List[str] = []
-    device_properties: Optional[DeviceProperties] = None
-    discriminators: Optional[Dict[str, Any]] = None
-    meas_lo_freq: Optional[List[int]] = None
-    qubit_lo_freq: Optional[List[int]] = None
-    qubit_calibrations: Optional[Dict[str, Any]] = None
-    coupler_calibrations: Optional[Dict[str, Any]] = None
-    resonator_calibrations: Optional[Dict[str, Any]] = None
-    gates: Optional[Dict[str, Any]] = None
-    is_active: Optional[bool] = None
-    properties: Optional[Dict[str, Any]] = None
-
-    class Config:
-        extra = Extra.allow
-
-
-class DeviceV2(BaseModel):
+class Device(BaseModel):
     """The schema for v2 of device"""
 
     name: str
@@ -136,20 +102,15 @@ class DeviceV2(BaseModel):
     open_pulse: bool
     meas_map: List[List[int]]
     description: str = None
-    simulator: bool = False
-    num_qubits: int = 0
-    num_couplers: int = 0
-    num_resonators: int = 0
-    online_date: Optional[str] = None
+    number_of_couplers: int = 0
+    number_of_resonators: int = 0
     dt: Optional[float] = None
     dtm: Optional[float] = None
-    timelog: Dict[str, Any] = {}
     qubit_ids: List[str] = []
     meas_lo_freq: Optional[List[int]] = None
     qubit_lo_freq: Optional[List[int]] = None
     gates: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
-    properties: Optional[Dict[str, Any]] = None
     qubit_ids_coupler_map: List[Tuple[Tuple[int, int], int]] = []
 
     class Config:
@@ -220,7 +181,7 @@ class CouplersCalibration(BaseModel, extra=Extra.allow):
     id: Optional[int] = None
 
 
-class DeviceCalibrationV2(BaseModel):
+class DeviceCalibration(BaseModel):
     """Schema for the calibration data of a given device"""
 
     name: str

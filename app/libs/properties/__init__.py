@@ -30,10 +30,9 @@ from .dtos import (
     BackendConfig,
     CouplerProps,
     CouplersCalibration,
-    DeviceCalibrationV2,
+    Device,
+    DeviceCalibration,
     DeviceProperties,
-    DeviceV1,
-    DeviceV2,
     QubitCalibration,
     QubitProps,
     ReadoutResonatorProps,
@@ -151,26 +150,29 @@ def initialize_backend(
         )
 
 
-def get_device_v2_info(
+def get_device_info(
     backend_config: Optional[BackendConfig] = None,
-) -> DeviceV2:
-    """Retrieves this device's info in DeviceV2 format
+) -> Device:
+    """Retrieves this device's info in Device format
 
     Args:
         backend_config: the BackendConfig instance for this device
 
     Returns:
-        the deviceV2 info of the device
+        the device info of the device
     """
     if backend_config is None:
         backend_config = get_backend_config()
     qubit_ids = backend_config.device_config.qubit_ids
-    return DeviceV2(
+    return Device(
         **backend_config.general_config.model_dump(),
         meas_map=backend_config.device_config.meas_map,
         qubit_ids=qubit_ids,
         gates=backend_config.gates,
         number_of_qubits=backend_config.general_config.num_qubits,
+        number_of_couplers=backend_config.general_config.num_couplers,
+        number_of_resonators=backend_config.general_config.num_resonators,
+        last_online=backend_config.general_config.online_date,
         is_online=backend_config.general_config.is_active,
         basis_gates=list(backend_config.gates.keys()),
         coupling_map=backend_config.device_config.coupling_map,
@@ -181,16 +183,16 @@ def get_device_v2_info(
     )
 
 
-def get_device_calibration_v2_info(
+def get_device_calibration_info(
     backend_config: Optional[BackendConfig] = None,
-) -> DeviceCalibrationV2:
-    """Retrieves this device's calibration info in DeviceCalibrationV2 format
+) -> DeviceCalibration:
+    """Retrieves this device's calibration info in DeviceCalibration format
 
     Args:
         backend_config: the BackendConfig instance for this device
 
     Returns:
-        the DeviceCalibrationV2 info of the device
+        the DeviceCalibration info of the device
     """
     if backend_config is None:
         backend_config = get_backend_config()
@@ -235,7 +237,7 @@ def get_device_calibration_v2_info(
         for discriminator, discriminator_conf in raw_discriminator_conf.items()
     }
 
-    return DeviceCalibrationV2(
+    return DeviceCalibration(
         name=backend_config.general_config.name,
         version=backend_config.general_config.version,
         qubits=qubit_conf,
@@ -249,7 +251,6 @@ def get_device_calibration_v2_info(
 def send_backend_info_to_mss(
     mss_client: Session,
     mss_url: str = settings.MSS_MACHINE_ROOT_URL,
-    collection: str = None,
     backend_config: Optional[BackendConfig] = None,
 ):
     """
@@ -258,7 +259,6 @@ def send_backend_info_to_mss(
     Args:
         mss_client: the requests Session to run the queries
         mss_url: the URL to MSS
-        collection: Please specify if backend should not be pushed to the standard collection in the DB
         backend_config: the BackendConfig instance for this device
 
     Raises:
@@ -267,14 +267,14 @@ def send_backend_info_to_mss(
     if backend_config is None:
         backend_config = get_backend_config()
 
-    device_v2_info = get_device_v2_info(backend_config=backend_config).model_dump()
-    calibration_v2_info = get_device_calibration_v2_info(
+    device_info = get_device_info(backend_config=backend_config).model_dump()
+    calibration_info = get_device_calibration_info(
         backend_config=backend_config
     ).model_dump()
 
     responses = [
-        mss_client.put(f"{mss_url}/v2/devices", json=device_v2_info),
-        mss_client.post(f"{mss_url}/v2/calibrations", json=[calibration_v2_info]),
+        mss_client.put(f"{mss_url}/devices/", json=device_info),
+        mss_client.post(f"{mss_url}/calibrations/", json=[calibration_info]),
     ]
 
     error_message = ",".join([v.text for v in responses if not v.ok])

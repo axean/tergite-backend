@@ -31,9 +31,9 @@ from sklearn.utils.extmath import safe_sparse_dot
 
 import settings
 from app.libs.properties import (
-    DeviceCalibrationV2,
+    DeviceCalibration,
     get_backend_config,
-    get_device_calibration_v2_info,
+    get_device_calibration_info,
 )
 from app.libs.properties.utils import date_time
 from app.libs.quantum_executor.base.quantum_job import (
@@ -118,7 +118,7 @@ def logfile_postprocess(logfile: Path) -> JobID:
 
 
 def _apply_linear_discriminator(
-    device_calibration: DeviceCalibrationV2,
+    device_calibration: DeviceCalibration,
     qubit_idx: int,
     iq_points: npt.NDArray[np.complex128],
 ) -> npt.NDArray[np.int_]:
@@ -162,7 +162,7 @@ def postprocess_storage_file(
         with get_mss_client() as mss_client:
             if job.meas_level == MeasLvl.DISCRIMINATED:
                 backend_config = get_backend_config()
-                device_calibration = get_device_calibration_v2_info(
+                device_calibration = get_device_calibration_info(
                     backend_config=backend_config
                 )
                 discriminator_fn = functools.partial(

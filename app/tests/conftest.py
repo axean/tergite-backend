@@ -38,7 +38,7 @@ from pytest_lazyfixture import lazy_fixture
 from redis.client import Redis
 from rq import SimpleWorker
 
-from ..libs.properties import DeviceCalibrationV2
+from ..libs.properties import DeviceCalibration
 from ..utils.queues import QueuePool
 from .utils.analysis import MockLinearDiscriminantAnalysis
 from .utils.http import MockHttpResponse, MockHttpSession
@@ -212,7 +212,7 @@ def mock_mss_post_requests(url: str, **kwargs):
 
     if url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/v2/calibrations"):
         try:
-            _parsed_payload = [DeviceCalibrationV2(**props) for props in payload]
+            _parsed_payload = [DeviceCalibration(**props) for props in payload]
             return MockHttpResponse(status_code=200)
         except Exception as exp:
             logging.error(exp)

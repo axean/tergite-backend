@@ -225,9 +225,9 @@ async def download_logfile(logfile_id: UUID):
 
 @app.get("/v2/static-properties", dependencies=[Depends(get_whitelisted_ip)])
 async def get_static_properties():
-    return props_lib.get_device_v2_info()
+    return props_lib.get_device_info()
 
 
 @app.get("/v2/dynamic-properties", dependencies=[Depends(get_whitelisted_ip)])
 async def get_dynamic_properties():
-    return props_lib.get_device_calibration_v2_info()
+    return props_lib.get_device_calibration_info()
