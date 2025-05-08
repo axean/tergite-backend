@@ -1,14 +1,12 @@
 """The service file for handling authentication"""
-from typing import Optional, Tuple
+from typing import Optional
 
 from redis.client import Redis
 
+from ...libs.store import Collection, ItemNotFoundError
 from ..jobs.dtos import JobStatus
 from .dtos import AuthLog, Credentials
 from .exc import AuthenticationError, AuthorizationError, JobAlreadyExists
-
-_AUTH_HASH_KEY = "auth_service"
-_SEPARATOR = "@@@"
 
 
 def save_credentials(redis_db: Redis, payload: Credentials):
@@ -21,17 +19,16 @@ def save_credentials(redis_db: Redis, payload: Credentials):
     Raises:
         JobAlreadyExists: job id '{payload.job_id}' already exists
     """
-    redis_key = _get_composite_key((payload.app_token, payload.job_id))
-    if redis_db.hexists(_AUTH_HASH_KEY, redis_key):
+    auth_logs = Collection(redis_db, schema=AuthLog)
+
+    if auth_logs.exists((payload.job_id, payload.app_token)):
         raise JobAlreadyExists(f"job id '{payload.job_id}' already exists")
 
-    auth_log = AuthLog(
+    auth_logs.replace(AuthLog(
         job_id=payload.job_id,
         app_token=payload.app_token,
         status=JobStatus.PENDING,
-    )
-
-    redis_db.hset(_AUTH_HASH_KEY, redis_key, auth_log.json())
+    ))
 
 
 def authenticate(
@@ -50,26 +47,16 @@ def authenticate(
         AuthenticationError: job {credentials.job_id} does not exist for current user
         AuthorizationError: job {credentials.job_id} is already {auth_log.status}
     """
-    redis_key = _get_composite_key((credentials.app_token, credentials.job_id))
-    auth_log_str = redis_db.hget(_AUTH_HASH_KEY, redis_key)
+    auth_logs = Collection(redis_db, schema=AuthLog)
 
-    if auth_log_str is None:
+    try:
+        auth_log = auth_logs.get_one((credentials.job_id, credentials.app_token))
+    except ItemNotFoundError:
         raise AuthenticationError(
             f"job {credentials.job_id} does not exist for current user"
         )
-
-    auth_log = AuthLog.parse_raw(auth_log_str)
 
     if expected_status and auth_log.status != expected_status:
         raise AuthorizationError(
             f"job {credentials.job_id} is already {auth_log.status}"
         )
-
-
-def _get_composite_key(keys: Tuple[str, ...]) -> str:
-    """Gets a single key from a list of keys
-
-    Args:
-        keys: the list of keys from which to generate the key
-    """
-    return _SEPARATOR.join(keys)
