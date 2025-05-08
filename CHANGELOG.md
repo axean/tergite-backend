@@ -7,6 +7,10 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ## [Unreleased]
 
+### Added
+
+- Add a simpler JSON document based store in redis
+
 ### Changed
 
 - Changed source of lda parameters to backend's redis store. Originally they were retrieved from MSS.

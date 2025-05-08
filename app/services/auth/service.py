@@ -1,10 +1,10 @@
 """The service file for handling authentication"""
-from datetime import datetime
 from typing import Optional, Tuple
 
 from redis.client import Redis
 
-from .dtos import AuthLog, Credentials, JobStatus
+from ..jobs.dtos import JobStatus
+from .dtos import AuthLog, Credentials
 from .exc import AuthenticationError, AuthorizationError, JobAlreadyExists
 
 _AUTH_HASH_KEY = "auth_service"
@@ -25,11 +25,10 @@ def save_credentials(redis_db: Redis, payload: Credentials):
     if redis_db.hexists(_AUTH_HASH_KEY, redis_key):
         raise JobAlreadyExists(f"job id '{payload.job_id}' already exists")
 
-    timestamp = datetime.utcnow()
     auth_log = AuthLog(
-        status=JobStatus.REGISTERED,
-        created_at=timestamp,
-        updated_at=timestamp,
+        job_id=payload.job_id,
+        app_token=payload.app_token,
+        status=JobStatus.PENDING,
     )
 
     redis_db.hset(_AUTH_HASH_KEY, redis_key, auth_log.json())
