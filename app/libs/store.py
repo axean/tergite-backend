@@ -11,12 +11,24 @@
 # that they have been altered from the originals.
 #
 """Module containing the source code for storing data"""
-from typing import Any, Dict, Generic, List, Sequence, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from pydantic import BaseModel
 from redis import Redis
 
 from app.utils.exc import BaseBccException
+from app.utils.model import create_partial_schema
 
 _KEY_SEPARATOR = "@@@"
 
@@ -56,14 +68,32 @@ class Schema(BaseModel):
 
 
 T = TypeVar("T", bound=Schema)
+Part_T = TypeVar("Part_T", bound=Schema)
 
 
-class Collection(Generic[T]):
+class Collection(Generic[T, Part_T]):
     """A synchronous collection of items of similar types"""
 
-    def __init__(self, connection: Redis, schema: Type[T]):
+    def __init__(
+        self,
+        connection: Redis,
+        schema: Type[T],
+        partial_schema: Optional[Type[Part_T]] = None,
+    ):
+        """
+        Args:
+            connection: the redis connection to which this collection is attached
+            schema: the schema for all items in the collection
+            partial_schema: the schema for partial updates; default: None
+        """
+        if partial_schema is None:
+            partial_schema = create_partial_schema(
+                f"Partial{schema.__qualname__}", original=schema
+            )
+
         self._connection = connection
         self._schema = schema
+        self._partial_schema = partial_schema
         self._hashmap_name = f"{schema.__module__}.{schema.__qualname__}".lower()
 
     def exists(self, key: Union[str, Tuple[Any, ...], Dict[str, Any]]) -> bool:
@@ -127,39 +157,8 @@ class Collection(Generic[T]):
         data = [self._schema.model_validate_json(item) for item in raw_data.values()]
         return sorted(data, key=lambda v: _get_redis_key(self._schema, v), reverse=desc)
 
-    def upsert(self, payload: T) -> T:
-        """Updates the item identified by the primary key or inserts it if it does not exist
-
-        The payload passed can be a partial schema, but it will result in validation
-        errors if the payload does not satisfy the full schema yet the item does not exist already.
-
-        Args:
-            payload: the item to update or insert.
-
-        Returns:
-            the current item as existing in the collection
-
-        Raises:
-            ValidationError: payload does not satisfy the schema of the collection
-            AttributeError: some primary key fields were not set
-        """
-        key = _get_redis_key(self._schema, payload)
-        props = payload.model_dump(exclude_unset=True, exclude_defaults=True)
-
-        try:
-            old_item = self.get_one(key)
-            props = {**old_item.model_dump(), **props}
-        except ItemNotFoundError:
-            pass
-
-        new_item = self._schema(**props)
-        data = new_item.model_dump_json()
-        self._connection.hset(self._hashmap_name, key, data)
-
-        return new_item
-
-    def replace(self, payload: T):
-        """Replaces the item identified by the primary key or inserts it if it does not exist
+    def insert(self, payload: T):
+        """Inserts the item identified by the primary key, replacing it if it exists
 
         Args:
             payload: the item to update or insert
@@ -178,6 +177,39 @@ class Collection(Generic[T]):
         self._connection.hset(self._hashmap_name, key, data)
 
         return payload
+
+    def update(
+        self,
+        key: Union[str, Tuple[Any, ...], Dict[str, Any]],
+        updates: Union[Dict[str, Any], Part_T],
+    ) -> T:
+        """Updates the item identified by the primary key with the new updates
+
+        Args:
+            key: the unique key that identifies that item
+            updates: the new fields and values to add.
+
+        Returns:
+            the item after updating
+
+        Raises:
+            ValidationError: updates does not satisfy the partial schema of the collection
+            ItemNotFound: key '{key}' not found
+        """
+        parsed_updates = self._partial_schema.model_validate(updates)
+
+        old_item = self.get_one(key)
+        new_props = {
+            **old_item.model_dump(),
+            **parsed_updates.model_dump(exclude_unset=True, exclude_defaults=True),
+        }
+        updated_item = self._schema(**new_props)
+        redis_key = self._schema.construct_redis_key(key)
+        self._connection.hset(
+            self._hashmap_name, redis_key, updated_item.model_dump_json()
+        )
+
+        return updated_item
 
     def delete_many(self, keys: Sequence[Union[str, Tuple[Any, ...], Dict[str, Any]]]):
         """Get many items by their keys

@@ -24,7 +24,7 @@ def save_credentials(redis_db: Redis, payload: Credentials):
     if auth_logs.exists((payload.job_id, payload.app_token)):
         raise JobAlreadyExists(f"job id '{payload.job_id}' already exists")
 
-    auth_logs.replace(
+    auth_logs.insert(
         AuthLog(
             job_id=payload.job_id,
             app_token=payload.app_token,

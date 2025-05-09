@@ -19,7 +19,7 @@ from pydantic import ValidationError
 from redis import Redis
 
 from app.libs.store import Collection, ItemNotFoundError, Schema
-from app.services.auth.dtos import AuthLog, Credentials, PartialAuthLog
+from app.services.auth.dtos import AuthLog, PartialAuthLog
 
 _AUTH_LOG_LIST = [
     {"job_id": "foo", "app_token": "bar"},
@@ -36,47 +36,23 @@ _DELETE_SLICES = [
 
 
 @pytest.mark.parametrize("payload", _AUTH_LOG_LIST)
-def test_insert(real_redis_client, payload, freezer):
-    """Calling upsert() inserts the new item if it does not exist"""
-    auth_logs = Collection(real_redis_client, schema=AuthLog)
-    kwargs = {"status": "pending", **payload}
-    item = AuthLog(**kwargs)
-
-    got = auth_logs.upsert(item)
-    item_in_db = _get_redis_value(real_redis_client, item)
-
-    assert got == item
-    assert item_in_db == item.model_dump_json()
-
-
-@pytest.mark.parametrize("payload", _AUTH_LOG_LIST)
-def test_insert_invalid_schema(real_redis_client, payload, freezer):
-    """upsert() fails if the new item does not satisfy the schema"""
-    auth_logs = Collection(real_redis_client, schema=AuthLog)
-    item = Credentials(**payload)
-
-    with pytest.raises(ValidationError, match=r"validation error for AuthLog"):
-        auth_logs.upsert(item)
-
-    item_in_db = _get_redis_value(real_redis_client, item)
-    assert item_in_db is None
-
-
-@pytest.mark.parametrize("payload", _AUTH_LOG_LIST)
-def test_update(real_redis_client, payload, freezer):
-    """Calling upsert() updates the item if it exists already"""
-    auth_logs = Collection(real_redis_client, schema=AuthLog)
+def test_update_by_single_key(real_redis_client, payload, freezer):
+    """Calling update() with a raw redis key updates the item if it exists already"""
+    auth_logs = Collection(
+        real_redis_client, schema=AuthLog, partial_schema=PartialAuthLog
+    )
 
     original_item = AuthLog(**{"status": "pending", **payload})
     _insert_into_redis(real_redis_client, [original_item])
     original_item_in_db = _get_redis_value(real_redis_client, original_item)
+    key = _get_redis_key(original_item)
 
     new_update = {
         "status": "successful",
         "job_id": payload["job_id"],
         "app_token": payload["app_token"],
     }
-    new_item = auth_logs.upsert(PartialAuthLog(**new_update))
+    new_item = auth_logs.update(key, PartialAuthLog(**new_update))
     new_item_in_db = _get_redis_value(real_redis_client, original_item)
 
     assert original_item_in_db == original_item.model_dump_json()
@@ -88,25 +64,211 @@ def test_update(real_redis_client, payload, freezer):
 
 
 @pytest.mark.parametrize("payload", _AUTH_LOG_LIST)
+def test_dict_update_by_single_key(real_redis_client, payload, freezer):
+    """Calling update() with a raw redis key, and dict updates, changes the item if it exists already"""
+    auth_logs = Collection(real_redis_client, schema=AuthLog)
+
+    original_item = AuthLog(**{"status": "pending", **payload})
+    _insert_into_redis(real_redis_client, [original_item])
+    original_item_in_db = _get_redis_value(real_redis_client, original_item)
+    key = _get_redis_key(original_item)
+
+    new_update = {
+        "status": "successful",
+        "job_id": payload["job_id"],
+        "app_token": payload["app_token"],
+    }
+    new_item = auth_logs.update(key, new_update)
+    new_item_in_db = _get_redis_value(real_redis_client, original_item)
+
+    assert original_item_in_db == original_item.model_dump_json()
+    assert new_item_in_db == new_item.model_dump_json()
+    assert new_item.model_dump() == {
+        **original_item.model_dump(),
+        "status": "successful",
+    }
+
+
+@pytest.mark.parametrize("payload", _AUTH_LOG_LIST)
+def test_update_by_tuple_key(real_redis_client, payload, freezer):
+    """Calling update() with a tuple of keys updates the item if it exists already"""
+    auth_logs = Collection(
+        real_redis_client, schema=AuthLog, partial_schema=PartialAuthLog
+    )
+
+    original_item = AuthLog(**{"status": "pending", **payload})
+    _insert_into_redis(real_redis_client, [original_item])
+    original_item_in_db = _get_redis_value(real_redis_client, original_item)
+    key = (payload["job_id"], payload["app_token"])
+
+    new_update = {
+        "status": "successful",
+        "job_id": payload["job_id"],
+        "app_token": payload["app_token"],
+    }
+    new_item = auth_logs.update(key, PartialAuthLog(**new_update))
+    new_item_in_db = _get_redis_value(real_redis_client, original_item)
+
+    assert original_item_in_db == original_item.model_dump_json()
+    assert new_item_in_db == new_item.model_dump_json()
+    assert new_item.model_dump() == {
+        **original_item.model_dump(),
+        "status": "successful",
+    }
+
+
+@pytest.mark.parametrize("payload", _AUTH_LOG_LIST)
+def test_dict_update_by_tuple_key(real_redis_client, payload, freezer):
+    """Calling update() with a tuple of keys, and dict updates, changes the item if it exists already"""
+    auth_logs = Collection(real_redis_client, schema=AuthLog)
+
+    original_item = AuthLog(**{"status": "pending", **payload})
+    _insert_into_redis(real_redis_client, [original_item])
+    original_item_in_db = _get_redis_value(real_redis_client, original_item)
+    key = (payload["job_id"], payload["app_token"])
+
+    new_update = {
+        "status": "successful",
+        "job_id": payload["job_id"],
+        "app_token": payload["app_token"],
+    }
+    new_item = auth_logs.update(key, new_update)
+    new_item_in_db = _get_redis_value(real_redis_client, original_item)
+
+    assert original_item_in_db == original_item.model_dump_json()
+    assert new_item_in_db == new_item.model_dump_json()
+    assert new_item.model_dump() == {
+        **original_item.model_dump(),
+        "status": "successful",
+    }
+
+
+@pytest.mark.parametrize("payload", _AUTH_LOG_LIST)
+def test_update_by_dict_key(real_redis_client, payload, freezer):
+    """Calling update() with a primary key in dict form updates the item if it exists already"""
+    auth_logs = Collection(
+        real_redis_client, schema=AuthLog, partial_schema=PartialAuthLog
+    )
+
+    original_item = AuthLog(**{"status": "pending", **payload})
+    _insert_into_redis(real_redis_client, [original_item])
+    original_item_in_db = _get_redis_value(real_redis_client, original_item)
+    key = {
+        "job_id": payload["job_id"],
+        "app_token": payload["app_token"],
+    }
+
+    new_update = {"status": "successful", **key}
+    new_item = auth_logs.update(key, PartialAuthLog(**new_update))
+    new_item_in_db = _get_redis_value(real_redis_client, original_item)
+
+    assert original_item_in_db == original_item.model_dump_json()
+    assert new_item_in_db == new_item.model_dump_json()
+    assert new_item.model_dump() == {
+        **original_item.model_dump(),
+        "status": "successful",
+    }
+
+
+@pytest.mark.parametrize("payload", _AUTH_LOG_LIST)
+def test_update_by_dict_key(real_redis_client, payload, freezer):
+    """Calling update() with a primary key in dict form, and update dict, changes the item if it exists already"""
+    auth_logs = Collection(real_redis_client, schema=AuthLog)
+
+    original_item = AuthLog(**{"status": "pending", **payload})
+    _insert_into_redis(real_redis_client, [original_item])
+    original_item_in_db = _get_redis_value(real_redis_client, original_item)
+    key = {
+        "job_id": payload["job_id"],
+        "app_token": payload["app_token"],
+    }
+
+    new_update = {"status": "successful", **key}
+    new_item = auth_logs.update(key, new_update)
+    new_item_in_db = _get_redis_value(real_redis_client, original_item)
+
+    assert original_item_in_db == original_item.model_dump_json()
+    assert new_item_in_db == new_item.model_dump_json()
+    assert new_item.model_dump() == {
+        **original_item.model_dump(),
+        "status": "successful",
+    }
+
+
+@pytest.mark.parametrize("payload", _AUTH_LOG_LIST)
+def test_update_not_found(real_redis_client, payload, freezer):
+    """Calling update() fails if the item does not exist"""
+    auth_logs = Collection(
+        real_redis_client, schema=AuthLog, partial_schema=PartialAuthLog
+    )
+
+    key_tuple = (payload["job_id"], payload["app_token"])
+    single_key = "@@@".join(key_tuple)
+    key_dict = {"app_token": payload["app_token"], "job_id": payload["job_id"]}
+
+    new_update = {"status": "successful", **key_dict}
+
+    with pytest.raises(ItemNotFoundError, match=r"not found"):
+        auth_logs.update(single_key, PartialAuthLog(**new_update))
+
+    with pytest.raises(ItemNotFoundError, match=r"not found"):
+        auth_logs.update(single_key, new_update)
+
+    with pytest.raises(ItemNotFoundError, match=r"not found"):
+        auth_logs.update(key_tuple, PartialAuthLog(**new_update))
+
+    with pytest.raises(ItemNotFoundError, match=r"not found"):
+        auth_logs.update(key_tuple, new_update)
+
+    with pytest.raises(ItemNotFoundError, match=r"not found"):
+        auth_logs.update(key_dict, PartialAuthLog(**new_update))
+
+    with pytest.raises(ItemNotFoundError, match=r"not found"):
+        auth_logs.update(key_dict, new_update)
+
+    hmap = _get_redis_hmap(real_redis_client, schema=AuthLog)
+    assert hmap == {}
+
+
+@pytest.mark.parametrize("payload", _AUTH_LOG_LIST)
 def test_update_invalid_schema(real_redis_client, payload, freezer):
-    """upsert() fails if the update payload does not satisfy the schema"""
+    """update() fails if the update payload does not satisfy the schema"""
     auth_logs = Collection(real_redis_client, schema=AuthLog)
 
     original_item = AuthLog(**{"status": "pending", **payload})
     _insert_into_redis(real_redis_client, [original_item])
     original_item_in_db = _get_redis_value(real_redis_client, original_item)
 
+    key_tuple = (payload["job_id"], payload["app_token"])
+    single_key = _get_redis_key(original_item)
+    key_dict = {"app_token": payload["app_token"], "job_id": payload["job_id"]}
+
     update = WrongAuthLog(**{**payload, "status": 9})
-    with pytest.raises(ValidationError, match=r"validation error for AuthLog"):
-        auth_logs.upsert(update)
+    with pytest.raises(ValidationError, match=r"validation error for PartialAuthLog"):
+        auth_logs.update(single_key, update)
+
+    with pytest.raises(ValidationError, match=r"validation error for PartialAuthLog"):
+        auth_logs.update(single_key, update.model_dump())
+
+    with pytest.raises(ValidationError, match=r"validation error for PartialAuthLog"):
+        auth_logs.update(key_tuple, update)
+
+    with pytest.raises(ValidationError, match=r"validation error for PartialAuthLog"):
+        auth_logs.update(key_tuple, update.model_dump())
+
+    with pytest.raises(ValidationError, match=r"validation error for PartialAuthLog"):
+        auth_logs.update(key_dict, update)
+
+    with pytest.raises(ValidationError, match=r"validation error for PartialAuthLog"):
+        auth_logs.update(key_dict, update.model_dump())
 
     item_in_db = _get_redis_value(real_redis_client, original_item)
     assert item_in_db == original_item_in_db
 
 
 @pytest.mark.parametrize("payload", _AUTH_LOG_LIST)
-def test_replace(real_redis_client, payload, freezer):
-    """Calling replace() replaces the entire item with a new one"""
+def test_insert(real_redis_client, payload, freezer):
+    """Calling insert() replaces the entire item with a new one"""
     auth_logs = Collection(real_redis_client, schema=AuthLog)
 
     original_item = AuthLog(**{"status": "pending", **payload})
@@ -114,7 +276,7 @@ def test_replace(real_redis_client, payload, freezer):
     original_item_in_db = _get_redis_value(real_redis_client, original_item)
 
     new_item = AuthLog(**{**payload, "status": "successful", "created_at": "belle"})
-    auth_logs.replace(new_item)
+    auth_logs.insert(new_item)
     new_item_in_db = _get_redis_value(real_redis_client, original_item)
 
     assert original_item_in_db == original_item.model_dump_json()
@@ -122,8 +284,8 @@ def test_replace(real_redis_client, payload, freezer):
 
 
 @pytest.mark.parametrize("payload", _AUTH_LOG_LIST)
-def test_replace_invalid_schema(real_redis_client, payload, freezer):
-    """replace() fails if the payload passed does not satisfy the schema"""
+def test_insert_invalid_schema(real_redis_client, payload, freezer):
+    """insert() fails if the payload passed does not satisfy the schema"""
     auth_logs = Collection(real_redis_client, schema=AuthLog)
 
     original_item = AuthLog(**{"status": "pending", **payload})
@@ -132,7 +294,7 @@ def test_replace_invalid_schema(real_redis_client, payload, freezer):
 
     update = WrongAuthLog(**{**payload, "status": 9})
     with pytest.raises(ValidationError, match=r"validation error for AuthLog"):
-        auth_logs.replace(update)
+        auth_logs.insert(update)
 
     item_in_db = _get_redis_value(real_redis_client, original_item)
     assert item_in_db == original_item_in_db
