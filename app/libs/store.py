@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 #
 """Module containing the source code for storing data"""
-from typing import Any, Dict, Generic, Tuple, Type, TypeVar, Union
+from typing import Any, Dict, Generic, List, Sequence, Tuple, Type, TypeVar, Union
 
 from pydantic import BaseModel
 from redis import Redis
@@ -111,6 +111,22 @@ class Collection(Generic[T]):
 
         return self._schema.model_validate_json(data)
 
+    def get_all(self, desc: bool = False) -> List[T]:
+        """Get all items in this collection, sorted by key
+
+        Args:
+            desc: if the items should come in descending order of keys
+
+        Returns:
+            the list of items in this collection
+
+        Raises:
+            ValidationError: item does not match the given schema
+        """
+        raw_data = self._connection.hgetall(self._hashmap_name)
+        data = [self._schema.model_validate_json(item) for item in raw_data.values()]
+        return sorted(data, key=lambda v: _get_redis_key(self._schema, v), reverse=desc)
+
     def upsert(self, payload: T) -> T:
         """Updates the item identified by the primary key or inserts it if it does not exist
 
@@ -162,6 +178,27 @@ class Collection(Generic[T]):
         self._connection.hset(self._hashmap_name, key, data)
 
         return payload
+
+    def delete_many(self, keys: Sequence[Union[str, Tuple[Any, ...], Dict[str, Any]]]):
+        """Get many items by their keys
+
+        The keys can be the tuples of the raw keys used in redis,
+        or sequence of tuples of the values of the primary fields in the right order,
+        or sequence of dictionaries of the primary fields and their values
+
+        Args:
+            keys: the unique keys that identify that items
+
+        Raises:
+            ValidationError: item does not match the given schema
+            KeyError: some primary key fields were not set
+        """
+        redis_keys = [self._schema.construct_redis_key(key) for key in keys]
+        self._connection.hdel(self._hashmap_name, *redis_keys)
+
+    def clear(self):
+        """Clears all items in this collection"""
+        self._connection.delete(self._hashmap_name)
 
 
 class ItemNotFoundError(BaseBccException):

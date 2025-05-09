@@ -12,7 +12,7 @@
 #
 """Module containing tests for the store library"""
 from datetime import datetime, timezone
-from typing import Union
+from typing import Dict, List, Tuple, Type, Union
 
 import pytest
 from pydantic import ValidationError
@@ -23,10 +23,15 @@ from app.services.auth.dtos import AuthLog, Credentials, PartialAuthLog
 
 _AUTH_LOG_LIST = [
     {"job_id": "foo", "app_token": "bar"},
-    {"job_id": "foo", "app_token": "bar", "status": "executing"},
-    {"job_id": "foo", "app_token": "bar", "status": "failed"},
+    {"job_id": "foot", "app_token": "bar", "status": "executing"},
+    {"job_id": "feet", "app_token": "ben", "status": "failed"},
     {"job_id": "fee", "app_token": "barracuda"},
     {"job_id": "billings", "app_token": "zealot"},
+]
+_DELETE_SLICES = [
+    (0, -1),
+    (1, 4),
+    (2, 3),
 ]
 
 
@@ -63,7 +68,7 @@ def test_update(real_redis_client, payload, freezer):
     auth_logs = Collection(real_redis_client, schema=AuthLog)
 
     original_item = AuthLog(**{"status": "pending", **payload})
-    _insert_into_redis(real_redis_client, original_item)
+    _insert_into_redis(real_redis_client, [original_item])
     original_item_in_db = _get_redis_value(real_redis_client, original_item)
 
     new_update = {
@@ -88,7 +93,7 @@ def test_update_invalid_schema(real_redis_client, payload, freezer):
     auth_logs = Collection(real_redis_client, schema=AuthLog)
 
     original_item = AuthLog(**{"status": "pending", **payload})
-    _insert_into_redis(real_redis_client, original_item)
+    _insert_into_redis(real_redis_client, [original_item])
     original_item_in_db = _get_redis_value(real_redis_client, original_item)
 
     update = WrongAuthLog(**{**payload, "status": 9})
@@ -105,7 +110,7 @@ def test_replace(real_redis_client, payload, freezer):
     auth_logs = Collection(real_redis_client, schema=AuthLog)
 
     original_item = AuthLog(**{"status": "pending", **payload})
-    _insert_into_redis(real_redis_client, original_item)
+    _insert_into_redis(real_redis_client, [original_item])
     original_item_in_db = _get_redis_value(real_redis_client, original_item)
 
     new_item = AuthLog(**{**payload, "status": "successful", "created_at": "belle"})
@@ -122,7 +127,7 @@ def test_replace_invalid_schema(real_redis_client, payload, freezer):
     auth_logs = Collection(real_redis_client, schema=AuthLog)
 
     original_item = AuthLog(**{"status": "pending", **payload})
-    _insert_into_redis(real_redis_client, original_item)
+    _insert_into_redis(real_redis_client, [original_item])
     original_item_in_db = _get_redis_value(real_redis_client, original_item)
 
     update = WrongAuthLog(**{**payload, "status": 9})
@@ -139,7 +144,7 @@ def test_get_one(real_redis_client, payload, freezer):
     auth_logs = Collection(real_redis_client, schema=AuthLog)
 
     item = AuthLog(**{"status": "pending", **payload})
-    _insert_into_redis(real_redis_client, item)
+    _insert_into_redis(real_redis_client, [item])
     item_in_db = _get_redis_value(real_redis_client, item)
 
     single_key = _get_redis_key(item)
@@ -177,6 +182,94 @@ def test_get_one_not_found(real_redis_client, payload, freezer):
         auth_logs.get_one(key_dict)
 
 
+@pytest.mark.parametrize("desc", [True, False])
+def test_get_all(real_redis_client, desc, freezer):
+    """Calling get_all() gets the items in the collection sorted by key"""
+    items = [AuthLog(**{"status": "pending", **payload}) for payload in _AUTH_LOG_LIST]
+    auth_logs = Collection(real_redis_client, schema=AuthLog)
+    sorted_items = _sort_by_key(items, desc=desc)
+
+    _insert_into_redis(real_redis_client, items)
+
+    got = auth_logs.get_all(desc=desc)
+    hmap = _get_redis_hmap(real_redis_client, schema=AuthLog)
+    expected_hmap = {_get_redis_key(v): v.model_dump_json() for v in sorted_items}
+
+    assert got == sorted_items
+    assert hmap == expected_hmap
+
+
+@pytest.mark.parametrize("bounds", _DELETE_SLICES)
+def test_delete_many_by_single_keys(
+    real_redis_client, bounds: Tuple[int, int], freezer
+):
+    """Calling delete_many() removes items with matching single key strings in the collection"""
+    items = [AuthLog(**{"status": "pending", **payload}) for payload in _AUTH_LOG_LIST]
+    auth_logs = Collection(real_redis_client, schema=AuthLog)
+    keys_to_delete = [_get_redis_key(item) for item in items[bounds[0] : bounds[1]]]
+    expected_items = items[: bounds[0]] + items[bounds[1] :]
+
+    _insert_into_redis(real_redis_client, items)
+
+    auth_logs.delete_many(keys_to_delete)
+    hmap = _get_redis_hmap(real_redis_client, schema=AuthLog)
+    expected_hmap = {_get_redis_key(v): v.model_dump_json() for v in expected_items}
+
+    assert hmap == expected_hmap
+
+
+@pytest.mark.parametrize("bounds", _DELETE_SLICES)
+def test_delete_many_by_key_tuples(real_redis_client, bounds: Tuple[int, int], freezer):
+    """Calling delete_many() removes items with matching key tuples in the collection"""
+    items = [AuthLog(**{"status": "pending", **payload}) for payload in _AUTH_LOG_LIST]
+    auth_logs = Collection(real_redis_client, schema=AuthLog)
+    keys_to_delete = [
+        (item.job_id, item.app_token) for item in items[bounds[0] : bounds[1]]
+    ]
+    expected_items = items[: bounds[0]] + items[bounds[1] :]
+
+    _insert_into_redis(real_redis_client, items)
+
+    auth_logs.delete_many(keys_to_delete)
+    hmap = _get_redis_hmap(real_redis_client, schema=AuthLog)
+    expected_hmap = {_get_redis_key(v): v.model_dump_json() for v in expected_items}
+
+    assert hmap == expected_hmap
+
+
+@pytest.mark.parametrize("bounds", _DELETE_SLICES)
+def test_delete_many_by_key_dicts(real_redis_client, bounds: Tuple[int, int], freezer):
+    """Calling delete_many() removes items with matching key dictionaries in the collection"""
+    items = [AuthLog(**{"status": "pending", **payload}) for payload in _AUTH_LOG_LIST]
+    auth_logs = Collection(real_redis_client, schema=AuthLog)
+    keys_to_delete = [
+        {"job_id": item.job_id, "app_token": item.app_token}
+        for item in items[bounds[0] : bounds[1]]
+    ]
+    expected_items = items[: bounds[0]] + items[bounds[1] :]
+
+    _insert_into_redis(real_redis_client, items)
+
+    auth_logs.delete_many(keys_to_delete)
+    hmap = _get_redis_hmap(real_redis_client, schema=AuthLog)
+    expected_hmap = {_get_redis_key(v): v.model_dump_json() for v in expected_items}
+
+    assert hmap == expected_hmap
+
+
+def test_clear(real_redis_client, freezer):
+    """Calling clear() removes all items in hashmap"""
+    items = [AuthLog(**{"status": "pending", **payload}) for payload in _AUTH_LOG_LIST]
+    auth_logs = Collection(real_redis_client, schema=AuthLog)
+
+    _insert_into_redis(real_redis_client, items)
+
+    auth_logs.clear()
+    items_in_db = _get_redis_hmap(real_redis_client, schema=AuthLog)
+
+    assert items_in_db == {}
+
+
 @pytest.mark.parametrize("payload", _AUTH_LOG_LIST)
 def test_exists(real_redis_client, payload, freezer):
     """Calling exists() checks that key exists"""
@@ -192,7 +285,7 @@ def test_exists(real_redis_client, payload, freezer):
     assert not auth_logs.exists(key_tuple)
     assert not auth_logs.exists(key_dict)
 
-    _insert_into_redis(real_redis_client, item)
+    _insert_into_redis(real_redis_client, [item])
 
     assert auth_logs.exists(single_key)
     assert auth_logs.exists(key_tuple)
@@ -214,7 +307,7 @@ def _get_redis_value(redis: Redis, item: Schema) -> Union[str, None]:
     Returns:
         the value saved in redis for the given item or None if not exists
     """
-    hashmap_name = _get_redis_hashmap_name(item)
+    hashmap_name = _get_redis_hashmap_name(item.__class__)
     redis_key = _get_redis_key(item)
     value: Union[bytes, None] = redis.hget(hashmap_name, redis_key)
     if isinstance(value, bytes):
@@ -223,28 +316,47 @@ def _get_redis_value(redis: Redis, item: Schema) -> Union[str, None]:
     return value
 
 
-def _insert_into_redis(redis: Redis, item: Schema):
-    """Inserts the value into redis
+def _get_redis_hmap(redis: Redis, schema: Type[Schema]) -> Dict[str, str]:
+    """Get the full hashmap for the given schema in redis sorted by key
 
     Args:
         redis: the redis connection
-        item: the item that is to be inserted
+        schema: the schema whose collection is to be queried
+
+    Returns:
+        the dictionary of keys and values in the redis hashmap of the schema
     """
-    hashmap_name = _get_redis_hashmap_name(item)
-    redis_key = _get_redis_key(item)
-    redis.hset(hashmap_name, redis_key, item.model_dump_json())
+    hashmap_name = _get_redis_hashmap_name(schema)
+    raw_value: Dict[bytes, bytes] = redis.hgetall(hashmap_name)
+    return {k.decode(): v.decode() for k, v in raw_value.items()}
 
 
-def _get_redis_hashmap_name(item: Schema) -> Union[str, None]:
-    """Get the name of the hashmap where the item would be stored in redis
+def _insert_into_redis(redis: Redis, items: List[Schema]):
+    """Inserts the items into redis
 
     Args:
-        item: the item under consideration
+        redis: the redis connection
+        items: the items that are to be inserted
+    """
+    try:
+        hashmap_name = _get_redis_hashmap_name(items[0].__class__)
+    except IndexError:
+        return
+
+    redis_items = {_get_redis_key(item): item.model_dump_json() for item in items}
+    redis.hset(hashmap_name, mapping=redis_items)
+
+
+def _get_redis_hashmap_name(schema: Type[Schema]) -> Union[str, None]:
+    """Get the name of the hashmap for the given schema
+
+    Args:
+        schema: the schema under consideration
 
     Returns:
         the name of the hashmap where the item is stored
     """
-    return f"{item.__class__.__module__}.{item.__class__.__qualname__}".lower()
+    return f"{schema.__module__}.{schema.__qualname__}".lower()
 
 
 def _get_redis_key(item: Schema) -> Union[str, None]:
@@ -260,6 +372,19 @@ def _get_redis_key(item: Schema) -> Union[str, None]:
         getattr(item, field) for field in item.__class__.__primary_key_fields__
     )
     return "@@@".join(keys)
+
+
+def _sort_by_key(items: List[Schema], desc: bool = False) -> List[Schema]:
+    """Sorts the items by the key
+
+    Args:
+        items: the items to sort
+        desc: whether to return in ascending or descending order
+
+    Returns:
+        the items sorted
+    """
+    return sorted(items, key=lambda v: _get_redis_key(v), reverse=desc)
 
 
 class WrongAuthLog(Schema):
