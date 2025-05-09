@@ -31,7 +31,6 @@ from typing import Dict
 
 import numpy as np
 import pytest
-from fakeredis import FakeStrictRedis
 from fastapi.testclient import TestClient
 from freezegun import freeze_time
 from pytest_lazyfixture import lazy_fixture
@@ -50,12 +49,8 @@ _real_redis = redis.Redis(
     port=TEST_REDIS_PORT,
     db=TEST_REDIS_DB,
 )
-_fake_redis = FakeStrictRedis()
 _async_queue_pool = QueuePool(
     prefix=TEST_DEFAULT_PREFIX, connection=_real_redis, is_async=True
-)
-_sync_queue_pool = QueuePool(
-    prefix=TEST_DEFAULT_PREFIX, connection=_fake_redis, is_async=False
 )
 
 MOCK_NOW = "2023-11-27T12:46:48.851656+00:00"
@@ -64,16 +59,12 @@ TEST_APP_TOKEN_STRING = "eecbf107ad103f70187923f49c1a1141219da95f1ab3906f"
 FASTAPI_CLIENTS = [
     lazy_fixture("async_fastapi_client"),
     lazy_fixture("async_fastapi_client_with_qiskit_simulator"),
-    lazy_fixture("async_fastapi_client_with_qiskit_simulator_2_qubit")
-    # FIXME: inform-job-location-stage logic is non-deterministic
-    # lazy_fixture("sync_fastapi_client"),
+    lazy_fixture("async_fastapi_client_with_qiskit_simulator_2_qubit"),
 ]
 BLACKLISTED_FASTAPI_CLIENTS = [
     lazy_fixture("blacklisted_async_fastapi_client"),
     lazy_fixture("blacklisted_async_fastapi_client_with_qiskit_simulator"),
     lazy_fixture("blacklisted_async_fastapi_client_with_qiskit_simulator_2_qubit"),
-    # FIXME: inform-job-location-stage logic is non-deterministic
-    # lazy_fixture("blacklisted_sync_fastapi_client"),
 ]
 
 CLIENTS = [
@@ -86,8 +77,6 @@ CLIENTS = [
         lazy_fixture("async_fastapi_client_with_qiskit_simulator_2_qubit"),
         lazy_fixture("real_redis_client"),
     ),
-    # FIXME: inform-job-location-stage logic is non-deterministic
-    # (lazy_fixture("sync_fastapi_client"), lazy_fixture("fake_redis_client")),
 ]
 
 BLACKLISTED_CLIENTS = [
@@ -103,8 +92,6 @@ BLACKLISTED_CLIENTS = [
         lazy_fixture("blacklisted_async_fastapi_client_with_qiskit_simulator_2_qubit"),
         lazy_fixture("real_redis_client"),
     ),
-    # FIXME: inform-job-location-stage logic is non-deterministic
-    # (lazy_fixture("blacklisted_sync_fastapi_client"), lazy_fixture("fake_redis_client")),
 ]
 
 CLIENT_AND_RQ_WORKER_TUPLES = [
@@ -123,17 +110,6 @@ CLIENT_AND_RQ_WORKER_TUPLES = [
         lazy_fixture("real_redis_client"),
         lazy_fixture("async_rq_worker"),
     ),
-    # FIXME: inform-job-location-stage logic is non-deterministic
-    # (
-    #     lazy_fixture("sync_fastapi_client"),
-    #     lazy_fixture("fake_redis_client"),
-    #     lazy_fixture("sync_rq_worker"),
-    # ),
-    # (
-    #     lazy_fixture("sync_fastapi_client_with_qiskit_simulator"),
-    #     lazy_fixture("fake_redis_client"),
-    #     lazy_fixture("sync_rq_worker"),
-    # ),
 ]
 
 BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES = [
@@ -152,17 +128,6 @@ BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES = [
         lazy_fixture("real_redis_client"),
         lazy_fixture("async_rq_worker"),
     ),
-    # FIXME: inform-job-location-stage logic is non-deterministic
-    # (
-    #     lazy_fixture("blacklisted_sync_fastapi_client"),
-    #     lazy_fixture("fake_redis_client"),
-    #     lazy_fixture("sync_rq_worker"),
-    # ),
-    # (
-    #     lazy_fixture("blacklisted_sync_fastapi_client_with_qiskit_simulator"),
-    #     lazy_fixture("fake_redis_client"),
-    #     lazy_fixture("sync_rq_worker"),
-    # ),
 ]
 
 _mock_linear_discriminant_analysis = MockLinearDiscriminantAnalysis(
@@ -229,22 +194,9 @@ def real_redis_client() -> Redis:
 
 
 @pytest.fixture
-def fake_redis_client() -> Redis:
-    """A mock redis client"""
-    yield _fake_redis
-    _fake_redis.flushall()
-
-
-@pytest.fixture
 def async_rq_worker() -> SimpleWorker:
     """Get the rq worker for running async tasks asynchronously"""
     yield get_rq_worker(_async_queue_pool)
-
-
-@pytest.fixture
-def sync_rq_worker() -> SimpleWorker:
-    """Get the rq worker for running tasks synchronously"""
-    yield get_rq_worker(_sync_queue_pool)
 
 
 @pytest.fixture
@@ -314,33 +266,6 @@ def async_standalone_backend_client(mocker) -> TestClient:
         yield TestClient(app)
 
 
-# @pytest.fixture
-# def sync_fastapi_client(mocker) -> TestClient:
-#     """A test client for fast api when rq is running synchronously"""
-#     remove_modules(["app", "settings"])
-#     _patch_sync_client(mocker)
-#     os.environ["EXECUTOR_TYPE"] = "quantify"
-#     os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
-#
-#     from app.api import app
-#
-#     with freeze_time(MOCK_NOW):
-#         yield TestClient(app)
-
-# @pytest.fixture
-# def sync_fastapi_client_with_qiskit_simulator(mocker) -> TestClient:
-#     """A test client for fast api when rq is running synchronously when qiskit-dynamics is executor"""
-#     remove_modules(["app", "settings"])
-#     _patch_sync_client(mocker)
-#     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
-#     os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
-#
-#     from app.api import app
-#
-#     with freeze_time(MOCK_NOW):
-#         yield TestClient(app)
-
-
 @pytest.fixture
 def blacklisted_async_fastapi_client(mocker) -> TestClient:
     """A test client with black listed ip for fast api when rq is running asynchronously"""
@@ -391,36 +316,6 @@ def blacklisted_async_fastapi_client_with_qiskit_simulator_2_qubit(
 
     with freeze_time(MOCK_NOW):
         yield TestClient(app)
-
-
-# @pytest.fixture
-# def blacklisted_sync_fastapi_client(mocker) -> TestClient:
-#     """A test client for fast api when rq is running synchronously and its IP is blacklisted"""
-#     remove_modules(["app", "settings"])
-#     _patch_sync_client(mocker)
-#     os.environ["BLACKLISTED"] = "True"
-#     os.environ["EXECUTOR_TYPE"] = "quantify"
-#     os.environ["BACKEND_SETTINGS"] = TEST_BACKEND_SETTINGS_FILE
-#
-#     from app.api import app
-#
-#     with freeze_time(MOCK_NOW):
-#         yield TestClient(app)
-
-# @pytest.fixture
-# def blacklisted_sync_fastapi_client_with_qiskit_simulator(mocker) -> TestClient:
-#     """A test client for fast api when rq is running synchronously and its IP is blacklisted when
-#     qiskit dynamics is executor"""
-#     remove_modules(["app", "settings"])
-#     _patch_sync_client(mocker)
-#     os.environ["BLACKLISTED"] = "True"
-#     os.environ["EXECUTOR_TYPE"] = "qiskit_pulse_1q"
-#     os.environ["BACKEND_SETTINGS"] = TEST_SIMQ1_BACKEND_SETTINGS_FILE
-#
-#     from app.api import app
-#
-#     with freeze_time(MOCK_NOW):
-#         yield TestClient(app)
 
 
 @pytest.fixture
@@ -495,23 +390,5 @@ def _patch_async_client_sim2q(mocker):
     mocker.patch(
         "sklearn.discriminant_analysis.LinearDiscriminantAnalysis",
         return_value=_mock_linear_discriminant_analysis_sim2q,
-    )
-    os.environ["BLACKLISTED"] = ""
-
-
-def _patch_sync_client(mocker):
-    """Patches the sync client"""
-    mss_client = MockHttpSession(
-        put=mock_mss_put_requests,
-        post=mock_mss_post_requests,
-    )
-
-    mocker.patch("redis.Redis", return_value=_fake_redis)
-    mocker.patch("app.utils.queues.QueuePool", return_value=_sync_queue_pool)
-    mocker.patch("requests.post", side_effect=mock_post_requests)
-    mocker.patch("requests.Session", return_value=mss_client)
-    mocker.patch(
-        "sklearn.discriminant_analysis.LinearDiscriminantAnalysis",
-        return_value=_mock_linear_discriminant_analysis,
     )
     os.environ["BLACKLISTED"] = ""

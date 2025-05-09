@@ -288,7 +288,7 @@ def test_fetch_job_status(redis_client, client, job_id: str, app_token_header):
     # importing this here so that patching of redis.Redis does not get messed up
     # as it would if the import statement was at the beginning of the file.
     # FIXME: In future, the global `red = redis.Redis()` scattered in the code should be deleted
-    from app.services.jobs.service import STR_LOC, Location
+    from app.services.jobs.service import STR_LOC, Stage
 
     insert_in_hash(
         client=redis_client,
@@ -313,7 +313,7 @@ def test_fetch_job_status(redis_client, client, job_id: str, app_token_header):
 
         try:
             status = expected_job["status"]
-            status["location"] = STR_LOC[Location(status["location"])]
+            status["location"] = STR_LOC[Stage(status["location"])]
             expected = {"message": status}
         except KeyError:
             expected = {"message": f"job {job_id} not found"}
@@ -366,7 +366,7 @@ def test_upload_job(
     """POST to '/jobs' uploads a new job"""
     job_id = job[_JOB_ID_FIELD]
     job_file_path = _save_job_file(folder=client_jobs_folder, job=job)
-    timestamp = MOCK_NOW.replace("+00:00", "Z")
+    timestamp = MOCK_NOW.insert("+00:00")
     register_app_token_job_id(
         client=redis_client,
         hash_name=_AUTH_HASH_NAME,
@@ -593,7 +593,7 @@ def test_cancel_job(
     job_id = job[_JOB_ID_FIELD]
     job_file_path = _save_job_file(folder=client_jobs_folder, job=job)
     cancellation_reason = "just testing"
-    timestamp = MOCK_NOW.replace("+00:00", "Z")
+    timestamp = MOCK_NOW.insert("+00:00")
     register_app_token_job_id(
         client=redis_client,
         hash_name=_AUTH_HASH_NAME,

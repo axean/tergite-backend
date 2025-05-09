@@ -23,12 +23,19 @@ from typing import Any, Dict
 from qiskit.qobj import PulseQobj
 from qiskit_ibm_provider.utils import json_decoder
 
-import settings
 from app.libs.quantum_executor.utils.connections import get_executor_lock
 from app.libs.quantum_executor.utils.serialization import iqx_rld
+from app.libs.store import Collection
 from app.utils.queues import QueuePool
+from settings import (
+    DEFAULT_PREFIX,
+    REDIS_CONNECTION,
+)
 
-from ...service import Location, fetch_job, inform_failure, inform_location
+from ...dtos import Job, JobStatus
+from ...exc import JobCancelled, MalformedJob
+from ...service import Stage
+from ...utils import get_rq_job_id, log_job_failure, update_job_stage
 from ..postprocessing import (
     logfile_postprocess,
     postprocessing_failure_callback,
@@ -36,78 +43,70 @@ from ..postprocessing import (
 )
 from .utils import get_executor
 
-# Settings
-# --------
-STORAGE_ROOT = settings.STORAGE_ROOT
-BCC_MACHINE_ROOT_URL = settings.BCC_MACHINE_ROOT_URL
-DEFAULT_PREFIX = settings.DEFAULT_PREFIX
-
-
-# Redis connection
-# ----------------
-rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=settings.REDIS_CONNECTION)
+rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=REDIS_CONNECTION)
 executor = get_executor()
 
 
 def job_execute(job_file: Path):
     print(f"Executing file {str(job_file)}")
+    jobs_db = Collection[Job](REDIS_CONNECTION, schema=Job)
+    job_id = job_file.stem
 
-    with job_file.open() as f:
-        job_dict = json.load(f)
-
-    job_id = ""
     try:
-        job_id = job_dict["job_id"]
+        with job_file.open() as f:
+            job_dict = json.load(f)
 
-        # Inform supervisor
-        inform_location(job_id, Location.EXEC_W)
+        if "job_id" not in job_dict:
+            raise MalformedJob("malformed job: missing job_id")
+
+        job_id = job_dict["job_id"]
+        update_job_stage(jobs_db, job_id=job_id, stage=Stage.EXEC_W)
+
         qobj = _decompress_qobj(job_dict["params"]["qobj"])
 
-    except KeyError as exp:
-        print("Invalid job")
-        print(f"Job execution failed. Key error: {exp}")
-        inform_failure(job_id, reason="malformed job")
-        return {"message": "malformed job"}
-
-    # Just a locking mechanism to ensure jobs don't interfere with each other
-    with get_executor_lock():
-        try:
+        # Just a locking mechanism to ensure jobs don't interfere with each other
+        with get_executor_lock():
             # --- In-place decode complex values
             # [[a,b],[c,d],...] -> [a + ib,c + id,...]
             json_decoder.decode_pulse_qobj(qobj)
-
-            print(datetime.now(), "IN REST API CALLING RUN_EXPERIMENTS")
-
+            print(datetime.now(), "IN API CALLING RUN_EXPERIMENTS")
             results_file = executor.run(PulseQobj.from_dict(qobj), job_id=job_id)
-        except Exception as exp:
-            print("Job failed")
-            print(f"Job execution failed. exp: {exp}")
-            # inform supervisor about failure
-            inform_failure(job_id, reason="no response")
-            return {"message": "failed"}
 
-    if results_file:
-        job_status = fetch_job(job_id, "status")
-        if job_status["cancelled"]["time"]:
-            print("Job cancelled, postprocessing halted")
-            # FIXME: Probably provide an error message to the client also
-            return {"message": "cancelled"}
+        if results_file:
+            job: Job = jobs_db.get_one((job_id,))
+            if job.status == JobStatus.CANCELLED:
+                raise JobCancelled("cancelled")
 
-        rq_queues.logfile_postprocessing_queue.enqueue(
-            logfile_postprocess,
-            on_success=postprocessing_success_callback,
-            on_failure=postprocessing_failure_callback,
-            job_id=f"{job_id}_{Location.PST_PROC_Q.name}",
-            args=(results_file,),
-        )
+            rq_queues.logfile_postprocessing_queue.enqueue(
+                logfile_postprocess,
+                on_success=postprocessing_success_callback,
+                on_failure=postprocessing_failure_callback,
+                job_id=get_rq_job_id(job_id, Stage.PST_PROC_Q),
+                args=(results_file,),
+            )
 
-        # inform supervisor
-        inform_location(job_id, Location.PST_PROC_Q)
+            # update job in database
+            update_job_stage(jobs_db, job_id=job_id, stage=Stage.PST_PROC_Q)
 
-    # clean up
-    job_file.unlink(missing_ok=True)
-    print("Job executed successfully")
-    return {"message": "ok"}
+        # clean up
+        job_file.unlink(missing_ok=True)
+        print("Job executed successfully")
+        return {"message": "ok"}
+
+    except JobCancelled as exp:
+        print(f"{exp}")
+        return {"message": f"{exp}"}
+
+    except MalformedJob as exp:
+        print(f"Invalid job\nJob execution failed. Key error: {exp}")
+        reason = f"{exp}"
+        log_job_failure(jobs_db, job_id=job_id, reason=reason)
+        return {"message": reason}
+
+    except Exception as exp:
+        print(f"Job failed\nJob execution failed. exp: {exp}")
+        log_job_failure(jobs_db, job_id=job_id, reason="no response")
+        return {"message": "failed"}
 
 
 def _decompress_qobj(qobj_dict: Dict[str, Any]) -> Dict[str, Any]:

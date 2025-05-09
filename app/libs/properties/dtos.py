@@ -20,6 +20,7 @@ import toml
 from pydantic import BaseModel, Extra, model_validator
 
 from app.libs.properties.utils.date_time import utc_now_iso
+from app.libs.store import Schema
 
 
 class QubitProps(BaseModel):
@@ -85,8 +86,10 @@ class DeviceProperties(BaseModel):
     coupler: Optional[List[CouplerProps]] = None
 
 
-class Device(BaseModel):
-    """The schema for v2 of device"""
+class Device(Schema):
+    """The schema for device information"""
+
+    __primary_key_fields__ = ("name",)
 
     name: str
     version: str
@@ -181,8 +184,10 @@ class CouplersCalibration(BaseModel, extra=Extra.allow):
     id: Optional[int] = None
 
 
-class DeviceCalibration(BaseModel):
+class DeviceCalibration(Schema):
     """Schema for the calibration data of a given device"""
+
+    __primary_key_fields__ = ("name",)
 
     name: str
     version: str

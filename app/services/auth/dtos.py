@@ -14,7 +14,7 @@
 from pydantic import Field
 
 from ...libs.store import Schema
-from ...utils.datetime import get_current_timestamp
+from ...utils.datetime import utc_now_str
 from ...utils.model import create_partial_schema
 from ..jobs.dtos import JobStatus
 
@@ -30,8 +30,8 @@ class Credentials(Schema):
 
 class AuthLog(Credentials):
     status: JobStatus
-    created_at: str = Field(default_factory=get_current_timestamp)
-    updated_at: str = Field(default_factory=get_current_timestamp)
+    created_at: str = Field(default_factory=utc_now_str)
+    updated_at: str = Field(default_factory=utc_now_str)
 
 
 # derived models

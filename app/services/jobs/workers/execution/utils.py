@@ -19,7 +19,7 @@ from app.libs.properties import get_backend_config, initialize_backend
 from app.libs.quantum_executor.base.executor import QuantumExecutor
 from app.libs.quantum_executor.qiskit.executor import QiskitDynamicsExecutor
 from app.libs.quantum_executor.quantify.executor import QuantifyExecutor
-from app.utils.http import get_mss_client
+from app.utils.api import get_mss_client
 
 
 def get_executor(
