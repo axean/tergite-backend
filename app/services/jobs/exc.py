@@ -29,5 +29,5 @@ class MalformedJob(BaseBccException):
     """Exception when Job file is malformed"""
 
 
-class JobCancelled(BaseBccException):
-    """Exception when Job is cancelled"""
+class JobAlreadyCancelled(BaseBccException):
+    """Exception when Job is already cancelled"""

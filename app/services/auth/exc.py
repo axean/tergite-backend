@@ -2,7 +2,7 @@
 from app.utils.exc import BaseBccException
 
 
-class JobAlreadyExists(BaseBccException):
+class CredentialsAlreadyExists(BaseBccException):
     """Exception when new credentials are being saved yet they exist already"""
 
 

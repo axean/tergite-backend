@@ -17,6 +17,7 @@
 
 from redis import Redis
 from rq.command import send_stop_job_command
+from rq.exceptions import InvalidJobOperation
 from rq.job import Job as RqJob
 
 from ...libs.store import Collection
@@ -27,6 +28,7 @@ from .dtos import (
     LogLevel,
     Stage,
 )
+from .exc import JobAlreadyCancelled
 from .utils import get_rq_job_id, log_job_msg
 
 
@@ -40,7 +42,7 @@ def cancel_job(redis: Redis, job_id: str, reason: str) -> None:
 
     Raises:
         ItemNotFoundError: key '{key}' not found
-        InvalidJobOperation: If the job has already been cancelled
+        JobAlreadyCancelled: job '{job_id}' is already cancelled
     """
     jobs_db = Collection[Job](redis, schema=Job)
     job: Job = jobs_db.get_one((job_id,))
@@ -62,7 +64,10 @@ def cancel_job(redis: Redis, job_id: str, reason: str) -> None:
         if rq_job.worker_name:
             send_stop_job_command(redis, rq_job.id)
         else:
-            rq_job.cancel()
+            try:
+                rq_job.cancel()
+            except InvalidJobOperation:
+                raise JobAlreadyCancelled(f"job {job_id} already cancelled")
 
     jobs_db.update(
         (job_id,),

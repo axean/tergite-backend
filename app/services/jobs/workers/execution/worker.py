@@ -33,7 +33,7 @@ from settings import (
 )
 
 from ...dtos import Job, JobStatus
-from ...exc import JobCancelled, MalformedJob
+from ...exc import JobAlreadyCancelled, MalformedJob
 from ...service import Stage
 from ...utils import get_rq_job_id, log_job_failure, update_job_stage
 from ..postprocessing import (
@@ -75,7 +75,7 @@ def job_execute(job_file: Path):
         if results_file:
             job: Job = jobs_db.get_one((job_id,))
             if job.status == JobStatus.CANCELLED:
-                raise JobCancelled("cancelled")
+                raise JobAlreadyCancelled("cancelled")
 
             rq_queues.logfile_postprocessing_queue.enqueue(
                 logfile_postprocess,
@@ -93,7 +93,7 @@ def job_execute(job_file: Path):
         print("Job executed successfully")
         return {"message": "ok"}
 
-    except JobCancelled as exp:
+    except JobAlreadyCancelled as exp:
         print(f"{exp}")
         return {"message": f"{exp}"}
 

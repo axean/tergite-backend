@@ -129,7 +129,7 @@ class Collection(Generic[T, Part_T]):
             the item identified by the given key in the hash
 
         Raises:
-            ItemNotFoundError: "key '{key}' not found"
+            ItemNotFoundError: '{key}' not found
             ValidationError: item does not match the given schema
             KeyError: some primary key fields were not set
         """
@@ -137,7 +137,7 @@ class Collection(Generic[T, Part_T]):
 
         data = self._connection.hget(self._hashmap_name, redis_key)
         if data is None:
-            raise ItemNotFoundError(f"key '{key}' not found")
+            raise ItemNotFoundError(f"'{key}' not found")
 
         return self._schema.model_validate_json(data)
 
@@ -194,7 +194,7 @@ class Collection(Generic[T, Part_T]):
 
         Raises:
             ValidationError: updates does not satisfy the partial schema of the collection
-            ItemNotFound: key '{key}' not found
+            ItemNotFound: '{key}' not found
         """
         parsed_updates = self._partial_schema.model_validate(updates)
 

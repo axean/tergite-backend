@@ -1,6 +1,6 @@
 """Entry point for the auth service"""
 from .dtos import AuthLog, Credentials, PartialAuthLog
-from .exc import AuthenticationError, AuthorizationError, JobAlreadyExists
+from .exc import AuthenticationError, AuthorizationError, CredentialsAlreadyExists
 from .service import authenticate, save_credentials
 
 __all__ = [
@@ -9,7 +9,7 @@ __all__ = [
     Credentials,
     AuthLog,
     PartialAuthLog,
-    JobAlreadyExists,
+    CredentialsAlreadyExists,
     AuthorizationError,
     AuthenticationError,
 ]

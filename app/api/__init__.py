@@ -21,9 +21,8 @@ from uuid import UUID
 
 from fastapi import Body, Depends, FastAPI, File, HTTPException, UploadFile, status
 from fastapi.requests import Request
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, Response
 from redis.client import Redis
-from rq.exceptions import InvalidJobOperation
 from typing_extensions import Annotated
 
 from settings import (
@@ -38,12 +37,14 @@ from settings import (
 from ..libs import properties as props_lib
 from ..libs.properties import get_backend_config, get_device_calibration_info
 from ..libs.store import Collection, ItemNotFoundError
+from ..services.auth import CredentialsAlreadyExists
 from ..services.auth import service as auth_service
 from ..services.jobs import service as jobs_service
 from ..services.jobs.dtos import Job, JobStatus, Stage
+from ..services.jobs.exc import JobAlreadyCancelled
 from ..services.jobs.utils import get_rq_job_id
 from ..services.jobs.workers.registration import job_register
-from ..utils.api import save_uploaded_file
+from ..utils.api import save_uploaded_file, to_http_error
 from ..utils.queues import QueuePool
 from .dependencies import (
     get_bearer_token,
@@ -71,21 +72,11 @@ app = FastAPI(
     version="2025.03.2",
 )
 
-
-@app.exception_handler(InvalidJobIdInUploadedFileError)
-async def invalid_job_id_in_file_exception_handler(
-    request: Request, exp: InvalidJobIdInUploadedFileError
-):
-    """A custom exception handler to handle InvalidJobIdInUploadedFileError.
-
-    This handler is only here to maintain the original way of responding
-    when the job_id in the uploaded file was non-existent or was not a
-    proper UUID
-    """
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={"message": "failed"},
-    )
+# exception handlers
+app.add_exception_handler(InvalidJobIdInUploadedFileError, to_http_error(400))
+app.add_exception_handler(CredentialsAlreadyExists, to_http_error(403))
+app.add_exception_handler(ItemNotFoundError, to_http_error(404))
+app.add_exception_handler(JobAlreadyCancelled, to_http_error(406))
 
 
 @app.middleware("http")
@@ -127,10 +118,7 @@ async def register_credentials(
     body: auth_service.Credentials, redis_connection: RedisDep
 ):
     """Registers the credentials passed to it"""
-    try:
-        auth_service.save_credentials(redis_connection, payload=body)
-    except auth_service.JobAlreadyExists as exp:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"{exp}")
+    auth_service.save_credentials(redis_connection, payload=body)
     return {"message": "ok"}
 
 
@@ -197,13 +185,9 @@ async def fetch_all_jobs(
 async def fetch_job(redis_connection: RedisDep, job_id: str):
     """Returns a job of the given job_id"""
     jobs_db = Collection(redis_connection, schema=Job)
-    try:
-        job = jobs_db.get_one((job_id,))
-        # TODO: Standardize the return schema here
-        return {"message": job.model_dump(mode="json")}
-    except ItemNotFoundError:
-        # TODO: Standardize the return schema here, and status code
-        return {"message": f"job {job_id} not found"}
+    job = jobs_db.get_one((job_id,))
+    # TODO: Standardize the return schema here
+    return {"message": job.model_dump(mode="json")}
 
 
 @app.get("/jobs/{job_id}/status", dependencies=[Depends(get_valid_credentials_dep())])
@@ -215,13 +199,9 @@ async def fetch_job_status(redis_connection: RedisDep, job_id: str):
         job_id: the unique identifier of the job
     """
     jobs_db = Collection(redis_connection, schema=Job)
-    try:
-        job: Job = jobs_db.get_one((job_id,))
-        # TODO: Standardize the return schema here
-        return {"message": job.status}
-    except ItemNotFoundError:
-        # TODO: Standardize the return schema here and status code
-        return {"message": f"job {job_id} not found"}
+    job: Job = jobs_db.get_one((job_id,))
+    # TODO: Standardize the return schema here
+    return {"message": job.status}
 
 
 @app.get("/jobs/{job_id}/result", dependencies=[Depends(get_valid_credentials_dep())])
@@ -233,16 +213,13 @@ async def fetch_job_result(redis_connection: RedisDep, job_id: str):
         job_id: the unique identifier of the job
     """
     jobs_db = Collection(redis_connection, schema=Job)
-    try:
-        job: Job = jobs_db.get_one((job_id,))
-        if job.result is not None:
-            # TODO: Standardize the return schema here
-            return {"message": job.result.model_dump(mode="json")}
-        # FIXME: this does not communicate well when the job has failed
-        return {"message": "job has not finished"}
-    except ItemNotFoundError:
-        # TODO: Standardize the return schema here and status code
-        return {"message": f"job {job_id} not found"}
+    job: Job = jobs_db.get_one((job_id,))
+    if job.result is not None:
+        # TODO: Standardize the return schema here
+        return {"message": job.result.model_dump(mode="json")}
+
+    # FIXME: this does not communicate well when the job has failed
+    return {"message": "job has not finished"}
 
 
 @app.delete("/jobs/{job_id}", dependencies=[Depends(get_valid_credentials_dep())])
@@ -255,11 +232,8 @@ async def remove_job(redis_connection: RedisDep, job_id: str):
     """
     try:
         jobs_service.cancel_job(redis_connection, job_id=job_id, reason="deleting job")
-    except InvalidJobOperation:
+    except JobAlreadyCancelled:
         pass
-    except ItemNotFoundError:
-        # TODO: Standardize the return schema here and status code
-        return {"message": f"job {job_id} not found"}
 
     jobs_db = Collection(redis_connection, schema=Job)
     jobs_db.delete_many([(job_id,)])
@@ -278,14 +252,7 @@ async def cancel_job(
         reason: reason for cancelling the job
     """
     print(f"Cancelling job {job_id}")
-    try:
-        jobs_service.cancel_job(redis_connection, job_id=job_id, reason=reason)
-    except InvalidJobOperation:
-        # TODO: Standardize the return schema here and status code
-        return {"message": f"job {job_id} already cancelled"}
-    except ItemNotFoundError:
-        # TODO: Standardize the return schema here and status code
-        return {"message": f"job {job_id} not found"}
+    jobs_service.cancel_job(redis_connection, job_id=job_id, reason=reason)
 
 
 @app.get(
@@ -301,8 +268,7 @@ async def download_logfile(logfile_id: UUID):
     file = (_LOG_FILE_POOL / str(logfile_id)).with_suffix(".hdf5")
     if file.exists():
         return FileResponse(file)
-    else:
-        return {"message": "logfile not found"}
+    return {"message": "logfile not found"}
 
 
 @app.get("/v2/static-properties", dependencies=[Depends(get_whitelisted_ip)])

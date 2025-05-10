@@ -6,7 +6,7 @@ from redis.client import Redis
 from ...libs.store import Collection, ItemNotFoundError
 from ..jobs.dtos import JobStatus
 from .dtos import AuthLog, Credentials
-from .exc import AuthenticationError, AuthorizationError, JobAlreadyExists
+from .exc import AuthenticationError, AuthorizationError, CredentialsAlreadyExists
 
 
 def save_credentials(redis_db: Redis, payload: Credentials):
@@ -17,12 +17,12 @@ def save_credentials(redis_db: Redis, payload: Credentials):
         payload: the credentials to save
 
     Raises:
-        JobAlreadyExists: job id '{payload.job_id}' already exists
+        CredentialsAlreadyExists: job id '{payload.job_id}' already exists
     """
     auth_logs = Collection(redis_db, schema=AuthLog)
 
     if auth_logs.exists((payload.job_id, payload.app_token)):
-        raise JobAlreadyExists(f"job id '{payload.job_id}' already exists")
+        raise CredentialsAlreadyExists(f"job id '{payload.job_id}' already exists")
 
     auth_logs.insert(
         AuthLog(

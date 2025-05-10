@@ -14,6 +14,10 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 ### Changed
 
 - Changed source of lda parameters to backend's redis store. Originally they were retrieved from MSS.
+- Added proper HTTP status codes for failed REST API requests
+  - InvalidJobIdInUploadedFileError results in a 400 HTTP response (originally was 200)
+  - ItemNotFoundError results in a 404 HTTP response (originally was 200)
+  - JobAlreadyCancelled results in a 406 HTTP response (originally was 500)
 
 ## [2025.03.2] - 2025-03-19
 
