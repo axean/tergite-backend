@@ -14,13 +14,17 @@
 # that they have been altered from the originals.
 
 from os import PathLike
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, Generic, List, Literal, Optional, Tuple, TypeVar, Union
 
 import toml
 from pydantic import BaseModel, Extra, model_validator
 
-from app.libs.properties.utils.date_time import utc_now_iso
 from app.libs.store import Schema
+from app.utils.datetime import utc_now_str
+
+from .utils import attach_units_many
+
+_CalibValueType = TypeVar("_CalibValueType", int, float, str)
 
 
 class QubitProps(BaseModel):
@@ -59,7 +63,6 @@ class ReadoutResonatorProps(BaseModel):
     lda_parameters: Optional[Dict[str, Any]] = None
 
 
-# FIXME: Confirm with Eleftherios if the autocalibration library provides these properties
 class CouplerProps(BaseModel):
     """Coupler Device configuration"""
 
@@ -76,14 +79,6 @@ class CouplerProps(BaseModel):
     cz_pulse_duration_constant: float
     pulse_type: str
     id: Optional[int] = None
-
-
-class DeviceProperties(BaseModel):
-    """All Device Properties"""
-
-    qubit: Optional[List[QubitProps]] = None
-    readout_resonator: Optional[List[ReadoutResonatorProps]] = None
-    coupler: Optional[List[CouplerProps]] = None
 
 
 class Device(Schema):
@@ -119,8 +114,37 @@ class Device(Schema):
     class Config:
         extra = Extra.allow
 
+    @classmethod
+    def from_config(cls, conf: "BackendConfig") -> "Device":
+        """Generates a device instance from the backend config
 
-class CalibrationValue(BaseModel, extra=Extra.allow):
+        Args:
+            conf: the backend configuration from which to extract the device info
+
+        Returns:
+            an instance of Device extracted from the backend config
+        """
+        qubit_ids = conf.device_config.qubit_ids
+        return cls(
+            **conf.general_config.model_dump(),
+            meas_map=conf.device_config.meas_map,
+            qubit_ids=qubit_ids,
+            gates=conf.gates,
+            number_of_qubits=conf.general_config.num_qubits,
+            number_of_couplers=conf.general_config.num_couplers,
+            number_of_resonators=conf.general_config.num_resonators,
+            last_online=conf.general_config.online_date,
+            is_online=conf.general_config.is_active,
+            basis_gates=list(conf.gates.keys()),
+            coupling_map=conf.device_config.coupling_map,
+            coordinates=conf.device_config.coordinates,
+            is_simulator=conf.general_config.simulator,
+            coupling_dict=conf.device_config.coupling_dict,
+            qubit_ids_coupler_map=conf.device_config.qubit_ids_coupler_map,
+        )
+
+
+class CalibrationValue(BaseModel, Generic[_CalibValueType], extra=Extra.allow):
     """A calibration value"""
 
     value: Union[float, str, int]
@@ -131,57 +155,123 @@ class CalibrationValue(BaseModel, extra=Extra.allow):
 class QubitCalibration(BaseModel, extra=Extra.allow):
     """Schema for the calibration data of the qubit"""
 
-    t1_decoherence: Optional[CalibrationValue] = None
-    t2_decoherence: Optional[CalibrationValue] = None
-    frequency: Optional[CalibrationValue] = None
-    anharmonicity: Optional[CalibrationValue] = None
-    readout_assignment_error: Optional[CalibrationValue] = None
+    t1_decoherence: Optional[CalibrationValue[float]] = None
+    t2_decoherence: Optional[CalibrationValue[float]] = None
+    frequency: Optional[CalibrationValue[float]] = None
+    anharmonicity: Optional[CalibrationValue[float]] = None
+    readout_assignment_error: Optional[CalibrationValue[float]] = None
     # parameters for x gate
-    pi_pulse_amplitude: Optional[CalibrationValue] = None
-    pi_pulse_duration: Optional[CalibrationValue] = None
-    pulse_type: Optional[CalibrationValue] = None
-    pulse_sigma: Optional[CalibrationValue] = None
+    pi_pulse_amplitude: Optional[CalibrationValue[float]] = None
+    pi_pulse_duration: Optional[CalibrationValue[float]] = None
+    pulse_type: Optional[CalibrationValue[str]] = None
+    pulse_sigma: Optional[CalibrationValue[float]] = None
     id: Optional[int] = None
-    index: Optional[CalibrationValue] = None
-    x_position: Optional[CalibrationValue] = None
-    y_position: Optional[CalibrationValue] = None
-    xy_drive_line: Optional[CalibrationValue] = None
-    z_drive_line: Optional[CalibrationValue] = None
+    index: Optional[CalibrationValue[int]] = None
+    x_position: Optional[CalibrationValue[int]] = None
+    y_position: Optional[CalibrationValue[int]] = None
+    xy_drive_line: Optional[CalibrationValue[int]] = None
+    z_drive_line: Optional[CalibrationValue[int]] = None
+
+    @classmethod
+    def from_calib_config(
+        cls, conf: "_BackendCalibrationConfig"
+    ) -> List["QubitCalibration"]:
+        """Generates new instances of QubitCalibration from the backend calibration config
+
+        Args:
+            conf: the backend calibration config
+
+        Returns:
+            the list of new instance of QubitCalibration
+        """
+        qubit_units = conf.units.get("qubit", {})
+        qubit_data = attach_units_many(conf.qubit, qubit_units)
+
+        results: List[QubitCalibration] = []
+        for qubit_conf in qubit_data:
+            qubit_conf["id"] = str(qubit_conf["id"]["value"]).strip("q")
+            results.append(QubitCalibration.model_validate(qubit_conf))
+
+        return results
 
 
 class ResonatorCalibration(BaseModel, extra=Extra.allow):
     """Schema for the calibration data of the resonator"""
 
-    acq_delay: Optional[CalibrationValue] = None
-    acq_integration_time: Optional[CalibrationValue] = None
-    frequency: Optional[CalibrationValue] = None
-    pulse_amplitude: Optional[CalibrationValue] = None
-    pulse_delay: Optional[CalibrationValue] = None
-    pulse_duration: Optional[CalibrationValue] = None
-    pulse_type: Optional[CalibrationValue] = None
+    acq_delay: Optional[CalibrationValue[float]] = None
+    acq_integration_time: Optional[CalibrationValue[float]] = None
+    frequency: Optional[CalibrationValue[float]] = None
+    pulse_amplitude: Optional[CalibrationValue[float]] = None
+    pulse_delay: Optional[CalibrationValue[float]] = None
+    pulse_duration: Optional[CalibrationValue[float]] = None
+    pulse_type: Optional[CalibrationValue[str]] = None
     id: Optional[int] = None
-    index: Optional[CalibrationValue] = None
-    x_position: Optional[CalibrationValue] = None
-    y_position: Optional[CalibrationValue] = None
-    readout_line: Optional[CalibrationValue] = None
+    index: Optional[CalibrationValue[int]] = None
+    x_position: Optional[CalibrationValue[int]] = None
+    y_position: Optional[CalibrationValue[int]] = None
+    readout_line: Optional[CalibrationValue[int]] = None
+
+    @classmethod
+    def from_calib_config(
+        cls, conf: "_BackendCalibrationConfig"
+    ) -> List["ResonatorCalibration"]:
+        """Generates new instances of ResonatorCalibration from the backend calibration config
+
+        Args:
+            conf: the backend calibration config
+
+        Returns:
+            the list of new instance of ResonatorCalibration
+        """
+        resonator_units = conf.units.get("readout_resonator", {})
+        resonator_data = attach_units_many(conf.readout_resonator, resonator_units)
+
+        results: List[ResonatorCalibration] = []
+        for resonator_conf in resonator_data:
+            resonator_conf["id"] = str(resonator_conf["id"]["value"]).strip("q")
+            results.append(ResonatorCalibration.model_validate(resonator_conf))
+
+        return results
 
 
-class CouplersCalibration(BaseModel, extra=Extra.allow):
+class CouplerCalibration(BaseModel, extra=Extra.allow):
     """Schema for the calibration data of the coupler"""
 
-    frequency: Optional[CalibrationValue] = None
-    frequency_detuning: Optional[CalibrationValue] = None
-    anharmonicity: Optional[CalibrationValue] = None
-    coupling_strength_02: Optional[CalibrationValue] = None
-    coupling_strength_12: Optional[CalibrationValue] = None
-    cz_pulse_amplitude: Optional[CalibrationValue] = None
-    cz_pulse_dc_bias: Optional[CalibrationValue] = None
-    cz_pulse_phase_offset: Optional[CalibrationValue] = None
-    cz_pulse_duration_before: Optional[CalibrationValue] = None
-    cz_pulse_duration_rise: Optional[CalibrationValue] = None
-    cz_pulse_duration_constant: Optional[CalibrationValue] = None
-    pulse_type: Optional[CalibrationValue] = None
+    frequency: Optional[CalibrationValue[float]] = None
+    frequency_detuning: Optional[CalibrationValue[float]] = None
+    anharmonicity: Optional[CalibrationValue[float]] = None
+    coupling_strength_02: Optional[CalibrationValue[float]] = None
+    coupling_strength_12: Optional[CalibrationValue[float]] = None
+    cz_pulse_amplitude: Optional[CalibrationValue[float]] = None
+    cz_pulse_dc_bias: Optional[CalibrationValue[float]] = None
+    cz_pulse_phase_offset: Optional[CalibrationValue[float]] = None
+    cz_pulse_duration_before: Optional[CalibrationValue[float]] = None
+    cz_pulse_duration_rise: Optional[CalibrationValue[float]] = None
+    cz_pulse_duration_constant: Optional[CalibrationValue[float]] = None
+    pulse_type: Optional[CalibrationValue[str]] = None
     id: Optional[int] = None
+
+    @classmethod
+    def from_calib_config(
+        cls, conf: "_BackendCalibrationConfig"
+    ) -> List["CouplerCalibration"]:
+        """Generates new instances of CouplerCalibration from the backend calibration config
+
+        Args:
+            conf: the backend calibration config
+
+        Returns:
+            the list of new instance of CouplerCalibration
+        """
+        coupler_units = conf.units.get("coupler", {})
+        coupler_data = attach_units_many(conf.coupler, coupler_units)
+
+        results: List[CouplerCalibration] = []
+        for coupler_conf in coupler_data:
+            coupler_conf["id"] = str(coupler_conf["id"]["value"]).strip("u")
+            results.append(CouplerCalibration.model_validate(coupler_conf))
+
+        return results
 
 
 class DeviceCalibration(Schema):
@@ -193,9 +283,36 @@ class DeviceCalibration(Schema):
     version: str
     qubits: List[QubitCalibration]
     resonators: Optional[List[ResonatorCalibration]] = None
-    couplers: Optional[List[CouplersCalibration]] = None
+    couplers: Optional[List[CouplerCalibration]] = None
     discriminators: Optional[Dict[str, Any]] = None
     last_calibrated: str
+
+    @classmethod
+    def from_config(cls, conf: "BackendConfig") -> "DeviceCalibration":
+        """Generates a device calibration instance from the backend config
+
+        Args:
+            conf: the backend configuration from which to extract the calibration info
+
+        Returns:
+            an instance of DeviceCalibration go from the backend config
+
+        Raises:
+            ValueError: calibration_config is None on backend config
+        """
+        calib_config = conf.calibration_config
+        if calib_config is None:
+            raise ValueError(f"calibration_config is None on backend config")
+
+        return cls(
+            name=conf.general_config.name,
+            version=conf.general_config.version,
+            qubits=QubitCalibration.from_calib_config(calib_config),
+            resonators=ResonatorCalibration.from_calib_config(calib_config),
+            couplers=CouplerCalibration.from_calib_config(calib_config),
+            discriminators=calib_config.discriminators,
+            last_calibrated=utc_now_str(),
+        )
 
 
 class _BackendGeneralConfig(BaseModel):
@@ -213,7 +330,7 @@ class _BackendGeneralConfig(BaseModel):
     open_pulse: bool = True
     simulator: bool = False
     version: str = "0.0.0"
-    online_date: str = utc_now_iso()
+    online_date: str = utc_now_str()
 
 
 class _BackendDeviceConfig(BaseModel):

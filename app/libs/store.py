@@ -18,6 +18,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Type,
     TypeVar,
@@ -26,10 +27,12 @@ from typing import (
 
 from pydantic import BaseModel
 from redis import Redis
+from typing_extensions import Literal
 
 from app.utils.exc import BaseBccException
 from app.utils.model import create_partial_schema
 
+IncEx = Union[Set[str], Set[int], Dict[int, Any], Dict[str, Any], None]
 _KEY_SEPARATOR = "@@@"
 
 
@@ -66,19 +69,43 @@ class Schema(BaseModel):
 
         return _KEY_SEPARATOR.join(keys)
 
+    def model_dump(
+        self,
+        *,
+        mode: Union[Literal["json", "python"], str] = "python",
+        include: IncEx = None,
+        exclude: IncEx = None,
+        by_alias: bool = False,
+        exclude_unset: bool = True,
+        exclude_defaults: bool = False,
+        exclude_none: bool = True,
+        round_trip: bool = False,
+        warnings: bool = True,
+    ) -> dict[str, Any]:
+        return super().model_dump(
+            mode=mode,
+            include=include,
+            exclude=exclude,
+            by_alias=by_alias,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
+            round_trip=round_trip,
+            warnings=warnings,
+        )
+
 
 T = TypeVar("T", bound=Schema)
-Part_T = TypeVar("Part_T", bound=Schema)
 
 
-class Collection(Generic[T, Part_T]):
+class Collection(Generic[T]):
     """A synchronous collection of items of similar types"""
 
     def __init__(
         self,
         connection: Redis,
         schema: Type[T],
-        partial_schema: Optional[Type[Part_T]] = None,
+        partial_schema: Optional[Type[T]] = None,
     ):
         """
         Args:
@@ -181,7 +208,7 @@ class Collection(Generic[T, Part_T]):
     def update(
         self,
         key: Union[str, Tuple[Any, ...], Dict[str, Any]],
-        updates: Union[Dict[str, Any], Part_T],
+        updates: Union[Dict[str, Any], T],
     ) -> T:
         """Updates the item identified by the primary key with the new updates
 

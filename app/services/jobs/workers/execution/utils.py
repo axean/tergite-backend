@@ -14,6 +14,8 @@
 """Simple utility functions for the execution worker"""
 from typing import Optional
 
+from redis import Redis
+
 import settings
 from app.libs.properties import get_backend_config, initialize_backend
 from app.libs.quantum_executor.base.executor import QuantumExecutor
@@ -23,6 +25,7 @@ from app.utils.api import get_mss_client
 
 
 def get_executor(
+    redis: Redis = settings.REDIS_CONNECTION,
     executor_type: str = settings.EXECUTOR_TYPE,
     quantify_config_file: str = settings.QUANTIFY_CONFIG_FILE,
     quantify_metadata_file: str = settings.QUANTIFY_METADATA_FILE,
@@ -33,6 +36,7 @@ def get_executor(
     It also initializes the backend before returning the executor
 
     Args:
+        redis: the connection to the redis database
         executor_type: the executor type to return
         quantify_config_file: the path to the configuration file of the executor
         quantify_metadata_file: the path to the metadata file of the executor
@@ -43,10 +47,6 @@ def get_executor(
     """
     executor: Optional[QuantumExecutor] = None
     backend_config = get_backend_config()
-    qubit_config = None
-    resonator_config = None
-    discriminator_config = None
-    coupler_config = None
 
     if executor_type == "quantify":
         executor = QuantifyExecutor(
@@ -59,22 +59,23 @@ def get_executor(
         executor: QiskitDynamicsExecutor = QiskitDynamicsExecutor.new_one_qubit(
             backend_config=backend_config
         )
-        discriminator_config = executor.backend.train_discriminator()
+        backend_config.calibration_config.discriminators = (
+            executor.backend.train_discriminator()
+        )
 
     if executor_type == "qiskit_pulse_2q":
         executor: QiskitDynamicsExecutor = QiskitDynamicsExecutor.new_two_qubit(
             backend_config=backend_config
         )
-        discriminator_config = executor.backend.train_discriminator()
+        backend_config.calibration_config.discriminators = (
+            executor.backend.train_discriminator()
+        )
 
     initialize_backend(
+        redis,
         mss_client=get_mss_client(),
         mss_url=mss_url,
         backend_config=backend_config,
-        qubit_config=qubit_config,
-        resonator_config=resonator_config,
-        discriminator_config=discriminator_config,
-        coupler_config=coupler_config,
     )
 
     return executor

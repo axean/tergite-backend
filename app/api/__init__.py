@@ -151,10 +151,12 @@ async def upload_job(
 
     # save job in database
     backend_config = get_backend_config()
-    calibration_info = get_device_calibration_info()
+    calibration_info = get_device_calibration_info(
+        redis_connection, backend_config=backend_config
+    )
     job = Job(
         job_id=job_id,
-        device=backend_config.name,
+        device=backend_config.general_config.name,
         calibration_date=calibration_info.last_calibrated,
     )
     jobs_db.insert(job)
@@ -177,8 +179,9 @@ async def fetch_all_jobs(
         redis_connection: the connection to the redis database
     """
     jobs_db = Collection(redis_connection, schema=Job)
+    data = jobs_db.get_all()
     # TODO: Paginate these in future
-    return jobs_db.get_all()
+    return [item.model_dump(mode="json") for item in data]
 
 
 @app.get("/jobs/{job_id}", dependencies=[Depends(get_valid_credentials_dep())])
@@ -271,13 +274,13 @@ async def download_logfile(logfile_id: UUID):
     return {"message": "logfile not found"}
 
 
-@app.get("/v2/static-properties", dependencies=[Depends(get_whitelisted_ip)])
-async def get_static_properties():
+@app.get("/static-properties", dependencies=[Depends(get_whitelisted_ip)])
+async def get_static_properties(redis_connection: RedisDep):
     """Retrieves the device properties that are not changing"""
-    return props_lib.get_device_info()
+    return props_lib.get_device_info(redis_connection)
 
 
-@app.get("/v2/dynamic-properties", dependencies=[Depends(get_whitelisted_ip)])
-async def get_dynamic_properties():
+@app.get("/dynamic-properties", dependencies=[Depends(get_whitelisted_ip)])
+async def get_dynamic_properties(redis_connection: RedisDep):
     """Retrieves the device properties that are changing with time i.e. calibration data"""
-    return props_lib.get_device_calibration_info()
+    return props_lib.get_device_calibration_info(redis_connection)

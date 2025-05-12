@@ -165,7 +165,7 @@ def mock_mss_put_requests(url: str, **kwargs):
         return MockHttpResponse(status_code=200)
     if is_jobs_update_url and "result" in payload:
         return MockHttpResponse(status_code=200)
-    if url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/v2/devices"):
+    if url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/devices"):
         return MockHttpResponse(status_code=200)
 
     return MockHttpResponse(status_code=405)
@@ -175,7 +175,7 @@ def mock_mss_post_requests(url: str, **kwargs):
     """Mock POST requests sent to MSS for testing"""
     payload = kwargs.get("json", [])
 
-    if url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/v2/calibrations"):
+    if url.startswith(f"{TEST_MSS_MACHINE_ROOT_URL}/calibrations"):
         try:
             _parsed_payload = [DeviceCalibration(**props) for props in payload]
             return MockHttpResponse(status_code=200)

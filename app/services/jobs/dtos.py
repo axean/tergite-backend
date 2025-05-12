@@ -55,8 +55,12 @@ class JobStatus(str, Enum):
     PENDING = "pending"
     EXECUTING = "executing"
     FAILED = "failed"
-    SUCCESS = "successful"
+    SUCCESSFUL = "successful"
     CANCELLED = "cancelled"
+
+    def is_terminal(self):
+        """Whether the current stage is end of line i.e. cannot be changed"""
+        return self in (JobStatus.CANCELLED, JobStatus.FAILED, JobStatus.SUCCESSFUL)
 
 
 class TimestampPair(BaseModel):
@@ -124,8 +128,6 @@ class Job(Schema):
     job_id: str
     device: str
     calibration_date: str
-    project_id: Optional[str] = None
-    user_id: Optional[str] = None
     stage: Stage = Stage.REG_Q
     status: JobStatus = JobStatus.PENDING
     failure_reason: Optional[str] = None

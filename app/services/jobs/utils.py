@@ -15,6 +15,7 @@
 # Modified:
 #
 # - Martin Ahindura, 2023, 2025
+import logging
 from json import JSONDecodeError
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
@@ -22,7 +23,6 @@ from typing import Dict, List, Tuple, Union
 import requests
 from pydantic import BaseModel
 
-from app.libs.properties.utils import date_time
 from app.libs.store import Collection
 from app.services.jobs.dtos import (
     Job,
@@ -43,9 +43,7 @@ from settings import (
     STORAGE_ROOT,
 )
 
-_STAGE_NAME_TIMESTAMPS_MAP: Dict[
-    Stage, Tuple[Tuple[StageName, TimestampLabel], ...]
-] = {
+_STAGE_TIMESTAMPS_MAP: Dict[Stage, Tuple[Tuple[StageName, TimestampLabel], ...]] = {
     Stage.REG_Q: (),
     Stage.REG_W: (("registration", "started"),),
     Stage.EXEC_Q: (("registration", "finished"),),
@@ -54,6 +52,17 @@ _STAGE_NAME_TIMESTAMPS_MAP: Dict[
     Stage.PST_PROC_W: (("post_processing", "started"),),
     Stage.FINAL_Q: (("post_processing", "finished"), ("final", "started")),
     Stage.FINAL_W: (("final", "finished"),),
+}
+
+_STAGE_STATUS_MAP: Dict[Stage, JobStatus] = {
+    Stage.REG_Q: JobStatus.PENDING,
+    Stage.REG_W: JobStatus.PENDING,
+    Stage.EXEC_Q: JobStatus.PENDING,
+    Stage.EXEC_W: JobStatus.EXECUTING,
+    Stage.PST_PROC_Q: JobStatus.EXECUTING,
+    Stage.PST_PROC_W: JobStatus.EXECUTING,
+    Stage.FINAL_Q: JobStatus.EXECUTING,
+    Stage.FINAL_W: JobStatus.SUCCESSFUL,
 }
 
 
@@ -71,7 +80,7 @@ def log_job_msg(message: str, level: LogLevel = LogLevel.INFO) -> None:
         "\033[0;31m",  # red
     )
 
-    formatted_time = date_time.utc_now_iso()
+    formatted_time = utc_now_str()
 
     logstring: str = (
         f"{color[level.value]}[{formatted_time}] {level.name}: {message}{color[0]}\n"
@@ -118,6 +127,8 @@ def get_rq_job_id(quantum_job_id: str, stage: Stage) -> str:
 def update_job_stage(jobs_db: Collection[Job], job_id: str, stage: Stage) -> Job:
     """Updates the job's stage in the database
 
+    This also updates the timestamps and the status of the job
+
     Args:
         jobs_db: the collection containing jobs
         job_id: the unique identifier of jobs
@@ -128,22 +139,19 @@ def update_job_stage(jobs_db: Collection[Job], job_id: str, stage: Stage) -> Job
     """
     key = (job_id,)
     job: Job = jobs_db.get_one(key)
-    timestamps = job.timestamps
-    if timestamps is None:
-        timestamps = Timestamps()
 
     current_timestamp = utc_now_str()
-    new_timestamps = {
-        stage_name: {timestamp_label: current_timestamp}
-        for pair in _STAGE_NAME_TIMESTAMPS_MAP[stage]
-        for stage_name, timestamp_label in pair
-    }
+    timestamps = _get_next_job_timestamps(
+        job, next_stage=stage, current_time=current_timestamp
+    )
+    status = _get_next_status(job, next_stage=stage)
 
     return jobs_db.update(
         key,
         {
+            "status": status,
             "stage": stage,
-            "timestamps": timestamps.with_updates(new_timestamps),
+            "timestamps": timestamps,
             "updated_at": current_timestamp,
         },
     )
@@ -193,7 +201,7 @@ def update_job_results(
     return jobs_db.update(
         (job_id,),
         {
-            "status": JobStatus.SUCCESS,
+            "status": JobStatus.SUCCESSFUL,
             "result": JobResult(memory=data),
             "download_url": f"{BCC_MACHINE_ROOT_URL}/logfiles/{job_id}",
             "updated_at": utc_now_str(),
@@ -237,3 +245,44 @@ def update_job_in_mss(
         raise RuntimeError(f"Public API returned {resp.status_code}")
 
     return resp
+
+
+def _get_next_status(job: Job, next_stage: Stage) -> JobStatus:
+    """Gets the next status given a job and the next stage
+
+    Args:
+        job: the quantum job
+        next_stage: the next stage this job is to go to
+
+    Returns:
+        the next job status for that job
+    """
+    status = job.status
+    if not status.is_terminal():
+        status = _STAGE_STATUS_MAP[next_stage]
+    return status
+
+
+def _get_next_job_timestamps(
+    job: Job, next_stage: Stage, current_time: str
+) -> Timestamps:
+    """Gets the next timestamps for the given job and the next stage
+
+    Args:
+        job: the quantum job
+        next_stage: the next stage this job is to go to
+        current_time: the current timestamp as a string
+
+    Returns:
+        the next timestamps for that job
+    """
+    timestamps = job.timestamps
+    if timestamps is None:
+        timestamps = Timestamps()
+
+    new_timestamps = {
+        stage_name: {timestamp_label: current_time}
+        for stage_name, timestamp_label in _STAGE_TIMESTAMPS_MAP[next_stage]
+    }
+
+    return timestamps.with_updates(new_timestamps)

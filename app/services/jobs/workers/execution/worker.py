@@ -105,7 +105,9 @@ def job_execute(job_file: Path):
 
     except Exception as exp:
         print(f"Job failed\nJob execution failed. exp: {exp}")
-        log_job_failure(jobs_db, job_id=job_id, reason="no response")
+        log_job_failure(
+            jobs_db, job_id=job_id, reason="unexpected error during execution"
+        )
         return {"message": "failed"}
 
 

@@ -130,7 +130,9 @@ def postprocess_storage_file(
         with get_mss_client() as mss_client:
             if job.meas_level == MeasLvl.DISCRIMINATED:
                 backend_config = get_backend_config()
-                calibration = get_device_calibration_info(backend_config)
+                calibration = get_device_calibration_info(
+                    REDIS_CONNECTION, backend_config=backend_config
+                )
                 discriminator = functools.partial(
                     _apply_linear_discriminator, calibration
                 )
@@ -165,7 +167,7 @@ def postprocessing_success_callback(
 
     job = update_job_stage(jobs_db, job_id=job_id, stage=Stage.FINAL_Q)
     with get_mss_client() as mss_client:
-        if job.status == JobStatus.SUCCESS:
+        if job.status == JobStatus.SUCCESSFUL:
             job = update_job_stage(jobs_db, job_id=job_id, stage=Stage.FINAL_W)
             print(f"Job with ID {job_id} has finished")
         else:

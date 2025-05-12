@@ -20,6 +20,7 @@ from redis import Redis
 
 from app.libs.store import Collection, ItemNotFoundError, Schema
 from app.services.auth.dtos import AuthLog, PartialAuthLog
+from app.tests.utils.records import with_current_timestamps
 
 _AUTH_LOG_LIST = [
     {"job_id": "foo", "app_token": "bar"},
@@ -41,6 +42,7 @@ def test_update_by_single_key(real_redis_client, payload, freezer):
     auth_logs = Collection(
         real_redis_client, schema=AuthLog, partial_schema=PartialAuthLog
     )
+    payload = with_current_timestamps([payload], fields=["updated_at", "created_at"])[0]
 
     original_item = AuthLog(**{"status": "pending", **payload})
     _insert_into_redis(real_redis_client, [original_item])
@@ -67,6 +69,7 @@ def test_update_by_single_key(real_redis_client, payload, freezer):
 def test_dict_update_by_single_key(real_redis_client, payload, freezer):
     """Calling update() with a raw redis key, and dict updates, changes the item if it exists already"""
     auth_logs = Collection(real_redis_client, schema=AuthLog)
+    payload = with_current_timestamps([payload], fields=["updated_at", "created_at"])[0]
 
     original_item = AuthLog(**{"status": "pending", **payload})
     _insert_into_redis(real_redis_client, [original_item])
@@ -95,6 +98,7 @@ def test_update_by_tuple_key(real_redis_client, payload, freezer):
     auth_logs = Collection(
         real_redis_client, schema=AuthLog, partial_schema=PartialAuthLog
     )
+    payload = with_current_timestamps([payload], fields=["updated_at", "created_at"])[0]
 
     original_item = AuthLog(**{"status": "pending", **payload})
     _insert_into_redis(real_redis_client, [original_item])
@@ -121,6 +125,7 @@ def test_update_by_tuple_key(real_redis_client, payload, freezer):
 def test_dict_update_by_tuple_key(real_redis_client, payload, freezer):
     """Calling update() with a tuple of keys, and dict updates, changes the item if it exists already"""
     auth_logs = Collection(real_redis_client, schema=AuthLog)
+    payload = with_current_timestamps([payload], fields=["updated_at", "created_at"])[0]
 
     original_item = AuthLog(**{"status": "pending", **payload})
     _insert_into_redis(real_redis_client, [original_item])
@@ -149,6 +154,7 @@ def test_update_by_dict_key(real_redis_client, payload, freezer):
     auth_logs = Collection(
         real_redis_client, schema=AuthLog, partial_schema=PartialAuthLog
     )
+    payload = with_current_timestamps([payload], fields=["updated_at", "created_at"])[0]
 
     original_item = AuthLog(**{"status": "pending", **payload})
     _insert_into_redis(real_redis_client, [original_item])
@@ -171,9 +177,10 @@ def test_update_by_dict_key(real_redis_client, payload, freezer):
 
 
 @pytest.mark.parametrize("payload", _AUTH_LOG_LIST)
-def test_update_by_dict_key(real_redis_client, payload, freezer):
+def test_dict_update_by_dict_key(real_redis_client, payload, freezer):
     """Calling update() with a primary key in dict form, and update dict, changes the item if it exists already"""
     auth_logs = Collection(real_redis_client, schema=AuthLog)
+    payload = with_current_timestamps([payload], fields=["updated_at", "created_at"])[0]
 
     original_item = AuthLog(**{"status": "pending", **payload})
     _insert_into_redis(real_redis_client, [original_item])

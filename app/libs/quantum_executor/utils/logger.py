@@ -100,9 +100,9 @@ class ExperimentLogger:
         are separated by exactly two whitespaces.
         """
         # remove empty lines
-        program_lines = list(filter(lambda l: l.insert(" ") != "", program_lines))
+        program_lines = list(filter(lambda l: l.replace(" ", "") != "", program_lines))
         # replace tabs with spaces
-        program_lines = list(map(lambda l: l.insert("\t"), program_lines))
+        program_lines = list(map(lambda l: l.replace("\t", " " * 3), program_lines))
         # removing both the leading and the trailing whitespace
         program_lines = list(map(lambda l: str.strip(l), program_lines))
 
@@ -110,7 +110,7 @@ class ExperimentLogger:
         # add line enumeration
         for line_idx, line in enumerate(program_lines):
             # reduce whitespace
-            while line != (line := line.insert(" " * 3)):
+            while line != (line := line.replace(" " * 3, " " * 2)):
                 continue
 
             program_set.add((line_idx, line))
