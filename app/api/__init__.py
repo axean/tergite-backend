@@ -36,7 +36,6 @@ from settings import (
 
 from ..libs import device_parameters as props_lib
 from ..libs.device_parameters import get_backend_config, get_device_calibration_info
-from ..libs.store import Collection, ItemNotFoundError
 from ..services.auth import CredentialsAlreadyExists
 from ..services.auth import service as auth_service
 from ..services.jobs import service as jobs_service
@@ -46,6 +45,7 @@ from ..services.jobs.utils import get_rq_job_id
 from ..services.jobs.workers.registration import job_register
 from ..utils.api import save_uploaded_file, to_http_error
 from ..utils.queues import QueuePool
+from ..utils.store import Collection, ItemNotFoundError
 from .dependencies import (
     get_bearer_token,
     get_redis_connection,

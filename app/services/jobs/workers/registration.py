@@ -20,8 +20,8 @@ from settings import (
     STORAGE_ROOT,
 )
 
-from ....libs.store import Collection
 from ....utils.queues import QueuePool
+from ....utils.store import Collection
 from ..dtos import Job
 from ..service import Stage
 from ..utils import get_rq_job_id, log_job_msg, move_file, update_job_stage

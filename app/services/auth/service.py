@@ -3,7 +3,7 @@ from typing import Optional
 
 from redis.client import Redis
 
-from ...libs.store import Collection, ItemNotFoundError
+from ...utils.store import Collection, ItemNotFoundError
 from ..jobs.dtos import JobStatus
 from .dtos import AuthLog, Credentials
 from .exc import AuthenticationError, AuthorizationError, CredentialsAlreadyExists

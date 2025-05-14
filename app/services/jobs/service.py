@@ -20,8 +20,8 @@ from rq.command import send_stop_job_command
 from rq.exceptions import InvalidJobOperation
 from rq.job import Job as RqJob
 
-from ...libs.store import Collection
 from ...utils.datetime import utc_now_str
+from ...utils.store import Collection
 from .dtos import (
     Job,
     JobStatus,

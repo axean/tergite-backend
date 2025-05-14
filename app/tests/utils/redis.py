@@ -12,7 +12,6 @@
 
 """Utility functions for redis when testing"""
 import json
-from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
 from app.tests.utils.datetime import get_current_timestamp_str

@@ -25,8 +25,8 @@ from qiskit_ibm_provider.utils import json_decoder
 
 from app.libs.quantum_executor.utils.connections import get_executor_lock
 from app.libs.quantum_executor.utils.serialization import iqx_rld
-from app.libs.store import Collection
 from app.utils.queues import QueuePool
+from app.utils.store import Collection
 from settings import (
     DEFAULT_PREFIX,
     REDIS_CONNECTION,

@@ -16,8 +16,8 @@ from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.libs.store import Schema
 from app.utils.datetime import utc_now_str
+from app.utils.store import Schema
 
 StageName = Literal[
     "registration",

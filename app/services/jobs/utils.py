@@ -15,7 +15,6 @@
 # Modified:
 #
 # - Martin Ahindura, 2023, 2025
-import logging
 from json import JSONDecodeError
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
@@ -23,7 +22,6 @@ from typing import Dict, List, Tuple, Union
 import requests
 from pydantic import BaseModel
 
-from app.libs.store import Collection
 from app.services.jobs.dtos import (
     Job,
     JobResult,
@@ -35,6 +33,7 @@ from app.services.jobs.dtos import (
     Timestamps,
 )
 from app.utils.datetime import utc_now_str
+from app.utils.store import Collection
 from settings import (
     BCC_MACHINE_ROOT_URL,
     JOB_SUPERVISOR_LOG,

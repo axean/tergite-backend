@@ -39,7 +39,6 @@ from app.libs.quantum_executor.base.quantum_job import (
     discriminate_results,
     read_job_from_hdf5,
 )
-from app.libs.store import Collection
 from app.services.jobs.dtos import Job, JobStatus, Stage
 from app.services.jobs.utils import (
     log_job_failure,
@@ -50,6 +49,7 @@ from app.services.jobs.utils import (
 )
 from app.services.jobs.workers.postprocessing.exc import PostProcessingError
 from app.utils.api import get_mss_client
+from app.utils.store import Collection
 from settings import (
     LOGFILE_DOWNLOAD_POOL_DIRNAME,
     REDIS_CONNECTION,

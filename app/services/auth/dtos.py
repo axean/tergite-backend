@@ -13,9 +13,9 @@
 """Data Transfer Objects for the auth service"""
 from pydantic import Field
 
-from ...libs.store import Schema
 from ...utils.datetime import utc_now_str
 from ...utils.model import create_partial_schema
+from ...utils.store import Schema
 from ..jobs.dtos import JobStatus
 
 

@@ -18,9 +18,9 @@ import pytest
 from pydantic import ValidationError
 from redis import Redis
 
-from app.libs.store import Collection, ItemNotFoundError, Schema
 from app.services.auth.dtos import AuthLog, PartialAuthLog
 from app.tests.utils.records import with_current_timestamps
+from app.utils.store import Collection, ItemNotFoundError, Schema
 
 _AUTH_LOG_LIST = [
     {"job_id": "foo", "app_token": "bar"},

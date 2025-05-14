@@ -7,8 +7,6 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
-import redis
-from rq import Worker
 
 from app.services.auth import AuthLog
 from app.services.jobs.dtos import Job
@@ -22,7 +20,6 @@ from app.tests.conftest import (
     MOCK_NOW,
     TEST_APP_TOKEN_STRING,
 )
-from app.tests.utils.datetime import get_current_timestamp_str
 from app.tests.utils.fixtures import load_fixture
 from app.tests.utils.http import get_headers
 from app.tests.utils.records import (
