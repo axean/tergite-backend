@@ -28,7 +28,7 @@ import rq.job
 from sklearn.utils.extmath import safe_sparse_dot
 
 import settings
-from app.libs.properties import (
+from app.libs.device_parameters import (
     DeviceCalibration,
     get_backend_config,
     get_device_calibration_info,

@@ -17,7 +17,7 @@ from typing import Optional
 from redis import Redis
 
 import settings
-from app.libs.properties import get_backend_config, initialize_backend
+from app.libs.device_parameters import get_backend_config, initialize_backend
 from app.libs.quantum_executor.base.executor import QuantumExecutor
 from app.libs.quantum_executor.qiskit.executor import QiskitDynamicsExecutor
 from app.libs.quantum_executor.quantify.executor import QuantifyExecutor

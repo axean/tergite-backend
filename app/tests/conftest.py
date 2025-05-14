@@ -37,7 +37,7 @@ from pytest_lazyfixture import lazy_fixture
 from redis.client import Redis
 from rq import SimpleWorker
 
-from ..libs.properties import DeviceCalibration
+from ..libs.device_parameters import DeviceCalibration
 from ..utils.queues import QueuePool
 from .utils.analysis import MockLinearDiscriminantAnalysis
 from .utils.http import MockHttpResponse, MockHttpSession

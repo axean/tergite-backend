@@ -15,7 +15,7 @@ import socket
 
 import pytest
 
-from ...libs.properties.dtos import BackendConfig
+from ...libs.device_parameters.dtos import BackendConfig
 from ...libs.quantum_executor.quantify.executor import QuantifyExecutor
 from ..utils.fixtures import get_fixture_path
 

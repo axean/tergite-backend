@@ -22,7 +22,7 @@ from qiskit.transpiler import Target
 from qiskit_dynamics import Solver
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
-from app.libs.properties import BackendConfig
+from app.libs.device_parameters import BackendConfig
 from app.libs.quantum_executor.qiskit.backends.base import QiskitPulseBackend
 
 # configure jax to use 64 bit mode

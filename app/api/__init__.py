@@ -34,8 +34,8 @@ from settings import (
     STORAGE_ROOT,
 )
 
-from ..libs import properties as props_lib
-from ..libs.properties import get_backend_config, get_device_calibration_info
+from ..libs import device_parameters as props_lib
+from ..libs.device_parameters import get_backend_config, get_device_calibration_info
 from ..libs.store import Collection, ItemNotFoundError
 from ..services.auth import CredentialsAlreadyExists
 from ..services.auth import service as auth_service

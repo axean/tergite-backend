@@ -20,6 +20,7 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
   - JobAlreadyCancelled results in a 406 HTTP response (originally was 500)
 - BREAKING: Change endpoint `/v2/static-properties` to `/static-properties`
 - BREAKING: Change endpoint `/v2/dynamic-properties` to `/dynamic-properties`
+- Rename the `properties` library to `device_parameters`
 
 ## [2025.03.2] - 2025-03-19
 
