@@ -167,7 +167,7 @@ def send_backend_info_to_mss(
 
     responses = [
         mss_client.put(f"{mss_url}/devices/", json=device_info),
-        mss_client.post(f"{mss_url}/calibrations/", json=[calibration_info]),
+        mss_client.post(f"{mss_url}/calibrations/", json=calibration_info),
     ]
 
     error_message = ",".join([v.text for v in responses if not v.ok])

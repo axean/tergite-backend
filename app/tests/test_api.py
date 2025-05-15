@@ -777,7 +777,7 @@ def test_unauthenticated_download_logfile(
 
 @pytest.mark.parametrize("client, expected", _STATIC_PROPERTIES_PARAMS)
 def test_get_static_properties(client, expected):
-    """Get to '/v2/static-properties' retrieves the current static properties of the backend in v2 form"""
+    """Get to '/static-properties' retrieves the current static properties of the backend in v2 form"""
     # using context manager to ensure on_startup runs
     with client as client:
         response = client.get("/static-properties")
@@ -788,7 +788,7 @@ def test_get_static_properties(client, expected):
 
 @pytest.mark.parametrize("client, expected", _DYNAMIC_PROPERTIES_PARAMS)
 def test_get_dynamic_properties(client, expected):
-    """Get to '/v2/dynamic-properties' retrieves the calibrated device parameters in version 2 form"""
+    """Get to '/dynamic-properties' retrieves the calibrated device parameters in version 2 form"""
     # using context manager to ensure on_startup runs
     with client as client:
         response = client.get("/dynamic-properties")
