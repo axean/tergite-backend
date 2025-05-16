@@ -1,10 +1,8 @@
-FROM python:3.9-slim-bullseye
+FROM python:3.12-slim-bullseye
 
 WORKDIR /code
 
-# copy this only so as to increase the chances of the cache being used
-# for the pip install step
-COPY ./requirements.txt /code/requirements.txt
+COPY . /code/
 
 # Install PyQt5
 RUN apt-get update -y; \
@@ -12,16 +10,15 @@ RUN apt-get update -y; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*;
 
+# FIXME: this may fail now that we use a pyproject.toml
 RUN \
     # Extract the core requirements that have a dependency of PyQt5; a difficult package to install
-    grep -E '^(quantify-core|quantify-scheduler)' /code/requirements.txt >> core-requirements.txt; \
+    grep -E '^(quantify-core|quantify-scheduler)' /code/pyproject.toml >> core-requirements.txt; \
     # show core-requirements for debugging
     cat core-requirements.txt; \
-    # Clean up code/requirements.txt file, remove the dev-dependencies
-    sed -i '/^# dev-dependencies/q'  /code/requirements.txt; \
     # comment out the packages that may need PyQt5
-    sed -i "s:quantify-core:# quantify-core:" /code/requirements.txt; \
-    sed -i "s:quantify-scheduler:# quantify-scheduler:" /code/requirements.txt; \
+    sed -i "s:\"quantify-core:# quantify-core:" /code/pyproject.toml; \
+    sed -i "s:\"quantify-scheduler:# quantify-scheduler:" /code/pyproject.toml; \
     # update pip, setuptools, wheel
     pip install --upgrade pip setuptools wheel; \
     # Install the pipdeptree
@@ -53,7 +50,7 @@ RUN \
     # remove pyqt5 dependency
     sed -i "s/^pyqt5[\>\<\=\~\!].*//" pending-requirements.txt; \
     # remove empty lines
-    sed -i.bak "/^$/d" pending-requirements.txt; \
+    sed -i "/^$/d" pending-requirements.txt; \
     # print the final output for debugging purposes
     cat pending-requirements.txt; \
     # Install all yet-to-be-installed dependencies except pyqt5
@@ -62,9 +59,7 @@ RUN \
     # Install the pip dependencies except the core ones \
     # This will ensure the dependencies that have strict versions restrictions are installed \
     # appropriately \
-    pip install --no-cache-dir -r /code/requirements.txt;
-
-COPY . /code/
+    pip install --no-cache-dir /code/;
 
 RUN chmod +x /code/start_bcc.sh
 

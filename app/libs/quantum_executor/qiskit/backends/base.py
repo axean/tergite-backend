@@ -32,7 +32,7 @@ class QiskitPulseBackend(DynamicsBackend):
         rtol: float = 1e-6,
         dim: int = 4,
         noise: bool = True,
-        **options
+        **options,
     ):
         self.backend_config = backend_config
         self.backend_name = backend_config.general_config.name
@@ -45,7 +45,7 @@ class QiskitPulseBackend(DynamicsBackend):
             dim=dim,
             noise=noise,
             backend_config=backend_config,
-            **options
+            **options,
         )
 
         super().__init__(**kwargs, **options)

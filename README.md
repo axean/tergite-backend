@@ -14,13 +14,13 @@ If you are reading this on GitHub, then you are looking at a mirror.
 
 ## Dependencies
 
-- [Python 3.9](https://www.python.org/)
+- [Python 3.12](https://www.python.org/)
 - [Redis](https://redis.io/)
 
 ## Quick Start
 
 - Ensure you have [conda](https://docs.anaconda.com/free/miniconda/index.html) installed. 
- (_You could simply have python +3.9 installed instead._)
+ (_You could simply have python +3.12 installed instead._)
 - Ensure you have the [Redis](https://redis.io/) server running
 - Clone the repo
 
@@ -31,7 +31,7 @@ git clone git@github.com:tergite/tergite-backend.git
 - Create conda environment
 
 ```shell
-conda create -n bcc -y python=3.9
+conda create -n bcc -y python=3.12
 conda activate bcc
 ```
 
@@ -39,7 +39,7 @@ conda activate bcc
 
 ```shell
 cd tergite-backend
-pip install -r requirements.txt
+pip install ."[dev]"
 ```
 
 - Copy the `dot-env-template.txt` file to `.env` and update the environment variables there appropriately.

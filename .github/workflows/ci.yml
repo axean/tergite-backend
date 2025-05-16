@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [ "3.9" ]
+        python-version: [ "3.12", "3.13" ]
 
     services:
       redis:
@@ -40,7 +40,7 @@ jobs:
           cache: 'pip'
       - name: Run tests
         run: |
-          pip install -r requirements.txt
+          pip install ."[dev]"
           black --check app
           pytest app
         env:

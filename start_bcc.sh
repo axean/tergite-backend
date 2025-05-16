@@ -98,7 +98,7 @@ if [ "$IS_SYSTEMD" = "true" ]; then
   if conda_activate ./env ; then
     echo "env activated";
   else
-    conda create -y --prefix=env python=3.9 && conda_activate ./env && pip install -r requirements.txt;
+    conda create -y --prefix=env python=3.12 && conda_activate ./env && pip install .;
     echo "env created, activated, and dependencies installed";
   fi
 fi

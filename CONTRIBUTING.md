@@ -88,17 +88,17 @@ git clone git@github.com:tergite/tergite-backend.git
 cd tergite-backend
 ```
 
-- Create a conda environment with python 3.9
+- Create a conda environment with python 3.12
 
 ```shell
-conda create -n bcc python=3.9
+conda create -n bcc python=3.12
 ```
 
 - Install requirements
 
 ```shell
 conda activate bcc
-pip install -r requirements.txt
+pip install ."[dev]"
 ```
 
 - Start the redis server in another terminal on port 6378

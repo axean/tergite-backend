@@ -108,7 +108,7 @@ class WacqtCZPlay(qiskit_pulse.Play, QiskitDynamicsInstruction):
         t_p: float,
         delta_0: float,
         duration: SupportsIndex,
-        **kwargs
+        **kwargs,
     ):
         """Creates a Play instruction to play the WACQT CZ gate custom pulse
 
