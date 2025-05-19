@@ -33,7 +33,7 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 from freezegun import freeze_time
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf as lazy_fixture
 from redis.client import Redis
 from rq import SimpleWorker
 

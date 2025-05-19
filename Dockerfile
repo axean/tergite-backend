@@ -13,12 +13,14 @@ RUN apt-get update -y; \
 # FIXME: this may fail now that we use a pyproject.toml
 RUN \
     # Extract the core requirements that have a dependency of PyQt5; a difficult package to install
-    grep -E '^(quantify-core|quantify-scheduler)' /code/pyproject.toml >> core-requirements.txt; \
+    grep -E '^\s+\"(quantify-core|quantify-scheduler)' /code/pyproject.toml >> core-requirements.txt; \
+    # convert the core-requirements.txt into a proper requirements.txt file
+    sed -Ei 's/^[[:space:]]*//; s/^"//; s/",?$//' core-requirements.txt; \
     # show core-requirements for debugging
     cat core-requirements.txt; \
     # comment out the packages that may need PyQt5
-    sed -i "s:\"quantify-core:# quantify-core:" /code/pyproject.toml; \
-    sed -i "s:\"quantify-scheduler:# quantify-scheduler:" /code/pyproject.toml; \
+    sed -i "s:\"quantify-core:# \"quantify-core:" /code/pyproject.toml; \
+    sed -i "s:\"quantify-scheduler:# \"quantify-scheduler:" /code/pyproject.toml; \
     # update pip, setuptools, wheel
     pip install --upgrade pip setuptools wheel; \
     # Install the pipdeptree
