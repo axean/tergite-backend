@@ -379,7 +379,6 @@ class SetFreqInstruction(BaseInstruction):
             clock=self.channel.clock,
             clock_freq_new=self.frequency,
             t0=self.t0,
-            duration=0.0,
         )
         return op
 
@@ -427,7 +426,6 @@ class ShiftFreqInstruction(BaseInstruction):
             clock=self.channel.clock,
             clock_freq_new=new_freq,
             t0=self.t0,
-            duration=0.0,
         )
         return op
 
@@ -474,7 +472,6 @@ class SetPhaseInstruction(BaseInstruction):
             phase_shift=phase_delta,
             clock=self.channel.clock,
             t0=self.t0,
-            duration=0.0,
         )
         return op
 
@@ -519,7 +516,6 @@ class ShiftPhaseInstruction(BaseInstruction):
             phase_shift=self.phase,
             clock=self.channel.clock,
             t0=self.t0,
-            duration=0.0,
         )
         return op
 

@@ -135,7 +135,7 @@ class QuantifyMetadata(RootModel[Dict[str, InstrumentConfig]]):
 
 
 def load_quantify_config(
-    file_path: Union[PathLike, str]
+    file_path: Union[PathLike, str],
 ) -> QbloxHardwareCompilationConfig:
     """Loads the quantify config json file to QbloxHardwareCompilationConfig
 

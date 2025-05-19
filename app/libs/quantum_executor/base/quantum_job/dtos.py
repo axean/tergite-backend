@@ -20,10 +20,11 @@ from typing import Any, Optional, Type, Union
 
 import numpy as np
 from pydantic import BaseModel, Extra
-from qiskit.providers.ibmq.utils import json_decoder
-from qiskit.providers.ibmq.utils.json_encoder import IQXJsonEncoder
 from qiskit.qobj import PulseQobj
 from quantify_scheduler.enums import BinMode
+
+from app.libs.qiskit_providers.utils import json_decoder
+from app.libs.qiskit_providers.utils.json_encoder import IQXJsonEncoder
 
 from .typing import QJobResult
 

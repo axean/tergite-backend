@@ -1,4 +1,5 @@
 """Exceptions related to the auth service"""
+
 from app.utils.exc import BaseBccException
 
 
