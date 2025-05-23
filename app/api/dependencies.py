@@ -15,12 +15,13 @@ from typing import Optional
 
 from fastapi import Depends, HTTPException, UploadFile, status
 from fastapi.requests import Request
+from pydantic import ValidationError
 from redis import Redis
 
 import settings
 
 from ..services import auth as auth_service
-from ..services.jobs.dtos import JobStatus
+from ..services.jobs.dtos import JobFile, JobStatus
 from ..utils.uuid import validate_uuid4_str
 from .exc import InvalidJobIdInUploadedFileError, IpNotAllowedError
 
@@ -180,3 +181,27 @@ def get_bearer_token(
     except (KeyError, IndexError):
         if raise_if_error:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
+
+async def validate_job_file(upload_file: UploadFile) -> UploadFile:
+    """Validates a job file input and returns the original upload file
+
+    Validations:
+    - Follows the JobFile structure
+
+    Args:
+        upload_file: the UploadFile instance that is uploaded
+    """
+    try:
+        upload_file.file.seek(0)
+        content = await upload_file.read()
+
+        JobFile.model_validate_json(content)
+
+        # optional: reset stream for reuse
+        upload_file.file.seek(0)
+        return upload_file
+    except (ValidationError, KeyError, TypeError) as exp:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid file: {exp}"
+        )

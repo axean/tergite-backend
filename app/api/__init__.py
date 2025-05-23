@@ -51,6 +51,7 @@ from .dependencies import (
     get_redis_connection,
     get_valid_credentials_dep,
     get_whitelisted_ip,
+    validate_job_file,
 )
 from .exc import InvalidJobIdInUploadedFileError, IpNotAllowedError
 
@@ -125,7 +126,7 @@ async def register_credentials(
 @app.post("/jobs")
 async def upload_job(
     redis_connection: RedisDep,
-    upload_file: UploadFile = File(...),
+    upload_file: Annotated[UploadFile, Depends(validate_job_file)] = File(...),
     credentials: auth_service.Credentials = Depends(
         get_valid_credentials_dep(expected_status=JobStatus.PENDING)
     ),
