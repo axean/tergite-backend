@@ -11,10 +11,18 @@
 # that they have been altered from the originals.
 #
 """Data Transfer Objects for the jobs service"""
+import json
 from enum import Enum, unique
 from typing import Dict, List, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SerializationInfo,
+    field_serializer,
+    field_validator,
+)
 from qiskit.qobj import PulseQobj
 
 from app.libs.qiskit_providers.utils.json_encoder import IQXJsonEncoder
@@ -144,11 +152,15 @@ class Job(Schema):
 class JobFileParams(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
-        json_encoders={PulseQobj: IQXJsonEncoder().default},
         arbitrary_types_allowed=True,
     )
 
     qobj: PulseQobj
+
+    @field_serializer("qobj")
+    def serialize_qobj(self, qobj: PulseQobj, _info: SerializationInfo):
+        """Converts qobj into a JSON"""
+        return json.dumps(qobj.to_dict(), cls=IQXJsonEncoder)
 
     @field_validator("qobj", mode="before")
     @classmethod
