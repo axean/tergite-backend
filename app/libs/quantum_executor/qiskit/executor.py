@@ -23,7 +23,7 @@ from app.libs.quantum_executor.base.executor import QuantumExecutor
 from app.libs.quantum_executor.base.experiment import NativeExperiment
 from app.libs.quantum_executor.qiskit.experiment import QiskitDynamicsExperiment
 
-from ...properties import BackendConfig
+from ...device_parameters import BackendConfig
 from ..base.quantum_job import (
     MeasRet,
     QDataset,

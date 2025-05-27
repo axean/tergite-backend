@@ -17,7 +17,7 @@ from qiskit.providers.models import PulseBackendConfiguration, PulseDefaults
 from qiskit.transpiler import Target
 from qiskit_dynamics import DynamicsBackend, Solver
 
-from app.libs.properties import BackendConfig
+from app.libs.device_parameters import BackendConfig
 
 
 class QiskitPulseBackend(DynamicsBackend):

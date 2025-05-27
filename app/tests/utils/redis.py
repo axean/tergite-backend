@@ -12,15 +12,19 @@
 
 """Utility functions for redis when testing"""
 import json
-from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+
+from app.tests.utils.datetime import get_current_timestamp_str
 
 if TYPE_CHECKING:
     import redis
 
 
 def insert_in_hash(
-    client: "redis.Redis", hash_name: str, data: List[Dict[str, Any]], id_field: str
+    client: "redis.Redis",
+    hash_name: str,
+    data: List[Dict[str, Any]],
+    id_fields: Tuple[str],
 ):
     """Inserts the records into the redis hash map
 
@@ -28,9 +32,11 @@ def insert_in_hash(
         client: the redis client
         hash_name: the name of the hash map to insert them into
         data: the list of records to insert
-        id_field: the name of the field that is unique for every record
+        id_fields: the name of the fields that together are used to uniquely identify a record
     """
-    mapping = {record[id_field]: json.dumps(record) for record in data}
+    mapping = {
+        "@@@".join([item[k] for k in id_fields]): json.dumps(item) for item in data
+    }
     client.hset(name=hash_name, mapping=mapping)
 
 
@@ -45,10 +51,12 @@ def register_app_token_job_id(
         app_token: the app token to register
         job_id: the job_id to register
     """
-    redis_key = f"{app_token}@@@{job_id}"
-    timestamp = f"{datetime.utcnow().isoformat('T')}Z"
+    redis_key = f"{job_id}@@@{app_token}"
+    timestamp = get_current_timestamp_str()
     auth_log = {
-        "status": "registered",
+        "job_id": job_id,
+        "app_token": app_token,
+        "status": "pending",
         "created_at": timestamp,
         "updated_at": timestamp,
     }

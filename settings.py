@@ -43,7 +43,7 @@ if not IS_AUTH_ENABLED and _is_production:
 
 # Storage settings
 DEFAULT_PREFIX = config("DEFAULT_PREFIX", cast=str)
-STORAGE_ROOT = config("STORAGE_ROOT", cast=str, default="/tmp")
+STORAGE_ROOT: Path = config("STORAGE_ROOT", cast=Path, default="/tmp")
 STORAGE_PREFIX_DIRNAME = config(
     "STORAGE_PREFIX_DIRNAME", cast=str, default=DEFAULT_PREFIX
 )
@@ -70,12 +70,8 @@ EXECUTOR_DATA_DIRNAME = config(
     "EXECUTOR_DATA_DIRNAME", cast=str, default="executor_data"
 )
 
-_executor_data_dir_path = os.path.join(
-    STORAGE_ROOT, DEFAULT_PREFIX, EXECUTOR_DATA_DIRNAME
-)
-if not os.path.exists(_executor_data_dir_path):
-    os.makedirs(_executor_data_dir_path)
-EXECUTOR_DATA_DIR = _executor_data_dir_path
+EXECUTOR_DATA_DIR = STORAGE_ROOT / DEFAULT_PREFIX / EXECUTOR_DATA_DIRNAME
+EXECUTOR_DATA_DIR.mkdir(exist_ok=True, parents=True)
 
 # Definition of backend property names
 BACKEND_SETTINGS = config(

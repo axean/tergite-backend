@@ -7,7 +7,20 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ## [Unreleased]
 
+### Added
+
+- Add a simpler JSON document based store in redis
+
 ### Changed
+
+- Changed source of lda parameters to backend's redis store. Originally they were retrieved from MSS.
+- Added proper HTTP status codes for failed REST API requests
+  - InvalidJobIdInUploadedFileError results in a 400 HTTP response (originally was 200)
+  - ItemNotFoundError results in a 404 HTTP response (originally was 200)
+  - JobAlreadyCancelled results in a 406 HTTP response (originally was 500)
+- BREAKING: Change endpoint `/v2/static-properties` to `/static-properties`
+- BREAKING: Change endpoint `/v2/dynamic-properties` to `/dynamic-properties`
+- Rename the `properties` library to `device_parameters`
 
 ## [2025.03.2] - 2025-03-19
 

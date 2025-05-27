@@ -2,6 +2,7 @@
 #
 # (C) Copyright Miroslav Dobsicek 2020, 2021
 # (C) Copyright Abdullah-Al Amin 2022
+# (C) Copyright Chalmers Next Labs 2025
 #
 # This code is licensed under the Apache License, Version 2.0. You may
 # obtain a copy of this license in the LICENSE.txt file in the root directory
@@ -16,26 +17,35 @@
 # - Martin Ahindura 2023
 
 
-import json
-import shutil
-from pathlib import Path
-from typing import Optional
 from uuid import UUID
 
 from fastapi import Body, Depends, FastAPI, File, HTTPException, UploadFile, status
 from fastapi.requests import Request
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, Response
 from redis.client import Redis
-from rq import Worker
 from typing_extensions import Annotated
 
-import settings
+from settings import (
+    CLIENT_IP_WHITELIST,
+    DEFAULT_PREFIX,
+    JOB_UPLOAD_POOL_DIRNAME,
+    LOGFILE_DOWNLOAD_POOL_DIRNAME,
+    STORAGE_PREFIX_DIRNAME,
+    STORAGE_ROOT,
+)
 
-from ..libs import properties as props_lib
+from ..libs import device_parameters as props_lib
+from ..libs.device_parameters import get_backend_config, get_device_calibration_info
+from ..services.auth import CredentialsAlreadyExists
 from ..services.auth import service as auth_service
 from ..services.jobs import service as jobs_service
+from ..services.jobs.dtos import Job, JobStatus, Stage
+from ..services.jobs.exc import JobAlreadyCancelled
+from ..services.jobs.utils import get_rq_job_id
 from ..services.jobs.workers.registration import job_register
+from ..utils.api import save_uploaded_file, to_http_error
 from ..utils.queues import QueuePool
+from ..utils.store import Collection, ItemNotFoundError
 from .dependencies import (
     get_bearer_token,
     get_redis_connection,
@@ -44,13 +54,8 @@ from .dependencies import (
 )
 from .exc import InvalidJobIdInUploadedFileError, IpNotAllowedError
 
-# settings
-DEFAULT_PREFIX = settings.DEFAULT_PREFIX
-STORAGE_ROOT = settings.STORAGE_ROOT
-STORAGE_PREFIX_DIRNAME = settings.STORAGE_PREFIX_DIRNAME
-LOGFILE_UPLOAD_POOL_DIRNAME = settings.LOGFILE_UPLOAD_POOL_DIRNAME
-LOGFILE_DOWNLOAD_POOL_DIRNAME = settings.LOGFILE_DOWNLOAD_POOL_DIRNAME
-JOB_UPLOAD_POOL_DIRNAME = settings.JOB_UPLOAD_POOL_DIRNAME
+_JOB_UPLOAD_POOL = STORAGE_ROOT / STORAGE_PREFIX_DIRNAME / JOB_UPLOAD_POOL_DIRNAME
+_LOG_FILE_POOL = STORAGE_ROOT / STORAGE_PREFIX_DIRNAME / LOGFILE_DOWNLOAD_POOL_DIRNAME
 
 # dependencies
 RedisDep = Annotated[Redis, Depends(get_redis_connection)]
@@ -67,21 +72,11 @@ app = FastAPI(
     version="2025.03.2",
 )
 
-
-@app.exception_handler(InvalidJobIdInUploadedFileError)
-async def invalid_job_id_in_file_exception_handler(
-    request: Request, exp: InvalidJobIdInUploadedFileError
-):
-    """A custom exception handler to handle InvalidJobIdInUploadedFileError.
-
-    This handler is only here to maintain the original way of responding
-    when the job_id in the uploaded file was non-existent or was not a
-    proper UUID
-    """
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={"message": "failed"},
-    )
+# exception handlers
+app.add_exception_handler(InvalidJobIdInUploadedFileError, to_http_error(400))
+app.add_exception_handler(CredentialsAlreadyExists, to_http_error(403))
+app.add_exception_handler(ItemNotFoundError, to_http_error(404))
+app.add_exception_handler(JobAlreadyCancelled, to_http_error(406))
 
 
 @app.middleware("http")
@@ -102,7 +97,7 @@ async def limit_access_to_ip_whitelist(request: Request, call_next):
     """
     ip = f"{request.client.host}"
 
-    if ip in settings.CLIENT_IP_WHITELIST:
+    if ip in CLIENT_IP_WHITELIST:
         request.state.whitelisted_ip = ip
 
     try:
@@ -123,85 +118,144 @@ async def register_credentials(
     body: auth_service.Credentials, redis_connection: RedisDep
 ):
     """Registers the credentials passed to it"""
-    try:
-        auth_service.save_credentials(redis_connection, payload=body)
-    except auth_service.JobAlreadyExists as exp:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"{exp}")
+    auth_service.save_credentials(redis_connection, payload=body)
     return {"message": "ok"}
 
 
 @app.post("/jobs")
 async def upload_job(
+    redis_connection: RedisDep,
     upload_file: UploadFile = File(...),
     credentials: auth_service.Credentials = Depends(
-        get_valid_credentials_dep(expected_status=auth_service.JobStatus.REGISTERED)
+        get_valid_credentials_dep(expected_status=JobStatus.PENDING)
     ),
 ):
-    # store the received file in the job upload pool
-    file_name = job_id = credentials.job_id
-    file_path = Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / JOB_UPLOAD_POOL_DIRNAME
-    file_path.mkdir(parents=True, exist_ok=True)
-    store_file = file_path / file_name
+    """Receives quantum jobs to process
 
-    if jobs_service.does_job_exist(job_id):
+    Args:
+        redis_connection: the connection to the redis database
+        upload_file: the quantum job file uploaded
+        credentials: the (job_id, app_token) pair associated with this request
+    """
+    job_id = credentials.job_id
+    jobs_db = Collection(redis_connection, schema=Job)
+    if jobs_db.exists(job_id):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"job_id {job_id} already exists",
         )
 
-    # save it
-    upload_file.file.seek(0)
-    with store_file.open("wb") as destination:
-        shutil.copyfileobj(upload_file.file, destination)
-    upload_file.file.close()
+    # save job file
+    new_file_path = _JOB_UPLOAD_POOL / job_id
+    job_file_path = save_uploaded_file(upload_file, target=new_file_path)
+
+    # save job in database
+    backend_config = get_backend_config()
+    calibration_info = get_device_calibration_info(
+        redis_connection, backend_config=backend_config
+    )
+    job = Job(
+        job_id=job_id,
+        device=backend_config.general_config.name,
+        calibration_date=calibration_info.last_calibrated,
+    )
+    jobs_db.insert(job)
 
     # enqueue for registration
+    rq_job_id = get_rq_job_id(job_id, Stage.REG_Q)
     rq_queues.job_registration_queue.enqueue(
-        job_register,
-        store_file,
-        job_id=credentials.job_id + f"_{jobs_service.Location.REG_Q.name}",
+        job_register, job_file_path, job_id=rq_job_id
     )
-    return {"message": file_name}
+    return {"message": job_id}
 
 
 @app.get("/jobs", dependencies=[Depends(get_whitelisted_ip)])
-async def fetch_all_jobs():
-    return jobs_service.fetch_all_jobs()
+async def fetch_all_jobs(
+    redis_connection: RedisDep,
+):
+    """Returns all available jobs
+
+    Args:
+        redis_connection: the connection to the redis database
+    """
+    jobs_db = Collection(redis_connection, schema=Job)
+    data = jobs_db.get_all()
+    # TODO: Paginate these in future
+    return [item.model_dump(mode="json") for item in data]
 
 
 @app.get("/jobs/{job_id}", dependencies=[Depends(get_valid_credentials_dep())])
-async def fetch_job(job_id: str):
-    job = jobs_service.fetch_job(job_id)
-    return {"message": job or f"job {job_id} not found"}
+async def fetch_job(redis_connection: RedisDep, job_id: str):
+    """Returns a job of the given job_id"""
+    jobs_db = Collection(redis_connection, schema=Job)
+    job = jobs_db.get_one((job_id,))
+    # TODO: Standardize the return schema here
+    return {"message": job.model_dump(mode="json")}
 
 
 @app.get("/jobs/{job_id}/status", dependencies=[Depends(get_valid_credentials_dep())])
-async def fetch_job_status(job_id: str):
-    job_status = jobs_service.fetch_job(job_id, "status", format=True)
-    return {"message": job_status or f"job {job_id} not found"}
+async def fetch_job_status(redis_connection: RedisDep, job_id: str):
+    """Returns the status of the given job of the given job_id
+
+    Args:
+        redis_connection: the connection to the redis database
+        job_id: the unique identifier of the job
+    """
+    jobs_db = Collection(redis_connection, schema=Job)
+    job: Job = jobs_db.get_one((job_id,))
+    # TODO: Standardize the return schema here
+    return {"message": job.status}
 
 
 @app.get("/jobs/{job_id}/result", dependencies=[Depends(get_valid_credentials_dep())])
-async def fetch_job_result(job_id: str):
-    job = jobs_service.fetch_job(job_id)
+async def fetch_job_result(redis_connection: RedisDep, job_id: str):
+    """Retrieves the result of the job if exists
 
-    if not job:
-        return {"message": f"job {job_id} not found"}
-    elif job["status"]["finished"]:
-        return {"message": job["result"]}
-    else:
-        return {"message": "job has not finished"}
+    Args:
+        redis_connection: the connection to the redis database
+        job_id: the unique identifier of the job
+    """
+    jobs_db = Collection(redis_connection, schema=Job)
+    job: Job = jobs_db.get_one((job_id,))
+    if job.result is not None:
+        # TODO: Standardize the return schema here
+        return {"message": job.result.model_dump(mode="json")}
+
+    # FIXME: this does not communicate well when the job has failed
+    return {"message": "job has not finished"}
 
 
 @app.delete("/jobs/{job_id}", dependencies=[Depends(get_valid_credentials_dep())])
-async def remove_job(job_id: str):
-    jobs_service.remove_job(job_id)
+async def remove_job(redis_connection: RedisDep, job_id: str):
+    """Deletes the job of the given job_id
+
+    Args:
+        redis_connection: the connection to the redis database
+        job_id: the unique identifier of the job
+    """
+    try:
+        jobs_service.cancel_job(redis_connection, job_id=job_id, reason="deleting job")
+    except JobAlreadyCancelled:
+        pass
+
+    jobs_db = Collection(redis_connection, schema=Job)
+    jobs_db.delete_many([(job_id,)])
+    return {"message": f"job {job_id} not found"}
 
 
 @app.post("/jobs/{job_id}/cancel", dependencies=[Depends(get_valid_credentials_dep())])
-async def cancel_job(job_id: str, reason: Optional[str] = Body(None, embed=False)):
+async def cancel_job(
+    redis_connection: RedisDep, job_id: str, reason: str = Body("", embed=False)
+):
+    """Cancels a given job's processing
+
+    Args:
+        redis_connection: the connection to the redis database
+        job_id: the unique identifier of the job
+        reason: reason for cancelling the job
+    """
     print(f"Cancelling job {job_id}")
-    jobs_service.cancel_job(job_id, reason)
+    jobs_service.cancel_job(redis_connection, job_id=job_id, reason=reason)
 
 
 @app.get(
@@ -209,61 +263,24 @@ async def cancel_job(job_id: str, reason: Optional[str] = Body(None, embed=False
     dependencies=[Depends(get_valid_credentials_dep(job_id_field="logfile_id"))],
 )
 async def download_logfile(logfile_id: UUID):
-    file_name = f"{logfile_id}.hdf5"
-    file = (
-        Path(STORAGE_ROOT)
-        / STORAGE_PREFIX_DIRNAME
-        / LOGFILE_DOWNLOAD_POOL_DIRNAME
-        / file_name
-    )
+    """Downloads the job logfile
 
+    Args:
+        logfile_id: the id of the logfile usually the job id
+    """
+    file = (_LOG_FILE_POOL / str(logfile_id)).with_suffix(".hdf5")
     if file.exists():
         return FileResponse(file)
-    else:
-        return {"message": "logfile not found"}
+    return {"message": "logfile not found"}
 
 
-# FIXME: this endpoint might be unnecessary going forward or might need to return proper JSON data
-@app.get("/rq-info", dependencies=[Depends(get_whitelisted_ip)])
-async def get_rq_info(redis_connection: RedisDep):
-    workers = Worker.all(connection=redis_connection)
-    print(str(workers))
-    if len(workers) == 0:
-        return {"message": "No worker registered"}
-
-    msg = "{"
-    for worker in workers:
-        msg += "hostname: " + str(worker.hostname) + ","
-        msg += "pid: " + str(worker.pid)
-    msg += "}"
-
-    return {"message": msg}
+@app.get("/static-properties", dependencies=[Depends(get_whitelisted_ip)])
+async def get_static_properties(redis_connection: RedisDep):
+    """Retrieves the device properties that are not changing"""
+    return props_lib.get_device_info(redis_connection)
 
 
-@app.get("/backend_properties", dependencies=[Depends(get_whitelisted_ip)])
-async def create_current_snapshot():
-    return props_lib.get_device_v1_info()
-
-
-@app.get("/v2/static-properties", dependencies=[Depends(get_whitelisted_ip)])
-async def create_current_snapshot():
-    return props_lib.get_device_v2_info()
-
-
-@app.get("/v2/dynamic-properties", dependencies=[Depends(get_whitelisted_ip)])
-async def create_current_snapshot():
-    return props_lib.get_device_calibration_v2_info()
-
-
-# FIXME: this endpoint might be unnecessary
-@app.get("/web-gui", dependencies=[Depends(get_whitelisted_ip)])
-async def get_snapshot(redis_connection: RedisDep):
-    snapshot = redis_connection.get("current_snapshot")
-    return json.loads(snapshot)
-
-
-# FIXME: this endpoint might be unnecessary
-@app.get("/web-gui/config", dependencies=[Depends(get_whitelisted_ip)])
-async def web_config(redis_connection: RedisDep):
-    snapshot = redis_connection.get("config")
-    return json.loads(snapshot)
+@app.get("/dynamic-properties", dependencies=[Depends(get_whitelisted_ip)])
+async def get_dynamic_properties(redis_connection: RedisDep):
+    """Retrieves the device properties that are changing with time i.e. calibration data"""
+    return props_lib.get_device_calibration_info(redis_connection)

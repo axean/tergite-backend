@@ -12,49 +12,45 @@
 # that they have been altered from the originals.
 from pathlib import Path
 
-import settings
+from settings import (
+    DEFAULT_PREFIX,
+    JOB_EXECUTION_POOL_DIRNAME,
+    REDIS_CONNECTION,
+    STORAGE_PREFIX_DIRNAME,
+    STORAGE_ROOT,
+)
 
-from ....utils.json import get_items_from_json
 from ....utils.queues import QueuePool
-from ..service import Location, inform_location, register_job, update_job_entry
-from .preprocessing import job_preprocess
+from ....utils.store import Collection
+from ..dtos import Job
+from ..service import Stage
+from ..utils import get_rq_job_id, log_job_msg, move_file, update_job_stage
+from .execution import job_execute
 
-# settings
-DEFAULT_PREFIX = settings.DEFAULT_PREFIX
-STORAGE_ROOT = settings.STORAGE_ROOT
-STORAGE_PREFIX_DIRNAME = settings.STORAGE_PREFIX_DIRNAME
-JOB_EXECUTION_POOL_DIRNAME = settings.JOB_EXECUTION_POOL_DIRNAME
-JOB_PRE_PROC_POOL_DIRNAME = settings.JOB_PRE_PROC_POOL_DIRNAME
+_EXEC_POOL_DIR = STORAGE_ROOT / STORAGE_PREFIX_DIRNAME / JOB_EXECUTION_POOL_DIRNAME
 
 
 # preprocessing queue
-rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=settings.REDIS_CONNECTION)
+rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=REDIS_CONNECTION)
 
 
 def job_register(job_file: Path) -> None:
     """Registers job in job supervisor"""
-    job_id = job_file.stem
-    # inform job supervisor about job registration
     print(f"Registering job file {str(job_file)}")
-    register_job(job_id)
-    # store the received file in the job upload pool
-    new_file_name = job_file.stem
-    new_file_path = (
-        Path(STORAGE_ROOT) / STORAGE_PREFIX_DIRNAME / JOB_PRE_PROC_POOL_DIRNAME
-    )
-    new_file_path.mkdir(exist_ok=True)
-    new_file = new_file_path / new_file_name
-    job_file.replace(new_file)
-    # add job to pre-processing queue and notify job supervisor
-    rq_queues.job_preprocessing_queue.enqueue(
-        job_preprocess,
-        new_file,
-        job_id=job_id + f"_{Location.PRE_PROC_Q.name}",
-    )
-    inform_location(job_id, Location.PRE_PROC_Q)
 
-    # put some of this job's items in job_supervisor's Redis entry
-    keys = ["name", "is_calibration_supervisor_job", "post_processing"]
-    dict_partial = get_items_from_json(new_file, keys)
-    for key, value in dict_partial.items():
-        update_job_entry(job_id, value, key)
+    job_id = job_file.stem
+    jobs_db = Collection[Job](REDIS_CONNECTION, schema=Job)
+
+    # update job's stage and timestamps at the beginning
+    update_job_stage(jobs_db, job_id=job_id, stage=Stage.REG_W)
+    log_job_msg(f"Registered entry for job {job_id}")
+
+    # store the received file in the job upload pool
+    new_file = move_file(job_file, new_folder=_EXEC_POOL_DIR)
+
+    # add job to executing queue and notify job supervisor
+    rq_job_id = get_rq_job_id(job_id, Stage.EXEC_Q)
+    rq_queues.job_preprocessing_queue.enqueue(job_execute, new_file, job_id=rq_job_id)
+
+    # update job's stage and timestamps at the end
+    update_job_stage(jobs_db, job_id=job_id, stage=Stage.EXEC_Q)

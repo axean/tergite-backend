@@ -41,7 +41,7 @@ def test_load_quantify_config_files():
 @pytest.mark.parametrize("client", FASTAPI_CLIENTS)
 def test_authenticated_mss_client(client):
     """The MSS client used to make requests to MSS is authenticated"""
-    from app.utils.http import get_mss_client
+    from app.utils.api import get_mss_client
 
     mss_client = get_mss_client()
     authorization_header = mss_client.headers.get("Authorization")

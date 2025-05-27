@@ -1,14 +1,15 @@
 import copy
 import json
+import os
 from itertools import zip_longest
 from os import path
 from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
-import redis
-from rq import Worker
 
+from app.services.auth import AuthLog
+from app.services.jobs.dtos import Job
 from app.tests.conftest import (
     BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES,
     BLACKLISTED_CLIENTS,
@@ -21,32 +22,32 @@ from app.tests.conftest import (
 )
 from app.tests.utils.fixtures import load_fixture
 from app.tests.utils.http import get_headers
+from app.tests.utils.records import (
+    order_by,
+    with_current_timestamps,
+    with_incremental_timestamps,
+)
 from app.tests.utils.redis import insert_in_hash, register_app_token_job_id
 
 _PARENT_FOLDER = path.dirname(path.abspath(__file__))
 _JOBS_LIST = load_fixture("job_list.json")
-_BACKEND_PROPERTIES = [
-    load_fixture("backend_properties.json"),
-    load_fixture("backend_properties.simq1.json"),
-    load_fixture("backend_properties.simq2.json"),
+_STATIC_PROPERTIES = [
+    load_fixture("static_properties.json"),
+    load_fixture("static_properties.simq1.json"),
+    load_fixture("static_properties.simq2.json"),
 ]
-_STATIC_PROPERTIES_V2 = [
-    load_fixture("static_properties_v2.json"),
-    load_fixture("static_properties_v2.simq1.json"),
-    load_fixture("static_properties_v2.simq2.json"),
-]
-_DYNAMIC_PROPERTIES_V2 = [
-    load_fixture("dynamic_properties_v2.json"),
-    load_fixture("dynamic_properties_v2.simq1.json"),
-    load_fixture("dynamic_properties_v2.simq2.json"),
+_DYNAMIC_PROPERTIES = [
+    load_fixture("dynamic_properties.json"),
+    load_fixture("dynamic_properties.simq1.json"),
+    load_fixture("dynamic_properties.simq2.json"),
 ]
 _SIMULATOR_JOBS_FOR_UPLOAD = load_fixture("jobs_to_upload_simulator.json")
 _SIMULATOR_JOBS_FOR_UPLOAD_2Q = load_fixture("jobs_to_upload_simulator_2q.json")
 _JOBS_FOR_UPLOAD = load_fixture("jobs_to_upload.json")
 _JOB_ID_FIELD = "job_id"
 _JOB_IDS = [item[_JOB_ID_FIELD] for item in _JOBS_LIST]
-_JOBS_HASH_NAME = "job_supervisor"
-_AUTH_HASH_NAME = "auth_service"
+_JOBS_HASH_NAME = f"{Job.__module__}.{Job.__qualname__}".lower()
+_AUTH_HASH_NAME = f"{AuthLog.__module__}.{AuthLog.__qualname__}".lower()
 _DUMMY_JSON = {
     "foo": "bar",
     "os": "system",
@@ -107,14 +108,11 @@ _BLACKLISTED_UPLOAD_JOB_PARAMS = [
     for job in _JOBS_FOR_UPLOAD
     for client, redis_client, rq_worker in BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES
 ]
-_BACKEND_PROPERTIES_PARAMS = [
-    (client, resp) for client, resp in zip(FASTAPI_CLIENTS, _BACKEND_PROPERTIES)
+_STATIC_PROPERTIES_PARAMS = [
+    (client, resp) for client, resp in zip(FASTAPI_CLIENTS, _STATIC_PROPERTIES)
 ]
-_STATIC_PROPERTIES_V2_PARAMS = [
-    (client, resp) for client, resp in zip(FASTAPI_CLIENTS, _STATIC_PROPERTIES_V2)
-]
-_DYNAMIC_PROPERTIES_V2_PARAMS = [
-    (client, resp) for client, resp in zip(FASTAPI_CLIENTS, _DYNAMIC_PROPERTIES_V2)
+_DYNAMIC_PROPERTIES_PARAMS = [
+    (client, resp) for client, resp in zip(FASTAPI_CLIENTS, _DYNAMIC_PROPERTIES)
 ]
 
 
@@ -139,18 +137,20 @@ def test_blacklisted_ip_root(client):
 @pytest.mark.parametrize("client, redis_client", CLIENTS)
 def test_fetch_all_jobs(redis_client, client):
     """Get to /jobs returns all jobs"""
+    raw_jobs = _get_raw_jobs()
+
     insert_in_hash(
         client=redis_client,
         hash_name=_JOBS_HASH_NAME,
-        data=_JOBS_LIST,
-        id_field=_JOB_ID_FIELD,
+        data=raw_jobs,
+        id_fields=(_JOB_ID_FIELD,),
     )
 
     # using context manager to ensure on_startup runs
     with client as client:
         response = client.get("/jobs")
-        got = response.json()
-        expected = {item[_JOB_ID_FIELD]: item for item in _JOBS_LIST}
+        got = order_by(response.json(), field="job_id")
+        expected = order_by(raw_jobs, field="job_id")
 
         assert response.status_code == 200
         assert got == expected
@@ -159,11 +159,13 @@ def test_fetch_all_jobs(redis_client, client):
 @pytest.mark.parametrize("client, redis_client", BLACKLISTED_CLIENTS)
 def test_blacklisted_fetch_all_jobs(redis_client, client):
     """Get to /jobs returns 404 and no content"""
+    raw_jobs = _get_raw_jobs()
+
     insert_in_hash(
         client=redis_client,
         hash_name=_JOBS_HASH_NAME,
-        data=_JOBS_LIST,
-        id_field=_JOB_ID_FIELD,
+        data=raw_jobs,
+        id_fields=(_JOB_ID_FIELD,),
     )
 
     # using context manager to ensure on_startup runs
@@ -176,11 +178,13 @@ def test_blacklisted_fetch_all_jobs(redis_client, client):
 @pytest.mark.parametrize("client, redis_client, job_id", _FETCH_JOB_PARAMS)
 def test_fetch_job(redis_client, client, job_id: str, app_token_header):
     """Get to /jobs/{job_id} returns the job for the given job_id"""
+    raw_jobs = _get_raw_jobs()
+
     insert_in_hash(
         client=redis_client,
         hash_name=_JOBS_HASH_NAME,
-        data=_JOBS_LIST,
-        id_field=_JOB_ID_FIELD,
+        data=raw_jobs,
+        id_fields=(_JOB_ID_FIELD,),
     )
     register_app_token_job_id(
         client=redis_client,
@@ -194,7 +198,7 @@ def test_fetch_job(redis_client, client, job_id: str, app_token_header):
         response = client.get(f"/jobs/{job_id}", headers=app_token_header)
         got = response.json()
         expected = {
-            "message": list(filter(lambda x: x["job_id"] == job_id, _JOBS_LIST))[0]
+            "message": list(filter(lambda x: x["job_id"] == job_id, raw_jobs))[0]
         }
 
         assert response.status_code == 200
@@ -208,11 +212,12 @@ def test_unauthenticated_fetch_job(
     redis_client, client, job_id: str, headers, app_token
 ):
     """Get to /jobs/{job_id} raise 401 if no app token is passed in Authorization header"""
+    raw_jobs = _get_raw_jobs()
     insert_in_hash(
         client=redis_client,
         hash_name=_JOBS_HASH_NAME,
-        data=_JOBS_LIST,
-        id_field=_JOB_ID_FIELD,
+        data=raw_jobs,
+        id_fields=(_JOB_ID_FIELD,),
     )
 
     # using context manager to ensure on_startup runs
@@ -233,11 +238,13 @@ def test_unauthenticated_fetch_job(
 @pytest.mark.parametrize("client, redis_client, job_id", _FETCH_JOB_PARAMS)
 def test_fetch_job_result(redis_client, client, job_id: str, app_token_header):
     """Get to /jobs/{job_id}/result returns the job result for the given job_id"""
+    raw_jobs = _get_raw_jobs()
+
     insert_in_hash(
         client=redis_client,
         hash_name=_JOBS_HASH_NAME,
-        data=_JOBS_LIST,
-        id_field=_JOB_ID_FIELD,
+        data=raw_jobs,
+        id_fields=(_JOB_ID_FIELD,),
     )
     register_app_token_job_id(
         client=redis_client,
@@ -250,7 +257,7 @@ def test_fetch_job_result(redis_client, client, job_id: str, app_token_header):
     with client as client:
         response = client.get(f"/jobs/{job_id}/result", headers=app_token_header)
         got = response.json()
-        expected_job = list(filter(lambda x: x["job_id"] == job_id, _JOBS_LIST))[0]
+        expected_job = list(filter(lambda x: x["job_id"] == job_id, raw_jobs))[0]
 
         try:
             expected = {"message": expected_job["result"]}
@@ -268,11 +275,13 @@ def test_unauthenticated_fetch_job_result(
     redis_client, client, job_id: str, headers, app_token
 ):
     """Get to /jobs/{job_id}/result returns 401 error when no valid app token is passed"""
+    raw_jobs = _get_raw_jobs()
+
     insert_in_hash(
         client=redis_client,
         hash_name=_JOBS_HASH_NAME,
-        data=_JOBS_LIST,
-        id_field=_JOB_ID_FIELD,
+        data=raw_jobs,
+        id_fields=(_JOB_ID_FIELD,),
     )
 
     # using context manager to ensure on_startup runs
@@ -293,16 +302,13 @@ def test_unauthenticated_fetch_job_result(
 @pytest.mark.parametrize("client, redis_client, job_id", _FETCH_JOB_PARAMS)
 def test_fetch_job_status(redis_client, client, job_id: str, app_token_header):
     """Get to /jobs/{job_id}/status returns the job status for the given job_id"""
-    # importing this here so that patching of redis.Redis does not get messed up
-    # as it would if the import statement was at the beginning of the file.
-    # FIXME: In future, the global `red = redis.Redis()` scattered in the code should be deleted
-    from app.services.jobs.service import STR_LOC, Location
+    raw_jobs = _get_raw_jobs()
 
     insert_in_hash(
         client=redis_client,
         hash_name=_JOBS_HASH_NAME,
-        data=_JOBS_LIST,
-        id_field=_JOB_ID_FIELD,
+        data=raw_jobs,
+        id_fields=(_JOB_ID_FIELD,),
     )
     register_app_token_job_id(
         client=redis_client,
@@ -315,13 +321,12 @@ def test_fetch_job_status(redis_client, client, job_id: str, app_token_header):
     with client as client:
         response = client.get(f"/jobs/{job_id}/status", headers=app_token_header)
         got = response.json()
-        expected_job = list(filter(lambda x: x["job_id"] == job_id, _JOBS_LIST))[0]
+        expected_job = list(filter(lambda x: x["job_id"] == job_id, raw_jobs))[0]
         # We add this, because we do not want to overwrite values as in the lines below
         expected_job = copy.deepcopy(expected_job)
 
         try:
             status = expected_job["status"]
-            status["location"] = STR_LOC[Location(status["location"])]
             expected = {"message": status}
         except KeyError:
             expected = {"message": f"job {job_id} not found"}
@@ -337,11 +342,13 @@ def test_unauthenticated_fetch_job_status(
     redis_client, client, job_id: str, headers, app_token
 ):
     """Get to /jobs/{job_id}/status returns 401 error when no valid app token is passed"""
+    raw_jobs = _get_raw_jobs()
+
     insert_in_hash(
         client=redis_client,
         hash_name=_JOBS_HASH_NAME,
-        data=_JOBS_LIST,
-        id_field=_JOB_ID_FIELD,
+        data=raw_jobs,
+        id_fields=(_JOB_ID_FIELD,),
     )
 
     # using context manager to ensure on_startup runs
@@ -370,6 +377,7 @@ def test_upload_job(
     job,
     expected_counts,
     app_token_header,
+    freezer,
 ):
     """POST to '/jobs' uploads a new job"""
     job_id = job[_JOB_ID_FIELD]
@@ -392,29 +400,23 @@ def test_upload_job(
         got = response.json()
         expected = {"message": job_id}
         expected_job_in_redis = {
-            "id": job_id,
-            "priorities": {
-                "global": 0,
-                "local": {"pre_processing": 0, "execution": 0, "post_processing": 0},
-            },
-            "status": {
-                "location": 9,
-                "started": timestamp,
-                "finished": timestamp,
-                "cancelled": {"time": None, "reason": None},
-                "failed": {"time": None, "reason": None},
-            },
+            "job_id": job_id,
+            "device": os.environ["DEFAULT_PREFIX"],
+            "download_url": f"http://localhost:8000/logfiles/{job_id}",
+            "failure_reason": None,
+            "cancellation_reason": None,
+            "status": "successful",
+            "stage": 9,
             "timestamps": {
                 _REGISTRATION_STAGE: {"started": timestamp, "finished": timestamp},
-                _PRE_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
+                _PRE_PROCESSING_STAGE: None,
                 _EXECUTION_STAGE: {"started": timestamp, "finished": timestamp},
                 _POST_PROCESSING_STAGE: {"started": timestamp, "finished": timestamp},
                 _FINAL_STAGE: {"started": timestamp, "finished": timestamp},
             },
             "result": {"memory": [["0x0"] * 1024]},
-            "name": job["name"],
-            "post_processing": job["post_processing"],
-            "is_calibration_supervisor_job": job["is_calibration_supervisor_job"],
+            "created_at": timestamp,
+            "updated_at": timestamp,
         }
 
         rq_worker.work(burst=True)
@@ -423,6 +425,9 @@ def test_upload_job(
 
         assert response.status_code == 200
         assert got == expected
+
+        # remove calibration date because it runs outside date freezer
+        job_in_redis.pop("calibration_date")
 
         # Remove the result, because it is probabilistic
         results = job_in_redis.pop("result")
@@ -549,7 +554,7 @@ def test_unauthenticated_remove_job(
     redis_client,
     client_jobs_folder,
     rq_worker,
-    job,
+    job: dict,
     app_token_header,
     headers,
     app_token,
@@ -629,33 +634,30 @@ def test_cancel_job(
         rq_worker.work(burst=True)
 
         expected_job_in_redis = {
-            "id": job_id,
-            "priorities": {
-                "global": 0,
-                "local": {"pre_processing": 0, "execution": 0, "post_processing": 0},
-            },
-            "status": {
-                "location": 2,
-                "started": timestamp,
-                "finished": None,
-                "cancelled": {"time": timestamp, "reason": cancellation_reason},
-                "failed": {"time": None, "reason": None},
-            },
+            "job_id": job_id,
+            "device": os.environ["DEFAULT_PREFIX"],
+            "download_url": None,
+            "failure_reason": None,
+            "cancellation_reason": cancellation_reason,
+            "status": "cancelled",
+            "stage": 4,
             "timestamps": {
                 _REGISTRATION_STAGE: {"started": timestamp, "finished": timestamp},
-                _PRE_PROCESSING_STAGE: {"started": None, "finished": None},
-                _EXECUTION_STAGE: {"started": None, "finished": None},
-                _POST_PROCESSING_STAGE: {"started": None, "finished": None},
-                _FINAL_STAGE: {"started": None, "finished": None},
+                _PRE_PROCESSING_STAGE: None,
+                _EXECUTION_STAGE: None,
+                _POST_PROCESSING_STAGE: None,
+                _FINAL_STAGE: None,
             },
             "result": None,
-            "name": job["name"],
-            "post_processing": job["post_processing"],
-            "is_calibration_supervisor_job": job["is_calibration_supervisor_job"],
+            "created_at": timestamp,
+            "updated_at": timestamp,
         }
 
         raw_job_in_redis = redis_client.hget(_JOBS_HASH_NAME, job_id)
         job_in_redis = json.loads(raw_job_in_redis)
+
+        # remove calibration date because it runs outside date freezer
+        job_in_redis.pop("calibration_date")
 
         assert cancellation_response.status_code == 200
         assert job_in_redis == expected_job_in_redis
@@ -716,7 +718,7 @@ def test_unauthenticated_cancel_job(
         job_in_redis = json.loads(redis_client.hget(_JOBS_HASH_NAME, job_id))
         assert cancellation_response.status_code == 401
         assert got == expected
-        assert job_in_redis["status"]["cancelled"] == {"time": None, "reason": None}
+        assert job_in_redis["status"] == "successful"
 
 
 @pytest.mark.parametrize("client, redis_client, rq_worker, job", _UPLOAD_JOB_PARAMS)
@@ -773,139 +775,44 @@ def test_unauthenticated_download_logfile(
         assert got == expected
 
 
-@pytest.mark.parametrize("client, redis_client, rq_worker", CLIENT_AND_RQ_WORKER_TUPLES)
-def test_get_rq_info(client, redis_client, rq_worker):
-    """GET to '/rq-info' retrieves information about the running rq workers"""
+@pytest.mark.parametrize("client, expected", _STATIC_PROPERTIES_PARAMS)
+def test_get_static_properties(client, expected):
+    """Get to '/static-properties' retrieves the current static properties of the backend in v2 form"""
     # using context manager to ensure on_startup runs
     with client as client:
-        rq_worker.register_birth()
-        response = client.get("/rq-info")
-        got = response.json()
-        workers = Worker.all(connection=redis_client)
-        worker_info_list = [
-            f"hostname: {worker.hostname},pid: {worker.pid}" for worker in workers
-        ]
-        expected = {"message": f"{{{''.join(worker_info_list)}}}"}
-        assert response.status_code == 200
-        assert got == expected
-
-
-@pytest.mark.parametrize(
-    "client, redis_client, rq_worker", BLACKLISTED_CLIENT_AND_RQ_WORKER_TUPLES
-)
-def test_blacklisted_get_rq_info(client, redis_client, rq_worker):
-    """Blacklisted IP GET to '/rq-info' returns 404 and no content"""
-    # using context manager to ensure on_startup runs
-    with client as client:
-        rq_worker.register_birth()
-        response = client.get("/rq-info")
-        assert response.status_code == 404
-        assert response.content == b""
-
-
-@pytest.mark.parametrize("client, expected", _BACKEND_PROPERTIES_PARAMS)
-def test_get_backend_properties(client, expected):
-    """Get to '/backend_properties' retrieves the current snapshot of the backend properties"""
-    # using context manager to ensure on_startup runs
-    with client as client:
-        response = client.get("/backend_properties")
+        response = client.get("/static-properties")
         got = response.json()
         assert response.status_code == 200
         assert got == expected
 
 
-@pytest.mark.parametrize("client, expected", _STATIC_PROPERTIES_V2_PARAMS)
-def test_get_static_properties_v2(client, expected):
-    """Get to '/v2/static-properties' retrieves the current static properties of the backend in v2 form"""
+@pytest.mark.parametrize("client, expected", _DYNAMIC_PROPERTIES_PARAMS)
+def test_get_dynamic_properties(client, expected):
+    """Get to '/dynamic-properties' retrieves the calibrated device parameters in version 2 form"""
     # using context manager to ensure on_startup runs
     with client as client:
-        response = client.get("/v2/static-properties")
-        got = response.json()
-        assert response.status_code == 200
-        assert got == expected
-
-
-@pytest.mark.parametrize("client, expected", _DYNAMIC_PROPERTIES_V2_PARAMS)
-def test_get_dynamic_properties_v2(client, expected):
-    """Get to '/v2/dynamic-properties' retrieves the calibrated device parameters in version 2 form"""
-    # using context manager to ensure on_startup runs
-    with client as client:
-        response = client.get("/v2/dynamic-properties")
+        response = client.get("/dynamic-properties")
         got = response.json()
         assert response.status_code == 200
         assert _remove_dates(got) == expected
 
 
 @pytest.mark.parametrize("client", BLACKLISTED_FASTAPI_CLIENTS)
-def test_blacklisted_get_backend_properties(client):
-    """Blacklisted Get to '/backend_properties' returns 404 with no content"""
+def test_blacklisted_get_static_properties(client):
+    """Blacklisted Get to '/static-properties' returns 404 with no content"""
     # using context manager to ensure on_startup runs
     with client as client:
-        response = client.get("/backend_properties")
+        response = client.get("/static-properties")
         assert response.status_code == 404
         assert response.content == b""
 
 
 @pytest.mark.parametrize("client", BLACKLISTED_FASTAPI_CLIENTS)
-def test_blacklisted_get_static_properties_v2(client):
-    """Blacklisted Get to '/v2/static-properties' returns 404 with no content"""
+def test_blacklisted_get_dynamic_properties(client):
+    """Blacklisted Get to '/dynamic-properties' returns 404 with no content"""
     # using context manager to ensure on_startup runs
     with client as client:
-        response = client.get("/v2/static-properties")
-        assert response.status_code == 404
-        assert response.content == b""
-
-
-@pytest.mark.parametrize("client", BLACKLISTED_FASTAPI_CLIENTS)
-def test_blacklisted_get_dynamic_properties_v2(client):
-    """Blacklisted Get to '/v2/dynamic-properties' returns 404 with no content"""
-    # using context manager to ensure on_startup runs
-    with client as client:
-        response = client.get("/v2/dynamic-properties")
-        assert response.status_code == 404
-        assert response.content == b""
-
-
-@pytest.mark.parametrize("client, redis_client", CLIENTS)
-def test_get_snapshot(client, redis_client: redis.Redis):
-    """Get to '/web-gui' retrieves the current snapshot of the backend properties"""
-    redis_client.set("current_snapshot", json.dumps(_DUMMY_JSON))
-    # using context manager to ensure on_startup runs
-    with client as client:
-        response = client.get("/web-gui")
-        assert response.status_code == 200
-        assert response.json() == _DUMMY_JSON
-
-
-@pytest.mark.parametrize("client, redis_client", BLACKLISTED_CLIENTS)
-def test_blacklisted_get_snapshot(client, redis_client: redis.Redis):
-    """Blacklisted Get to '/web-gui' returns 404 and no content"""
-    redis_client.set("current_snapshot", json.dumps(_DUMMY_JSON))
-    # using context manager to ensure on_startup runs
-    with client as client:
-        response = client.get("/web-gui")
-        assert response.status_code == 404
-        assert response.content == b""
-
-
-@pytest.mark.parametrize("client, redis_client", CLIENTS)
-def test_web_config(client, redis_client: redis.Redis):
-    """Get to '/web-gui/config' retrieves the config of this backend"""
-    redis_client.set("config", json.dumps(_DUMMY_JSON))
-    # using context manager to ensure on_startup runs
-    with client as client:
-        response = client.get("/web-gui/config")
-        assert response.status_code == 200
-        assert response.json() == _DUMMY_JSON
-
-
-@pytest.mark.parametrize("client, redis_client", BLACKLISTED_CLIENTS)
-def test_blacklisted_web_config(client, redis_client: redis.Redis):
-    """Blacklisted Get to '/web-gui/config' returns 404 and no content"""
-    redis_client.set("config", json.dumps(_DUMMY_JSON))
-    # using context manager to ensure on_startup runs
-    with client as client:
-        response = client.get("/web-gui/config")
+        response = client.get("/dynamic-properties")
         assert response.status_code == 404
         assert response.content == b""
 
@@ -983,3 +890,15 @@ def _remove_dates(dynamic_properties: Dict[str, Any]) -> Dict[str, Any]:
             for resonator_conf in resonators
         ],
     }
+
+
+def _get_raw_jobs() -> List[Dict[str, Any]]:
+    """Prepares the raw jobs and returns them
+
+    Returns:
+        the list of job data as would be saved in the database
+    """
+    raw_jobs = with_incremental_timestamps(
+        _JOBS_LIST, fields=["created_at", "calibration_date"]
+    )
+    return with_current_timestamps(raw_jobs, fields=["updated_at"])

@@ -21,7 +21,7 @@ from qiskit.transpiler import Target
 from qiskit_dynamics import Solver
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
-from app.libs.properties import BackendConfig
+from app.libs.device_parameters import BackendConfig
 from app.libs.quantum_executor.qiskit.backends.base import QiskitPulseBackend
 from app.libs.quantum_executor.qiskit.functions import omega_c
 
@@ -295,12 +295,12 @@ class QiskitPulse2Q(QiskitPulseBackend):
             Discriminator object as json in the format to store it in the database
         """
         # Generate the iq values for each qubit
-        qubit_ids = [x[0] for x in self.configuration().meas_map]
+        qubit_indexes = [x[0] for x in self.configuration().meas_map]
 
         lda_results = {}
-        for qubit_id in qubit_ids:
+        for qubit_idx in qubit_indexes:
             schedule = Schedule(
-                (0, Acquire(1, AcquireChannel(qubit_id), MemorySlot(0)))
+                (0, Acquire(1, AcquireChannel(qubit_idx), MemorySlot(0)))
             )
 
             # Process the solution to extract populations of interest
@@ -316,7 +316,7 @@ class QiskitPulse2Q(QiskitPulseBackend):
 
             def get_statevector(mode):
                 sv = np.zeros(dim**3, dtype=complex)
-                sv[get_index(qubit_id, mode, dim)] = 1
+                sv[get_index(qubit_idx, mode, dim)] = 1
                 return Statevector(sv)
 
             # For |0> state
@@ -345,6 +345,6 @@ class QiskitPulse2Q(QiskitPulseBackend):
                 lda_result["coef_0"] = lda_coefs[i][0]
                 lda_result["coef_1"] = lda_coefs[i][1]
 
-            lda_results[qubit_id] = lda_result
+            lda_results[f"q{qubit_idx}"] = lda_result
         # Return the discriminator configuration
         return {"lda": lda_results}

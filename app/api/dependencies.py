@@ -20,6 +20,7 @@ from redis import Redis
 import settings
 
 from ..services import auth as auth_service
+from ..services.jobs.dtos import JobStatus
 from ..utils.uuid import validate_uuid4_str
 from .exc import InvalidJobIdInUploadedFileError, IpNotAllowedError
 
@@ -105,7 +106,7 @@ def get_whitelisted_ip(request: Request) -> str:
 
 
 def get_valid_credentials_dep(
-    expected_status: Optional[auth_service.JobStatus] = None,
+    expected_status: Optional[JobStatus] = None,
     job_id_field: str = "job_id",
 ):
     """Returns a dependency injector that gets a valid credentials with the expected job status.
