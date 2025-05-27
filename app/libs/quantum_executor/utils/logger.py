@@ -22,7 +22,8 @@ import pandas as pd
 import quantify_core.data.handling as dh
 import tabulate
 from quantify_core.data.types import TUID
-from quantify_scheduler import CompiledSchedule, Schedule
+from quantify_scheduler import Schedule
+from quantify_scheduler.schedules import CompiledSchedule
 
 from .general import load_config, search_nested
 

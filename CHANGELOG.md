@@ -21,6 +21,10 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 - BREAKING: Change endpoint `/v2/static-properties` to `/static-properties`
 - BREAKING: Change endpoint `/v2/dynamic-properties` to `/dynamic-properties`
 - Rename the `properties` library to `device_parameters`
+- Upgraded to python 3.12
+- Removed the deprecated `qiskit-ibmq-providers` dependency, moving its code into our lib folder
+- Moved from requirements.txt to pyproject.toml setup
+- Bumped up the version of fastapi to the latest (>=0.115.12)
 
 ## [2025.03.2] - 2025-03-19
 

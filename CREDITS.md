@@ -26,6 +26,7 @@
 - Tracking of execution time of jobs
 - Hardware configuration clean up with YAML and TOML
 - integration test suite plus CI/CD
+- Simplification of data storage in redis
 
 ## Nicklas Botö
 

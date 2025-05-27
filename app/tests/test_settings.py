@@ -1,4 +1,5 @@
 """Tests for the settings and configs"""
+
 import os
 
 import pytest

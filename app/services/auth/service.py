@@ -1,4 +1,5 @@
 """The service file for handling authentication"""
+
 from typing import Optional
 
 from redis.client import Redis
