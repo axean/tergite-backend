@@ -1,10 +1,6 @@
 [
   {
     "job_id": "aaf5cea8-cd3d-4e9b-b468-d74ae52b2360",
-    "type": "script",
-    "post_processing": null,
-    "is_calibration_supervisor_job": false,
-    "name": "test_job_simulator_1",
     "params": {
       "qobj": {
         "qobj_id": "a55444a5-ecb7-4dca-a319-6ef26ffc94bd",
@@ -16,12 +12,8 @@
           "meas_level": 2,
           "meas_return": "single",
           "pulse_library": [],
-          "qubit_lo_freq": [
-            0.0
-          ],
-          "meas_lo_freq": [
-            0.0
-          ],
+          "qubit_lo_freq": [0.0],
+          "meas_lo_freq": [0.0],
           "memory_slot_size": 100,
           "shots": 1024,
           "memory_slots": 1,
@@ -62,22 +54,15 @@
                 "pulse_shape": "constant",
                 "parameters": {
                   "duration": 0,
-                  "amp": [
-                    0.0,
-                    0.0
-                  ]
+                  "amp": [0.0, 0.0]
                 }
               },
               {
                 "name": "acquire",
                 "t0": 300,
                 "duration": 0,
-                "qubits": [
-                  0
-                ],
-                "memory_slot": [
-                  0
-                ]
+                "qubits": [0],
+                "memory_slot": [0]
               }
             ],
             "header": {

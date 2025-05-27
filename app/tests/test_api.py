@@ -44,6 +44,7 @@ _DYNAMIC_PROPERTIES = [
 _SIMULATOR_JOBS_FOR_UPLOAD = load_fixture("jobs_to_upload_simulator.json")
 _SIMULATOR_JOBS_FOR_UPLOAD_2Q = load_fixture("jobs_to_upload_simulator_2q.json")
 _JOBS_FOR_UPLOAD = load_fixture("jobs_to_upload.json")
+_INVALID_JOBS_FOR_UPLOAD = load_fixture("invalid_jobs_to_upload.json")
 _JOB_ID_FIELD = "job_id"
 _JOB_IDS = [item[_JOB_ID_FIELD] for item in _JOBS_LIST]
 _JOBS_HASH_NAME = f"{Job.__module__}.{Job.__qualname__}".lower()
@@ -80,6 +81,12 @@ _ALL_UPLOAD_JOB_PARAMS = (
     + [(*args, {"0x0": 400, "0x3": 400}) for args in _SIMULATOR_UPLOAD_JOB_PARAMS_2Q]
     # the bell state of 00 and 11 == ~512
 )
+
+_ALL_INVALID_UPLOAD_JOB_PARAMS = [
+    (client, redis, rq_worker, job)
+    for job in _INVALID_JOBS_FOR_UPLOAD
+    for client, redis, rq_worker in CLIENT_AND_RQ_WORKER_TUPLES
+]
 
 _FETCH_JOB_PARAMS = [
     (client, redis_client, job_id)
@@ -419,12 +426,12 @@ def test_upload_job(
             "updated_at": timestamp,
         }
 
+        assert response.status_code == 200
+        assert got == expected
+
         rq_worker.work(burst=True)
         raw_job_in_redis = redis_client.hget(_JOBS_HASH_NAME, job_id)
         job_in_redis = json.loads(raw_job_in_redis)
-
-        assert response.status_code == 200
-        assert got == expected
 
         # remove calibration date because it runs outside date freezer
         job_in_redis.pop("calibration_date")
@@ -439,6 +446,45 @@ def test_upload_job(
             results=results["memory"][0], expected_min_counts=expected_counts
         )
         assert job_in_redis == expected_job_in_redis
+
+
+@pytest.mark.parametrize(
+    "client, redis_client, rq_worker, job", _ALL_INVALID_UPLOAD_JOB_PARAMS
+)
+def test_upload_invalid_job(
+    client,
+    redis_client,
+    rq_worker,
+    job,
+    client_jobs_folder,
+    app_token_header,
+    freezer,
+):
+    """POSTing an invalid structure of a job to '/jobs' fails"""
+    job_id = job.get(_JOB_ID_FIELD, "dummy")
+    job_file_path = _save_job_file(folder=client_jobs_folder, job=job)
+    register_app_token_job_id(
+        client=redis_client,
+        hash_name=_AUTH_HASH_NAME,
+        job_id=job_id,
+        app_token=TEST_APP_TOKEN_STRING,
+    )
+
+    # using context manager to ensure on_startup runs
+    with client as client:
+        with open(job_file_path, "rb") as file:
+            response = client.post(
+                "/jobs", files={"upload_file": file}, headers=app_token_header
+            )
+
+        got = response.json()
+
+        assert response.status_code == 400
+        assert got["detail"].startswith("Invalid file: ")
+
+        rq_worker.work(burst=True)
+        raw_job_in_redis = redis_client.hget(_JOBS_HASH_NAME, job_id)
+        assert raw_job_in_redis is None
 
 
 @pytest.mark.parametrize(
@@ -820,6 +866,8 @@ def test_blacklisted_get_dynamic_properties(client):
 def _save_job_file(folder: Path, job: Dict[str, Any], ext: str = ".json") -> Path:
     """Saves the given job to a file and returns the Path
 
+    It uses 'dummy' as a default job id
+
     Args:
         folder: the folder to save the job in
         job: the job to save
@@ -827,7 +875,7 @@ def _save_job_file(folder: Path, job: Dict[str, Any], ext: str = ".json") -> Pat
     Returns:
         the path where the job was saved
     """
-    job_id = job[_JOB_ID_FIELD]
+    job_id = job.get(_JOB_ID_FIELD, "dummy")
     file_path = folder / f"{job_id}{ext}"
 
     with open(file_path, "w") as file:

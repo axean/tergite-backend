@@ -25,6 +25,7 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 - Removed the deprecated `qiskit-ibmq-providers` dependency, moving its code into our lib folder
 - Moved from requirements.txt to pyproject.toml setup
 - Bumped up the version of fastapi to the latest (>=0.115.12)
+- Added validation of job files when uploading jobs to `/jobs`
 
 ## [2025.03.2] - 2025-03-19
 

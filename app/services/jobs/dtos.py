@@ -11,11 +11,21 @@
 # that they have been altered from the originals.
 #
 """Data Transfer Objects for the jobs service"""
+import json
 from enum import Enum, unique
 from typing import Dict, List, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SerializationInfo,
+    field_serializer,
+    field_validator,
+)
+from qiskit.qobj import PulseQobj
 
+from app.libs.qiskit_providers.utils.json_encoder import IQXJsonEncoder
 from app.utils.datetime import utc_now_str
 from app.utils.store import Schema
 
@@ -137,6 +147,40 @@ class Job(Schema):
     result: Optional[JobResult] = None
     created_at: Optional[str] = Field(default_factory=utc_now_str)
     updated_at: Optional[str] = Field(default_factory=utc_now_str)
+
+
+class JobFileParams(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        arbitrary_types_allowed=True,
+    )
+
+    qobj: PulseQobj
+
+    @field_serializer("qobj")
+    def serialize_qobj(self, qobj: PulseQobj, _info: SerializationInfo):
+        """Converts qobj into a JSON"""
+        return json.dumps(qobj.to_dict(), cls=IQXJsonEncoder)
+
+    @field_validator("qobj", mode="before")
+    @classmethod
+    def parse_qobj(cls, v):
+        """Parses the qobject from dict to Qobj"""
+        if isinstance(v, PulseQobj):
+            return v
+        elif isinstance(v, dict):
+            return PulseQobj.from_dict(v)
+
+        raise TypeError(f"Invalid type for PulseQobj: {type(v)}")
+
+
+class JobFile(BaseModel):
+    """The expected structure of the job file"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    job_id: str
+    params: JobFileParams
 
 
 @unique
