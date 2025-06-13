@@ -13,7 +13,7 @@
 """Data Transfer Objects for the jobs service"""
 import json
 from enum import Enum, unique
-from typing import Dict, List, Literal, Optional, Any, Callable
+from typing import Any, Callable, Dict, List, Literal, Optional
 
 from pydantic import (
     BaseModel,

@@ -15,11 +15,11 @@
 # that they have been altered from the originals.
 
 
-import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict
 
+from pydantic import ValidationError
 from qiskit.qobj import PulseQobj
 from qiskit_ibm_provider.utils import json_decoder
 
@@ -32,7 +32,7 @@ from settings import (
     REDIS_CONNECTION,
 )
 
-from ...dtos import Job, JobStatus
+from ...dtos import Job, JobFile, JobStatus
 from ...exc import JobAlreadyCancelled, MalformedJob
 from ...service import Stage
 from ...utils import get_rq_job_id, log_job_failure, update_job_stage
@@ -54,10 +54,8 @@ def job_execute(job_file: Path):
 
     try:
         with job_file.open() as f:
-            job_dict = json.load(f)
-
-        if "job_id" not in job_dict:
-            raise MalformedJob("malformed job: missing job_id")
+            job_file_obj = JobFile.model_validate_json(f.read())
+            job_dict = job_file_obj.model_dump()
 
         job_id = job_dict["job_id"]
         update_job_stage(jobs_db, job_id=job_id, stage=Stage.EXEC_W)
@@ -92,6 +90,10 @@ def job_execute(job_file: Path):
         job_file.unlink(missing_ok=True)
         print("Job executed successfully")
         return {"message": "ok"}
+
+    except ValidationError as exp:
+        print(f"{exp}")
+        return {"message": f"malformed job: {exp}"}
 
     except JobAlreadyCancelled as exp:
         print(f"{exp}")
