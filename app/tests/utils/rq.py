@@ -40,7 +40,6 @@ def get_rq_worker(queue_pool: QueuePool) -> SimpleWorker:
         queue_pool.job_registration_queue,
         queue_pool.logfile_postprocessing_queue,
         queue_pool.job_execution_queue,
-        queue_pool.job_preprocessing_queue,
     ]
     if not queue_pool.is_async:
         return PseudoSimpleWorker(queues=queues, connection=queue_pool.connection)
