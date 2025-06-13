@@ -165,11 +165,13 @@ class JobFileParams(BaseModel):
     @field_validator("qobj", mode="before")
     @classmethod
     def parse_qobj(cls, v):
-        """Parses the qobject from dict to Qobj"""
+        """Parses the qobject from dict/str to Qobj"""
         if isinstance(v, PulseQobj):
             return v
         elif isinstance(v, dict):
             return PulseQobj.from_dict(v)
+        elif isinstance(v, str):
+            return PulseQobj.from_dict(json.loads(v))
 
         raise TypeError(f"Invalid type for PulseQobj: {type(v)}")
 
