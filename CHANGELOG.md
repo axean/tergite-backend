@@ -7,6 +7,8 @@ and this project follows versions of format `{year}.{month}.{patch_number}`.
 
 ## [Unreleased]
 
+## [2025.06.0] - 2025-06-16
+
 ### Added
 
 - Add a simpler JSON document based store in redis
