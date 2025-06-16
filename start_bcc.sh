@@ -109,7 +109,6 @@ set -e # exit if any step fails
 
 # Clean start
 rq empty -u "$REDIS_URL" "${DEFAULT_PREFIX}_job_registration"
-rq empty -u "$REDIS_URL" "${DEFAULT_PREFIX}_job_preprocessing"
 rq empty -u "$REDIS_URL" "${DEFAULT_PREFIX}_job_execution"
 rq empty -u "$REDIS_URL" "${DEFAULT_PREFIX}_logfile_postprocessing"
 rm -fr "/tmp/${DEFAULT_PREFIX}"
@@ -134,7 +133,6 @@ fi
 
 # Worker processes
 rq worker -u "$REDIS_URL" "${DEFAULT_PREFIX}_job_registration" &
-rq worker -u "$REDIS_URL" "${DEFAULT_PREFIX}_job_preprocessing" &
 rq worker -u "$REDIS_URL" "${DEFAULT_PREFIX}_job_execution" &
 rq worker -u "$REDIS_URL" "${DEFAULT_PREFIX}_logfile_postprocessing" &
 

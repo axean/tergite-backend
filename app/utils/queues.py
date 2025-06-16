@@ -21,7 +21,6 @@ class QueuePool:
     Attributes:
         job_registration_queue: the queue for handling job registration
         logfile_postprocessing_queue: the queue for handling logfile postprocessing
-        job_preprocessing_queue: the queue for handling job preprocessing
         job_execution_queue: the queue for handling job execution
         connection: the redis connection where the queue pool is to run
         is_async: whether the queues are to be run asynchronously or not
@@ -42,9 +41,6 @@ class QueuePool:
         )
         self.logfile_postprocessing_queue = Queue(
             f"{prefix}_logfile_postprocessing", connection=connection, is_async=is_async
-        )
-        self.job_preprocessing_queue = Queue(
-            f"{prefix}_job_preprocessing", connection=connection, is_async=is_async
         )
         self.job_execution_queue = Queue(
             f"{prefix}_job_execution", connection=connection, is_async=is_async
