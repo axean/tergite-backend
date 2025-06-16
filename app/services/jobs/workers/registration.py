@@ -30,7 +30,6 @@ from .execution import job_execute
 _EXEC_POOL_DIR = STORAGE_ROOT / STORAGE_PREFIX_DIRNAME / JOB_EXECUTION_POOL_DIRNAME
 
 
-# preprocessing queue
 rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=REDIS_CONNECTION)
 
 
@@ -50,7 +49,7 @@ def job_register(job_file: Path) -> None:
 
     # add job to executing queue and notify job supervisor
     rq_job_id = get_rq_job_id(job_id, Stage.EXEC_Q)
-    rq_queues.job_preprocessing_queue.enqueue(job_execute, new_file, job_id=rq_job_id)
+    rq_queues.job_execution_queue.enqueue(job_execute, new_file, job_id=rq_job_id)
 
     # update job's stage and timestamps at the end
     update_job_stage(jobs_db, job_id=job_id, stage=Stage.EXEC_Q)
