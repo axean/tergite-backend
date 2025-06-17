@@ -70,7 +70,7 @@ rq_queues = QueuePool(prefix=DEFAULT_PREFIX, connection=get_redis_connection())
 app = FastAPI(
     title="Backend Control Computer",
     description="Interfaces Quantum processor via REST API",
-    version="2025.06.0",
+    version="2025.06.1",
 )
 
 # exception handlers
